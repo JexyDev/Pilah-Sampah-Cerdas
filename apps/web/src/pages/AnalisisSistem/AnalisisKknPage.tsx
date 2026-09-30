@@ -19,6 +19,10 @@ import {
   RefreshCw,
   Filter,
   Info,
+  GraduationCap,
+  Trash2,
+  ShoppingBag,
+  Award,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -81,6 +85,7 @@ interface KknAnalysisData {
 
 export const AnalisisKknPage: React.FC = () => {
   const [data, setData] = useState<KknAnalysisData | null>(null);
+  const [kpiStats, setKpiStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [kelompokList, setKelompokList] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("");
@@ -105,9 +110,22 @@ export const AnalisisKknPage: React.FC = () => {
     }
   };
 
+  const fetchKpiStats = async () => {
+    try {
+      const res = await api.get("/dashboard/kpi");
+      const kpi = res.data?.data ?? res.data;
+      if (kpi) {
+        setKpiStats(kpi);
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+  };
+
   const fetchData = async (kelompokId?: string) => {
     try {
       setLoading(true);
+      fetchKpiStats();
       const url = kelompokId
         ? `/analisis-sistem/kkn?kelompokId=${kelompokId}`
         : "/analisis-sistem/kkn";
@@ -125,6 +143,7 @@ export const AnalisisKknPage: React.FC = () => {
   useEffect(() => {
     fetchKelompokOptions();
     fetchData();
+    fetchKpiStats();
   }, []);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -218,6 +237,189 @@ export const AnalisisKknPage: React.FC = () => {
         </div>
       ) : data ? (
         <div className="space-y-6">
+          {/* Ringkasan Operasional Pemilahan Sampah & Program KKN (Read Only) */}
+          <div className="space-y-2.5">
+            <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+              Ringkasan Operasional Pemilahan Sampah & Program KKN
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
+              {/* Card 1: Pengguna Kelola Sampah */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-blue-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <Users size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Pengguna Kelola Sampah
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {((Number(kpiStats?.penggunaSampah?.warga ?? 0) + Number(kpiStats?.penggunaSampah?.petugas ?? 0)) || Number(kpiStats?.totalPenggunaSampah ?? 0)).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Terdaftar</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      {Number(kpiStats?.penggunaSampah?.warga ?? 0)} Warga • {Number(kpiStats?.penggunaSampah?.petugas ?? 0)} Petugas
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Partisipan Program KKN */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-indigo-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-indigo-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <GraduationCap size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Partisipan Program KKN
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {((Number(kpiStats?.partisipanKkn?.mahasiswa ?? 0) + Number(kpiStats?.partisipanKkn?.dpl ?? 0)) || Number(kpiStats?.totalPartisipanKkn ?? 0)).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Terdaftar KKN</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      {Number(kpiStats?.partisipanKkn?.mahasiswa ?? 0)} Mahasiswa • {Number(kpiStats?.partisipanKkn?.dpl ?? 0)} DPL
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Tempat Sampah Teraktivasi */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-emerald-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-emerald-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <Trash2 size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Tempat Sampah Teraktivasi
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {Number(kpiStats?.tempatSampahAktif ?? 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Teraktivasi Warga</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      Terdaftar Aktif
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Lokasi Terdaftar (RW) */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-cyan-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-cyan-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <MapPin size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Lokasi Terdaftar (RW)
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {Number(kpiStats?.lokasiTerdaftar ?? 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Wilayah Terjangkau</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      Rukun Warga (RW)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5: Total Pemilahan */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-amber-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-amber-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <ShoppingBag size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Total Pemilahan
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {Number(kpiStats?.setoranHariIniKg ?? 0).toFixed(2)} kg
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Aktivitas Pemilahan</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      Total Keseluruhan
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6: Total Poin */}
+              <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-yellow-500 flex flex-col justify-between h-full transition-all duration-300 cursor-default select-none">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-yellow-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+                    <Award size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">
+                      Total Poin
+                    </p>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                        {Number(kpiStats?.totalPoin ?? 0) > 1000
+                          ? `${(Number(kpiStats?.totalPoin ?? 0) / 1000).toFixed(2)}K`
+                          : Number(kpiStats?.totalPoin ?? 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 min-w-0">
+                    <TrendingUp size={13} className="shrink-0" />
+                    <span className="font-bold shrink-0">Akumulasi Poin</span>
+                    <span className="text-slate-300 dark:text-slate-600 shrink-0">•</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium truncate">
+                      Peringkat Warga
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* PILAR 1: Buku Harian Kegiatan Mahasiswa */}
           <section className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">

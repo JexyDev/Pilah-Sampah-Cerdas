@@ -1917,7 +1917,7 @@ const Dashboard: React.FC = () => {
         },
         partisipanKkn: {
           value: totalPartisipanKknVal.toLocaleString("id-ID"),
-          trend: "Sivitas KKN",
+          trend: "Terdaftar KKN",
           trendLabel: kknTrendLabel,
           trendUp: true,
         },
@@ -2451,11 +2451,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.penggunaSampah?.trend}
           trendLabel={stats?.penggunaSampah?.trendLabel}
           trendUp={stats?.penggunaSampah?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/manajemen-pengguna", user, can)
-              ? "/manajemen-pengguna"
-              : undefined
-          }
+          linkTo={undefined}
         />
         <KpiCard
           iconName="graduation-cap"
@@ -2465,13 +2461,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.partisipanKkn?.trend}
           trendLabel={stats?.partisipanKkn?.trendLabel}
           trendUp={stats?.partisipanKkn?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/kkn-executive", user, can)
-              ? "/kkn-executive"
-              : canAccessSidebarRoute("/dpl/dashboard", user, can)
-              ? "/dpl/dashboard"
-              : undefined
-          }
+          linkTo={undefined}
         />
         <KpiCard
           iconName="delete"
@@ -2481,11 +2471,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/monitoring-pengelolaan/tempat-sampah", user, can)
-              ? "/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi"
-              : undefined
-          }
+          linkTo={undefined}
         />
         <KpiCard
           iconName="location_on"
@@ -2495,11 +2481,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.lokasiTerdaftar?.trend}
           trendLabel={stats?.lokasiTerdaftar?.trendLabel}
           trendUp={stats?.lokasiTerdaftar?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/wilayah/rw", user, can)
-              ? "/wilayah/rw"
-              : undefined
-          }
+          linkTo={undefined}
         />
         <KpiCard
           iconName="shopping_bag"
@@ -2516,11 +2498,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
           trendUp={stats?.setoranHariIni?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/monitoring-pemilahan/rekapitulasi-setoran", user, can)
-              ? "/monitoring-pemilahan/rekapitulasi-setoran"
-              : undefined
-          }
+          linkTo={undefined}
         />
         <KpiCard
           iconName="stars"
@@ -2530,11 +2508,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
           trendUp={stats?.totalPoin?.trendUp}
-          linkTo={
-            canAccessSidebarRoute("/peringkat", user, can)
-              ? "/peringkat?system=system1&tab=citizens"
-              : undefined
-          }
+          linkTo={undefined}
         />
       </div>
 

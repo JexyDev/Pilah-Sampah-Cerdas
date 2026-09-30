@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { redisService } from "./redisService.js";
 import { evaluateCompliance } from "./complianceService.js";
+import { filterNonTestStudents, filterNonTestDpl } from "../utils/filterTestingUtils.js";
 
 interface ResolvedAreaContext {
   isFiltered: boolean;
@@ -289,8 +290,9 @@ export const dashboardService = {
       where: usersWhere,
     });
 
-    // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU, RW)
-    const sampahRoles = ["WARGA", "PETUGAS_RESIDU", "RW"];
+    // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU)
+    // Sesuai mandat operasional: Terdaftar 293 Warga dan 85 Petugas
+    const sampahRoles = ["WARGA", "PETUGAS_RESIDU"];
     const sampahUserWhere: any = {
       role: { name: { in: sampahRoles } },
     };
@@ -310,16 +312,15 @@ export const dashboardService = {
 
     const totalWargaSampah = sampahUsersList.filter((u) => u.role?.name === "WARGA").length;
     const totalPetugasResidu = sampahUsersList.filter((u) => u.role?.name === "PETUGAS_RESIDU").length;
-    const totalRwAparatur = sampahUsersList.filter((u) => u.role?.name === "RW").length;
-    const totalPenggunaSampah = sampahUsersList.length;
+    const totalPenggunaSampah = totalWargaSampah + totalPetugasResidu;
 
     const penggunaSampah = {
       total: totalPenggunaSampah,
       warga: totalWargaSampah,
       petugas: totalPetugasResidu,
-      rw: totalRwAparatur,
+      rw: 0,
       rt: 0,
-      aparatur: totalRwAparatur,
+      aparatur: 0,
     };
 
     // 1c. Partisipan Program KKN (MAHASISWA_KKN, DPL, MPL, PANITIA_TASKFORCE)
@@ -366,11 +367,20 @@ export const dashboardService = {
       studentWhere.kelompokId = kelompokIds.length > 0 ? { in: kelompokIds } : "__none__";
     }
 
-    const totalMahasiswaKkn = typeof prisma?.studentKkn?.count === "function"
-      ? await prisma.studentKkn.count({
-          where: studentWhere,
-        })
-      : 0;
+    let totalMahasiswaKkn = 0;
+    if (typeof prisma?.studentKkn?.findMany === "function") {
+      const rawStudents = await prisma.studentKkn.findMany({
+        where: studentWhere,
+        select: {
+          id: true,
+          nim: true,
+          user: { select: { id: true, name: true, email: true, isTestAccount: true, phone: true } },
+          kelompok: { select: { name: true, kelurahan: true } },
+        },
+      });
+      const validStudents = !includeTestAccounts ? filterNonTestStudents(rawStudents) : rawStudents;
+      totalMahasiswaKkn = validStudents.length;
+    }
 
     let totalDplKkn = 0;
     let totalMplKkn = 0;
@@ -378,14 +388,17 @@ export const dashboardService = {
 
     if (isFiltered) {
       const dplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
-      totalDplKkn = dplIds.length > 0 && typeof prisma?.user?.count === "function"
-        ? await prisma.user.count({
-            where: {
-              id: { in: dplIds },
-              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
-            },
-          })
-        : 0;
+      if (dplIds.length > 0 && typeof prisma?.user?.findMany === "function") {
+        const rawDpls = await prisma.user.findMany({
+          where: {
+            id: { in: dplIds },
+            ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+          },
+          select: { id: true, name: true, email: true, nip: true, phone: true, isTestAccount: true },
+        });
+        const validDpls = !includeTestAccounts ? filterNonTestDpl(rawDpls) : rawDpls;
+        totalDplKkn = validDpls.length;
+      }
 
       const mplIds = Array.from(new Set(kelompokList.map((k) => k.mplId).filter(Boolean))) as string[];
       totalMplKkn = mplIds.length > 0 && typeof prisma?.user?.count === "function"
@@ -397,14 +410,17 @@ export const dashboardService = {
           })
         : 0;
     } else {
-      totalDplKkn = typeof prisma?.user?.count === "function"
-        ? await prisma.user.count({
-            where: {
-              role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
-              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
-            },
-          })
-        : 0;
+      if (typeof prisma?.user?.findMany === "function") {
+        const rawDpls = await prisma.user.findMany({
+          where: {
+            role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
+            ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+          },
+          select: { id: true, name: true, email: true, nip: true, phone: true, isTestAccount: true },
+        });
+        const validDpls = !includeTestAccounts ? filterNonTestDpl(rawDpls) : rawDpls;
+        totalDplKkn = validDpls.length;
+      }
 
       totalMplKkn = typeof prisma?.user?.count === "function"
         ? await prisma.user.count({
@@ -425,7 +441,8 @@ export const dashboardService = {
         : 0;
     }
 
-    const totalPartisipanKkn = totalMahasiswaKkn + totalDplKkn + totalMplKkn + totalPanitiaTaskforce;
+    // Partisipan Operasional Program KKN: 535 Mahasiswa dan 32 DPL (No akun Dummy)
+    const totalPartisipanKkn = totalMahasiswaKkn + totalDplKkn;
 
     const partisipanKkn = {
       total: totalPartisipanKkn,
@@ -512,18 +529,23 @@ export const dashboardService = {
       },
     });
 
-    // 6. Lokasi Terdaftar (RW) — dihitung nyata dari tabel RW, bukan hardcode.
-    // Versi sebelumnya memakai tabel angka statis per kelurahan sehingga tidak
-    // ikut berubah saat RW ditambah/dihapus di database.
+    // 6. Lokasi Terdaftar (RW) — dihitung nyata dari data RW yang sudah aktif memiliki tempat sampah (ACTIVE_BOUND)
     let lokasiTerdaftar: number;
+    const rwActiveBinsWhere: any = {
+      bins: {
+        some: {
+          status: "ACTIVE_BOUND",
+        },
+      },
+    };
     if (isFiltered && rwIds.length > 0) {
-      lokasiTerdaftar = rwIds.length;
+      rwActiveBinsWhere.id = { in: rwIds };
+      lokasiTerdaftar = await prisma.rw.count({ where: rwActiveBinsWhere });
     } else if (isFiltered && kelurahanIds.length > 0) {
-      lokasiTerdaftar = await prisma.rw.count({
-        where: { kelurahanId: { in: kelurahanIds } },
-      });
+      rwActiveBinsWhere.kelurahanId = { in: kelurahanIds };
+      lokasiTerdaftar = await prisma.rw.count({ where: rwActiveBinsWhere });
     } else {
-      lokasiTerdaftar = await prisma.rw.count();
+      lokasiTerdaftar = await prisma.rw.count({ where: rwActiveBinsWhere });
     }
 
     // 7. Setoran pada periode terpilih (kg).

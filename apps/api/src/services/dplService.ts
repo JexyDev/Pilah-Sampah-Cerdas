@@ -2625,10 +2625,14 @@ export const dplService = {
             latitude: lat,
             longitude: lng,
             attendedAt: sch.date || new Date(),
+            actualInZoneMinutes: 240,
+            deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${req.reason || "-"}`,
           },
           update: {
             status: attStatus,
             method: "IZIN_DPL",
+            actualInZoneMinutes: 240,
+            deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${req.reason || "-"}`,
           },
         });
       }
