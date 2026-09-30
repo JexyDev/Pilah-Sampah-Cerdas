@@ -74,7 +74,7 @@ describe("AiController - Waste Baseline & Actual Trends", () => {
       const sekeloa = jsonResponse.data.kelurahan.find((k: any) => k.kelurahan === "Sekeloa");
       expect(sekeloa).toBeDefined();
       expect(sekeloa.kepatuhanBaseline).toBe(17.8);
-      expect(sekeloa.volumeBaselineKg).toBe(9723.4);
+      expect(sekeloa.volumeBaselineKg).toBe(10803.78);
       expect(sekeloa.rwKepatuhanTinggi).toBe(5);
 
       // Pastikan ada catatan kaki anti-miskomunikasi

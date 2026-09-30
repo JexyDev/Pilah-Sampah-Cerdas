@@ -160,10 +160,14 @@ export class BinRepository {
           }
         }
 
-        const patuh =
+        const partisipasi =
           area.households.length > 0
             ? Math.round((activeHouseholds / area.households.length) * 100)
             : 0;
+
+        // Defensive guard: Jika wilayah RW belum memiliki titik tempat sampah fisik,
+        // nilai patuh dinormalkan menjadi 0 untuk mencegah misleading 100% patuh pada wilayah tanpa unit.
+        const patuh = area.bins.length > 0 ? partisipasi : 0;
 
         const ketuaRwUser =
           area.users.find((u) => u.role?.name === "RW") ||
@@ -195,6 +199,9 @@ export class BinRepository {
           rtCount: 1,
           titikCount: area.bins.length,
           patuh,
+          partisipasi,
+          activeHouseholds,
+          totalHouseholds: area.households.length,
           latitude: area.latitude ? Number(area.latitude) : null,
           longitude: area.longitude ? Number(area.longitude) : null,
           ketuaRwName: ketuaRwUser ? ketuaRwUser.name : "Belum Ditugaskan",

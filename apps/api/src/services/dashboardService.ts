@@ -289,8 +289,8 @@ export const dashboardService = {
       where: usersWhere,
     });
 
-    // 1b. Pengguna Tata Kelola Sampah (Opsi 2: WARGA, PETUGAS_RESIDU, RW, RT)
-    const sampahRoles = ["WARGA", "PETUGAS_RESIDU", "RW", "RT"];
+    // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU, RW)
+    const sampahRoles = ["WARGA", "PETUGAS_RESIDU", "RW"];
     const sampahUserWhere: any = {
       role: { name: { in: sampahRoles } },
     };
@@ -311,8 +311,6 @@ export const dashboardService = {
     const totalWargaSampah = sampahUsersList.filter((u) => u.role?.name === "WARGA").length;
     const totalPetugasResidu = sampahUsersList.filter((u) => u.role?.name === "PETUGAS_RESIDU").length;
     const totalRwAparatur = sampahUsersList.filter((u) => u.role?.name === "RW").length;
-    const totalRtAparatur = sampahUsersList.filter((u) => u.role?.name === "RT").length;
-    const totalAparaturWilayah = totalRwAparatur + totalRtAparatur;
     const totalPenggunaSampah = sampahUsersList.length;
 
     const penggunaSampah = {
@@ -320,8 +318,8 @@ export const dashboardService = {
       warga: totalWargaSampah,
       petugas: totalPetugasResidu,
       rw: totalRwAparatur,
-      rt: totalRtAparatur,
-      aparatur: totalAparaturWilayah,
+      rt: 0,
+      aparatur: totalRwAparatur,
     };
 
     // 1c. Partisipan Program KKN (MAHASISWA_KKN, DPL, MPL, PANITIA_TASKFORCE)

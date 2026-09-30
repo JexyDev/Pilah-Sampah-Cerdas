@@ -33,6 +33,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { canAccessSidebarRoute } from "../../utils/sidebarAccess";
 import { WasteTrendChart } from "../../components/dashboard/WasteTrendChart";
 import { ComplianceWidget } from "../../components/dashboard/ComplianceWidget";
+import type { ComplianceMetricsResult } from "../../services/complianceService";
 import { WasteImpactSummaryTable } from "../../components/dashboard/WasteImpactSummaryTable";
 import { WasteImpactTrendChart } from "../../components/dashboard/WasteImpactTrendChart";
 import { BaselineSection } from "../../components/dashboard/BaselineSection";
@@ -75,20 +76,20 @@ export const SURVEY_BASELINE_RATES: Record<string, number> = {
 
 export const SURVEY_BASELINE_KG: Record<string, number> = {
   cipaganti: 1850.0,
-  dago: 500.0,
-  lebakgede: 250.0,
-  lebaksiliwangi: 10.0,
-  sadangserang: 7298.5,
-  sekeloa: 9723.4,
+  dago: 10983.0,
+  lebakgede: 3003.5,
+  lebaksiliwangi: 2628.0,
+  sadangserang: 9123.04,
+  sekeloa: 10803.78,
 };
 
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
   { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 1850.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.0, baselineKg: 500.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 250.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.0, baselineKg: 10.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.8, baselineKg: 7298.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.8, baselineKg: 9723.4, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.0, baselineKg: 10983.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 3003.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.0, baselineKg: 2628.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.8, baselineKg: 9123.04, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.8, baselineKg: 10803.78, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
@@ -114,9 +115,16 @@ const PERIODE_OPTIONS: SelectOption[] = [
 interface ComplianceModalProps {
   locations: any[];
   onClose: () => void;
+  organikRate?: number;
+  anorganikRate?: number;
 }
 
-const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose }) => {
+const ComplianceModal: React.FC<ComplianceModalProps> = ({
+  locations,
+  onClose,
+  organikRate,
+  anorganikRate,
+}) => {
   const [search, setSearch] = useState("");
   const [kelurahanFilter, setKelurahanFilter] = useState("SEMUA");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -129,13 +137,21 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
   const totalRW = locations.length;
   const avgPatuh =
     totalRW > 0
-      ? (locations.reduce((acc, curr) => acc + Number(curr.patuh || 0), 0) / totalRW).toFixed(2)
+      ? (locations.reduce((acc, curr) => acc + Number(curr.partisipasi ?? curr.patuh ?? 0), 0) / totalRW).toFixed(2)
       : "0.00";
-  const highPatuhCount = locations.filter((loc) => Number(loc.patuh || 0) >= 85).length;
-  const medPatuhCount = locations.filter(
-    (loc) => Number(loc.patuh || 0) >= 60 && Number(loc.patuh || 0) < 85
+  const highPatuhCount = locations.filter(
+    (loc) => (loc.titikCount || 0) > 0 && Number(loc.partisipasi ?? loc.patuh ?? 0) >= 85
   ).length;
-  const lowPatuhCount = locations.filter((loc) => Number(loc.patuh || 0) < 60).length;
+  const medPatuhCount = locations.filter(
+    (loc) =>
+      (loc.titikCount || 0) > 0 &&
+      Number(loc.partisipasi ?? loc.patuh ?? 0) >= 60 &&
+      Number(loc.partisipasi ?? loc.patuh ?? 0) < 85
+  ).length;
+  const lowPatuhCount = locations.filter(
+    (loc) => (loc.titikCount || 0) > 0 && Number(loc.partisipasi ?? loc.patuh ?? 0) < 60
+  ).length;
+  const noUnitCount = locations.filter((loc) => (loc.titikCount || 0) === 0).length;
 
   const filteredLocations = locations
     .filter((loc) => {
@@ -149,19 +165,30 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         kelurahanFilter === "SEMUA" ||
         (loc.kelurahan || "").toLowerCase() === kelurahanFilter.toLowerCase();
 
-      const patuh = Number(loc.patuh || 0);
+      const hasUnit = (loc.titikCount || 0) > 0;
+      const patuh = Number(loc.partisipasi ?? loc.patuh ?? 0);
       let matchStatus = true;
-      if (statusFilter === "HIGH") matchStatus = patuh >= 85;
-      else if (statusFilter === "MED") matchStatus = patuh >= 60 && patuh < 85;
-      else if (statusFilter === "LOW") matchStatus = patuh < 60;
+      if (statusFilter === "NO_UNIT") matchStatus = !hasUnit;
+      else if (statusFilter === "HIGH") matchStatus = hasUnit && patuh >= 85;
+      else if (statusFilter === "MED") matchStatus = hasUnit && patuh >= 60 && patuh < 85;
+      else if (statusFilter === "LOW") matchStatus = hasUnit && patuh < 60;
 
       return matchSearch && matchKel && matchStatus;
     })
     .sort((a, b) => {
-      const patuhA = Number(a.patuh || 0);
-      const patuhB = Number(b.patuh || 0);
-      if (sortBy === "HIGHEST") return patuhB - patuhA;
-      if (sortBy === "LOWEST") return patuhA - patuhB;
+      const hasUnitA = (a.titikCount || 0) > 0;
+      const hasUnitB = (b.titikCount || 0) > 0;
+      const patuhA = Number(a.partisipasi ?? a.patuh ?? 0);
+      const patuhB = Number(b.partisipasi ?? b.patuh ?? 0);
+
+      if (sortBy === "HIGHEST") {
+        if (hasUnitA !== hasUnitB) return hasUnitA ? -1 : 1;
+        return patuhB - patuhA;
+      }
+      if (sortBy === "LOWEST") {
+        if (hasUnitA !== hasUnitB) return hasUnitA ? -1 : 1;
+        return patuhA - patuhB;
+      }
       if (sortBy === "RW_ASC") return (a.rw || "").localeCompare(b.rw || "");
       if (sortBy === "KELURAHAN") return (a.kelurahan || "").localeCompare(b.kelurahan || "");
       return 0;
@@ -218,10 +245,10 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
           </div>
           <div className="flex items-center gap-3 text-[11px] font-bold">
             <span className="text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              Tempat Sampah Organik: ~92% Sesuai
+              Tempat Sampah Organik: {organikRate != null ? `${Number(organikRate).toFixed(1)}% Sesuai` : "Memuat..."}
             </span>
             <span className="text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-              Tempat Sampah Anorganik: ~88% Sesuai
+              Tempat Sampah Anorganik: {anorganikRate != null ? `${Number(anorganikRate).toFixed(1)}% Sesuai` : "Memuat..."}
             </span>
           </div>
         </div>
@@ -229,11 +256,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rerata Kepatuhan</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rerata Partisipasi</span>
             <span className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5 block">{avgPatuh}%</span>
           </div>
           <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Tinggi (≥85%)</span>
             <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{highPatuhCount} RW</span>
           </div>
           <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
@@ -243,6 +270,9 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
           <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
             <span className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5 block">{lowPatuhCount} RW</span>
+            {noUnitCount > 0 && (
+              <span className="text-[10px] text-slate-400 block mt-0.5">{noUnitCount} RW belum ada unit</span>
+            )}
           </div>
         </div>
 
@@ -287,10 +317,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
-                <option value="ALL">Semua Kepatuhan</option>
+                <option value="ALL">Semua Partisipasi</option>
                 <option value="HIGH">Tinggi (≥85%)</option>
                 <option value="MED">Sedang (60-84%)</option>
                 <option value="LOW">Perlu Perhatian (&lt;60%)</option>
+                <option value="NO_UNIT">Belum Ada Unit</option>
               </select>
 
               <select
@@ -298,8 +329,8 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
-                <option value="HIGHEST">Kepatuhan Tertinggi</option>
-                <option value="LOWEST">Kepatuhan Terendah</option>
+                <option value="HIGHEST">Partisipasi Tertinggi</option>
+                <option value="LOWEST">Partisipasi Terendah</option>
                 <option value="RW_ASC">Urutkan RW</option>
                 <option value="KELURAHAN">Urutkan Kelurahan</option>
               </select>
@@ -329,7 +360,8 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
             </div>
           ) : (
             filteredLocations.map((loc) => {
-              const patuh = Number(loc.patuh || 0);
+              const hasUnit = (loc.titikCount || 0) > 0;
+              const patuh = Number(loc.partisipasi ?? loc.patuh ?? 0);
               const isHigh = patuh >= 85;
               const isMed = patuh >= 60 && patuh < 85;
 
@@ -354,24 +386,30 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                          isHigh
-                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
-                            : isMed
-                            ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-500/20"
-                            : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-500/20"
-                        }`}
-                      >
-                        {isHigh ? (
-                          <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
-                        ) : isMed ? (
-                          <Sparkles size={13} className="text-amber-600 dark:text-amber-400" />
-                        ) : (
-                          <AlertTriangle size={13} className="text-rose-600 dark:text-rose-400" />
-                        )}
-                        {patuh}% Patuh
-                      </span>
+                      {!hasUnit ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          Belum Ada Unit
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                            isHigh
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+                              : isMed
+                              ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                              : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-500/20"
+                          }`}
+                        >
+                          {isHigh ? (
+                            <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                          ) : isMed ? (
+                            <Sparkles size={13} className="text-amber-600 dark:text-amber-400" />
+                          ) : (
+                            <AlertTriangle size={13} className="text-rose-600 dark:text-rose-400" />
+                          )}
+                          {patuh}% Partisipasi
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -380,13 +418,15 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          isHigh
+                          !hasUnit
+                            ? "bg-slate-300 dark:bg-slate-700"
+                            : isHigh
                             ? "bg-emerald-500"
                             : isMed
                             ? "bg-amber-500"
                             : "bg-rose-500"
                         }`}
-                        style={{ width: `${Math.max(patuh, 4)}%` }}
+                        style={{ width: `${!hasUnit ? 0 : Math.max(patuh, 4)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -1776,6 +1816,7 @@ const Dashboard: React.FC = () => {
   const [weeks, setWeeks] = useState(8);
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
+  const [complianceWidgetMetrics, setComplianceWidgetMetrics] = useState<ComplianceMetricsResult | null>(null);
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
   const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
@@ -1854,13 +1895,13 @@ const Dashboard: React.FC = () => {
 
       const wargaCount = Number(kpi.penggunaSampah?.warga ?? 0);
       const petugasCount = Number(kpi.penggunaSampah?.petugas ?? 0);
-      const aparaturCount = Number(kpi.penggunaSampah?.aparatur ?? 0);
+      const rwCount = Number(kpi.penggunaSampah?.rw ?? kpi.penggunaSampah?.aparatur ?? 0);
 
       const mhsCount = Number(kpi.partisipanKkn?.mahasiswa ?? 0);
       const dplCount = Number(kpi.partisipanKkn?.dpl ?? 0);
 
-      const sampahTrendLabel = aparaturCount > 0
-        ? `${wargaCount} Warga • ${petugasCount} Petugas • ${aparaturCount} RW/RT`
+      const sampahTrendLabel = rwCount > 0
+        ? `${wargaCount} Warga • ${petugasCount} Petugas • ${rwCount} RW`
         : `${wargaCount} Warga • ${petugasCount} Petugas`;
 
       const kknTrendLabel = dplCount > 0
@@ -2500,7 +2541,13 @@ const Dashboard: React.FC = () => {
       {/* Evaluasi Kepatuhan Pemilahan & Kamus Definisi UI */}
       <ComplianceWidget
         wilayah={effectiveWilayah}
-        onOpenDetail={() => setShowComplianceModal(true)}
+        onOpenDetail={(m) => {
+          if (m) setComplianceWidgetMetrics(m);
+          setShowComplianceModal(true);
+        }}
+        onMetricsLoaded={(m) => {
+          if (m) setComplianceWidgetMetrics(m);
+        }}
       />
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
@@ -2865,6 +2912,14 @@ const Dashboard: React.FC = () => {
         <ComplianceModal
           locations={locations}
           onClose={() => setShowComplianceModal(false)}
+          organikRate={
+            complianceWidgetMetrics?.wadahOrganik?.kesesuaianPersen ??
+            stats?.kepatuhanPemilahan?.organikRate
+          }
+          anorganikRate={
+            complianceWidgetMetrics?.wadahAnorganik?.kesesuaianPersen ??
+            stats?.kepatuhanPemilahan?.anorganikRate
+          }
         />
       )}
 

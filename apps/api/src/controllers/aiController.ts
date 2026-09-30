@@ -457,12 +457,12 @@ export class AiController {
       });
 
       const kelurahanList = [
-        { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 280.0 },
-        { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 500.0 },
-        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 250.0 },
-        { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 10.0 },
-        { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 7298.5 },
-        { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 9723.4 },
+        { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 1850.0 },
+        { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 10983.0 },
+        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 3003.5 },
+        { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 2628.0 },
+        { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 9123.04 },
+        { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 10803.78 },
       ];
 
       const kelurahanData = kelurahanList.map((k) => {
@@ -489,6 +489,7 @@ export class AiController {
         }
 
         if (b?.volumeSampah) {
+          const totalVol = Number(b.volumeSampah.totalVolumeKgPerHari || 0);
           const org = b.volumeSampah.organikKgPerHari ? Number(b.volumeSampah.organikKgPerHari) : null;
           const rawAnorg = b.volumeSampah.anorganikKgPerHari ? Number(b.volumeSampah.anorganikKgPerHari) : null;
           const anorg = rawAnorg && rawAnorg > 10000 ? null : rawAnorg;
@@ -498,11 +499,15 @@ export class AiController {
           volumeAnorganik = anorg;
           volumeResidu = res;
 
-          // Hitung volume terpilah/terkelola baseline (organik + anorganik terdata)
-          if (org !== null || anorg !== null) {
-            volumeKg = Number(((org || 0) + (anorg || 0)).toFixed(2));
-          } else if (b.volumeSampah.totalVolumeKgPerHari) {
-            volumeKg = Number(b.volumeSampah.totalVolumeKgPerHari);
+          // Utamakan total volume resmi survei KKN (total timbulan wilayah, konsisten dengan dashboardService)
+          if (totalVol > 0) {
+            if (normK.includes("lebaksiliwangi") && totalVol <= 50) {
+              volumeKg = 2628.0; // Standar BPS: 4.172 jiwa x 0,63 kg/hari
+            } else {
+              volumeKg = Number(totalVol.toFixed(2));
+            }
+          } else if (org !== null || anorg !== null || res !== null) {
+            volumeKg = Number(((org || 0) + (anorg || 0) + (res || 0)).toFixed(2));
           }
         }
 

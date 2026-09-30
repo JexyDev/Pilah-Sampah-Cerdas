@@ -126,14 +126,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       return;
     }
 
+    const isWargaApp = selectedSource === "WARGA_APP";
     const headers = [
       "No",
       "Kelurahan",
       "Sumber Data",
-      "Baseline Berat Sampah (kg)",
-      "Aktual Saat Ini (kg)",
-      "Reduksi Berat (kg)",
-      "Reduksi Berat (%)",
+      isWargaApp ? "Baseline Timbulan (kg)" : "Baseline Berat Sampah (kg)",
+      isWargaApp ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)",
+      isWargaApp ? "Sampah Terpilah Mandiri (kg)" : "Reduksi Berat ke TPA (kg)",
+      isWargaApp ? "Tingkat Partisipasi Volume Terpilah (%)" : "Reduksi Berat ke TPA (%)",
       "Baseline Kepatuhan (%)",
       "Aktual Kepatuhan (%)",
       "Perubahan Kepatuhan (%)",
@@ -144,19 +145,27 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
       const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
       const deltaComp = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
+      const adopsiPct =
+        item.baselineKg && item.baselineKg > 0
+          ? Number(((item.actualKg / item.baselineKg) * 100).toFixed(2))
+          : 0;
 
       return [
         idx + 1,
         `Kel. ${item.kelurahan}`,
-        selectedSource === "WARGA_APP"
+        isWargaApp
           ? "Aktivitas Warga (WARGA_APP)"
           : selectedSource === "PETUGAS_LAPANGAN"
           ? "Input Petugas (PETUGAS_LAPANGAN)"
           : "Semua Sumber (Warga + Petugas)",
         item.baselineKg ? Number(item.baselineKg.toFixed(2)) : 0,
         item.actualKg ? Number(item.actualKg.toFixed(2)) : 0,
-        deltaKg !== null ? deltaKg : "-",
-        deltaPct !== null ? `${deltaPct}%` : "-",
+        isWargaApp
+          ? (item.actualKg ? Number(item.actualKg.toFixed(2)) : 0)
+          : (deltaKg !== null ? deltaKg : "-"),
+        isWargaApp
+          ? `${adopsiPct}%`
+          : (deltaPct !== null ? `${deltaPct}%` : "-"),
         item.baselineCompliance !== null && item.baselineCompliance !== undefined
           ? `${item.baselineCompliance}%`
           : "-",
@@ -168,6 +177,11 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       ];
     });
 
+    const totalAdopsiPct =
+      aggregation.totalBaselineKg > 0
+        ? Number(((aggregation.totalActualKg / aggregation.totalBaselineKg) * 100).toFixed(2))
+        : 0;
+
     // Baris Agregasi Kecamatan
     rows.push([
       "",
@@ -175,8 +189,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       `Filter: ${selectedSource}`,
       aggregation.totalBaselineKg,
       aggregation.totalActualKg,
-      aggregation.totalDeltaKg,
-      aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-",
+      isWargaApp ? aggregation.totalActualKg : aggregation.totalDeltaKg,
+      isWargaApp
+        ? `${totalAdopsiPct}%`
+        : (aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-"),
       `${aggregation.avgBaselineCompliance}%`,
       `${aggregation.avgActualCompliance}%`,
       `${aggregation.deltaCompliance >= 0 ? "+" : ""}${aggregation.deltaCompliance}%`,
@@ -210,8 +226,9 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan.
-            Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas di 6 Kelurahan Kecamatan Coblong.
+            {selectedSource === "WARGA_APP"
+              ? "Tabel rekapitulasi adopsi pemilahan sampah mandiri oleh warga dan peningkatan kepatuhan pemilahan di 6 Kelurahan Kecamatan Coblong."
+              : "Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan. Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas di 6 Kelurahan Kecamatan Coblong."}
           </p>
         </div>
 
@@ -339,7 +356,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Berat Sampah
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border-r border-slate-200 dark:border-slate-800">
-                Penurunan Berat Sampah (Δ)
+                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Penurunan Berat Sampah (Δ)"}
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
                 Kepatuhan Pemilahan
@@ -349,20 +366,20 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
               </th>
             </tr>
 
-            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Berat */}
+            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                Baseline (kg)
+                {selectedSource === "WARGA_APP" ? "Baseline Timbulan (kg)" : "Baseline (kg)"}
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                Aktual Saat Ini (kg)
+                {selectedSource === "WARGA_APP" ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)"}
               </th>
-              {/* Dua Kolom Berdampingan untuk Delta Berat */}
+              {/* Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
-                Delta (kg)
+                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Delta (kg)"}
               </th>
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[105px]">
-                Delta (%)
+                {selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Volume Terpilah" : "Delta (%)"}
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
                 Baseline (%)
@@ -377,6 +394,11 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             {displayItems.map((item, idx) => {
               const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
               const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
+              const isWargaApp = selectedSource === "WARGA_APP";
+              const adopsiPct =
+                item.baselineKg && item.baselineKg > 0
+                  ? Number(((item.actualKg / item.baselineKg) * 100).toFixed(2))
+                  : 0;
               const hasActualCompliance = item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0;
               const deltaCompliance = hasActualCompliance
                 ? calculateComplianceDelta(item.baselineCompliance, item.actualCompliance)
@@ -418,9 +440,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     </span>
                   </td>
 
-                  {/* Kolom Berdampingan 1: Penurunan Berat (kg) */}
+                  {/* Kolom Berdampingan 1: Penurunan Berat (kg) / Sampah Terpilah Mandiri */}
                   <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
-                    {deltaKg === null ? (
+                    {isWargaApp ? (
+                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        <span>{Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
+                      </span>
+                    ) : deltaKg === null ? (
                       <span className="text-slate-400 italic">—</span>
                     ) : (
                       <span
@@ -448,9 +475,13 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Kolom Berdampingan 2: Penurunan Berat (%) */}
+                  {/* Kolom Berdampingan 2: Penurunan Berat (%) / Tingkat Partisipasi Volume Terpilah */}
                   <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
-                    {deltaPct === null ? (
+                    {isWargaApp ? (
+                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
+                        <span>{adopsiPct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%</span>
+                      </span>
+                    ) : deltaPct === null ? (
                       <span className="text-slate-400 italic">—</span>
                     ) : (
                       <span

@@ -41,7 +41,8 @@ export interface ComplianceWidgetProps {
   metrics?: ComplianceMetricsResult | null;
   wilayah?: string;
   className?: string;
-  onOpenDetail?: () => void;
+  onOpenDetail?: (metrics?: ComplianceMetricsResult | null) => void;
+  onMetricsLoaded?: (metrics: ComplianceMetricsResult) => void;
 }
 
 export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
@@ -49,6 +50,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
   wilayah,
   className = "",
   onOpenDetail,
+  onMetricsLoaded,
 }) => {
   const [metrics, setMetrics] = useState<ComplianceMetricsResult | null>(initialMetrics || null);
   const [loading, setLoading] = useState<boolean>(!initialMetrics);
@@ -60,6 +62,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
     if (initialMetrics) {
       setMetrics(initialMetrics);
       setLoading(false);
+      onMetricsLoaded?.(initialMetrics);
       return;
     }
 
@@ -77,6 +80,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
         if (isMounted) {
           setMetrics(data);
           setLoading(false);
+          onMetricsLoaded?.(data);
         }
       })
       .catch((err) => {
@@ -86,13 +90,14 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           const fallback = complianceService.calculateComplianceMetrics([]);
           setMetrics(fallback);
           setLoading(false);
+          onMetricsLoaded?.(fallback);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [initialMetrics, wilayah]);
+  }, [initialMetrics, wilayah, onMetricsLoaded]);
 
   const kepatuhanRate = metrics?.indeksKepatuhan ?? 0;
   const kepatuhanBobot = metrics?.kepatuhanBobotPersen ?? 0;
@@ -420,7 +425,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
         {onOpenDetail && (
           <button
             type="button"
-            onClick={onOpenDetail}
+            onClick={() => onOpenDetail(metrics)}
             className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-bold inline-flex items-center gap-1 hover:underline cursor-pointer shrink-0 ml-auto sm:ml-0"
           >
             <span>Rincian per RW</span>

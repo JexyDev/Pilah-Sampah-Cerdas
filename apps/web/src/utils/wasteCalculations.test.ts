@@ -88,6 +88,6 @@ describe("wasteCalculations", () => {
     expect(agg.totalActualKg).toBe(937);
     expect(agg.totalDeltaKg).toBe(313);
     expect(agg.weightedDeltaPct).toBe(25.04);
-    expect(agg.avgActualCompliance).toBe(66.7);
+    expect(agg.avgActualCompliance).toBe(70);
   });
 });

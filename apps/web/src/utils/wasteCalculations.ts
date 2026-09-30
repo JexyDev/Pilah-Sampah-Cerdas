@@ -259,11 +259,9 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
       ? Number((sumBaselineCompliance / countBaselineCompliance).toFixed(1))
       : 0;
 
-  // Prefer weighted actual compliance if available, otherwise simple average
+  // Gunakan rata-rata indeks komposit kepatuhan kelurahan agar konsisten dan sinkron dengan baris masing-masing kelurahan
   const avgActualCompliance =
-    totalSetoranDinilai > 0
-      ? Number(((totalSetoranPatuh / totalSetoranDinilai) * 100).toFixed(1))
-      : countActualCompliance > 0
+    countActualCompliance > 0
       ? Number((sumActualCompliance / countActualCompliance).toFixed(1))
       : 0;
 
