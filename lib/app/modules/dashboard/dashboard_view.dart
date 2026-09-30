@@ -57,6 +57,7 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
   DateTime? _lastSyncTime;
+  UserRole _currentRole = UserRole.warga;
 
   @override
   void initState() {
@@ -195,7 +196,10 @@ class _DashboardViewState extends ConsumerState<DashboardView>
 
     final bool isOnline = ref.watch(isOnlineProvider);
     final user = ref.watch(authProvider).user;
-    final role = user?.role ?? UserRole.warga;
+    if (user != null) {
+      _currentRole = user.role;
+    }
+    final role = _currentRole;
 
     return ResponsiveLayout(
       mobile: _buildMobileShell(isOnline, role),

@@ -378,7 +378,27 @@ class ApiAuthRepository implements AuthRepository {
         secureStorage.delete(key: AppConfig.householdIdKey),
       ]);
       final prefs = await SharedPreferences.getInstance();
+      // Pertahankan preferensi UI pengguna (seperti riwayat yang disembunyikan) agar tidak hilang saat logout-login
+      final preservedKeys = <String, Object?>{};
+      for (final key in prefs.getKeys()) {
+        if (key.startsWith('hidden_history_') ||
+            key.startsWith('last_app_version')) {
+          preservedKeys[key] = prefs.get(key);
+        }
+      }
       await prefs.clear();
+      for (final entry in preservedKeys.entries) {
+        final val = entry.value;
+        if (val is int) {
+          await prefs.setInt(entry.key, val);
+        } else if (val is String) {
+          await prefs.setString(entry.key, val);
+        } else if (val is List<String>) {
+          await prefs.setStringList(entry.key, val);
+        } else if (val is bool) {
+          await prefs.setBool(entry.key, val);
+        }
+      }
     }
   }
 

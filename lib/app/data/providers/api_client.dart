@@ -87,12 +87,15 @@ class ApiClient {
             return handler.next(e);
           }
 
-          // Abaikan 401 jika berasal dari request dengan token lama yang sudah digantikan sesi baru
+          // Abaikan 401 jika request tidak menyertakan Authorization token (unauthenticated/setelah logout)
           final requestAuth =
               e.requestOptions.headers['Authorization']?.toString();
-          if (_cachedToken != null &&
-              requestAuth != null &&
-              requestAuth != 'Bearer $_cachedToken') {
+          if (requestAuth == null || requestAuth.isEmpty) {
+            return handler.next(e);
+          }
+
+          // Abaikan 401 jika berasal dari request dengan token lama yang sudah digantikan sesi baru
+          if (_cachedToken != null && requestAuth != 'Bearer $_cachedToken') {
             debugPrint(
               '[ApiClient] Mengabaikan 401 dari request kadaluarsa yang sudah digantikan oleh sesi baru.',
             );
@@ -263,7 +266,18 @@ class ApiClient {
       // Hapus snackbar yang mungkin muncul sebelum logout agar tidak nyangkut/ngespam
       ScaffoldMessenger.of(navState.context).clearSnackBars();
 
-      navState.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+      // ponytail: cegah double navigation ke login jika sudah berada di halaman login
+      bool isAlreadyLogin = false;
+      navState.popUntil((route) {
+        if (route.settings.name == AppRoutes.login) {
+          isAlreadyLogin = true;
+        }
+        return true;
+      });
+
+      if (!isAlreadyLogin) {
+        navState.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+      }
     }
   }
 

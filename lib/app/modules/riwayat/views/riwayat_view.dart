@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/hidden_history_service.dart';
 import '../../../data/models/waste_log_entity.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/notification_entity.dart';
@@ -42,6 +43,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     if (kIsWeb) {
       return const PemilahanMonitoringDashboardView();
     }
+    ref.watch(hiddenHistoryVersionProvider);
     final logsAsync = ref.watch(wasteLogsProvider);
     final notifsAsync = ref.watch(wargaNotificationsProvider);
 
@@ -53,6 +55,13 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     if (logsAsync.value != null && notifsAsync.value != null) {
       combinedData = [];
       for (var l in logsAsync.value!) {
+        if (!HiddenHistoryService.isVisibleSync(
+          scope: HiddenHistoryService.scopeWargaWaste,
+          id: l.id,
+          createdAt: l.createdAt,
+        )) {
+          continue;
+        }
         combinedData.add(
           RiwayatItemData(date: l.createdAt.toLocal(), wasteLog: l),
         );
@@ -65,6 +74,13 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
             dt = DateTime.parse(n.time).toLocal();
           } catch (_) {
             dt = DateTime.now();
+          }
+          if (!HiddenHistoryService.isVisibleSync(
+            scope: HiddenHistoryService.scopeWargaWaste,
+            id: n.id,
+            createdAt: dt,
+          )) {
+            continue;
           }
           combinedData.add(RiwayatItemData(date: dt, notif: n));
         }
@@ -85,6 +101,21 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
             color: AppColors.textPrimary,
           ),
         ),
+        actions: [
+          HiddenHistoryActionMenu(
+            scope: HiddenHistoryService.scopeWargaWaste,
+            getItemIds: () {
+              final ids = <String>[];
+              for (final l in logsAsync.value ?? []) {
+                ids.add(l.id);
+              }
+              for (final n in notifsAsync.value ?? []) {
+                ids.add(n.id);
+              }
+              return ids;
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

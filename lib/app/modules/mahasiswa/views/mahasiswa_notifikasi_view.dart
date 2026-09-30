@@ -34,6 +34,7 @@ class _MahasiswaNotifikasiViewState
   @override
   Widget build(BuildContext context) {
     final notifAsync = ref.watch(mahasiswaNotificationsProvider);
+    final markState = ref.watch(markReadProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -46,16 +47,18 @@ class _MahasiswaNotifikasiViewState
           child: Text(
             'Notifikasi KKN Mahasiswa',
             style: TextStyle(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               fontSize: 16,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryGreen,
             ),
           ),
         ),
         backgroundColor: Colors.white,
         shadowColor: Colors.black12,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.primaryGreen),
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 1,
 
         actions: [
           IconButton(
@@ -64,34 +67,62 @@ class _MahasiswaNotifikasiViewState
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.delete_sweep_rounded,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryGreen,
             ),
             tooltip: 'Hapus Semua Notifikasi',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (c) => AlertDialog(
-                  title: const Text('Hapus Semua?'),
-                  content: const Text(
-                    'Apakah Anda yakin ingin menghapus semua notifikasi?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(c, false),
-                      child: const Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(c, true),
-                      child: const Text('Hapus'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await ref.read(deleteAllProvider.notifier).deleteAll();
-                ref.invalidate(mahasiswaNotificationsProvider);
-              }
-            },
+            onPressed: markState.isLoading
+                ? null
+                : () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        title: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.dangerRed.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.dangerRed,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Hapus Semua?',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        content: const Text(
+                          'Apakah Anda yakin ingin menghapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(c, false),
+                            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(c, true),
+                            child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed, fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await ref.read(deleteAllProvider.notifier).deleteAll();
+                      ref.invalidate(mahasiswaNotificationsProvider);
+                    }
+                  },
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -99,13 +130,63 @@ class _MahasiswaNotifikasiViewState
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.done_all_rounded,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryGreen,
             ),
             tooltip: 'Tandai Semua Dibaca',
-            onPressed: () async {
-              await ref.read(markReadProvider.notifier).markAllRead();
-              ref.invalidate(mahasiswaNotificationsProvider);
-            },
+            onPressed: markState.isLoading
+                ? null
+                : () async {
+                    final bool? confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        title: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.done_all_rounded,
+                                color: AppColors.primaryGreen,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Tandai Semua Dibaca',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        content: const Text(
+                          'Apakah Anda yakin ingin menandai semua notifikasi sebagai telah dibaca?',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Ya', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      await ref.read(markReadProvider.notifier).markAllRead();
+                      ref.invalidate(mahasiswaNotificationsProvider);
+                    }
+                  },
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -113,7 +194,7 @@ class _MahasiswaNotifikasiViewState
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.refresh_rounded,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryGreen,
             ),
             onPressed: () => ref.invalidate(mahasiswaNotificationsProvider),
           ),

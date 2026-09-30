@@ -5,6 +5,7 @@ import '../../core/values/app_colors.dart';
 import '../../data/models/point_history_entity.dart';
 import '../../data/models/bin_entity.dart';
 import '../../core/utils/input_sanitizer.dart';
+import '../../core/utils/hidden_history_service.dart';
 import '../riwayat/controllers/riwayat_controller.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
@@ -16,6 +17,7 @@ class PoinView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(hiddenHistoryVersionProvider);
     final totalAsync = ref.watch(totalPointsProvider);
     final historyAsync = ref.watch(pointHistoryProvider);
 
@@ -87,29 +89,48 @@ class PoinView extends ConsumerWidget {
                   const SizedBox(height: 24),
 
                   // ─── Riwayat Poin ───────────────────────────────────
-                  const Text(
-                    'Riwayat Poin',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Riwayat Poin',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      HiddenHistoryActionMenu(
+                        scope: HiddenHistoryService.scopeWargaPoints,
+                        getItemIds: () =>
+                            (historyAsync.value ?? []).map((e) => e.id).toList(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
                   historyAsync.when(
                     skipLoadingOnReload: true,
-                    data: (history) => history.isEmpty
-                        ? const EmptyState(
-                            message: 'Belum ada riwayat poin.',
-                            icon: Icons.monetization_on_rounded,
-                          )
-                        : Column(
-                            children: history
-                                .map(
-                                  (ph) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: _PoinHistoryItem(item: ph),
-                                  ),
-                                )
-                                .toList(),
-                          ),
+                    data: (history) {
+                      final visibleHistory = history.where((ph) {
+                        return HiddenHistoryService.isVisibleSync(
+                          scope: HiddenHistoryService.scopeWargaPoints,
+                          id: ph.id,
+                          createdAt: ph.createdAt,
+                        );
+                      }).toList();
+                      return visibleHistory.isEmpty
+                          ? const EmptyState(
+                              message: 'Belum ada riwayat poin.',
+                              icon: Icons.monetization_on_rounded,
+                            )
+                          : Column(
+                              children: visibleHistory
+                                  .map(
+                                    (ph) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: _PoinHistoryItem(item: ph),
+                                    ),
+                                  )
+                                  .toList(),
+                            );
+                    },
                     loading: () => Column(
                       children: List.generate(
                         3,

@@ -17,9 +17,9 @@ class WasteLogsNotifier extends AsyncNotifier<List<WasteLogEntity>> {
   @override
   FutureOr<List<WasteLogEntity>> build() async {
     final repo = ref.watch(wasteLogRepositoryProvider);
-    final userId = ref.watch(
-      authProvider.select((state) => state.user?.id ?? ''),
-    );
+    final user = ref.watch(authProvider.select((state) => state.user));
+    if (user == null || user.id.isEmpty) return const [];
+    final userId = user.id;
 
     // 1. Coba baca cache.
     final cached = await repo.getCachedWasteLogs(userId);
@@ -53,8 +53,8 @@ final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
 ) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
   final user = ref.watch(authProvider.select((state) => state.user));
-  final userId = user?.id ?? '';
-  return await repo.getPointHistoryByUser(userId);
+  if (user == null || user.id.isEmpty) return const [];
+  return await repo.getPointHistoryByUser(user.id);
 });
 
 /// Provider total frekuensi setor sampah fisik (berdasarkan data riil log sampah)
@@ -107,17 +107,15 @@ final dailyPointsProvider = FutureProvider<int>((ref) async {
 /// Provider total poin akumulasi milik user (Murni dari backend GET /api/v1/points/me → data.totalPoints)
 final totalPointsProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(
-    authProvider.select((state) => state.user?.id ?? ''),
-  );
-  return repo.getTotalPointsByUser(userId);
+  final user = ref.watch(authProvider.select((state) => state.user));
+  if (user == null || user.id.isEmpty) return 0;
+  return repo.getTotalPointsByUser(user.id);
 });
 
 /// Provider peringkat user (misal: "#3 di RT 03")
 final userLeaderboardRankProvider = FutureProvider<String>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(
-    authProvider.select((state) => state.user?.id ?? ''),
-  );
-  return repo.getUserLeaderboardRank(userId);
+  final user = ref.watch(authProvider.select((state) => state.user));
+  if (user == null || user.id.isEmpty) return '-';
+  return repo.getUserLeaderboardRank(user.id);
 });

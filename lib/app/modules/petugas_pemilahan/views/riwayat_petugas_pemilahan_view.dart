@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/hidden_history_service.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 
 class RiwayatPetugasPemilahanView extends ConsumerStatefulWidget {
@@ -261,7 +262,27 @@ class _RiwayatPetugasPemilahanViewState
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(hiddenHistoryVersionProvider);
     final state = ref.watch(petugasPemilahanControllerProvider);
+    final visibleHistory = state.historyList.where((item) {
+      final rawDate = item['timestamp']?.toString() ??
+          item['submittedAt']?.toString() ??
+          item['createdAt']?.toString();
+      DateTime? dt;
+      if (rawDate != null) {
+        try {
+          dt = DateTime.parse(rawDate).toLocal();
+        } catch (_) {}
+      }
+      final id = item['id']?.toString() ??
+          item['reportId']?.toString() ??
+          '${dt?.millisecondsSinceEpoch}';
+      return HiddenHistoryService.isVisibleSync(
+        scope: HiddenHistoryService.scopePetugasTasks,
+        id: id,
+        createdAt: dt,
+      );
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -276,6 +297,17 @@ class _RiwayatPetugasPemilahanViewState
             color: AppColors.primaryGreen,
           ),
         ),
+        actions: [
+          HiddenHistoryActionMenu(
+            scope: HiddenHistoryService.scopePetugasTasks,
+            iconColor: AppColors.primaryGreen,
+            getItemIds: () => state.historyList
+                .map((e) =>
+                    e['id']?.toString() ?? e['reportId']?.toString() ?? '')
+                .where((id) => id.isNotEmpty)
+                .toList(),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -364,7 +396,7 @@ class _RiwayatPetugasPemilahanViewState
                         color: AppColors.primaryGreen,
                       ),
                     )
-                  : state.historyList.isEmpty
+                  : visibleHistory.isEmpty
                   ? const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 36),
@@ -397,9 +429,9 @@ class _RiwayatPetugasPemilahanViewState
                         top: 4,
                         bottom: 100,
                       ),
-                      itemCount: state.historyList.length,
+                      itemCount: visibleHistory.length,
                       itemBuilder: (ctx, index) {
-                        final item = state.historyList[index];
+                        final item = visibleHistory[index];
                         final title = _sanitizeTitle(
                           item['title']?.toString() ??
                               item['classification']?.toString() ??

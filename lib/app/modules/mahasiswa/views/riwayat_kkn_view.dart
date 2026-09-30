@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/input_sanitizer.dart';
+import '../../../core/utils/hidden_history_service.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
@@ -65,15 +66,23 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   List<KknHistoryLog> _getFilteredLogs(List<KknHistoryLog> logs) {
     return logs
         .where(
-          (log) =>
-              (log.points == null || log.points == 0) &&
-              log.type != KknHistoryType.proker,
+          (log) {
+            final isVisible = HiddenHistoryService.isVisibleSync(
+              scope: HiddenHistoryService.scopeMahasiswaKkn,
+              id: log.scheduleId ?? '${log.type.name}_${log.timestamp.millisecondsSinceEpoch}',
+              createdAt: log.timestamp,
+            );
+            return isVisible &&
+                (log.points == null || log.points == 0) &&
+                log.type != KknHistoryType.proker;
+          },
         )
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(hiddenHistoryVersionProvider);
     final state = ref.watch(riwayatKknControllerProvider);
     final filteredLogs = _getFilteredLogs(state.logs);
 
@@ -82,6 +91,16 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Riwayat Aktivitas KKN'),
+        actions: [
+          HiddenHistoryActionMenu(
+            scope: HiddenHistoryService.scopeMahasiswaKkn,
+            getItemIds: () => state.logs
+                .map((e) =>
+                    e.scheduleId ??
+                    '${e.type.name}_${e.timestamp.millisecondsSinceEpoch}')
+                .toList(),
+          ),
+        ],
       ),
       body: Column(
         children: [

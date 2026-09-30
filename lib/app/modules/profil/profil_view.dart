@@ -1109,9 +1109,19 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
               Navigator.of(ctx).pop();
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+                // ponytail: cegah double push ke login jika sudah berada di AppRoutes.login
+                bool isAlreadyLogin = false;
+                Navigator.of(context).popUntil((route) {
+                  if (route.settings.name == AppRoutes.login) {
+                    isAlreadyLogin = true;
+                  }
+                  return true;
+                });
+                if (!isAlreadyLogin) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+                }
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.dangerRed),

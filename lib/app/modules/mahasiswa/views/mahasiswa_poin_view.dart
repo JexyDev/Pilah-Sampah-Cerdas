@@ -12,6 +12,7 @@ import '../controllers/riwayat_kkn_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import 'data_proker_view.dart' show prokerDataListProvider;
 import '../../../core/utils/input_sanitizer.dart';
+import '../../../core/utils/hidden_history_service.dart';
 
 /// Halaman Poin KKN Mahasiswa — Menampilkan:
 /// 1. Poin Personal Mahasiswa (Presensi, Durasi, Logbook Harian)
@@ -22,6 +23,7 @@ class MahasiswaPoinView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(hiddenHistoryVersionProvider);
     final user = ref.watch(authProvider).user;
 
     final mhsState = ref.watch(mahasiswaControllerProvider);
@@ -64,13 +66,25 @@ class MahasiswaPoinView extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // ── 3. Judul & List Riwayat Poin ────────────────────
-                  const Text(
-                    'Riwayat Perolehan Poin KKN',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Riwayat Perolehan Poin KKN',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      HiddenHistoryActionMenu(
+                        scope: HiddenHistoryService.scopeMahasiswaPoints,
+                        getItemIds: () =>
+                            (ref.read(pointHistoryProvider).value ?? [])
+                                .map((e) => e.id)
+                                .toList(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   if (user != null)
@@ -386,6 +400,13 @@ class MahasiswaPoinView extends ConsumerWidget {
       ),
       data: (history) {
         final List<PointHistoryEntity> pointLogs = history.where((log) {
+          if (!HiddenHistoryService.isVisibleSync(
+            scope: HiddenHistoryService.scopeMahasiswaPoints,
+            id: log.id,
+            createdAt: log.createdAt,
+          )) {
+            return false;
+          }
           final kat = (log.kategori ?? '').toUpperCase();
           final desc = log.description.toLowerCase();
           

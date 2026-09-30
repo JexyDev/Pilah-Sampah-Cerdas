@@ -2,16 +2,30 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/utils/safe_storage.dart';
 
 /// Interceptor cache offline untuk Dio dengan masa berlaku (TTL) 5 menit.
 ///
 /// Fitur:
 /// 1. Menyimpan hasil GET dengan timestamp.
 /// 2. Pada kondisi offline/network error, hanya menggunakan cache jika usianya < 5 menit.
-/// 3. Menghapus otomatis cache terkait saat ada request mutasi (POST, PUT, DELETE, PATCH) yang sukses.
+/// 3. Menghapus otomatis cache terkait lintas domain saat ada request mutasi (POST, PUT, DELETE, PATCH).
+/// 4. Sinkronisasi pembersihan cache ganda (Dio Cache dan Manual Repository Cache di SharedPreferences/SafeStorage).
 class OfflineCacheInterceptor extends Interceptor {
   /// TTL default untuk cache offline: 5 menit (300.000 ms)
   static const int defaultTtlMs = 5 * 60 * 1000;
+
+  /// Relasi dependensi domain untuk invalidasi lintas sumber daya (Cross-Resource Invalidation)
+  static const Map<String, List<String>> _domainRelations = {
+    'transactions': ['transactions', 'points', 'bins'],
+    'waste': ['waste', 'transactions', 'points', 'bins'],
+    'bins': ['bins', 'transactions', 'points'],
+    'warga': ['warga', 'bins', 'points'],
+    'kkn': ['kkn', 'logbook', 'timesheet', 'schedules', 'points'],
+    'logbook': ['logbook', 'kkn', 'timesheet', 'points'],
+    'petugas-residu': ['petugas-residu', 'petugas-pemilahan', 'points', 'history', 'bins'],
+    'petugas-pemilahan': ['petugas-pemilahan', 'petugas-residu', 'points', 'history', 'bins'],
+  };
 
   @override
   Future<void> onRequest(
@@ -44,7 +58,7 @@ class OfflineCacheInterceptor extends Interceptor {
       }
     }
 
-    // 2. Tangani request MUTASI sukses (POST/PUT/DELETE/PATCH) -> hapus cache terkait
+    // 2. Tangani request MUTASI sukses (POST/PUT/DELETE/PATCH) -> hapus cache terkait lintas domain
     if ((method == 'POST' ||
             method == 'PUT' ||
             method == 'DELETE' ||
@@ -126,7 +140,7 @@ class OfflineCacheInterceptor extends Interceptor {
     return 'cache_${options.uri.toString()}';
   }
 
-  /// Menghapus cache yang berkaitan dengan endpoint yang baru saja dimutasi
+  /// Menghapus cache yang berkaitan dengan endpoint yang baru saja dimutasi secara lintas domain
   Future<void> _invalidateRelatedCache(String path) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -141,11 +155,52 @@ class OfflineCacheInterceptor extends Interceptor {
       if (segments.isEmpty) return;
       final targetSegment = segments.first.toLowerCase();
 
+      // Dapatkan seluruh segmen terkait berdasarkan tabel relasi domain
+      final relatedSegments = _domainRelations[targetSegment] ?? [targetSegment];
+
+      // 1. Hapus cache Dio (cache_*) yang cocok dengan segmen terkait manapun
       for (final key in keys) {
-        if (key.toLowerCase().contains(targetSegment)) {
-          await prefs.remove(key);
-          debugPrint('[OfflineCache] Cache dimusnahkan pasca-mutasi: $key');
+        final keyLower = key.toLowerCase();
+        for (final segment in relatedSegments) {
+          if (keyLower.contains(segment)) {
+            await prefs.remove(key);
+            debugPrint('[OfflineCache] Cache Dio dimusnahkan pasca-mutasi: $key');
+            break;
+          }
         }
+      }
+
+      // 2. Hapus cache manual repositori pada SharedPreferences & SafeStorage
+      const storage = SafeStorage();
+
+      if (relatedSegments.contains('bins')) {
+        await storage.delete(key: 'cached_bins');
+        debugPrint('[OfflineCache] Cache manual SafeStorage cached_bins dimusnahkan.');
+      }
+
+      if (relatedSegments.contains('transactions') || relatedSegments.contains('points')) {
+        final allStorageKeys = await storage.readAll();
+        for (final k in allStorageKeys.keys) {
+          if (k.startsWith('cached_waste_logs_')) {
+            await storage.delete(key: k);
+            debugPrint('[OfflineCache] Cache manual SafeStorage $k dimusnahkan.');
+          }
+        }
+      }
+
+      if (relatedSegments.contains('kkn') || relatedSegments.contains('logbook')) {
+        await prefs.remove('kkn_dashboard_cache');
+        await prefs.remove('kkn_warga_cache');
+        await prefs.remove('kkn_activity_log_cache');
+        debugPrint('[OfflineCache] Cache manual SharedPreferences KKN dimusnahkan.');
+      }
+
+      if (relatedSegments.contains('petugas-residu') ||
+          relatedSegments.contains('petugas-pemilahan')) {
+        await prefs.remove('petugas_pemilahan_dashboard_cache');
+        await prefs.remove('petugas_pemilahan_jadwal_cache');
+        await prefs.remove('petugas_pemilahan_history_cache');
+        debugPrint('[OfflineCache] Cache manual SharedPreferences Petugas dimusnahkan.');
       }
     } catch (e) {
       debugPrint('[OfflineCache] Gagal menghapus cache pasca-mutasi: $e');

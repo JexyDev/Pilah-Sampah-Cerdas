@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../core/utils/hidden_history_service.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 
 class PetugasPemilahanPoinView extends ConsumerWidget {
@@ -31,6 +32,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(hiddenHistoryVersionProvider);
     final state = ref.watch(petugasPemilahanControllerProvider);
     final pointHistoryAsync = ref.watch(petugasPointHistoryProvider);
     final dashboard = state.dashboard;
@@ -47,6 +49,23 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
         automaticallyImplyLeading: Navigator.canPop(context),
         foregroundColor: AppColors.primaryGreen,
         title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen)),
+        actions: [
+          HiddenHistoryActionMenu(
+            scope: HiddenHistoryService.scopePetugasPoints,
+            iconColor: AppColors.primaryGreen,
+            getItemIds: () {
+              final ids = <String>[];
+              for (final h in pointHistoryAsync.value ?? []) {
+                ids.add(h.id);
+              }
+              for (final p in pointItems) {
+                final id = p['id']?.toString();
+                if (id != null && id.isNotEmpty) ids.add(id);
+              }
+              return ids;
+            },
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
@@ -155,8 +174,31 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
 
               pointHistoryAsync.when(
                 data: (histories) {
-                  if (histories.isEmpty) {
-                    if (pointItems.isEmpty) {
+                  final visibleHistories = histories.where((item) {
+                    return HiddenHistoryService.isVisibleSync(
+                      scope: HiddenHistoryService.scopePetugasPoints,
+                      id: item.id,
+                      createdAt: item.createdAt,
+                    );
+                  }).toList();
+                  final visiblePointItems = pointItems.where((item) {
+                    final rawDate = item['timestamp']?.toString() ?? item['createdAt']?.toString();
+                    DateTime? dt;
+                    if (rawDate != null) {
+                      try {
+                        dt = DateTime.parse(rawDate).toLocal();
+                      } catch (_) {}
+                    }
+                    final id = item['id']?.toString() ?? '${dt?.millisecondsSinceEpoch}';
+                    return HiddenHistoryService.isVisibleSync(
+                      scope: HiddenHistoryService.scopePetugasPoints,
+                      id: id,
+                      createdAt: dt,
+                    );
+                  }).toList();
+
+                  if (visibleHistories.isEmpty) {
+                    if (visiblePointItems.isEmpty) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(24.0),
@@ -168,15 +210,15 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                         ),
                       );
                     }
-                    return _buildPointFallbackList(pointItems);
+                    return _buildPointFallbackList(visiblePointItems);
                   }
 
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: histories.length,
+                    itemCount: visibleHistories.length,
                     itemBuilder: (ctx, idx) {
-                      final item = histories[idx];
+                      final item = visibleHistories[idx];
                       final isPositive = item.points >= 0;
 
                       return Card(
@@ -235,8 +277,23 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                   ),
                 ),
                 error: (_, __) {
-                  if (pointItems.isNotEmpty) {
-                    return _buildPointFallbackList(pointItems);
+                  final visiblePointItems = pointItems.where((item) {
+                    final rawDate = item['timestamp']?.toString() ?? item['createdAt']?.toString();
+                    DateTime? dt;
+                    if (rawDate != null) {
+                      try {
+                        dt = DateTime.parse(rawDate).toLocal();
+                      } catch (_) {}
+                    }
+                    final id = item['id']?.toString() ?? '${dt?.millisecondsSinceEpoch}';
+                    return HiddenHistoryService.isVisibleSync(
+                      scope: HiddenHistoryService.scopePetugasPoints,
+                      id: id,
+                      createdAt: dt,
+                    );
+                  }).toList();
+                  if (visiblePointItems.isNotEmpty) {
+                    return _buildPointFallbackList(visiblePointItems);
                   }
                   return const Center(
                     child: Padding(

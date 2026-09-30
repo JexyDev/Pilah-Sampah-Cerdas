@@ -23,6 +23,7 @@ import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'app/core/utils/app_cache_manager.dart';
+import 'app/core/utils/hidden_history_service.dart';
 import 'app/data/models/user_entity.dart';
 import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
 import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
@@ -114,6 +115,7 @@ void main() async {
 
   // Bersihkan cache lama otomatis jika mendeteksi update versi APK baru
   await AppCacheManager.checkVersionAndCleanCache();
+  await HiddenHistoryService.ensureInitialized();
 
   // Inisialisasi Foreground Task untuk background GPS tracking KKN
   FlutterForegroundTask.initCommunicationPort();
@@ -321,9 +323,12 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         final isPoin = type.contains('POIN') || titleUpper.contains('POIN');
         final isHistory = type.contains('LEAVE_') || type.contains('PROKER_') || type.contains('KEGIATAN_');
         final isReset = type.contains('RESET') || type.contains('PENGAJUAN') || type.contains('TEMPAT SAMPAH');
+        final isReminder = type.contains('REMINDER') || titleUpper.contains('SELAMAT PAGI');
 
         final String payloadRoute;
-        if (isReset && user?.role == UserRole.petugasPemilahan) {
+        if (isReminder) {
+          payloadRoute = 'ROUTE_MAIN';
+        } else if (isReset && user?.role == UserRole.petugasPemilahan) {
           payloadRoute = 'ROUTE_PENGAJUAN_WARGA';
         } else if (isPoin) {
           payloadRoute = 'ROUTE_POIN';
@@ -466,6 +471,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           AppRoutes.prokerDetail,
           arguments: {'id': prokerId},
         );
+        return;
+      } else if (type == 'REMINDER_KKN_PAGI' || type.contains('REMINDER')) {
+        navigatorKey.currentState?.pushNamed(AppRoutes.main);
         return;
       }
 

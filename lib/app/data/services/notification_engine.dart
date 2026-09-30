@@ -44,7 +44,9 @@ class NotificationEngine {
           if (navigatorKey != null &&
               navigatorKey.currentState != null &&
               response.payload != null) {
-            if (response.payload == 'ROUTE_POIN') {
+            if (response.payload == 'ROUTE_MAIN') {
+              navigatorKey.currentState!.pushNamed(AppRoutes.main);
+            } else if (response.payload == 'ROUTE_POIN') {
               navigatorKey.currentState!.pushNamed(AppRoutes.poin);
             } else if (response.payload == 'ROUTE_HISTORY') {
               navigatorKey.currentState!.pushNamed(AppRoutes.riwayatKkn);
