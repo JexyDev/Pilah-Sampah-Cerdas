@@ -1233,9 +1233,12 @@ class ApiKknRepository implements KknRepository {
         }
       }
       return [];
+    } on DioException catch (e) {
+      debugPrint('[KKN] getProgramKerja DioException: $e');
+      throw Exception(_handleDioError(e, 'Gagal memuat program kerja'));
     } catch (e) {
       debugPrint('[KKN] getProgramKerja error: $e');
-      return [];
+      rethrow;
     }
   }
 

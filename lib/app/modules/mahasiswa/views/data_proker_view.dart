@@ -18,8 +18,8 @@ final prokerDataListProvider =
       }).toList();
       // Sort terbaru paling atas
       filtered.sort((a, b) {
-        final dateA = a['createdAt']?.toString() ?? '';
-        final dateB = b['createdAt']?.toString() ?? '';
+        final dateA = (a['createdAt'] ?? a['submittedAt'] ?? '').toString();
+        final dateB = (b['createdAt'] ?? b['submittedAt'] ?? '').toString();
         return dateB.compareTo(dateA);
       });
       return filtered;
@@ -874,7 +874,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        err.toString(),
+                        err.toString().replaceAll('Exception: ', ''),
                         style: const TextStyle(color: AppColors.textSecondary),
                         textAlign: TextAlign.center,
                       ),

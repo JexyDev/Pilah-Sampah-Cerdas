@@ -49,7 +49,6 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
   final List<File> _selectedFiles = [];
   bool _isLoading = false;
-  bool _isPastReport = false;
 
   @override
   void initState() {
@@ -229,13 +228,16 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   Future<void> _selectDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final kknStartDate = DateTime(now.year, 7, 1);
+    final firstDate = kknStartDate.isBefore(today)
+        ? kknStartDate
+        : today.subtract(const Duration(days: 90));
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: _isPastReport
-          ? today.subtract(const Duration(days: 365))
-          : today.subtract(const Duration(days: 30)),
-      lastDate: today.add(const Duration(hours: 23, minutes: 59)),
+      initialDate: _selectedDate.isAfter(today) ? today : _selectedDate,
+      firstDate: firstDate,
+      lastDate: today,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -314,6 +316,12 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           ? 'ANDROID'
           : 'WEB';
 
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final selectedDay =
+          DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+      final isBackdate = selectedDay.isBefore(today);
+
       final payload = {
         'tanggalKegiatan': _tanggalCtrl.text,
         'waktuMulai': _waktuMulaiCtrl.text,
@@ -321,7 +329,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         'tempat': _lokasiCtrl.text.trim(),
         'deskripsi': _deskripsiCtrl.text.trim(),
         'platformOs': platformStr,
-        if (_isPastReport) 'isPastReport': 'true',
+        if (isBackdate) 'isPastReport': 'true',
         if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
       };
@@ -486,17 +494,11 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           title: Text(
             widget.initialData != null
                 ? 'Edit Logbook'
-                : (_isPastReport
-                      ? 'Input Logbook (Masa Lampau)'
-                      : 'Input Logbook Harian'),
+                : 'Input Logbook Harian',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          backgroundColor: _isPastReport
-              ? AppColors.warningOrange.withValues(alpha: 0.1)
-              : Colors.white,
-          foregroundColor: _isPastReport
-              ? AppColors.warningOrange
-              : AppColors.textPrimary,
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
           elevation: 0,
           centerTitle: true,
           bottom: PreferredSize(
@@ -512,38 +514,6 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHeaderBanner(logbookListAsync),
-                const SizedBox(height: 16),
-
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: SwitchListTile(
-                    title: const Text(
-                      'Mode Laporan Masa Lampau',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Aktifkan jika laporan sudah lewat batas toleransi waktu',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    value: _isPastReport,
-                    activeThumbColor: AppColors.warningOrange,
-                    onChanged: (val) {
-                      setState(() {
-                        _isPastReport = val;
-                      });
-                    },
-                  ),
-                ),
                 const SizedBox(height: 16),
 
                 _buildSectionCard(
