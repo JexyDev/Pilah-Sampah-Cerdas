@@ -145,6 +145,40 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final status =
+        _logbookData?['statusApproval']?.toString().toUpperCase() ?? '';
+    final isDisetujui = status == 'DISETUJUI_DPL' || status == 'DISETUJUI';
+    if (isDisetujui) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Konfirmasi Pengajuan Ulang'),
+          content: const Text(
+            'Logbook ini sebelumnya telah disetujui DPL. Menyimpan perubahan akan mengajukan ulang logbook ke DPL untuk diverifikasi kembali.\n\nPoin Anda tidak akan berkurang atau bertambah (tetap 3 PTS). Yakin ingin menyimpan perubahan?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text(
+                'Ya, Ajukan Ulang',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    if (!mounted) return;
+
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -171,8 +205,12 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
         ref.invalidate(mahasiswaNotificationsProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logbook berhasil diperbarui!'),
+          SnackBar(
+            content: Text(
+              isDisetujui
+                  ? 'Perubahan logbook berhasil diajukan ulang ke DPL!'
+                  : 'Logbook berhasil diperbarui!',
+            ),
             backgroundColor: AppColors.primaryGreen,
           ),
         );
@@ -206,6 +244,17 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
     final catatanDpl = data['catatanDpl']?.toString() ?? '';
     final catatanKetua = data['catatanKetua']?.toString() ?? '';
 
+    if (status == 'DISETUJUI_DPL' || status == 'DISETUJUI') {
+      return _buildBanner(
+        color: Colors.teal,
+        icon: Icons.check_circle_outline_rounded,
+        title: 'ℹ️ Logbook Telah Disetujui DPL',
+        body:
+            'Menyimpan perubahan akan mengajukan ulang logbook ini ke DPL untuk diverifikasi kembali. Poin Anda tetap aman (3 PTS).',
+        catatan: '',
+        catatanLabel: '',
+      );
+    }
     if (status == 'PERLU_REVISI_DPL') {
       return _buildBanner(
         color: Colors.orange,

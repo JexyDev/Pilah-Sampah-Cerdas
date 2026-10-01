@@ -139,6 +139,7 @@ class AppPages {
       case AppRoutes.tentang:
         return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
+      case AppRoutes.kknPresensi:
         return _buildRoute(const KknAttendanceView(), settings);
       case AppRoutes.kknAttendanceHistory:
         final args = settings.arguments as Map<String, dynamic>?;

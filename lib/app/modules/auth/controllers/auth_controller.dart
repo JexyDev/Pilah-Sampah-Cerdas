@@ -16,6 +16,19 @@ import '../../mahasiswa/controllers/kelompok_kkn_controller.dart';
 import '../../mahasiswa/controllers/posko_kkn_controller.dart';
 import '../../mahasiswa/controllers/fasilitas_kkn_controller.dart';
 import '../../mahasiswa/controllers/kkn_map_controller.dart';
+import '../../../core/utils/app_cache_manager.dart';
+import '../../../core/utils/hidden_history_service.dart';
+import '../../mahasiswa/controllers/mahasiswa_controller.dart';
+import '../../mahasiswa/controllers/riwayat_kkn_controller.dart';
+import '../../mahasiswa/controllers/pemanfaatan_sampah_controller.dart';
+import '../../mahasiswa/controllers/kelompok_stiker_qr_controller.dart';
+import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart';
+import '../../scan/controllers/scan_controller.dart';
+import '../../petugas_pemilahan/controllers/petugas_pemilahan_controller.dart';
+import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
+import '../../notifikasi/controllers/warga_notifikasi_controller.dart';
+import '../../warga/controllers/warga_aspirasi_controller.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -372,20 +385,42 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _ref.read(kknLocationProvider.notifier).resetForNewUser();
       } catch (_) {}
 
-      // 3b. Invalidate semua provider KKN agar sesi akun baru tidak menampilkan
-      //     data stale (kelompok, posko, fasilitas, peta) dari akun sebelumnya.
-      //     Belt-and-suspenders: main.dart auth listener juga melakukan ini,
-      //     tapi tambahan di sini menjamin cover edge-case (auto-logout 401/403).
+      // 3b. Invalidate seluruh provider data pengguna agar sesi akun baru tidak menampilkan
+      //     data stale dari akun sebelumnya.
+      _ref.invalidate(mahasiswaControllerProvider);
+      _ref.invalidate(riwayatKknControllerProvider);
+      _ref.invalidate(totalPointsProvider);
+      _ref.invalidate(pointHistoryProvider);
+      _ref.invalidate(dailyPointsProvider);
+      _ref.invalidate(wasteLogsProvider);
+      _ref.invalidate(binsProvider);
       _ref.invalidate(kelompokKknProvider);
       _ref.invalidate(poskoKknProvider);
       _ref.invalidate(fasilitasKknProvider);
       _ref.invalidate(kknMapProvider);
+      _ref.invalidate(petugasPemilahanControllerProvider);
+      _ref.invalidate(petugasPointHistoryProvider);
+      _ref.invalidate(petugasPemilahanNotificationsProvider);
+      _ref.invalidate(notificationsProvider);
+      _ref.invalidate(wargaNotificationsProvider);
+      _ref.invalidate(mahasiswaNotificationsProvider);
+      _ref.invalidate(pemanfaatanSampahProvider);
+      _ref.invalidate(kelompokStikerQrProvider);
+      _ref.invalidate(userLeaderboardRankProvider);
+      _ref.invalidate(wargaAspirasiProvider);
+      _ref.invalidate(totalSetoranProvider);
 
       // 4. Hentikan notifikasi & bersihkan cache notifikasi
       await NotificationEngine().cancelAll();
       clearNotificationCache();
 
-      // 5. Clear user-specific SharedPreferences caches (notif read state, dll)
+      // 5. Bersihkan cache API lokal, SafeStorage, dan HiddenHistoryService
+      try {
+        await HiddenHistoryService.resetSession();
+        await AppCacheManager.clearAllApiCache();
+      } catch (_) {}
+
+      // 5b. Clear user-specific SharedPreferences caches (notif read state, dll)
       try {
         final prefs = await SharedPreferences.getInstance();
         final keys = prefs.getKeys();

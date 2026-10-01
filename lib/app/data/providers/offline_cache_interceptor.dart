@@ -21,10 +21,13 @@ class OfflineCacheInterceptor extends Interceptor {
     'waste': ['waste', 'transactions', 'points', 'bins'],
     'bins': ['bins', 'transactions', 'points'],
     'warga': ['warga', 'bins', 'points'],
-    'kkn': ['kkn', 'logbook', 'timesheet', 'schedules', 'points'],
+    'kkn': ['kkn', 'logbook', 'timesheet', 'schedules', 'points', 'history'],
     'logbook': ['logbook', 'kkn', 'timesheet', 'points'],
     'petugas-residu': ['petugas-residu', 'petugas-pemilahan', 'points', 'history', 'bins'],
     'petugas-pemilahan': ['petugas-pemilahan', 'petugas-residu', 'points', 'history', 'bins'],
+    'points': ['points', 'transactions', 'kkn', 'history'],
+    'history': ['history', 'points', 'transactions', 'kkn'],
+    'attendance': ['kkn', 'attendance', 'points', 'timesheet'],
   };
 
   @override

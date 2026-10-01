@@ -74,7 +74,7 @@ class DataLogbookHarianView extends ConsumerWidget {
 
   bool _canEdit(String? status) {
     final s = (status ?? '').toUpperCase();
-    return s != 'DISETUJUI_DPL' && s != 'DISETUJUI';
+    return s != 'DITOLAK_DPL';
   }
 
   String _formatDate(String? raw) {
@@ -132,6 +132,7 @@ class DataLogbookHarianView extends ConsumerWidget {
     final canEdit = _canEdit(status);
     final isRevisi = status == 'PERLU_REVISI_DPL';
     final isDitolak = status == 'DITOLAK_KETUA';
+    final isDisetujui = status == 'DISETUJUI_DPL' || status == 'DISETUJUI';
 
     return Card(
       elevation: 1.5,
@@ -315,11 +316,19 @@ class DataLogbookHarianView extends ConsumerWidget {
                     minimumSize: Size.zero,
                   ),
                   icon: Icon(
-                    isRevisi ? Icons.rate_review_rounded : Icons.edit_rounded,
+                    isRevisi
+                        ? Icons.rate_review_rounded
+                        : (isDisetujui
+                            ? Icons.edit_note_rounded
+                            : Icons.edit_rounded),
                     size: 14,
                   ),
                   label: Text(
-                    isRevisi ? 'Revisi Sekarang' : 'Edit Logbook',
+                    isRevisi
+                        ? 'Revisi Sekarang'
+                        : (isDisetujui
+                            ? 'Ajukan Ulang / Edit'
+                            : 'Edit Logbook'),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

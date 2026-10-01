@@ -109,5 +109,40 @@ void main() {
       expect(isPoint2Vis, isFalse);
       expect(isPointNewVis, isTrue);
     });
+
+    test('mapScopeToItemType: memetakan seluruh scope dengan tepat ke tabel backend', () {
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopeWargaPoints), 'POINT');
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopeMahasiswaPoints), 'POINT');
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopePetugasPoints), 'POINT');
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopeWargaWaste), 'WASTE_DEPOSIT');
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopeMahasiswaKkn), 'KKN_ACTIVITY');
+      expect(HiddenHistoryService.mapScopeToItemType(HiddenHistoryService.scopePetugasTasks), 'PETUGAS_TASK');
+      expect(HiddenHistoryService.mapScopeToItemType('unknown'), isNull);
+    });
+
+    test('hideItems: menyembunyikan kumpulan item (multi-select) sekaligus', () async {
+      await HiddenHistoryService.hideItems(
+        HiddenHistoryService.scopeMahasiswaKkn,
+        ['kkn-1', 'kkn-2', 'kkn-3'],
+      );
+
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeMahasiswaKkn, id: 'kkn-1'), isFalse);
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeMahasiswaKkn, id: 'kkn-2'), isFalse);
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeMahasiswaKkn, id: 'kkn-3'), isFalse);
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeMahasiswaKkn, id: 'kkn-4'), isTrue);
+    });
+
+    test('resetSession: mengosongkan seluruh memori dan preferensi saat logout', () async {
+      await HiddenHistoryService.clearDisplay(HiddenHistoryService.scopeMahasiswaKkn);
+      await HiddenHistoryService.hideItem(HiddenHistoryService.scopeWargaPoints, 'p-1');
+
+      expect(HiddenHistoryService.hasHiddenItemsSync(HiddenHistoryService.scopeMahasiswaKkn), isTrue);
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeWargaPoints, id: 'p-1'), isFalse);
+
+      await HiddenHistoryService.resetSession();
+
+      expect(HiddenHistoryService.hasHiddenItemsSync(HiddenHistoryService.scopeMahasiswaKkn), isFalse);
+      expect(HiddenHistoryService.isVisibleSync(scope: HiddenHistoryService.scopeWargaPoints, id: 'p-1'), isTrue);
+    });
   });
 }

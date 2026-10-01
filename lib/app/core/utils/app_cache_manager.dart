@@ -71,8 +71,10 @@ class AppCacheManager {
       final allPrefKeys = prefs.getKeys().toList();
 
       for (final key in allPrefKeys) {
-        // Hapus cache Dio GET (cache_*) dan cache modul terdaftar
-        if (key.startsWith('cache_') || _knownPrefCacheKeys.contains(key)) {
+        // Hapus cache Dio GET (cache_*), hidden history, dan cache modul terdaftar
+        if (key.startsWith('cache_') ||
+            key.startsWith('hidden_history_') ||
+            _knownPrefCacheKeys.contains(key)) {
           await prefs.remove(key);
         }
       }
@@ -88,7 +90,8 @@ class AppCacheManager {
 
         if (key == 'cached_bins' ||
             key.startsWith('cached_waste_logs_') ||
-            key.startsWith('active_reset_request_')) {
+            key.startsWith('active_reset_request_') ||
+            key.startsWith('backup_hidden_history_')) {
           await storage.delete(key: key);
         }
       }

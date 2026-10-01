@@ -6,7 +6,7 @@ void main() {
   group('KKN Attendance Checkout Logic Tests', () {
     test('Checkout minimum duration gate evaluates correctly at 30 minutes', () {
       const int targetMenit = 240;
-      final int minCheckoutMenit =
+      const int minCheckoutMenit =
           (targetMenit > 0 && targetMenit < 30) ? targetMenit : 30;
 
       // Kasus 1: Durasi 25 menit (< 30 menit) -> Belum bisa checkout

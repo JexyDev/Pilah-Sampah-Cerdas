@@ -54,6 +54,11 @@ class ApiEndpoints {
   static const String pointsLeaderboard = '/points/leaderboard';
   static const String pointsClear = '/points/clear';
 
+  // History Exclude (Hapus 1-1 / Multi-select)
+  static const String historyExclude = '/history/exclude';
+  static String historyExcludeItem(String itemType, String itemId) =>
+      '/history/exclude/$itemType/$itemId';
+
   // KKN
   static const String kknDashboard = '/kkn/dashboard';
   // [SYNC] Route warga-dampingan dialihkan ke /kkn-attendance/warga-dampingan (ENG-MEMO/BEND-SYNC/2026-09/005)

@@ -330,6 +330,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             );
           }
 
+          final durasiMenit = state.inZoneDurationSeconds;
+
           Future<void> submit() async {
             if (fotoFile == null) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -350,6 +352,37 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               );
               return;
             }
+            final targetMenit = state.targetDurationMinutes;
+            if (durasiMenit < targetMenit) {
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (dialogCtx) => AlertDialog(
+                  title: const Text('Konfirmasi Selesai Kegiatan'),
+                  content: Text(
+                    'Durasi Anda baru $durasiMenit menit (kurang dari target $targetMenit menit). Jika Anda menyelesaikan sesi sekarang, status kehadiran Anda adalah \'Hadir Tidak Memenuhi\' dan tidak memperoleh +3 Poin Durasi. Yakin ingin menyelesaikan kegiatan?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: const Text('Batal'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                      ),
+                      onPressed: () => Navigator.pop(dialogCtx, true),
+                      child: const Text(
+                        'Ya, Selesaikan',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true) return;
+            }
+            if (!ctx.mounted) return;
+
             setModalState(() => isLoading = true);
             Navigator.pop(ctx);
             final success = await notifier.recordAttendance(
@@ -364,9 +397,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ScaffoldMessenger.of(context).clearSnackBars();
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      'Presensi Selesai Kegiatan berhasil! (+3 Poin Durasi Terpenuhi)',
+                      durasiMenit >= targetMenit
+                          ? 'Presensi Selesai Kegiatan berhasil! (+3 Poin Durasi Terpenuhi)'
+                          : 'Presensi Selesai Kegiatan berhasil! (Status: Hadir Tidak Memenuhi)',
                     ),
                     backgroundColor: AppColors.primaryGreen,
                     behavior: SnackBarBehavior.floating,
@@ -387,7 +422,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             }
           }
 
-          final durasiMenit = state.inZoneDurationSeconds;
           final waktu = DateTime.now().toLocal().toString().substring(0, 16);
 
           return SingleChildScrollView(
@@ -2126,13 +2160,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           const SizedBox(height: 8),
           if (isSessionActive && !canCheckout)
             Text(
-              'Tombol Presensi Pulang aktif setelah durasi mencapai minimal $minCheckoutMenit menit. (Saat ini: $durasiMenit menit)',
+              'Target durasi kerja: $targetMenit menit untuk bonus poin penuh (+3 PTS). Minimal durasi presensi pulang: $minCheckoutMenit menit. (Saat ini: $durasiMenit menit)',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: Colors.orange),
             ),
           if (isSessionActive && canCheckout && durasiMenit < targetMenit)
             Text(
-              'Target harian: $targetMenit menit. Presensi sekarang akan dicatat dengan status Hadir Belum Memenuhi.',
+              'Target durasi kerja: $targetMenit menit untuk bonus poin penuh (+3 PTS). Minimal durasi presensi pulang: $minCheckoutMenit menit.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),

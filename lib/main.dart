@@ -36,6 +36,10 @@ import 'app/modules/mahasiswa/controllers/kkn_map_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
+import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_controller.dart';
+import 'app/modules/mahasiswa/controllers/pemanfaatan_sampah_controller.dart';
+import 'app/modules/mahasiswa/controllers/kelompok_stiker_qr_controller.dart';
+import 'app/modules/warga/controllers/warga_aspirasi_controller.dart';
 import 'app/modules/auth/controllers/auth_controller.dart';
 import 'app/data/services/firebase_notification_service.dart';
 import 'app/modules/mahasiswa/views/data_logbook_harian_view.dart';
@@ -507,8 +511,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.read(kknLocationProvider.notifier).stopTracking();
       }
 
-      // Wajib bersihkan cache data penting jika pengguna log out
-      if (previous?.user != null && next.user == null) {
+      // Wajib bersihkan cache data penting jika pengguna log out atau ganti akun
+      if (previous?.user != null && (next.user == null || previous?.user?.id != next.user?.id)) {
         ref.invalidate(mahasiswaControllerProvider);
         ref.invalidate(riwayatKknControllerProvider);
         ref.invalidate(totalPointsProvider);
@@ -516,11 +520,21 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.invalidate(dailyPointsProvider);
         ref.invalidate(wasteLogsProvider);
         ref.invalidate(binsProvider);
-        // Bersihkan sisa cache KKN agar akun baru tidak melihat data akun lama
         ref.invalidate(kelompokKknProvider);
         ref.invalidate(poskoKknProvider);
         ref.invalidate(fasilitasKknProvider);
         ref.invalidate(kknMapProvider);
+        ref.invalidate(petugasPemilahanControllerProvider);
+        ref.invalidate(petugasPointHistoryProvider);
+        ref.invalidate(petugasPemilahanNotificationsProvider);
+        ref.invalidate(notificationsProvider);
+        ref.invalidate(wargaNotificationsProvider);
+        ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(pemanfaatanSampahProvider);
+        ref.invalidate(kelompokStikerQrProvider);
+        ref.invalidate(userLeaderboardRankProvider);
+        ref.invalidate(wargaAspirasiProvider);
+        ref.invalidate(totalSetoranProvider);
       }
     });
 

@@ -376,13 +376,14 @@ class ApiAuthRepository implements AuthRepository {
         secureStorage.delete(key: AppConfig.refreshTokenKey),
         secureStorage.delete(key: AppConfig.userDataKey),
         secureStorage.delete(key: AppConfig.householdIdKey),
+        secureStorage.delete(key: AppConfig.mahasiswaKecamatanKey),
+        secureStorage.delete(key: AppConfig.mahasiswaKelurahanKey),
+        secureStorage.delete(key: AppConfig.mahasiswaRwKey),
       ]);
       final prefs = await SharedPreferences.getInstance();
-      // Pertahankan preferensi UI pengguna (seperti riwayat yang disembunyikan) agar tidak hilang saat logout-login
       final preservedKeys = <String, Object?>{};
       for (final key in prefs.getKeys()) {
-        if (key.startsWith('hidden_history_') ||
-            key.startsWith('last_app_version')) {
+        if (key.startsWith('last_app_version')) {
           preservedKeys[key] = prefs.get(key);
         }
       }

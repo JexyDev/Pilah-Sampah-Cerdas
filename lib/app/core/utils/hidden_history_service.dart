@@ -39,7 +39,7 @@ class HiddenHistoryService {
 
   /// Memastikan instance SharedPreferences telah dimuat ke memori dan tersinkronisasi dari SafeStorage.
   static Future<SharedPreferences> ensureInitialized() async {
-    _prefs ??= await SharedPreferences.getInstance();
+    _prefs = await SharedPreferences.getInstance();
 
     // Auto-restore dari SafeStorage jika SharedPreferences sempat ter-wipe saat logout
     const scopes = [
@@ -106,6 +106,54 @@ class HiddenHistoryService {
     }
   }
 
+  /// Memetakan scope halaman riwayat ke itemType pada tabel user_hidden_history_items backend.
+  static String? mapScopeToItemType(String scope) {
+    switch (scope) {
+      case scopeWargaPoints:
+      case scopeMahasiswaPoints:
+      case scopePetugasPoints:
+        return 'POINT';
+      case scopeWargaWaste:
+        return 'WASTE_DEPOSIT';
+      case scopeMahasiswaKkn:
+        return 'KKN_ACTIVITY';
+      case scopePetugasTasks:
+        return 'PETUGAS_TASK';
+      default:
+        return null;
+    }
+  }
+
+  /// Mengirimkan sinyal server-side exclude satuan (1-1) ke backend VPS secara asinkron.
+  static Future<void> syncServerHideItem(String scope, String itemId, [ApiClient? client]) async {
+    final itemType = mapScopeToItemType(scope);
+    if (itemType == null || client == null) return;
+    try {
+      await client.dio.delete(ApiEndpoints.historyExcludeItem(itemType, itemId));
+      debugPrint('[HiddenHistoryService] Server exclude synced for $itemType:$itemId');
+    } catch (e) {
+      debugPrint('[HiddenHistoryService] Warning: Failed to sync server exclude for $itemType:$itemId: $e');
+    }
+  }
+
+  /// Mengirimkan sinyal server-side multi-exclude (batch) ke backend VPS secara asinkron.
+  static Future<void> syncServerExcludeItems(String scope, List<String> itemIds, [ApiClient? client]) async {
+    final itemType = mapScopeToItemType(scope);
+    if (itemType == null || client == null || itemIds.isEmpty) return;
+    try {
+      await client.dio.post(
+        ApiEndpoints.historyExclude,
+        data: {
+          'itemType': itemType,
+          'itemIds': itemIds,
+        },
+      );
+      debugPrint('[HiddenHistoryService] Server multi-exclude synced for $itemType: ${itemIds.length} items');
+    } catch (e) {
+      debugPrint('[HiddenHistoryService] Warning: Failed to sync server multi-exclude for $itemType: $e');
+    }
+  }
+
   /// Menyembunyikan seluruh tampilan riwayat saat ini untuk scope tertentu.
   /// Menyimpan seluruh ID aktif dan timestamp toleran agar data lama tidak bocor kembali,
   /// serta mensinkronisasikan cutoff ke backend VPS jika ApiClient tersedia.
@@ -167,8 +215,8 @@ class HiddenHistoryService {
     }
   }
 
-  /// Menyembunyikan satu item spesifik berdasarkan ID.
-  static Future<void> hideItem(String scope, String id) async {
+  /// Menyembunyikan satu item spesifik berdasarkan ID (Swipe to Delete / Hapus 1-1).
+  static Future<void> hideItem(String scope, String id, {ApiClient? apiClient}) async {
     try {
       final p = await ensureInitialized();
       final key = '$_prefixHiddenIds$scope';
@@ -180,8 +228,42 @@ class HiddenHistoryService {
         _memHiddenIds[scope] ??= <String>{};
         _memHiddenIds[scope]!.add(id);
       }
+      if (apiClient != null) {
+        unawaited(syncServerHideItem(scope, id, apiClient));
+      }
     } catch (e) {
       debugPrint('[HiddenHistoryService] Error hiding item: $e');
+    }
+  }
+
+  /// Menyembunyikan beberapa item spesifik berdasarkan kumpulan ID (Multi-Select).
+  static Future<void> hideItems(
+    String scope,
+    List<String> ids, {
+    ApiClient? apiClient,
+  }) async {
+    try {
+      final p = await ensureInitialized();
+      final key = '$_prefixHiddenIds$scope';
+      final list = p.getStringList(key) ?? [];
+      final newIds = <String>[];
+      for (final id in ids) {
+        if (!list.contains(id)) {
+          list.add(id);
+          newIds.add(id);
+        }
+      }
+      if (newIds.isNotEmpty) {
+        await p.setStringList(key, list);
+        await _storage.write(key: 'backup_$key', value: list.join(','));
+        _memHiddenIds[scope] ??= <String>{};
+        _memHiddenIds[scope]!.addAll(newIds);
+      }
+      if (apiClient != null && ids.isNotEmpty) {
+        unawaited(syncServerExcludeItems(scope, ids, apiClient));
+      }
+    } catch (e) {
+      debugPrint('[HiddenHistoryService] Error hiding multiple items: $e');
     }
   }
 
@@ -204,6 +286,29 @@ class HiddenHistoryService {
     }
 
     return true;
+  }
+
+  /// Reset seluruh in-memory dan local cache riwayat tersembunyi saat logout atau pergantian sesi.
+  static Future<void> resetSession() async {
+    _memClearTimes.clear();
+    _memHiddenIds.clear();
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      final keys = _prefs!.getKeys().where((k) => k.startsWith(_prefixClearTime) || k.startsWith(_prefixHiddenIds)).toList();
+      for (final k in keys) {
+        await _prefs!.remove(k);
+      }
+      const storage = SafeStorage();
+      final allStorage = await storage.readAll();
+      for (final k in allStorage.keys) {
+        if (k.startsWith('backup_$_prefixClearTime') || k.startsWith('backup_$_prefixHiddenIds')) {
+          await storage.delete(key: k);
+        }
+      }
+      debugPrint('[HiddenHistoryService] Session cache reset.');
+    } catch (e) {
+      debugPrint('[HiddenHistoryService] Error reset session: $e');
+    }
   }
 
   /// Memeriksa apakah scope saat ini memiliki riwayat yang sedang disembunyikan.
