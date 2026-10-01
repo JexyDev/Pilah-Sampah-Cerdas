@@ -8,73 +8,73 @@ class AppTextStyles {
   AppTextStyles._();
 
   // --- Heading ---
-  static TextStyle get h1 => GoogleFonts.poppins(
+  static final TextStyle h1 = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
 
-  static TextStyle get h2 => GoogleFonts.poppins(
+  static final TextStyle h2 = GoogleFonts.poppins(
     fontSize: 20,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
 
-  static TextStyle get h3 => GoogleFonts.poppins(
+  static final TextStyle h3 = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
 
   // --- Body ---
-  static TextStyle get bodyLarge => GoogleFonts.poppins(
+  static final TextStyle bodyLarge = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
     height: 1.5,
   );
 
-  static TextStyle get bodyMedium => GoogleFonts.poppins(
+  static final TextStyle bodyMedium = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
     height: 1.5,
   );
 
-  static TextStyle get bodySmall => GoogleFonts.poppins(
+  static final TextStyle bodySmall = GoogleFonts.poppins(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
 
   // --- Caption ---
-  static TextStyle get caption => GoogleFonts.poppins(
+  static final TextStyle caption = GoogleFonts.poppins(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
 
   // --- Label / Button ---
-  static TextStyle get labelLarge => GoogleFonts.poppins(
+  static final TextStyle labelLarge = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textOnPrimary,
   );
 
-  static TextStyle get labelMedium => GoogleFonts.poppins(
+  static final TextStyle labelMedium = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
 
-  static TextStyle get hint => GoogleFonts.poppins(
+  static final TextStyle hint = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textHint,
   );
 
   // --- Error / Warning ---
-  static TextStyle get errorText => GoogleFonts.poppins(
+  static final TextStyle errorText = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.dangerRed,

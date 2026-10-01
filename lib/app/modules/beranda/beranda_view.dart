@@ -133,7 +133,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
             slivers: [
               // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Header Biru ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
               SliverToBoxAdapter(
-                child: _buildHeader(context, ref, user, isOnline, unreadCount),
+                child: RepaintBoundary(
+                  child: _buildHeader(context, ref, user, isOnline, unreadCount),
+                ),
               ),
 
               SliverPadding(
@@ -143,7 +145,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     // ──────────────── Stats Card ─────────────────────────────────
                     totalPointsAsync.when(
                       skipLoadingOnReload: true,
-                      data: (total) => _buildStatsCard(context, total),
+                      data: (total) => RepaintBoundary(child: _buildStatsCard(context, total)),
                       loading: () => const SkeletonLoading(
                         height: 100,
                         width: double.infinity,
@@ -168,7 +170,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     const SizedBox(height: AppDimensions.sm),
                     wasteLogsAsync.when(
                       skipLoadingOnReload: true,
-                      data: (logs) => _buildStatistikSaya(context, logs),
+                      data: (logs) => RepaintBoundary(child: _buildStatistikSaya(context, logs)),
                       loading: () => const SkeletonLoading(
                         height: 120,
                         width: double.infinity,
@@ -189,7 +191,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                         ),
                       ),
                       const SizedBox(height: AppDimensions.sm),
-                      _buildAksiCepat(context, ref, isOnline),
+                      RepaintBoundary(child: _buildAksiCepat(context, ref, isOnline)),
                       const SizedBox(height: AppDimensions.lg),
                     ],
 
@@ -500,40 +502,37 @@ class _BerandaViewState extends ConsumerState<BerandaView>
 
                       wasteLogsAsync.when(
                         skipLoadingOnReload: true,
-                        data: (logs) => logs.isEmpty
-                            ? _buildEmptyLogs(context)
-                            : SizedBox(
-                                height:
-                                    180, // Membatasi tinggi agar tidak expand penuh
-                                child: ListView.separated(
-                                  padding: EdgeInsets.zero,
-                                  physics: const BouncingScrollPhysics(),
-                                  itemCount: logs.length > 5 ? 5 : logs.length,
-                                  separatorBuilder: (context, index) =>
-                                      const SizedBox(height: 12),
-                                  itemBuilder: (context, index) {
-                                    return _RiwayatCard(log: logs[index]);
-                                  },
-                                ),
+                        data: (logs) {
+                          if (logs.isEmpty) return _buildEmptyLogs(context);
+                          final displayLogs = logs.take(5).toList();
+                          return Column(
+                            children: [
+                              for (int i = 0; i < displayLogs.length; i++) ...[
+                                _RiwayatCard(log: displayLogs[i]),
+                                if (i < displayLogs.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            ],
+                          );
+                        },
+                        loading: () => const Column(
+                          children: [
+                            SkeletonLoading(
+                              height: 70,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
                               ),
-                        loading: () => SizedBox(
-                          height: 180,
-                          child: ListView.separated(
-                            padding: EdgeInsets.zero,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: 3,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              return const SkeletonLoading(
-                                height: 70,
-                                width: double.infinity,
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                              );
-                            },
-                          ),
+                            ),
+                            SizedBox(height: 12),
+                            SkeletonLoading(
+                              height: 70,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ],
                         ),
                         error: (_, __) => EmptyState(
                           message: 'Gagal memuat riwayat.',
@@ -545,7 +544,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       ),
                     ],
                     const SizedBox(height: AppDimensions.lg),
-                    _buildBeritaSection(context, ref),
+                    RepaintBoundary(child: _buildBeritaSection(context, ref)),
                     const SizedBox(height: 80),
                   ]),
                 ),
