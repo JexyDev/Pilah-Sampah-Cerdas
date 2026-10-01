@@ -257,7 +257,6 @@ model User {
   notificationSync      UserNotificationSync?
   beritaKonten          BeritaKonten[]           @relation("BeritaAuthor")
   presensiMandiri       PresensiMandiri[]        @relation("PresensiMandiriStudent")
-  iotDevicesHandled     IoTDevice[]              @relation("PicIoTDevices")
 
   @@index([roleId])
   @@index([rwId])
@@ -1668,28 +1667,29 @@ enum IoTDeviceStatus {
 }
 
 model IoTDevice {
-  id           String          @id @default(uuid())
-  name         String          @map("nama")
-  nodeCode     String          @unique @map("kode_node")
-  locationName String          @map("nama_lokasi")
-  latitude     Decimal         @db.Decimal(11, 8)
-  longitude    Decimal         @db.Decimal(11, 8)
-  status       IoTDeviceStatus @default(ACTIVE) @map("status")
-  apiKey       String          @unique @map("api_key")
-  kelurahan    String?         @map("kelurahan")
-  kelurahanId  String?         @map("id_kelurahan")
-  rwId         Int?            @map("id_rw")
-  picUserId    String?         @map("id_petugas_pic")
-  createdAt    DateTime        @default(now()) @map("dibuat_pada")
-  updatedAt    DateTime        @updatedAt @map("diperbarui_pada")
-  readings     CH4Reading[]
-  kelurahanRef Kelurahan?      @relation(fields: [kelurahanId], references: [id])
-  rwRef        Rw?             @relation(fields: [rwId], references: [id])
-  picUser      User?           @relation("PicIoTDevices", fields: [picUserId], references: [id])
+  id              String          @id @default(uuid())
+  name            String          @map("nama")
+  nodeCode        String          @unique @map("kode_node")
+  locationName    String          @map("nama_lokasi")
+  latitude        Decimal         @db.Decimal(11, 8)
+  longitude       Decimal         @db.Decimal(11, 8)
+  useSensorGps    Boolean         @default(true) @map("gunakan_gps_sensor")
+  sensorRadius    Int             @default(50) @map("radius_sensor_meter")
+  firmwareVersion String          @default("1.0.0") @map("versi_firmware")
+  lastSeenAt      DateTime?       @map("terakhir_aktif")
+  status          IoTDeviceStatus @default(ACTIVE) @map("status")
+  apiKey          String          @unique @map("api_key")
+  kelurahan       String?         @map("kelurahan")
+  kelurahanId     String?         @map("id_kelurahan")
+  rwId            Int?            @map("id_rw")
+  createdAt       DateTime        @default(now()) @map("dibuat_pada")
+  updatedAt       DateTime        @updatedAt @map("diperbarui_pada")
+  readings        CH4Reading[]
+  kelurahanRef    Kelurahan?      @relation(fields: [kelurahanId], references: [id])
+  rwRef           Rw?             @relation(fields: [rwId], references: [id])
 
   @@index([kelurahanId])
   @@index([rwId])
-  @@index([picUserId])
   @@map("perangkat_iot")
 }
 
@@ -1700,6 +1700,10 @@ model CH4Reading {
   suhu        Decimal?       @map("suhu_celsius") @db.Decimal(5, 2)
   kelembaban  Decimal?       @map("kelembaban_persen") @db.Decimal(5, 2)
   baterai     Decimal?       @map("level_baterai") @db.Decimal(5, 2)
+  rssi        Decimal?       @map("rssi_dbm") @db.Decimal(6, 2)
+  latitude    Decimal?       @map("latitude") @db.Decimal(11, 8)
+  longitude   Decimal?       @map("longitude") @db.Decimal(11, 8)
+  lokasiName  String?        @map("nama_lokasi_terdeteksi")
   statusLevel CH4StatusLevel @default(AMAN) @map("tingkat_status")
   timestamp   DateTime       @default(now()) @map("waktu_rekam")
   createdAt   DateTime       @default(now()) @map("dibuat_pada")
@@ -1708,4 +1712,30 @@ model CH4Reading {
   @@index([deviceId, timestamp])
   @@map("pembacaan_sensor_ch4")
 }
+
+model IoTSystemConfig {
+  id                        String   @id @default(uuid())
+  ch4WarningThreshold       Decimal  @default(1000.0) @map("ambang_peringatan_ch4") @db.Decimal(8, 2)
+  ch4DangerThreshold        Decimal  @default(5000.0) @map("ambang_bahaya_ch4") @db.Decimal(8, 2)
+  heartbeatTimeoutMinutes   Int      @default(10) @map("tenggat_heartbeat_menit")
+  defaultSensorRadiusMeters Int      @default(50) @map("radius_default_meter")
+  mqttBrokerHost            String   @default("broker.emqx.io") @map("mqtt_broker_host")
+  mqttBrokerPort            Int      @default(1883) @map("mqtt_broker_port")
+  mqttBrokerWsPort          Int      @default(8083) @map("mqtt_broker_ws_port")
+  mqttTopicTemplate         String   @default("berseka/iot/telemetry/#") @map("mqtt_topik_template")
+  mqttUsername              String?  @map("mqtt_username")
+  mqttPassword              String?  @map("mqtt_password")
+  geminiApiKey              String?  @map("gemini_api_key")
+  geminiModel               String   @default("gemini-1.5-flash") @map("gemini_model")
+  cacheTtlSeconds           Int      @default(300) @map("cache_ttl_detik")
+  roleAccessMonitoring      Json     @default("[\"DEVELOPER\", \"SUPER_USER\", \"ADMIN_DLH\", \"PIMPINAN\"]") @map("akses_role_monitoring")
+  roleAccessDataSensor      Json     @default("[\"DEVELOPER\", \"SUPER_USER\", \"ADMIN_DLH\", \"PIMPINAN\"]") @map("akses_role_data_sensor")
+  roleAccessPerangkat       Json     @default("[\"DEVELOPER\", \"SUPER_USER\", \"ADMIN_DLH\"]") @map("akses_role_perangkat")
+  roleAccessKonfigurasi     Json     @default("[\"DEVELOPER\", \"SUPER_USER\"]") @map("akses_role_konfigurasi")
+  createdAt                 DateTime @default(now()) @map("dibuat_pada")
+  updatedAt                 DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("konfigurasi_sistem_iot")
+}
+
 
