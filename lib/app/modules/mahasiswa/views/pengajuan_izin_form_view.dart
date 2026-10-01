@@ -7,7 +7,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/pengajuan_izin_mahasiswa_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
-import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
@@ -160,22 +159,13 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       });
       NotificationEngine().showGenericNotification(
         id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
-        title: 'Pengajuan Izin/Sakit Terkirim ⏳',
+        title: 'Pengajuan ${_selectedKategori.displayName} Terkirim ⏳',
         body:
             'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
       );
 
       final user = ref.read(authProvider).user;
       if (user != null) {
-        LocalNotificationCacheService().addNotification(
-          userId: user.id,
-          role: user.role.name,
-          title: 'Pengajuan ${_selectedKategori.displayName} Terkirim ⏳',
-          desc:
-              'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
-          type: 'IZIN_DIAJUKAN',
-          id: 'local_izin_${DateTime.now().millisecondsSinceEpoch}',
-        );
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(riwayatKknControllerProvider);
         ref.invalidate(pengajuanSummaryProvider);

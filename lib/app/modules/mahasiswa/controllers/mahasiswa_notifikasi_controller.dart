@@ -44,6 +44,7 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       type.contains('PRESENSI') ||
       type.contains('GPS') ||
       type.contains('IZIN') ||
+      type.contains('SAKIT') ||
       type.contains('DPL') ||
       type.contains('POIN') ||
       type.contains('KKN') ||
@@ -69,6 +70,7 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       title.contains('AKTIVASI') ||
       title.contains('PRESENSI') ||
       title.contains('IZIN') ||
+      title.contains('SAKIT') ||
       title.contains('KRITIS') ||
       title.contains('KAPASITAS') ||
       title.contains('PENGOSONGAN') ||
@@ -197,7 +199,9 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
       if (status == 'APPROVED' || status == 'REJECTED' || status == 'PENDING') {
         final isApproved = status == 'APPROVED';
         final isPending = status == 'PENDING';
-        final kategori = izin['kategori']?.toString() ?? 'Izin';
+        final rawKategori = izin['kategori']?.toString() ?? 'Izin';
+        final isSakit = rawKategori.toUpperCase().contains('SAKIT');
+        final kategori = isSakit ? 'Sakit' : 'Izin';
         final timestamp =
             izin['reviewedAt']?.toString() ??
             izin['createdAt']?.toString() ??
@@ -213,20 +217,25 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
             dt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, dt);
 
+        final rejectionReason = izin['rejectionReason']?.toString().trim();
+        final rejectionText = (rejectionReason != null && rejectionReason.isNotEmpty)
+            ? ' $rejectionReason'
+            : '';
+
         list.add(
           NotificationEntity(
             id: notifId,
             type: 'IZIN',
             title: isPending
-                ? 'Pengajuan Izin Dikirim'
+                ? 'Pengajuan $kategori Dikirim'
                 : (isApproved
-                      ? 'Pengajuan Izin Disetujui'
-                      : 'Pengajuan Izin Ditolak'),
+                      ? 'Pengajuan $kategori Disetujui'
+                      : 'Pengajuan $kategori Ditolak'),
             desc: isPending
                 ? 'Pengajuan $kategori Anda telah terkirim dan menunggu verifikasi DPL.'
                 : (isApproved
                       ? 'DPL telah menyetujui pengajuan $kategori Anda.'
-                      : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}'),
+                      : 'DPL menolak pengajuan $kategori Anda.$rejectionText'),
             isRead: isRead,
             time: dt
                 .toLocal()
@@ -395,6 +404,11 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     role,
   );
   for (final ln in localNotifs) {
+    // Abaikan duplikasi jika notifikasi izin lokal sudah ada di server
+    if ((ln.type == 'IZIN_DIAJUKAN' || ln.type == 'IZIN') &&
+        result.any((n) => n.type == 'IZIN')) {
+      continue;
+    }
     if (result.any(
       (n) =>
           n.id == ln.id ||
