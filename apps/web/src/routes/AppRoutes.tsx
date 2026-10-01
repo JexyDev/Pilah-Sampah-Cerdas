@@ -93,7 +93,10 @@ const LaporanResmiKknPage = React.lazy(() => import("../pages/LaporanKkn/Laporan
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 const LaporanTataKelolaSampahPage = React.lazy(() => import("../pages/Laporan/LaporanTataKelolaSampahPage"));
-const ManajemenIotPage = React.lazy(() => import("../pages/ManajemenIot/ManajemenIotPage"));
+const IotMonitoringPage = React.lazy(() => import("../pages/IoT/IotMonitoringPage"));
+const IotDataSensorPage = React.lazy(() => import("../pages/IoT/IotDataSensorPage"));
+const IotPerangkatPage = React.lazy(() => import("../pages/IoT/IotPerangkatPage"));
+const IotKonfigurasiPage = React.lazy(() => import("../pages/IoT/IotKonfigurasiPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
@@ -768,12 +771,37 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/iot" element={<Navigate to="/manajemen-iot" replace />} />
+        <Route path="/iot" element={<Navigate to="/iot/monitoring" replace />} />
+        <Route path="/manajemen-iot" element={<Navigate to="/iot/monitoring" replace />} />
         <Route
-          path="/manajemen-iot"
+          path="/iot/monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
-              <ManajemenIotPage />
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}>
+              <IotMonitoringPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/iot/data-sensor"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}>
+              <IotDataSensorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/iot/perangkat"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+              <IotPerangkatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/iot/konfigurasi"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+              <IotKonfigurasiPage />
             </ProtectedRoute>
           }
         />

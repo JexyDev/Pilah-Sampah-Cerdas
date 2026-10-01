@@ -367,6 +367,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/informasi":
       case "/tentang":
         return ["Informasi"];
+      case "/iot/monitoring":
+        return ["Tata Kelola Sampah", "Internet of Things", "Monitoring"];
+      case "/iot/data-sensor":
+        return ["Tata Kelola Sampah", "Internet of Things", "Data Sensor"];
+      case "/iot/perangkat":
+        return ["Tata Kelola Sampah", "Internet of Things", "Perangkat"];
+      case "/iot/konfigurasi":
+        return ["Tata Kelola Sampah", "Internet of Things", "Konfigurasi"];
       default:
         return ["Dasbor"];
     }

@@ -13,6 +13,11 @@ vi.mock("../lib/prisma.js", () => ({
       delete: vi.fn(),
       count: vi.fn(),
     },
+    ioTSystemConfig: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     cH4Reading: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -43,6 +48,13 @@ vi.mock("./notificationIntegrationService.js", () => ({
 describe("iotService - Manajemen IoT & Sensor Metana (CH4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma as any).ioTSystemConfig.findFirst.mockResolvedValue({
+      id: "config-1",
+      ch4WarningThreshold: 1000,
+      ch4DangerThreshold: 5000,
+      heartbeatTimeoutMinutes: 10,
+      isLiveStreamingActive: false,
+    });
   });
 
   describe("calculateStatusLevel", () => {
@@ -77,18 +89,32 @@ describe("iotService - Manajemen IoT & Sensor Metana (CH4)", () => {
       ).rejects.toThrow("Perangkat IoT tidak terdaftar");
     });
 
-    it("harus melempar error jika perangkat berstatus INACTIVE", async () => {
+    it("harus otomatis mengaktifkan status perangkat menjadi ACTIVE saat menerima payload", async () => {
       (prisma.ioTDevice.findUnique as any).mockResolvedValue({
         id: "dev-1",
         status: IoTDeviceStatus.INACTIVE,
+        useSensorGps: true,
       });
 
-      await expect(
-        iotService.ingestReading({
-          apiKey: "valid-key-inactive",
-          nilaiPpm: 500,
+      (prisma.cH4Reading.create as any).mockResolvedValue({
+        id: "reading-1",
+        deviceId: "dev-1",
+        nilaiPpm: 500,
+      });
+
+      await iotService.ingestReading({
+        apiKey: "valid-key-inactive",
+        nilaiPpm: 500,
+      });
+
+      expect(prisma.ioTDevice.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "dev-1" },
+          data: expect.objectContaining({
+            status: IoTDeviceStatus.ACTIVE,
+          }),
         })
-      ).rejects.toThrow("Perangkat IoT saat ini berstatus NON-AKTIF");
+      );
     });
 
     it("harus menyimpan telemetri CH4 dengan statusLevel yang tepat saat data valid", async () => {
@@ -98,7 +124,6 @@ describe("iotService - Manajemen IoT & Sensor Metana (CH4)", () => {
         nodeCode: "NODE-01",
         locationName: "TPS Sadang Serang",
         status: IoTDeviceStatus.ACTIVE,
-        picUserId: null,
       });
 
       const mockSavedReading = {
@@ -108,6 +133,9 @@ describe("iotService - Manajemen IoT & Sensor Metana (CH4)", () => {
         suhu: 28.5,
         kelembaban: 70,
         baterai: 95,
+        latitude: null,
+        longitude: null,
+        rssi: null,
         statusLevel: CH4StatusLevel.AMAN,
         timestamp: new Date(),
         device: {
@@ -146,33 +174,39 @@ describe("iotService - Manajemen IoT & Sensor Metana (CH4)", () => {
   });
 
   describe("getDashboardSummary", () => {
-    it("harus menghitung total node, status operasional, dan breakdown status gas", async () => {
-      (prisma.ioTDevice.count as any)
-        .mockResolvedValueOnce(5) // total
-        .mockResolvedValueOnce(4) // active
-        .mockResolvedValueOnce(1) // maintenance
-        .mockResolvedValueOnce(0); // inactive
-      (prisma.cH4Reading.count as any).mockResolvedValueOnce(120);
-
+    it("harus menghitung KPI perangkat dan ringkasan telemetri", async () => {
+      (prisma.cH4Reading.findMany as any).mockResolvedValue([]);
       (prisma.ioTDevice.findMany as any).mockResolvedValue([
-        { id: "1", readings: [{ statusLevel: CH4StatusLevel.AMAN, nilaiPpm: 300 }] },
-        { id: "2", readings: [{ statusLevel: CH4StatusLevel.WASPADA, nilaiPpm: 1500 }] },
-        { id: "3", readings: [{ statusLevel: CH4StatusLevel.BAHAYA, nilaiPpm: 5500 }] },
-        { id: "4", readings: [] },
+        {
+          id: "1",
+          status: IoTDeviceStatus.ACTIVE,
+          lastSeenAt: new Date(),
+          readings: [{ statusLevel: CH4StatusLevel.AMAN, nilaiPpm: 300, timestamp: new Date() }],
+        },
+        {
+          id: "2",
+          status: IoTDeviceStatus.ACTIVE,
+          lastSeenAt: new Date(),
+          readings: [{ statusLevel: CH4StatusLevel.WASPADA, nilaiPpm: 1500, timestamp: new Date() }],
+        },
+        {
+          id: "3",
+          status: IoTDeviceStatus.INACTIVE,
+          lastSeenAt: null,
+          readings: [],
+        },
       ]);
 
       const summary = await iotService.getDashboardSummary();
 
-      expect(summary.totalDevices).toBe(5);
-      expect(summary.activeDevices).toBe(4);
-      expect(summary.maintenanceDevices).toBe(1);
-      expect(summary.inactiveDevices).toBe(0);
-      expect(summary.totalReadings).toBe(120);
-      expect(summary.statusBreakdown).toEqual({
-        aman: 1,
-        waspada: 1,
-        bahaya: 1,
-        tanpaData: 1,
+      expect(summary.totalDevices).toBe(3);
+      expect(summary.activeDevices).toBe(2);
+      expect(summary.offlineDevices).toBe(1);
+      expect(summary.kpi).toEqual({
+        totalDevices: 3,
+        activeDevices: 2,
+        inactiveDevices: 1,
+        warningDevices: 1,
       });
     });
   });
