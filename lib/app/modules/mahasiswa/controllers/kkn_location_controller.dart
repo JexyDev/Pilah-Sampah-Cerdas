@@ -1729,38 +1729,64 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           : response.isNotEmpty;
 
       if (isSuccess) {
+        final rawData = response['data'];
+        final Map<String, dynamic> dataMap = (rawData is Map<String, dynamic> &&
+                rawData['data'] is Map<String, dynamic>)
+            ? rawData['data'] as Map<String, dynamic>
+            : (rawData is Map<String, dynamic>)
+                ? rawData
+                : response;
+
         state = state.copyWith(
           isSuccessAttendance: true,
           attendanceTime:
+              dataMap['attendedAt']?.toString() ??
               response['attendedAt']?.toString() ??
               DateTime.now().toLocal().toString().split('.')[0],
-          attendanceId: response['id']?.toString(),
+          attendanceId:
+              dataMap['attendanceId']?.toString() ??
+              dataMap['id']?.toString() ??
+              response['id']?.toString(),
           isInsideRadius: true,
           inZoneDurationSeconds: _backendDurationMinutes,
         );
 
-        if (user != null) {
+        bool isMemenuhi = false;
+        if (dataMap.containsKey('isMemenuhiDurasi')) {
+          isMemenuhi = dataMap['isMemenuhiDurasi'] == true;
+        } else if (dataMap.containsKey('status') ||
+            response.containsKey('status')) {
+          final st = (dataMap['status'] ?? response['status'])
+              ?.toString()
+              .toUpperCase();
+          isMemenuhi = st == 'HADIR_MEMENUHI';
+        } else {
+          isMemenuhi = state.targetDurationMinutes > 0 &&
+              _backendDurationMinutes >= state.targetDurationMinutes;
+        }
+
+        if (user != null && isMemenuhi) {
+          const notifTitle = 'Selesai Kegiatan KKN Berhasil ✅';
+          final notifDesc =
+              'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).';
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Selesai Kegiatan KKN Berhasil 📍',
-            desc:
-                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
+            title: notifTitle,
+            desc: notifDesc,
             type: 'PRESENSI_KKN_SUKSES',
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Selesai Kegiatan KKN Berhasil ✅',
-            desc:
-                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
+            title: notifTitle,
+            desc: notifDesc,
             type: 'PRESENSI_KKN_SUKSES',
           );
           NotificationEngine().showGenericNotification(
             id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
-            title: 'Selesai Kegiatan KKN Berhasil ✅',
-            body:
-                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
+            title: notifTitle,
+            body: notifDesc,
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);

@@ -336,14 +336,20 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  if (log.type == KknHistoryType.laporan &&
+                  if ((log.type == KknHistoryType.laporan || log.title.toLowerCase().contains('laporan akhir')) &&
                       (log.statusKehadiran == 'BELUM_DISETUJUI' ||
                           log.statusKehadiran == 'MENUNGGU_VERIFIKASI_DPL'))
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: InkWell(
                         onTap: () {
-                          if (log.rawData != null) {
+                          final isLaporanAkhir = log.title.toLowerCase().contains('laporan akhir');
+                          if (isLaporanAkhir) {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.inputLaporanAkhir,
+                            );
+                          } else if (log.rawData != null) {
                             Navigator.pushNamed(
                               context,
                               AppRoutes.inputLogbookKkn,
@@ -368,18 +374,22 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                             ),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.edit_rounded,
+                                log.title.toLowerCase().contains('laporan akhir')
+                                    ? Icons.description_outlined
+                                    : Icons.edit_rounded,
                                 size: 14,
                                 color: AppColors.primaryGreen,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                'Edit Logbook',
-                                style: TextStyle(
+                                log.title.toLowerCase().contains('laporan akhir')
+                                    ? 'Lihat Laporan Akhir'
+                                    : 'Edit Logbook',
+                                style: const TextStyle(
                                   fontSize: 11,
                                   color: AppColors.primaryGreen,
                                   fontWeight: FontWeight.bold,

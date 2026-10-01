@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../views/riwayat_kkn_view.dart'; // Import models from view
 
 class RiwayatKknState {
@@ -249,10 +250,23 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       // Ambil data Program Kerja dan masukkan ke Riwayat
       try {
         final prokerList = await kknRepo.getProgramKerja();
+        final currentUser = ref.read(authProvider).user;
         for (final p in prokerList) {
           final statusUsulan = p['statusUsulan']?.toString() ?? p['status']?.toString() ?? 'BELUM_DISETUJUI';
           final kat = p['kategori']?.toString().toUpperCase() ?? '';
           final isLaporanAkhir = kat == 'LAPORAN_AKHIR';
+
+          // Laporan Akhir bersifat per-individu: hanya tampilkan laporan milik mahasiswa yang sedang login
+          if (isLaporanAkhir && currentUser != null) {
+            final penginput = p['penginput'] as Map<String, dynamic>?;
+            final pNim = penginput?['nim']?.toString().trim();
+            final pNama = penginput?['nama']?.toString().trim();
+            final judulRaw = p['judul']?.toString() ?? '';
+            final matchesNim = pNim != null && pNim.isNotEmpty && pNim == currentUser.nim.trim();
+            final matchesNama = pNama != null && pNama.isNotEmpty && pNama.toLowerCase() == currentUser.name.trim().toLowerCase();
+            final matchesJudul = judulRaw.startsWith('[${currentUser.name.trim()}]');
+            if (!matchesNim && !matchesNama && !matchesJudul) continue;
+          }
           
           final judul = p['judul']?.toString() ?? (isLaporanAkhir ? 'Laporan Akhir' : 'Program Kerja');
           final statusPelaksanaan = p['statusPelaksanaan']?.toString() ?? '';

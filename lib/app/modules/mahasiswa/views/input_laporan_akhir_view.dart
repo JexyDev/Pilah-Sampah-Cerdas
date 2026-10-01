@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_config.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
@@ -92,6 +94,31 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
 
   @override
   Widget build(BuildContext context) {
+    final prokerAsync = ref.watch(programKerjaListProvider);
+    final currentUser = ref.watch(authProvider).user;
+
+    Map<String, dynamic>? myLatestLaporan;
+    prokerAsync.whenData((rawList) {
+      for (final item in rawList) {
+        final kat = item['kategori']?.toString().toUpperCase() ?? '';
+        if (kat != 'LAPORAN_AKHIR') continue;
+        if (currentUser != null) {
+          final penginput = item['penginput'] as Map<String, dynamic>?;
+          final pNim = penginput?['nim']?.toString().trim();
+          final pNama = penginput?['nama']?.toString().trim();
+          final judul = item['judul']?.toString() ?? '';
+
+          final matchesNim = pNim != null && pNim.isNotEmpty && pNim == currentUser.nim.trim();
+          final matchesNama = pNama != null && pNama.isNotEmpty && pNama.toLowerCase() == currentUser.name.trim().toLowerCase();
+          final matchesJudul = judul.startsWith('[${currentUser.name.trim()}]');
+
+          if (!matchesNim && !matchesNama && !matchesJudul) continue;
+        }
+        myLatestLaporan = item;
+        break;
+      }
+    });
+
     bool hasUnsavedChanges() {
       return _judulCtrl.text.isNotEmpty ||
           _deskripsiCtrl.text.isNotEmpty ||
@@ -185,6 +212,12 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
               children: [
                 _buildHeaderBanner(),
                 const SizedBox(height: 16),
+                if (myLatestLaporan != null) ...[
+                  _buildLatestSubmissionCard(myLatestLaporan!),
+                ] else ...[
+                  _buildRiwayatShortcutButton(),
+                  const SizedBox(height: 16),
+                ],
 
                 _buildSectionCard(
                   title: 'Data Laporan',
@@ -460,6 +493,155 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
       ),
     );
   }
+  Widget _buildLatestSubmissionCard(Map<String, dynamic> item) {
+    final judul = item['judul']?.toString() ?? 'Laporan Akhir';
+    final statusUsulan = item['statusTelaah']?.toString() ??
+        item['status_telaah']?.toString() ??
+        item['statusUsulan']?.toString() ??
+        'MENUNGGU_TELAAH';
+    final legacyStatus = item['status']?.toString();
+    final createdAtStr =
+        item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 16,
+                    color: AppColors.primaryGreen,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Laporan Terakhir Diajukan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              _buildLaporanUsulanBadge(statusUsulan, legacyStatus),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            judul,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (createdAtStr != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Diajukan pada: ${_formatLaporanDate(createdAtStr)}',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.history_rounded, size: 16),
+              label: const Text('Buka Riwayat & Dokumen Laporan'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryGreen,
+                side: const BorderSide(color: AppColors.primaryGreen),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const _RiwayatLaporanAkhirSheet(),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRiwayatShortcutButton() {
+    return InkWell(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => const _RiwayatLaporanAkhirSheet(),
+        );
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Row(
+          children: [
+            Icon(
+              Icons.history_rounded,
+              size: 18,
+              color: AppColors.primaryGreen,
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Lihat Riwayat Laporan Akhir Saya',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 12,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 final programKerjaListProvider =
@@ -468,79 +650,79 @@ final programKerjaListProvider =
       return repo.getProgramKerja();
     });
 
+String _formatLaporanDate(String isoString) {
+  try {
+    final date = DateTime.parse(isoString);
+    return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+  } catch (_) {
+    return isoString.split('T').first;
+  }
+}
+
+Widget _buildLaporanUsulanBadge(String? statusUsulan, String? legacyStatus) {
+  String u = (statusUsulan ?? '').toUpperCase();
+  final leg = (legacyStatus ?? '').toUpperCase();
+  if (u.isEmpty) {
+    if (leg == 'DISETUJUI') {
+      u = 'DISETUJUI';
+    } else if (leg == 'PERLU_REVISI' || leg == 'DITOLAK') {
+      u = 'PERLU_REVISI';
+    } else if (leg == 'BELUM_UNGGAH') {
+      u = 'BELUM_UNGGAH';
+    } else {
+      u = 'MENUNGGU_TELAAH';
+    }
+  }
+
+  Color color;
+  String label;
+  IconData icon;
+
+  if (u == 'DISETUJUI' || u == 'DITERIMA') {
+    color = AppColors.primaryGreen;
+    label = 'Disetujui';
+    icon = Icons.check_circle;
+  } else if (u == 'PERLU_REVISI' || u == 'DITOLAK') {
+    color = AppColors.dangerRed;
+    label = 'Perlu Revisi';
+    icon = Icons.error_outline;
+  } else if (u == 'BELUM_UNGGAH') {
+    color = Colors.grey;
+    label = 'Belum Diunggah';
+    icon = Icons.cloud_off;
+  } else {
+    color = AppColors.warningYellow;
+    label = 'Menunggu Telaah';
+    icon = Icons.access_time;
+  }
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withValues(alpha: 0.4)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
   const _RiwayatLaporanAkhirSheet();
-
-  String _formatDate(String isoString) {
-    try {
-      final date = DateTime.parse(isoString);
-      return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
-    } catch (_) {
-      return isoString.split('T').first;
-    }
-  }
-
-  Widget _buildUsulanBadge(String? statusUsulan, String? legacyStatus) {
-    String u = (statusUsulan ?? '').toUpperCase();
-    final leg = (legacyStatus ?? '').toUpperCase();
-    if (u.isEmpty) {
-      if (leg == 'DISETUJUI') {
-        u = 'DISETUJUI';
-      } else if (leg == 'PERLU_REVISI' || leg == 'DITOLAK') {
-        u = 'PERLU_REVISI';
-      } else if (leg == 'BELUM_UNGGAH') {
-        u = 'BELUM_UNGGAH';
-      } else {
-        u = 'MENUNGGU_TELAAH';
-      }
-    }
-
-    Color color;
-    String label;
-    IconData icon;
-
-    if (u == 'DISETUJUI' || u == 'DITERIMA') {
-      color = AppColors.primaryGreen;
-      label = 'Disetujui';
-      icon = Icons.check_circle;
-    } else if (u == 'PERLU_REVISI' || u == 'DITOLAK') {
-      color = AppColors.dangerRed;
-      label = 'Perlu Revisi';
-      icon = Icons.error_outline;
-    } else if (u == 'BELUM_UNGGAH') {
-      color = Colors.grey;
-      label = 'Belum Diunggah';
-      icon = Icons.cloud_off;
-    } else {
-      color = AppColors.warningYellow;
-      label = 'Menunggu Telaah';
-      icon = Icons.access_time;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -614,9 +796,25 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                   ],
                 ),
                 data: (rawList) {
+                  final currentUser = ref.watch(authProvider).user;
                   final list = rawList.where((item) {
                     final kat = item['kategori']?.toString().toUpperCase() ?? '';
-                    return kat == 'LAPORAN_AKHIR';
+                    if (kat != 'LAPORAN_AKHIR') return false;
+
+                    // Filter per-individu mahasiswa yang sedang login
+                    if (currentUser != null) {
+                      final penginput = item['penginput'] as Map<String, dynamic>?;
+                      final pNim = penginput?['nim']?.toString().trim();
+                      final pNama = penginput?['nama']?.toString().trim();
+                      final judul = item['judul']?.toString() ?? '';
+
+                      final matchesNim = pNim != null && pNim.isNotEmpty && pNim == currentUser.nim.trim();
+                      final matchesNama = pNama != null && pNama.isNotEmpty && pNama.toLowerCase() == currentUser.name.trim().toLowerCase();
+                      final matchesJudul = judul.startsWith('[${currentUser.name.trim()}]');
+
+                      if (!matchesNim && !matchesNama && !matchesJudul) return false;
+                    }
+                    return true;
                   }).toList();
 
                   if (list.isEmpty) {
@@ -650,11 +848,18 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                         item['createdAt']?.toString() ??
                         item['dibuat_pada']?.toString();
 
-                    final nilaiAkhir = item['nilaiAkhir'] ?? item['nilai'];
+                    final nilaiAkhir =
+                        item['nilaiAkhir'] ?? item['nilai'] ?? item['skorPenilaian'];
                     final predikat = item['predikat'] ?? item['predikatNilai'];
 
-                    final rubrikObj =
-                        item['rubrikScores'] ?? item['rubrik_scores'];
+                    final rawAspek = item['aspekPenilaian'];
+                    final Map<String, dynamic>? parsedAspek = rawAspek is Map<String, dynamic>
+                        ? rawAspek
+                        : null;
+                    final rubrikObj = item['rubrikScores'] ??
+                        item['rubrik_scores'] ??
+                        parsedAspek?['rubrikScores'] ??
+                        parsedAspek;
                     final rubrikSistematika =
                         rubrikObj?['sistematika'] ??
                         item['rubrikSistematika'] ??
@@ -675,7 +880,10 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                     final filePdfUrl =
                         item['filePdfUrl'] ??
                         item['fileUrl'] ??
-                        item['lampiranUrl'];
+                        item['lampiranUrl'] ??
+                        item['attachmentFile'] ??
+                        item['linkGoogleDrive'] ??
+                        item['urlGoogleDrive'];
 
                     return Card(
                       elevation: 1.5,
@@ -728,7 +936,7 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                _buildUsulanBadge(statusUsulan, legacyStatus),
+                                _buildLaporanUsulanBadge(statusUsulan, legacyStatus),
                               ],
                             ),
                             const SizedBox(height: 6),
@@ -742,7 +950,7 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Diajukan Pada: ${_formatDate(createdAtStr)}',
+                                    'Diajukan Pada: ${_formatLaporanDate(createdAtStr)}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -915,9 +1123,11 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    final url = Uri.parse(
-                                      filePdfUrl.toString(),
-                                    );
+                                    final raw = filePdfUrl.toString().trim();
+                                    final fullUrl = raw.startsWith('http://') || raw.startsWith('https://')
+                                        ? raw
+                                        : AppConfig.getImageUrl(raw);
+                                    final url = Uri.parse(fullUrl);
                                     if (await canLaunchUrl(url)) {
                                       await launchUrl(
                                         url,
