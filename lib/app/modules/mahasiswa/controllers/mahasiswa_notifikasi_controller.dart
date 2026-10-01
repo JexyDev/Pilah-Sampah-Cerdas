@@ -341,21 +341,27 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final sanitizedTitle = InputSanitizer.cleanSystemMessage(notif.title);
     final sanitizedDesc = InputSanitizer.cleanSystemMessage(notif.desc);
 
-    // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc + Type)
+    String formattedTitle = sanitizedTitle;
+    String formattedDesc = sanitizedDesc;
+    if (formattedTitle.contains('Program Kerja') &&
+        (formattedDesc.contains('Program [') || formattedDesc.toUpperCase().contains('LAPORAN_AKHIR'))) {
+      formattedTitle = formattedTitle.replaceAll('Program Kerja', 'Laporan Akhir');
+      formattedDesc = formattedDesc.replaceFirst('Program [', 'Laporan Akhir [');
+    }
+
+    // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc)
     if (result.any(
       (n) =>
           n.id == notif.id ||
-          (n.title == sanitizedTitle &&
-              n.desc == sanitizedDesc &&
-              n.type == notif.type),
+          (n.title == formattedTitle && n.desc == formattedDesc),
     )) {
       continue;
     }
 
     // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
     NotificationEntity finalNotif = notif.copyWith(
-      title: sanitizedTitle,
-      desc: sanitizedDesc,
+      title: formattedTitle,
+      desc: formattedDesc,
     );
     if (notif.time.endsWith('Z')) {
       final dt = DateTime.tryParse(notif.time);
@@ -385,16 +391,24 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
       role,
     );
     for (final fn in firebaseNotifs) {
+      String fnTitle = InputSanitizer.cleanSystemMessage(fn.title);
+      String fnDesc = InputSanitizer.cleanSystemMessage(fn.desc);
+      if (fnTitle.contains('Program Kerja') &&
+          (fnDesc.contains('Program [') || fnDesc.toUpperCase().contains('LAPORAN_AKHIR'))) {
+        fnTitle = fnTitle.replaceAll('Program Kerja', 'Laporan Akhir');
+        fnDesc = fnDesc.replaceFirst('Program [', 'Laporan Akhir [');
+      }
+
       if (result.any(
         (n) =>
             n.id == fn.id ||
-            (n.title == fn.title && n.desc == fn.desc && n.type == fn.type),
+            (n.title == fnTitle && n.desc == fnDesc),
       )) {
         continue;
       }
       if (!_isMahasiswaNotification(fn)) continue;
 
-      result.add(fn);
+      result.add(fn.copyWith(title: fnTitle, desc: fnDesc));
     }
   } catch (_) {}
 
@@ -409,15 +423,23 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         result.any((n) => n.type == 'IZIN')) {
       continue;
     }
+    String lnTitle = InputSanitizer.cleanSystemMessage(ln.title);
+    String lnDesc = InputSanitizer.cleanSystemMessage(ln.desc);
+    if (lnTitle.contains('Program Kerja') &&
+        (lnDesc.contains('Program [') || lnDesc.toUpperCase().contains('LAPORAN_AKHIR'))) {
+      lnTitle = lnTitle.replaceAll('Program Kerja', 'Laporan Akhir');
+      lnDesc = lnDesc.replaceFirst('Program [', 'Laporan Akhir [');
+    }
+
     if (result.any(
       (n) =>
           n.id == ln.id ||
-          (n.title == ln.title && n.desc == ln.desc && n.type == ln.type),
+          (n.title == lnTitle && n.desc == lnDesc),
     )) {
       continue;
     }
     if (!_isMahasiswaNotification(ln)) continue;
-    result.add(ln);
+    result.add(ln.copyWith(title: lnTitle, desc: lnDesc));
   }
 
   final deleteAllTimestamp =

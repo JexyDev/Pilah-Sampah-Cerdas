@@ -5,6 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 
 class InputLaporanAkhirView extends ConsumerStatefulWidget {
   const InputLaporanAkhirView({super.key});
@@ -69,6 +71,9 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         'filePdfPath': _selectedPdf!.path,
       });
       if (mounted) {
+        ref.invalidate(programKerjaListProvider);
+        ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(mahasiswaNotificationsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Laporan Akhir berhasil disubmit!')),
         );
@@ -593,31 +598,44 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
           const SizedBox(height: 8),
           const Divider(height: 1),
           Expanded(
-            child: prokerState.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(
-                child: Text(
-                  err.toString(),
-                  style: const TextStyle(color: AppColors.dangerRed),
+            child: RefreshIndicator(
+              onRefresh: () async => ref.refresh(programKerjaListProvider.future),
+              child: prokerState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => ListView(
+                  children: [
+                    const SizedBox(height: 100),
+                    Center(
+                      child: Text(
+                        err.toString(),
+                        style: const TextStyle(color: AppColors.dangerRed),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              data: (rawList) {
-                final list = rawList.where((item) {
-                  final kat = item['kategori']?.toString().toUpperCase() ?? '';
-                  return kat == 'LAPORAN_AKHIR';
-                }).toList();
+                data: (rawList) {
+                  final list = rawList.where((item) {
+                    final kat = item['kategori']?.toString().toUpperCase() ?? '';
+                    return kat == 'LAPORAN_AKHIR';
+                  }).toList();
 
-                if (list.isEmpty) {
-                  return const Center(
-                    child: Text('Belum ada laporan akhir yang diajukan.'),
-                  );
-                }
+                  if (list.isEmpty) {
+                    return ListView(
+                      children: const [
+                        SizedBox(height: 120),
+                        Center(
+                          child: Text('Belum ada laporan akhir yang diajukan.'),
+                        ),
+                      ],
+                    );
+                  }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
                     final item = list[index];
                     final judulStr = item['judul']?.toString() ?? '-';
                     final deskripsi = item['deskripsi']?.toString() ?? '-';
@@ -919,7 +937,8 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
               },
             ),
           ),
-        ],
+        ),
+      ],
       ),
     );
   }

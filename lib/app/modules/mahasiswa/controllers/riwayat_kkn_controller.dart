@@ -251,19 +251,32 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         final prokerList = await kknRepo.getProgramKerja();
         for (final p in prokerList) {
           final statusUsulan = p['statusUsulan']?.toString() ?? p['status']?.toString() ?? 'BELUM_DISETUJUI';
+          final kat = p['kategori']?.toString().toUpperCase() ?? '';
+          final isLaporanAkhir = kat == 'LAPORAN_AKHIR';
           
-          final judul = p['judul']?.toString() ?? 'Program Kerja';
+          final judul = p['judul']?.toString() ?? (isLaporanAkhir ? 'Laporan Akhir' : 'Program Kerja');
           final statusPelaksanaan = p['statusPelaksanaan']?.toString() ?? '';
           final dateStr = p['tanggal']?.toString() ?? p['createdAt']?.toString() ?? '';
           final timestamp = (DateTime.tryParse(dateStr) ?? DateTime.now()).toLocal();
           
-          String sub = 'Proker Diajukan (Menunggu ACC)';
-          if (statusUsulan == 'DITOLAK' || statusUsulan == 'TIDAK_DISETUJUI') {
-            sub = 'Proker Perlu Revisi / Ditolak';
-          } else if (statusUsulan == 'DISETUJUI' || statusUsulan == 'DITERIMA' || statusUsulan == 'SELESAI') {
-            sub = 'Proker Disetujui (ACC)';
-            if (statusPelaksanaan == 'SEDANG_BERJALAN') sub = 'Proker Sedang Berjalan';
-            if (statusPelaksanaan == 'SELESAI') sub = 'Proker Selesai (Menunggu Klaim 60%)';
+          String sub;
+          if (isLaporanAkhir) {
+            if (statusUsulan == 'DISETUJUI' || statusUsulan == 'DITERIMA' || statusUsulan == 'SELESAI') {
+              sub = 'Laporan Akhir Disetujui DPL (ACC)';
+            } else if (statusUsulan == 'DITOLAK' || statusUsulan == 'TIDAK_DISETUJUI' || statusUsulan == 'PERLU_REVISI') {
+              sub = 'Laporan Akhir Perlu Revisi / Ditolak';
+            } else {
+              sub = 'Laporan Akhir Diajukan (Menunggu Review DPL)';
+            }
+          } else {
+            sub = 'Proker Diajukan (Menunggu ACC)';
+            if (statusUsulan == 'DITOLAK' || statusUsulan == 'TIDAK_DISETUJUI') {
+              sub = 'Proker Perlu Revisi / Ditolak';
+            } else if (statusUsulan == 'DISETUJUI' || statusUsulan == 'DITERIMA' || statusUsulan == 'SELESAI') {
+              sub = 'Proker Disetujui (ACC)';
+              if (statusPelaksanaan == 'SEDANG_BERJALAN') sub = 'Proker Sedang Berjalan';
+              if (statusPelaksanaan == 'SELESAI') sub = 'Proker Selesai (Menunggu Klaim 60%)';
+            }
           }
 
           parsedLogs.add(
@@ -271,10 +284,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               title: judul,
               subtitle: sub,
               timestamp: timestamp,
-              type: KknHistoryType.proker,
+              type: isLaporanAkhir ? KknHistoryType.laporan : KknHistoryType.proker,
               points: null,
-              isGpsActive: false,
-              scheduleId: 'proker_${p['id']}',
+              isGpsActive: isLaporanAkhir ? (statusUsulan == 'DISETUJUI' || statusUsulan == 'SELESAI') : false,
+              scheduleId: isLaporanAkhir ? 'laporan_akhir_${p['id']}' : 'proker_${p['id']}',
               rawData: p,
             ),
           );
