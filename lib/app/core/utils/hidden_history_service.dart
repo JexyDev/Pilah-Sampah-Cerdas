@@ -1,17 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../values/app_colors.dart';
+import '../values/api_constants.dart';
+import '../../data/providers/api_client.dart';
+import '../../data/providers/repository_providers.dart' show apiClientProvider;
 import 'safe_storage.dart';
 
 /// Provider reaktif untuk memicu rebuild UI ketika status penyembunyian riwayat berubah.
 final hiddenHistoryVersionProvider = StateProvider<int>((ref) => 0);
 
-/// Service untuk mengelola penyembunyian riwayat dari sisi antarmuka klien (UI).
+/// Service untuk mengelola pembersihan riwayat tampilan (Hybrid: Client-side Hide + Server Cutoff).
 ///
-/// Opsi A: Client-Side Hide / Clear Display.
-/// Menyembunyikan riwayat dari layar HP tanpa menghapus data audit & transaksi di database VPS.
-/// Menggunakan dual-layer persistence (SharedPreferences + SafeStorage) agar data tidak hilang saat logout-login.
+/// Menyembunyikan riwayat seketika dari layar HP (0 ms respons) dan melakukan server-side cutoff
+/// ke backend VPS agar request riwayat berikutnya menghasilkan 0 KB payload.
+/// Saldo total poin dan seluruh catatan audit hukum di backend tetap aman 100%.
 class HiddenHistoryService {
   HiddenHistoryService._();
 
@@ -63,11 +67,43 @@ class HiddenHistoryService {
     return _prefs!;
   }
 
+  /// Memetakan scope halaman riwayat ke endpoint cutoff backend VPS.
+  static String? mapScopeToEndpoint(String scope) {
+    switch (scope) {
+      case scopeWargaPoints:
+      case scopeMahasiswaPoints:
+      case scopePetugasPoints:
+        return ApiEndpoints.pointsClear;
+      case scopeWargaWaste:
+        return ApiEndpoints.transactionsDepositsClear;
+      case scopeMahasiswaKkn:
+        return ApiEndpoints.kknActivityLogClear;
+      case scopePetugasTasks:
+        return ApiEndpoints.petugasRiwayatClear;
+      default:
+        return null;
+    }
+  }
+
+  /// Mengirimkan sinyal server-side cutoff ke backend VPS secara asinkron.
+  static Future<void> syncServerClear(String scope, [ApiClient? client]) async {
+    final endpoint = mapScopeToEndpoint(scope);
+    if (endpoint == null || client == null) return;
+    try {
+      await client.dio.post(endpoint);
+      debugPrint('[HiddenHistoryService] Server cutoff synced for scope: $scope via $endpoint');
+    } catch (e) {
+      debugPrint('[HiddenHistoryService] Warning: Failed to sync server cutoff for $scope: $e');
+    }
+  }
+
   /// Menyembunyikan seluruh tampilan riwayat saat ini untuk scope tertentu.
-  /// Menyimpan seluruh ID aktif dan timestamp toleran agar data lama tidak bocor kembali.
+  /// Menyimpan seluruh ID aktif dan timestamp toleran agar data lama tidak bocor kembali,
+  /// serta mensinkronisasikan cutoff ke backend VPS jika ApiClient tersedia.
   static Future<void> clearDisplay(
     String scope, {
     List<String>? currentItemIds,
+    ApiClient? apiClient,
   }) async {
     try {
       final p = await ensureInitialized();
@@ -91,6 +127,11 @@ class HiddenHistoryService {
       debugPrint(
         '[HiddenHistoryService] Display cleared for scope: $scope with ${currentItemIds?.length ?? 0} ids at $safeNow',
       );
+
+      // Sinkronisasikan server-side cutoff di background (non-blocking)
+      if (apiClient != null) {
+        unawaited(syncServerClear(scope, apiClient));
+      }
     } catch (e) {
       debugPrint('[HiddenHistoryService] Error clearing display: $e');
     }
@@ -176,8 +217,6 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch versi agar icon/menu ikut bereaksi jika ada perubahan status
     ref.watch(hiddenHistoryVersionProvider);
-    final hasHidden = HiddenHistoryService.hasHiddenItemsSync(scope);
-
     return PopupMenuButton<String>(
       icon: Icon(
         Icons.more_vert_rounded,
@@ -188,18 +227,6 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
       onSelected: (value) async {
         if (value == 'clear') {
           _confirmClear(context, ref);
-        } else if (value == 'restore') {
-          await HiddenHistoryService.restoreDisplay(scope);
-          ref.read(hiddenHistoryVersionProvider.notifier).state++;
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tampilan riwayat berhasil dipulihkan'),
-                backgroundColor: AppColors.primaryGreen,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
         }
       },
       itemBuilder: (context) => [
@@ -207,10 +234,10 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
           value: 'clear',
           child: Row(
             children: [
-              Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed, size: 20),
+              Icon(Icons.delete_sweep_rounded, color: AppColors.dangerRed, size: 20),
               SizedBox(width: 10),
               Text(
-                'Bersihkan Riwayat',
+                'Hapus Riwayat',
                 style: TextStyle(
                   color: AppColors.dangerRed,
                   fontSize: 13,
@@ -220,24 +247,6 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
             ],
           ),
         ),
-        if (hasHidden)
-          const PopupMenuItem<String>(
-            value: 'restore',
-            child: Row(
-              children: [
-                Icon(Icons.restore_rounded, color: AppColors.primaryGreen, size: 20),
-                SizedBox(width: 10),
-                Text(
-                  'Pulihkan Tampilan',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
       ],
     );
   }
@@ -249,18 +258,18 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.cleaning_services_rounded, color: AppColors.dangerRed, size: 24),
+            Icon(Icons.delete_sweep_rounded, color: AppColors.dangerRed, size: 24),
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Bersihkan Tampilan?',
+                'Hapus Riwayat?',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
         content: const Text(
-          'Daftar riwayat ini akan dibersihkan dari layar HP Anda. Catatan transaksi dan saldo resmi di server tetap aman dan tidak terhapus.',
+          'Seluruh riwayat ini akan dihapus dari akun Anda agar aplikasi tetap ringan. Saldo poin Anda tetap aman 100%.',
           style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
         ),
         actions: [
@@ -277,22 +286,24 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(dialogCtx);
               final currentIds = getItemIds?.call();
+              final client = ref.read(apiClientProvider);
               await HiddenHistoryService.clearDisplay(
                 scope,
                 currentItemIds: currentIds,
+                apiClient: client,
               );
               ref.read(hiddenHistoryVersionProvider.notifier).state++;
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Tampilan riwayat berhasil dibersihkan'),
+                    content: Text('Riwayat berhasil dihapus'),
                     backgroundColor: AppColors.primaryGreen,
                     duration: Duration(seconds: 2),
                   ),
                 );
               }
             },
-            child: const Text('Bersihkan'),
+            child: const Text('Hapus'),
           ),
         ],
       ),

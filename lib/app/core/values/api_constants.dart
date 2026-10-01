@@ -49,14 +49,17 @@ class ApiEndpoints {
   // Transactions & Points
   static const String transactionsDeposits = '/transactions/deposits';
   static const String transactionsMyDeposits = '/transactions/my-deposits';
+  static const String transactionsDepositsClear = '/transactions/deposits/clear';
   static const String pointsMe = '/points/me';
   static const String pointsLeaderboard = '/points/leaderboard';
+  static const String pointsClear = '/points/clear';
 
   // KKN
   static const String kknDashboard = '/kkn/dashboard';
   // [SYNC] Route warga-dampingan dialihkan ke /kkn-attendance/warga-dampingan (ENG-MEMO/BEND-SYNC/2026-09/005)
   static const String kknWargaDampingan = '/kkn-attendance/warga-dampingan';
   static const String kknActivityLog = '/kkn/activity-log';
+  static const String kknActivityLogClear = '/kkn/activity-log/clear';
   static const String kknActiveZone = '/kkn/active-zone';
   // [FIX] Route /location-ping ada di kknAttendanceRouter → mount prefix /api/v1/kkn-attendance
   static const String kknLocationPing = '/kkn-attendance/location-ping';
@@ -124,6 +127,7 @@ class ApiEndpoints {
   static const String petugasJadwalHarian = '/petugas-residu/jadwal-harian';
   static const String petugasSubmitLog = '/petugas-residu/submit-log';
   static const String petugasRiwayat = '/petugas-residu/riwayat';
+  static const String petugasRiwayatClear = '/petugas-residu/riwayat/clear';
 
   // Notifications
   static const String notifications = '/notifications';
