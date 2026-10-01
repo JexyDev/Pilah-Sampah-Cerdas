@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { historyCutoffService } from "./historyCutoffService.js";
-import { HistoryScope } from "@prisma/client";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 import { prisma } from "../lib/prisma.js";
 import { pointService } from "./pointService.js";
 import { pointRepository } from "../repositories/pointRepository.js";

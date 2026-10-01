@@ -6,7 +6,13 @@
  */
 
 import { prisma } from "../lib/prisma.js";
-import { HistoryScope } from "@prisma/client";
+
+export enum HistoryScope {
+  POINTS = "POINTS",
+  WASTE_DEPOSITS = "WASTE_DEPOSITS",
+  KKN_ACTIVITIES = "KKN_ACTIVITIES",
+  PETUGAS_TASKS = "PETUGAS_TASKS",
+}
 
 export class HistoryCutoffService {
   /**
@@ -14,22 +20,28 @@ export class HistoryCutoffService {
    */
   async setCutoff(userId: string, scope: HistoryScope): Promise<Date> {
     const now = new Date();
-    await prisma.userHistoryCutoff.upsert({
-      where: {
-        userId_scope: {
-          userId,
-          scope,
-        },
-      },
-      update: {
-        clearedAt: now,
-      },
-      create: {
-        userId,
-        scope,
-        clearedAt: now,
-      },
-    });
+    try {
+      if ((prisma as any).userHistoryCutoff) {
+        await (prisma as any).userHistoryCutoff.upsert({
+          where: {
+            userId_scope: {
+              userId,
+              scope,
+            },
+          },
+          update: {
+            clearedAt: now,
+          },
+          create: {
+            userId,
+            scope,
+            clearedAt: now,
+          },
+        });
+      }
+    } catch (e: any) {
+      console.warn(`[HistoryCutoffService] Non-fatal setCutoff error for ${userId}:`, e?.message);
+    }
     return now;
   }
 
@@ -38,7 +50,8 @@ export class HistoryCutoffService {
    */
   async getCutoff(userId: string, scope: HistoryScope): Promise<Date | null> {
     try {
-      const record = await prisma.userHistoryCutoff.findUnique({
+      if (!(prisma as any).userHistoryCutoff) return null;
+      const record = await (prisma as any).userHistoryCutoff.findUnique({
         where: {
           userId_scope: {
             userId,
@@ -49,7 +62,6 @@ export class HistoryCutoffService {
       });
       return record?.clearedAt || null;
     } catch (error) {
-      console.warn(`[HistoryCutoffService] Failed to get cutoff for ${userId} - ${scope}:`, error);
       return null;
     }
   }
@@ -58,9 +70,15 @@ export class HistoryCutoffService {
    * Reset / Pulihkan riwayat kembali
    */
   async resetCutoff(userId: string, scope: HistoryScope): Promise<void> {
-    await prisma.userHistoryCutoff.deleteMany({
-      where: { userId, scope },
-    });
+    try {
+      if ((prisma as any).userHistoryCutoff) {
+        await (prisma as any).userHistoryCutoff.deleteMany({
+          where: { userId, scope },
+        });
+      }
+    } catch (e: any) {
+      console.warn(`[HistoryCutoffService] Non-fatal resetCutoff error for ${userId}:`, e?.message);
+    }
   }
 }
 

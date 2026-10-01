@@ -8,8 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { pointRepository } from "../repositories/pointRepository.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
-import { historyCutoffService } from "./historyCutoffService.js";
-import { HistoryScope } from "@prisma/client";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 
 /**
  * 🛡️ FUNGSI SENTRALISASI ANTI-BOCOR POIN INDIVIDU MAHASISWA & PENGGUNA (SSOT)

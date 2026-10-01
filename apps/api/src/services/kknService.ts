@@ -8,8 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
-import { historyCutoffService } from "./historyCutoffService.js";
-import { HistoryScope } from "@prisma/client";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import {

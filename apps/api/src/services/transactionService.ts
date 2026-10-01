@@ -2,8 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { v4 as uuidv4 } from "uuid";
-import { historyCutoffService } from "./historyCutoffService.js";
-import { HistoryScope } from "@prisma/client";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 
 export class TransactionService {
   async getDeposits(binCode?: string) {

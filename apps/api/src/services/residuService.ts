@@ -10,8 +10,7 @@ import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { websocketService } from "./websocketService.js";
 import { binRepository } from "../repositories/binRepository.js";
-import { historyCutoffService } from "./historyCutoffService.js";
-import { HistoryScope } from "@prisma/client";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 
 export class ResiduService {
   /**
