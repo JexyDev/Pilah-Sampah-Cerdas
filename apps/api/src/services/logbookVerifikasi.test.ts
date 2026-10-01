@@ -7,6 +7,7 @@ vi.mock("../lib/prisma.js", () => {
     prisma: {
       logbookKkn: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         update: vi.fn(),
       },
       pointHistory: {
@@ -249,4 +250,64 @@ describe("LogbookService - Verifikasi DPL (Separasi Revisi vs Tolak)", () => {
       ).rejects.toThrow("Logbook yang telah ditolak mutlak oleh DPL tidak dapat diubah kembali.");
     });
   });
+
+  describe("updateMahasiswaLogbook - Pengajuan Ulang Pasca-ACC DPL (DISETUJUI_DPL)", () => {
+    it("harus mengizinkan pengeditan logbook berstatus DISETUJUI_DPL, mereset status ke MENUNGGU_VERIFIKASI_DPL, mengosongkan diverifikasiDplPada, dan mengirim notifikasi ke DPL tanpa memutasi poin", async () => {
+      const approvedLogbook = {
+        ...mockLogbook,
+        statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+        diverifikasiDplPada: new Date("2026-08-16T10:00:00Z"),
+      };
+      vi.mocked(prisma.logbookKkn.findUnique)
+        .mockResolvedValueOnce(approvedLogbook as any)
+        .mockResolvedValueOnce({
+          ...approvedLogbook,
+          statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+          diverifikasiDplPada: null,
+          deskripsi: "Deskripsi diperbarui dengan foto tambahan",
+        } as any);
+      vi.mocked(prisma.logbookKkn.update).mockResolvedValue({
+        ...approvedLogbook,
+        statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+        diverifikasiDplPada: null,
+      } as any);
+
+      const result = await service.updateMahasiswaLogbook("logbook-1", "mhs-1", "MAHASISWA_KKN", {
+        deskripsi: "Deskripsi diperbarui dengan foto tambahan",
+      });
+
+      // 1. Prisma update dipanggil dengan MENUNGGU_VERIFIKASI_DPL dan diverifikasiDplPada: null
+      expect(prisma.logbookKkn.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "logbook-1" },
+          data: expect.objectContaining({
+            deskripsi: "Deskripsi diperbarui dengan foto tambahan",
+            statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+            diverifikasiDplPada: null,
+          }),
+        })
+      );
+
+      // 2. Jaminan Saldo Poin: Poin TIDAK bertambah (no create) dan TIDAK ditarik (no update/updateMany)
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+      expect(prisma.pointHistory.update).not.toHaveBeenCalled();
+      expect(prisma.pointHistory.updateMany).not.toHaveBeenCalled();
+
+      // 3. Notifikasi ke DPL terkirim dengan triggerType LOGBOOK_RESUBMITTED
+      expect(notificationIntegrationService.sendToUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "dpl-1",
+          title: "📑 Pengajuan Ulang Logbook Mahasiswa",
+          triggerType: "LOGBOOK_RESUBMITTED",
+          dataPayload: expect.objectContaining({
+            type: "LOGBOOK_RESUBMITTED",
+            logbookId: "logbook-1",
+          }),
+        })
+      );
+
+      expect(result.statusApproval).toBe(StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL);
+    });
+  });
 });
+

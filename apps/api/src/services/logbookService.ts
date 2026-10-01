@@ -47,13 +47,6 @@ export class LogbookService {
     const isPrivileged = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
     if (isPrivileged) return; // Privileged roles tidak dibatasi
 
-    if (isPastReport) {
-      // Bypass validasi H-1 jika mahasiswa explicitly mengirimkan laporan masa lampau
-      return;
-    }
-
-    const toleranceDays = await this.getBackdateToleranceDays();
-
     // Normalisasi waktu ke awal hari (00:00:00) zona lokal
     const now = new Date();
     const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -65,10 +58,17 @@ export class LogbookService {
       actDate.getDate()
     ).getTime();
 
-    // Tidak boleh masa depan
+    // Tidak boleh masa depan (berlaku mutlak untuk semua pengisian logbook mahasiswa)
     if (activityMidnight > todayMidnight) {
       throw new Error("Tanggal kegiatan logbook tidak boleh berupa tanggal di masa depan.");
     }
+
+    if (isPastReport) {
+      // Bypass validasi batas toleransi H-1 jika mahasiswa explicitly mengirimkan laporan masa lampau
+      return;
+    }
+
+    const toleranceDays = await this.getBackdateToleranceDays();
 
     const diffDays = Math.floor((todayMidnight - activityMidnight) / (1000 * 60 * 60 * 24));
 
@@ -975,28 +975,26 @@ export class LogbookService {
 
     // Business guard for Mahasiswa (if not developer/dpl)
     if (!isDeveloper && !isAssignedDpl) {
-      if (existing.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
-        throw new Error("Logbook yang telah disetujui DPL tidak dapat diubah kembali.");
-      }
+      // ✅ DISETUJUI_DPL diizinkan diedit sebagai Pengajuan Ulang Pasca-ACC DPL
       if (existing.statusApproval === StatusLogbookKkn.DITOLAK_DPL) {
         throw new Error("Logbook yang telah ditolak mutlak oleh DPL tidak dapat diubah kembali.");
       }
     }
 
+    const wasDisetujuiDpl = existing.statusApproval === StatusLogbookKkn.DISETUJUI_DPL;
     const updateData: any = {};
 
-    // Reset status approval if mahasiswa edits a rejected/revision logbook
+    // Reset status approval if mahasiswa edits a rejected/revision/approved logbook -> diajukan ulang ke DPL
     if (!isDeveloper && !isAssignedDpl && !payload.statusApproval) {
       if (
         existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA ||
-        existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL
+        existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL ||
+        wasDisetujuiDpl
       ) {
-        const studentProfile = await prisma.studentKkn.findUnique({
-          where: { userId: existing.penulisId },
-        });
-        updateData.statusApproval = studentProfile?.isKetua
-          ? StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL
-          : StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA;
+        updateData.statusApproval = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
+        if (wasDisetujuiDpl) {
+          updateData.diverifikasiDplPada = null;
+        }
       }
     }
 
@@ -1049,13 +1047,6 @@ export class LogbookService {
             existing.kelompok.dplId || (isDeveloper ? userId : null);
         }
       }
-    } else if (
-      isAuthor &&
-      (existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL ||
-        existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA)
-    ) {
-      // Otomatis ajukan kembali jika mahasiswa merevisi logbook yang sebelumnya ditolak/revisi
-      updateData.statusApproval = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
     }
     if (payload.programKerjaId !== undefined)
       updateData.programKerjaId = payload.programKerjaId || null;
@@ -1073,6 +1064,37 @@ export class LogbookService {
       where: { id: logbookId },
       data: updateData,
     });
+
+    // Notifikasi ke DPL jika ini adalah pengajuan ulang logbook yang sebelumnya telah disetujui DPL
+    const targetDplId = existing.kelompok?.dplId;
+    if (targetDplId && wasDisetujuiDpl && !isDeveloper && !isAssignedDpl) {
+      const actDate = updateData.tanggalKegiatan || existing.tanggalKegiatan;
+      const actDateStr =
+        actDate instanceof Date
+          ? actDate.toISOString().split("T")[0]
+          : String(actDate).split("T")[0];
+      const authorName = existing.penulis?.name || "Mahasiswa";
+
+      await notificationIntegrationService
+        .sendToUser({
+          userId: targetDplId,
+          title: "📑 Pengajuan Ulang Logbook Mahasiswa",
+          message: `Mahasiswa ${authorName} telah memperbarui isi logbook tanggal ${actDateStr} dan mengajukan verifikasi ulang.`,
+          triggerType: "LOGBOOK_RESUBMITTED",
+          dataPayload: {
+            event: "REFRESH_LOGBOOK_DPL",
+            type: "LOGBOOK_RESUBMITTED",
+            entityId: logbookId,
+            logbookId,
+            kelompokId: existing.kelompokId,
+            pekanKe: String(updateData.pekanKe || existing.pekanKe || 1),
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) => {
+          console.warn("[updateMahasiswaLogbook] Gagal mengirim push notifikasi ke DPL:", err);
+        });
+    }
 
     return await this.getMahasiswaLogbookById(logbookId, userId, userRole);
   }
@@ -1560,11 +1582,16 @@ export class LogbookService {
         where: { statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
       });
       const pendingDplCount = await prisma.logbookKkn.count({
-        where: { statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL },
+        where: {
+          statusApproval: {
+            in: [
+              StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+              StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA,
+            ],
+          },
+        },
       });
-      const pendingKetuaCount = await prisma.logbookKkn.count({
-        where: { statusApproval: StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA },
-      });
+      const pendingKetuaCount = 0;
       const revisiCount = await prisma.logbookKkn.count({
         where: {
           statusApproval: {
@@ -1699,17 +1726,17 @@ export class LogbookService {
       },
     });
 
-    const pendingKetuaCount = await prisma.logbookKkn.count({
-      where: {
-        kelompokId,
-        statusApproval: StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA,
-      },
-    });
+    const pendingKetuaCount = 0;
 
     const pendingDplCount = await prisma.logbookKkn.count({
       where: {
         kelompokId,
-        statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+        statusApproval: {
+          in: [
+            StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+            StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA,
+          ],
+        },
       },
     });
 
