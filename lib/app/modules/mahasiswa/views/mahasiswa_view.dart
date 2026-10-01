@@ -10,6 +10,8 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
+import '../controllers/kelompok_kkn_controller.dart'
+    show kelompokKknProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/location_ping_controller.dart';
 import '../controllers/kkn_location_controller.dart';
@@ -1149,7 +1151,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildWargaSection(MahasiswaState state) {
-    final user = ref.watch(authProvider).user;
+    final kelompokState = ref.watch(kelompokKknProvider);
     final displayedWarga = state.wargaList.take(3).toList();
 
     return Column(
@@ -1238,7 +1240,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     final w = displayedWarga[index];
                     return _WargaCard(
                       warga: w,
-                      currentUserName: user?.name ?? '',
+                      kelompokMembers: kelompokState.kelompok?.members ?? const [],
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -2086,25 +2088,24 @@ class _WargaCard extends StatelessWidget {
   const _WargaCard({
     required this.warga,
     required this.onTap,
-    this.currentUserName = '',
+    this.kelompokMembers = const [],
   });
 
   final WargaDampingan warga;
   final VoidCallback onTap;
-  final String currentUserName;
+  final List<KelompokMemberData> kelompokMembers;
 
   @override
   Widget build(BuildContext context) {
-    final isActivated = warga.isActivated == true || warga.status == 'aktif';
-
-    String activator = '';
-    if (warga.pendampingName.isNotEmpty) {
-      activator = warga.pendampingName;
-    } else if (currentUserName.isNotEmpty) {
-      activator = currentUserName;
-    } else {
-      activator = 'Mahasiswa';
+    String mName = warga.pendampingKkn?.name ?? warga.pendampingName;
+    if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+      final mem = kelompokMembers
+          .where((m) => m.userId == warga.mahasiswaId)
+          .firstOrNull;
+      if (mem != null) mName = mem.name;
     }
+    final hasPendamping = mName.trim().isNotEmpty &&
+        mName.trim().toLowerCase() != 'null';
 
     return InkWell(
       onTap: onTap,
@@ -2158,24 +2159,47 @@ class _WargaCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (isActivated) ...[
-                    const SizedBox(height: 4),
-                    Row(
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hasPendamping
+                          ? const Color(0xFFEBF5FF)
+                          : AppColors.warningOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: hasPendamping
+                            ? const Color(0xFF90CDF4)
+                            : AppColors.warningOrange.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.verified_rounded,
-                          size: 14,
-                          color: AppColors.primaryBlueDark,
+                        Icon(
+                          hasPendamping
+                              ? Icons.verified_rounded
+                              : Icons.person_outline_rounded,
+                          size: 12,
+                          color: hasPendamping
+                              ? AppColors.primaryBlueDark
+                              : AppColors.warningOrange,
                         ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            'Diaktivasi: $activator',
-                            style: const TextStyle(
-                              fontSize: 11,
+                            hasPendamping
+                                ? 'Pendamping: $mName'
+                                : 'Belum Ada Pendamping (Mandiri)',
+                            style: TextStyle(
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primaryBlueDark,
+                              color: hasPendamping
+                                  ? AppColors.primaryBlueDark
+                                  : AppColors.warningOrange,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2183,7 +2207,7 @@ class _WargaCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ],
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     warga.address.isNotEmpty

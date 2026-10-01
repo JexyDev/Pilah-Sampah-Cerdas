@@ -556,6 +556,15 @@ class ApiAuthRepository implements AuthRepository {
             pendampingName = hh['pendampingName'].toString();
           }
 
+          // Prioritaskan pendampingName dari /auth/me (user.pendampingName)
+          // karena /auth/me merujuk pada mentor sebenarnya via bin.registeredByStudentId.
+          // Gunakan data dari /households/me hanya jika user.pendampingName kosong.
+          final effectivePendamping = (user.pendampingName != null &&
+                  user.pendampingName!.trim().isNotEmpty &&
+                  user.pendampingName!.trim().toLowerCase() != 'null')
+              ? user.pendampingName!.trim()
+              : pendampingName.trim();
+
           if (householdId.isNotEmpty) {
             await secureStorage.write(
               key: AppConfig.householdIdKey,
@@ -572,9 +581,7 @@ class ApiAuthRepository implements AuthRepository {
               rw: rw.isNotEmpty ? rw : user.rw,
               kecamatan: user.kecamatan,
               kelurahan: kelurahan.isNotEmpty ? kelurahan : user.kelurahan,
-              pendampingName: pendampingName.isNotEmpty
-                  ? pendampingName
-                  : user.pendampingName,
+              pendampingName: effectivePendamping,
               familySize: hhFamilySize ?? user.familySize,
             );
           }
@@ -1258,7 +1265,10 @@ class ApiAuthRepository implements AuthRepository {
       phone: userMap['phone']?.toString() ?? '',
       address: fullAddress,
       email: userMap['email']?.toString(),
-      komunitasId: userMap['komunitas_id']?.toString(),
+      komunitasId: (userMap['komunitas_id'] ??
+              userMap['komunitasId'] ??
+              userMap['id_komunitas'])
+          ?.toString(),
       role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
       provinsi: provinsi,
@@ -1345,6 +1355,9 @@ class ApiAuthRepository implements AuthRepository {
             familySize: fetched.familySize,
             role: fetched.role,
             lifecycleState: fetched.lifecycleState,
+            komunitasId: fetched.komunitasId?.isNotEmpty == true
+                ? fetched.komunitasId
+                : user.komunitasId,
             nim: fetched.nim.isNotEmpty ? fetched.nim : user.nim,
             jurusan: fetched.jurusan.isNotEmpty
                 ? fetched.jurusan

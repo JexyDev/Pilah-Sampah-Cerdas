@@ -689,10 +689,11 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             _InfoTile(
                               Icons.school_outlined,
                               'Mahasiswa Pendamping',
-                              user?.pendampingName != null &&
-                                      user!.pendampingName!.isNotEmpty
-                                  ? user.pendampingName!
-                                  : '-',
+                              (user?.pendampingName != null &&
+                                      user!.pendampingName!.trim().isNotEmpty &&
+                                      user.pendampingName!.trim().toLowerCase() != 'null')
+                                  ? user.pendampingName!.trim()
+                                  : 'Tanpa Pendamping (Mandiri)',
                             ),
                             _divider(),
                           ],
