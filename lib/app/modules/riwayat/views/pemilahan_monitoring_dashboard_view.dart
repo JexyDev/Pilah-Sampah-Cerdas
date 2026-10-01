@@ -260,6 +260,8 @@ class _PemilahanMonitoringDashboardViewState
                                                             AppConfig.getImageUrl(
                                                               item.photoUrl,
                                                             ),
+                                                        memCacheWidth: 600,
+                                                        memCacheHeight: 400,
                                                         errorWidget:
                                                             (
                                                               _,

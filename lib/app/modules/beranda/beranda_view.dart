@@ -851,6 +851,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
+        memCacheWidth: 150,
+        memCacheHeight: 150,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => const Center(
           child: Icon(
@@ -870,11 +872,18 @@ class _BerandaViewState extends ConsumerState<BerandaView>
           : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 150,
+          cacheHeight: 150,
+        );
       }
     }
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
+      memCacheWidth: 150,
+      memCacheHeight: 150,
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Center(
         child: Icon(

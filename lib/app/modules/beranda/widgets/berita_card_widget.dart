@@ -41,6 +41,8 @@ class BeritaCardWidget extends StatelessWidget {
               children: [
                 CachedNetworkImage(
                   imageUrl: article.fullImageUrl,
+                  memCacheWidth: 400,
+                  memCacheHeight: 260,
                   height: 130,
                   width: double.infinity,
                   fit: BoxFit.cover,

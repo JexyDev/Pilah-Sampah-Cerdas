@@ -367,6 +367,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
+        memCacheWidth: 200,
+        memCacheHeight: 200,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => const Icon(
           Icons.person_rounded,
@@ -384,11 +386,18 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
           : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 200,
+          cacheHeight: 200,
+        );
       }
     }
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
+      memCacheWidth: 200,
+      memCacheHeight: 200,
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Icon(
         Icons.person_rounded,

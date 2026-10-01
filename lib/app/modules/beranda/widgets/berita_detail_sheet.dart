@@ -47,6 +47,8 @@ void showBeritaDetailSheet(BuildContext context, NewsArticleModel article) {
                     // Header Image
                     CachedNetworkImage(
                       imageUrl: article.fullImageUrl,
+                      memCacheWidth: 800,
+                      memCacheHeight: 440,
                       width: double.infinity,
                       height: 220,
                       fit: BoxFit.cover,

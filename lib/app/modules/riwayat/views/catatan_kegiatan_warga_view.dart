@@ -207,6 +207,8 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                                           imageUrl: AppConfig.getImageUrl(
                                             entry.photoUrl,
                                           ),
+                                          memCacheWidth: 600,
+                                          memCacheHeight: 400,
                                           errorWidget: (_, __, ___) =>
                                               const SizedBox(
                                                 height: 150,
