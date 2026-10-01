@@ -9,7 +9,9 @@ import '../values/app_dimensions.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme {
+  static final ThemeData lightTheme = _buildLightTheme();
+
+  static ThemeData _buildLightTheme() {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,

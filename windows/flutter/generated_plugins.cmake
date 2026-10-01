@@ -3,15 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  camera_desktop
   connectivity_plus
   file_selector_windows
   firebase_core
   flutter_secure_storage_windows
-  flutter_timezone
   geolocator_windows
   permission_handler_windows
-  printing
   share_plus
   url_launcher_windows
 )

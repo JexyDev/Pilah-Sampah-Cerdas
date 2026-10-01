@@ -24,7 +24,6 @@ dependencies:
 
   # Camera — kamera inline di dalam app (tidak keluar ke sistem kamera)
   camera: ^0.11.0+2
-  camera_desktop: ^1.2.1
 
   # Image Picker — untuk galeri dan fallback
   image_picker: ^1.1.2
@@ -68,13 +67,11 @@ dependencies:
   # QR and PDF Export
   qr_flutter: ^4.1.0
   pdf: ^3.11.1
-  printing: ^5.13.0
   path_provider: ^2.1.3
   share_plus: ^10.1.0
   permission_handler: ^12.0.3
   flutter_local_notifications: ^22.1.0
   timezone: ^0.11.1
-  flutter_timezone: ^5.1.0
   lottie: ^3.5.1
   http_parser: ^4.1.2
 

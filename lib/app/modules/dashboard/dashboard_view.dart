@@ -56,6 +56,7 @@ class DashboardView extends ConsumerStatefulWidget {
 class _DashboardViewState extends ConsumerState<DashboardView>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  final Set<int> _activatedIndices = {0};
   DateTime? _lastSyncTime;
   UserRole _currentRole = UserRole.warga;
 
@@ -133,37 +134,47 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     }
   }
 
-  List<Widget> _getScreens(UserRole role) => [
-    role == UserRole.mahasiswaKkn
-        ? const MahasiswaView()
-        : (role == UserRole.petugasPemilahan
-              ? const PetugasPemilahanDashboardView()
-              : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
-    role == UserRole.mahasiswaKkn
-        ? const RiwayatKknView()
-        : (role == UserRole.petugasPemilahan
-              ? const RiwayatPetugasPemilahanView()
-              : const RiwayatView()),
-    const SizedBox.shrink(),
-    role == UserRole.mahasiswaKkn
-        ? const MahasiswaPoinView()
-        : (role == UserRole.petugasPemilahan
-              ? const PetugasPemilahanPoinView()
-              : const PoinView()),
-    role == UserRole.petugasPemilahan
-        ? const PetugasPemilahanProfilView()
-        : const ProfilView(),
-  ];
+  List<Widget>? _cachedScreens;
+  UserRole? _cachedRole;
+
+  List<Widget> _getScreens(UserRole role) {
+    if (_cachedScreens != null && _cachedRole == role) {
+      return _cachedScreens!;
+    }
+    _cachedRole = role;
+    _cachedScreens = [
+      role == UserRole.mahasiswaKkn
+          ? const MahasiswaView()
+          : (role == UserRole.petugasPemilahan
+                ? const PetugasPemilahanDashboardView()
+                : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
+      role == UserRole.mahasiswaKkn
+          ? const RiwayatKknView()
+          : (role == UserRole.petugasPemilahan
+                ? const RiwayatPetugasPemilahanView()
+                : const RiwayatView()),
+      const SizedBox.shrink(),
+      role == UserRole.mahasiswaKkn
+          ? const MahasiswaPoinView()
+          : (role == UserRole.petugasPemilahan
+                ? const PetugasPemilahanPoinView()
+                : const PoinView()),
+      role == UserRole.petugasPemilahan
+          ? const PetugasPemilahanProfilView()
+          : const ProfilView(),
+    ];
+    return _cachedScreens!;
+  }
 
   void _onTabTap(int index) {
     if (index == 2) {
       ScanGuard.handleScanNavigation(context, ref);
       return;
     }
-    setState(() => _selectedIndex = index);
-    final user = ref.read(authProvider).user;
-    final role = user?.role ?? UserRole.warga;
-    _syncActiveData(role, index);
+    setState(() {
+      _selectedIndex = index;
+      _activatedIndices.add(index);
+    });
   }
 
   @override
@@ -208,6 +219,7 @@ class _DashboardViewState extends ConsumerState<DashboardView>
   }
 
   Widget _buildMobileShell(bool isOnline, UserRole role) {
+    _activatedIndices.add(_selectedIndex);
     final screens = _getScreens(role);
     final bool showFab =
         role == UserRole.warga ||
@@ -216,7 +228,15 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
-      body: Column(children: [Expanded(child: screens[_selectedIndex])]),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: List.generate(
+          screens.length,
+          (i) => _activatedIndices.contains(i)
+              ? screens[i]
+              : const SizedBox.shrink(),
+        ),
+      ),
       bottomNavigationBar: _buildBottomBar(role),
       floatingActionButton: showFab ? _buildFab(isOnline, role) : null,
       floatingActionButtonLocation: showFab
@@ -451,26 +471,29 @@ class _DashboardViewState extends ConsumerState<DashboardView>
 
   // â”€â”€â”€ Tablet (NavigationRail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildTabletShell(bool isOnline, UserRole role) {
+    _activatedIndices.add(_selectedIndex);
     final screens = _getScreens(role);
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
-      body: Column(
+      body: Row(
         children: [
+          _buildNavigationRail(isOnline, role),
+          const VerticalDivider(width: 1),
           Expanded(
-            child: Row(
-              children: [
-                _buildNavigationRail(isOnline, role),
-                const VerticalDivider(width: 1),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 800),
-                      child: screens[_selectedIndex],
-                    ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: List.generate(
+                    screens.length,
+                    (i) => _activatedIndices.contains(i)
+                        ? screens[i]
+                        : const SizedBox.shrink(),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],

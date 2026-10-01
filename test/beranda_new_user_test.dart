@@ -162,6 +162,9 @@ class MockAuthNotifier extends StateNotifier<AuthState>
   MockAuthNotifier(UserEntity user) : super(AuthState(user: user));
 
   @override
+  Future<void> fetchProfile() async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
