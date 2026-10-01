@@ -33,6 +33,10 @@ class HiddenHistoryService {
   static SharedPreferences? _prefs;
   static const SafeStorage _storage = SafeStorage();
 
+  // Fast in-memory cache for 60fps zero-allocation scroll performance
+  static final Map<String, int?> _memClearTimes = {};
+  static final Map<String, Set<String>> _memHiddenIds = {};
+
   /// Memastikan instance SharedPreferences telah dimuat ke memori dan tersinkronisasi dari SafeStorage.
   static Future<SharedPreferences> ensureInitialized() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -62,6 +66,11 @@ class HiddenHistoryService {
           await _prefs!.setStringList(keyIds, backupIds.split(','));
         }
       }
+
+      // Inisialisasi memory cache agar render list 100% bebas dari lag SharedPreferences
+      _memClearTimes[s] = _prefs!.getInt(keyTime);
+      final savedIds = _prefs!.getStringList(keyIds);
+      _memHiddenIds[s] = savedIds != null ? Set<String>.from(savedIds) : <String>{};
     }
 
     return _prefs!;
@@ -124,6 +133,11 @@ class HiddenHistoryService {
         await p.setStringList(key, list);
         await _storage.write(key: 'backup_$key', value: list.join(','));
       }
+
+      // Update memory cache seketika (O(1))
+      _memClearTimes[scope] = safeNow;
+      _memHiddenIds[scope] = Set<String>.from(list);
+
       debugPrint(
         '[HiddenHistoryService] Display cleared for scope: $scope with ${currentItemIds?.length ?? 0} ids at $safeNow',
       );
@@ -145,6 +159,8 @@ class HiddenHistoryService {
       await p.remove('$_prefixHiddenIds$scope');
       await _storage.delete(key: 'backup_$_prefixClearTime$scope');
       await _storage.delete(key: 'backup_$_prefixHiddenIds$scope');
+      _memClearTimes.remove(scope);
+      _memHiddenIds[scope] = <String>{};
       debugPrint('[HiddenHistoryService] Display restored for scope: $scope');
     } catch (e) {
       debugPrint('[HiddenHistoryService] Error restoring display: $e');
@@ -161,26 +177,26 @@ class HiddenHistoryService {
         list.add(id);
         await p.setStringList(key, list);
         await _storage.write(key: 'backup_$key', value: list.join(','));
+        _memHiddenIds[scope] ??= <String>{};
+        _memHiddenIds[scope]!.add(id);
       }
     } catch (e) {
       debugPrint('[HiddenHistoryService] Error hiding item: $e');
     }
   }
 
-  /// Memeriksa apakah satu item riwayat layak ditampilkan di UI (Synchronous dari cache in-memory).
+  /// Memeriksa apakah satu item riwayat layak ditampilkan di UI (O(1) in-memory cache, zero allocation).
   static bool isVisibleSync({
     required String scope,
     required String id,
     DateTime? createdAt,
   }) {
-    if (_prefs == null) return true;
+    // 1. Cek apakah ID ada di set tersembunyi (O(1) instant lookup)
+    final hiddenSet = _memHiddenIds[scope];
+    if (hiddenSet != null && hiddenSet.contains(id)) return false;
 
-    // 1. Cek apakah ID ada di daftar tersembunyi
-    final hiddenIds = _prefs!.getStringList('$_prefixHiddenIds$scope');
-    if (hiddenIds != null && hiddenIds.contains(id)) return false;
-
-    // 2. Cek apakah item dibuat sebelum timestamp pembersihan
-    final clearTime = _prefs!.getInt('$_prefixClearTime$scope');
+    // 2. Cek apakah item dibuat sebelum timestamp pembersihan (O(1) integer comparison)
+    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt('$_prefixClearTime$scope');
     if (clearTime != null && createdAt != null) {
       if (createdAt.millisecondsSinceEpoch <= clearTime) {
         return false;
@@ -192,11 +208,10 @@ class HiddenHistoryService {
 
   /// Memeriksa apakah scope saat ini memiliki riwayat yang sedang disembunyikan.
   static bool hasHiddenItemsSync(String scope) {
-    if (_prefs == null) return false;
-    final clearTime = _prefs!.getInt('$_prefixClearTime$scope');
+    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt('$_prefixClearTime$scope');
     if (clearTime != null && clearTime > 0) return true;
-    final hiddenIds = _prefs!.getStringList('$_prefixHiddenIds$scope');
-    return hiddenIds != null && hiddenIds.isNotEmpty;
+    final hiddenSet = _memHiddenIds[scope];
+    return hiddenSet != null && hiddenSet.isNotEmpty;
   }
 }
 

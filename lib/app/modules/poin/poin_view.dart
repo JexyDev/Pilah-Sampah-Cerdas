@@ -120,15 +120,16 @@ class PoinView extends ConsumerWidget {
                               message: 'Belum ada riwayat poin.',
                               icon: Icons.monetization_on_rounded,
                             )
-                          : Column(
-                              children: visibleHistory
-                                  .map(
-                                    (ph) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: _PoinHistoryItem(item: ph),
-                                    ),
-                                  )
-                                  .toList(),
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: visibleHistory.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: _PoinHistoryItem(item: visibleHistory[index]),
+                                );
+                              },
                             );
                     },
                     loading: () => Column(

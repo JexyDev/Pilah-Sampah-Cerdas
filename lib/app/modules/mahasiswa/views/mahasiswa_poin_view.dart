@@ -457,15 +457,16 @@ class MahasiswaPoinView extends ConsumerWidget {
           );
         }
 
-        return Column(
-          children: pointLogs
-              .map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _PoinHistoryItem(item: item),
-                ),
-              )
-              .toList(),
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: pointLogs.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _PoinHistoryItem(item: pointLogs[index]),
+            );
+          },
         );
       },
     );
