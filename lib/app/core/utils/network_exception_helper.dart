@@ -63,6 +63,12 @@ class NetworkExceptionHelper {
                 return 'Perpindahan lokasi terlalu cepat terdeteksi. Pastikan GPS tidak dalam mode simulasi (Fake GPS).';
               case 'INVALID_COORDINATES':
                 return 'Koordinat GPS tidak valid. Aktifkan GPS dan coba lagi.';
+              case 'EARLY_CHECKOUT_RESTRICTED':
+                final customMsg = responseData['message']?.toString();
+                if (customMsg != null && customMsg.isNotEmpty) {
+                  return customMsg.replaceFirst(RegExp(r'^EARLY_CHECKOUT_RESTRICTED:\s*', caseSensitive: false), '');
+                }
+                return 'Presensi pulang belum dapat dilakukan.';
               default:
                 // Fallback ke pesan dari backend jika bukan kode yang dikenal
                 if (responseData['message'] != null) {

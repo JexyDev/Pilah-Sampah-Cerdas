@@ -362,6 +362,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             status == 'hadir' ||
             status == 'hadir_memenuhi' ||
             status == 'hadir_tidak_memenuhi';
+        final bool isBerlangsung =
+            status == 'berlangsung' ||
+            activeZone['statusKehadiran']?.toString().toUpperCase() ==
+                'BERLANGSUNG';
 
         state = state.copyWith(
           activeActivity: activeZone,
@@ -370,6 +374,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           distanceToTarget: distance,
           inZoneDurationSeconds: _backendDurationMinutes,
           isSuccessAttendance: isAttended,
+          isEligibleForAttendance: isBerlangsung,
           zoneResetWarning: null,
           clearWarning: true,
           error: null,
@@ -451,6 +456,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
         _currentTargetScheduleId = scheduleId;
 
+        final itemStatus = (activeItem['attendanceStatus'] ??
+                activeItem['status'] ??
+                activeItem['statusKehadiran'] ??
+                '')
+            .toString()
+            .toLowerCase();
+        final bool isBerlangsung = itemStatus == 'berlangsung';
+
         state = state.copyWith(
           kegiatanList: list,
           activeActivity: activeItem,
@@ -459,6 +472,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           inZoneDurationSeconds: _backendDurationMinutes,
           attendanceTime:
               activeItem['attendedAt']?.toString() ?? state.attendanceTime,
+          isEligibleForAttendance: isBerlangsung,
           isLoadingKegiatan: false,
         );
 
@@ -743,32 +757,36 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     } catch (e) {
       debugPrint('[KKN] selesaiKegiatan error: $e');
       isSuccess = false;
+      final errorMsg = NetworkExceptionHelper.getErrorMessage(e);
+      state = state.copyWith(error: errorMsg);
     } finally {
-      // === GPS LIFECYCLE: Matikan semua lapisan GPS ===
-      await stopTracking();
-      ref.read(locationPingControllerProvider.notifier).stopTracking();
+      if (isSuccess) {
+        // === GPS LIFECYCLE: Matikan semua lapisan GPS ===
+        await stopTracking();
+        ref.read(locationPingControllerProvider.notifier).stopTracking();
 
-      _backendDurationMinutes = 0;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final kknKeys = prefs
-            .getKeys()
-            .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
-            .toList();
-        for (final key in kknKeys) {
-          await prefs.remove(key);
-        }
-      } catch (_) {}
+        _backendDurationMinutes = 0;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final kknKeys = prefs
+              .getKeys()
+              .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
+              .toList();
+          for (final key in kknKeys) {
+            await prefs.remove(key);
+          }
+        } catch (_) {}
 
-      state = state.copyWith(
-        clearKegiatan: true,
-        clearSession: true,
-        clearActivity:
-            true, // Tambahkan ini agar mergedData tidak mewarisi aktivitas lama
-        isAutoStarted: false,
-        clearPosko:
-            true, // Reset pilihan posko agar sesi berikutnya bisa pilih ulang
-      );
+        state = state.copyWith(
+          clearKegiatan: true,
+          clearSession: true,
+          clearActivity:
+              true, // Tambahkan ini agar mergedData tidak mewarisi aktivitas lama
+          isAutoStarted: false,
+          clearPosko:
+              true, // Reset pilihan posko agar sesi berikutnya bisa pilih ulang
+        );
+      }
     }
 
     return isSuccess;

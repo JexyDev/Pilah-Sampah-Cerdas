@@ -1345,8 +1345,14 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
         state.zoneResetWarning!.toLowerCase().contains('tanpa keterangan') &&
         !state.isSuccessAttendance;
     final bool isSuccess = state.isSuccessAttendance;
-
     final act = state.selectedKegiatan ?? state.activeActivity;
+    final int minCheckoutMenit =
+        (targetMenit > 0 && targetMenit < 30) ? targetMenit : 30;
+    final bool canCheckout = durasiMenit >= minCheckoutMenit;
+    final bool isSessionActive =
+        (state.isEligibleForAttendance || act != null) &&
+        !isSuccess &&
+        !isAlpa;
     // Normalize: hapus suffix WIB/WITA, coba semua field yang ada
     final String rawTimeLabel = act?['time']?.toString().isNotEmpty == true
         ? act!['time'].toString()
@@ -2050,8 +2056,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   isSuccess
                       ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
                       : (durasiMenit >= targetMenit
-                            ? 'Waktu terpenuhi! Tombol absen sudah terbuka.'
-                            : 'Durasi terkumpul: $durasiMenit menit dari $targetMenit menit target.'),
+                            ? 'Target waktu terpenuhi! Tombol presensi pulang sudah terbuka.'
+                            : (canCheckout
+                                  ? 'Durasi minimal ($minCheckoutMenit mnt) terpenuhi. Anda dapat melakukan presensi pulang.'
+                                  : 'Durasi terkumpul: $durasiMenit menit dari minimal $minCheckoutMenit menit target.')),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -2066,11 +2074,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             width: double.infinity,
             height: 52,
             child: ElevatedButton.icon(
-              onPressed:
-                  (state.isEligibleForAttendance &&
-                      !isSuccess &&
-                      !isAlpa &&
-                      durasiMenit >= targetMenit)
+              onPressed: (isSessionActive && canCheckout)
                   ? () async {
                       await _showAbsenDialog(state, notifier);
                     }
@@ -2120,22 +2124,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             ),
           ),
           const SizedBox(height: 8),
-          if (!state.isEligibleForAttendance && !isSuccess && !isAlpa)
+          if (isSessionActive && !canCheckout)
             Text(
-              targetMenit >= 60
-                  ? 'Presensi baru dapat dilakukan setelah Anda berada di lokasi kegiatan selama ${targetMenit ~/ 60} jam tanpa putus.'
-                  : 'Presensi baru dapat dilakukan setelah durasi kehadiran mencapai minimum $targetMenit menit.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
-            ),
-          if (state.isEligibleForAttendance &&
-              !isSuccess &&
-              !isAlpa &&
-              durasiMenit < targetMenit)
-            Text(
-              'Tombol Presensi Pulang aktif setelah durasi mencapai $targetMenit menit. (Saat ini: $durasiMenit menit)',
+              'Tombol Presensi Pulang aktif setelah durasi mencapai minimal $minCheckoutMenit menit. (Saat ini: $durasiMenit menit)',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: Colors.orange),
+            ),
+          if (isSessionActive && canCheckout && durasiMenit < targetMenit)
+            Text(
+              'Target harian: $targetMenit menit. Presensi sekarang akan dicatat dengan status Hadir Belum Memenuhi.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           const SizedBox(height: 16),
           if (!isSuccess &&
