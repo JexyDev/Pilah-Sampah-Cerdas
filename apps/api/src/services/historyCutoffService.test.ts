@@ -12,6 +12,9 @@ describe("History Cutoff & Clear History Feature (Mobile Optimization)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    if ((prisma as any).userHiddenHistoryItem) {
+      vi.spyOn((prisma as any).userHiddenHistoryItem, "findMany").mockResolvedValue([]);
+    }
   });
 
   describe("historyCutoffService", () => {
@@ -91,7 +94,7 @@ describe("History Cutoff & Clear History Feature (Mobile Optimization)", () => {
       const ledger = await pointService.getLedger(mockUserId);
       expect(ledger.totalPoints).toBe(2500);
       expect(ledger.history).toEqual(mockHistory);
-      expect(pointRepository.getHistoryByUserId).toHaveBeenCalledWith(mockUserId, false, cutoffDate);
+      expect(pointRepository.getHistoryByUserId).toHaveBeenCalledWith(mockUserId, false, cutoffDate, []);
     });
   });
 

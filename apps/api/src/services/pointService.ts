@@ -200,10 +200,13 @@ export class PointService {
 
     const effectiveRoleName = roleName || (isStudent ? "MAHASISWA_KKN" : "WARGA");
 
-    const cutoff = await historyCutoffService.getCutoff(userId, HistoryScope.POINTS);
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(userId, HistoryScope.POINTS),
+      historyCutoffService.getExcludedItemIds(userId, "POINT"),
+    ]);
 
     const [history, totalPoints] = await Promise.all([
-      pointRepository.getHistoryByUserId(userId, isStudent, cutoff),
+      pointRepository.getHistoryByUserId(userId, isStudent, cutoff, excludedIds),
       calculateValidIndividualPoints(userId, effectiveRoleName),
     ]);
 

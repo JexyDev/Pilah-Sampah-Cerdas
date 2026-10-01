@@ -41,7 +41,8 @@ export class PointRepository {
   async getHistoryByUserId(
     userId: string,
     isStudent: boolean = false,
-    clearedAt?: Date | null
+    clearedAt?: Date | null,
+    excludedIds?: string[]
   ): Promise<PointHistory[]> {
     const excludedCategories = isStudent
       ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"]
@@ -53,6 +54,7 @@ export class PointRepository {
         kategori: { notIn: excludedCategories },
         NOT: { description: { contains: "[ProkerID:" } },
         ...(clearedAt ? { createdAt: { gt: clearedAt } } : {}),
+        ...(excludedIds && excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
       },
       orderBy: { createdAt: "desc" },
     });

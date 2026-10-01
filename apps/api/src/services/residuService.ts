@@ -398,7 +398,10 @@ export class ResiduService {
    */
   async getRiwayat(petugasUserId: string, range?: string, type?: string) {
     const logs: any[] = [];
-    const cutoff = await historyCutoffService.getCutoff(petugasUserId, HistoryScope.PETUGAS_TASKS);
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(petugasUserId, HistoryScope.PETUGAS_TASKS),
+      historyCutoffService.getExcludedItemIds(petugasUserId, "PETUGAS_TASK"),
+    ]);
 
     // Date range filtering
     let dateFilter: any = undefined;
@@ -592,6 +595,10 @@ export class ResiduService {
     }
 
     logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (excludedIds && excludedIds.length > 0) {
+      const excludedSet = new Set(excludedIds);
+      return logs.filter((l) => !excludedSet.has(l.id) && !excludedSet.has(l.logId));
+    }
     return logs;
   }
 

@@ -66,11 +66,15 @@ export class TransactionService {
   }
 
   async getMyDeposits(userId: string) {
-    const cutoff = await historyCutoffService.getCutoff(userId, HistoryScope.WASTE_DEPOSITS);
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(userId, HistoryScope.WASTE_DEPOSITS),
+      historyCutoffService.getExcludedItemIds(userId, "WASTE_DEPOSIT"),
+    ]);
     return prisma.setoranOtomatis.findMany({
       where: {
         wargaId: userId,
         ...(cutoff ? { createdAt: { gt: cutoff } } : {}),
+        ...(excludedIds && excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
       },
       orderBy: { createdAt: "desc" },
       include: {

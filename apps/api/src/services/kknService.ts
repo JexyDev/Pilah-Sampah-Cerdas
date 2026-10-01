@@ -2047,13 +2047,17 @@ export class KknService {
   }
 
   async getActivityLog(kknUserId: string) {
-    const cutoff = await historyCutoffService.getCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES);
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES),
+      historyCutoffService.getExcludedItemIds(kknUserId, "KKN_ACTIVITY"),
+    ]);
 
     const auditLogs = await prisma.auditTrail.findMany({
       where: {
         userId: kknUserId,
         action: "REQUEST_ACTIVATE_BIN",
         ...(cutoff ? { timestamp: { gt: cutoff } } : {}),
+        ...(excludedIds && excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
       },
       orderBy: { timestamp: "desc" },
       take: 50,

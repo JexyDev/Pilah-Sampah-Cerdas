@@ -256,6 +256,7 @@ model User {
   dplLogbooks           LogbookDpl[]             @relation("DplLogbooks")
   notificationSync      UserNotificationSync?
   historyCutoffs        UserHistoryCutoff[]
+  hiddenHistoryItems    UserHiddenHistoryItem[]
   beritaKonten          BeritaKonten[]           @relation("BeritaAuthor")
   presensiMandiri       PresensiMandiri[]        @relation("PresensiMandiriStudent")
   iotDevicesHandled     IoTDevice[]              @relation("PicIoTDevices")
@@ -1530,8 +1531,8 @@ model LogbookKkn {
   programKerjaId  String?          @map("id_program_kerja")
   fasilitasId     String?          @map("id_fasilitas")
 
-  // Status Approval 2-Tingkat
-  statusApproval StatusLogbookKkn @default(MENUNGGU_PERSETUJUAN_KETUA) @map("status_persetujuan")
+  // Status Approval (Langsung ke DPL)
+  statusApproval StatusLogbookKkn @default(MENUNGGU_VERIFIKASI_DPL) @map("status_persetujuan")
 
   // Approval Ketua Kelompok
   disetujuiKetuaOlehId String?   @map("id_ketua_penyetuju")
@@ -1634,6 +1635,20 @@ model UserHistoryCutoff {
   @@unique([userId, scope])
   @@index([userId])
   @@map("pengguna_riwayat_cutoff")
+}
+
+model UserHiddenHistoryItem {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  itemType  String   @map("item_type")
+  itemId    String   @map("item_id")
+  hiddenAt  DateTime @default(now()) @map("hidden_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemType, itemId])
+  @@index([userId, itemType])
+  @@map("user_hidden_history_items")
 }
 
 // ─────────────────────────────────────────────
