@@ -4626,12 +4626,21 @@ export class KknService {
 
     // Notify DPL
     if (kelompok.dplId) {
+      const isLaporanAkhir = finalKategori === "LAPORAN_AKHIR";
+      const cleanJudul = judul.trim();
+      const dplTitle = isLaporanAkhir
+        ? "Pengajuan Laporan Akhir Mahasiswa 📑"
+        : "Pengajuan Program Kerja Baru";
+      const dplMessage = isLaporanAkhir
+        ? `Mahasiswa ${authorName} telah mengunggah Laporan Akhir: "${cleanJudul}". Silakan ditinjau dan dinilai.`
+        : `Mahasiswa ${authorName} mengajukan ide program kerja: "${cleanJudul}". Silakan ditinjau.`;
+
       await prisma.notification
         .create({
           data: {
             userId: kelompok.dplId,
-            title: "Pengajuan Program Kerja Baru",
-            message: `Mahasiswa ${authorName} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
+            title: dplTitle,
+            message: dplMessage,
             isRead: false,
           },
         })
