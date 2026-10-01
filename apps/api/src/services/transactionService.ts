@@ -2,6 +2,8 @@ import { prisma } from "../lib/prisma.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { v4 as uuidv4 } from "uuid";
+import { historyCutoffService } from "./historyCutoffService.js";
+import { HistoryScope } from "@prisma/client";
 
 export class TransactionService {
   async getDeposits(binCode?: string) {
@@ -65,8 +67,12 @@ export class TransactionService {
   }
 
   async getMyDeposits(userId: string) {
+    const cutoff = await historyCutoffService.getCutoff(userId, HistoryScope.WASTE_DEPOSITS);
     return prisma.setoranOtomatis.findMany({
-      where: { wargaId: userId },
+      where: {
+        wargaId: userId,
+        ...(cutoff ? { createdAt: { gt: cutoff } } : {}),
+      },
       orderBy: { createdAt: "desc" },
       include: {
         bin: {
@@ -81,6 +87,11 @@ export class TransactionService {
         },
       },
     });
+  }
+
+  async clearMyDeposits(userId: string) {
+    await historyCutoffService.setCutoff(userId, HistoryScope.WASTE_DEPOSITS);
+    return [];
   }
 
   async getDepositDetails(id: string) {

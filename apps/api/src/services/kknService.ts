@@ -8,6 +8,8 @@ import { prisma } from "../lib/prisma.js";
 
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { historyCutoffService } from "./historyCutoffService.js";
+import { HistoryScope } from "@prisma/client";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import {
@@ -2046,10 +2048,13 @@ export class KknService {
   }
 
   async getActivityLog(kknUserId: string) {
+    const cutoff = await historyCutoffService.getCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES);
+
     const auditLogs = await prisma.auditTrail.findMany({
       where: {
         userId: kknUserId,
         action: "REQUEST_ACTIVATE_BIN",
+        ...(cutoff ? { timestamp: { gt: cutoff } } : {}),
       },
       orderBy: { timestamp: "desc" },
       take: 50,
@@ -2068,6 +2073,11 @@ export class KknService {
 
     combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     return combined.slice(0, 100);
+  }
+
+  async clearActivityLog(kknUserId: string) {
+    await historyCutoffService.setCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES);
+    return [];
   }
 
   async handover(fromKknUserId: string, toKknUserId: string, rwId: number, notes?: string) {

@@ -281,6 +281,21 @@ export class KknController {
     }
   }
 
+  async clearActivityLog(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      await kknService.clearActivityLog(kknUserId);
+      res.status(200).json({
+        success: true,
+        message: "Riwayat aktivitas KKN berhasil dibersihkan dari tampilan",
+        data: [],
+      });
+    } catch (error: any) {
+      console.error("[KknController] clearActivityLog error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async handover(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;

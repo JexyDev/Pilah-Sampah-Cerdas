@@ -172,6 +172,21 @@ export const transactionController = {
     }
   },
 
+  clearMyDeposits: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      await transactionService.clearMyDeposits(userId);
+      res.status(200).json({
+        success: true,
+        message: "Riwayat setoran sampah berhasil dibersihkan dari tampilan",
+        data: [],
+      });
+    } catch (error: any) {
+      console.error("[TransactionController] clearMyDeposits error:", error);
+      res.status(500).json({ success: false, message: error.message || "Gagal membersihkan riwayat setoran" });
+    }
+  },
+
   createManualDeposit: async (req: Request, res: Response) => {
     try {
       const user = req.user!;

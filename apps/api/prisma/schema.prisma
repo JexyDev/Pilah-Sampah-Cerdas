@@ -255,6 +255,7 @@ model User {
   logbooksVerifiedDpl   LogbookKkn[]             @relation("LogbookDplVerifikator")
   dplLogbooks           LogbookDpl[]             @relation("DplLogbooks")
   notificationSync      UserNotificationSync?
+  historyCutoffs        UserHistoryCutoff[]
   beritaKonten          BeritaKonten[]           @relation("BeritaAuthor")
   presensiMandiri       PresensiMandiri[]        @relation("PresensiMandiriStudent")
   iotDevicesHandled     IoTDevice[]              @relation("PicIoTDevices")
@@ -1611,6 +1612,28 @@ model UserNotificationSync {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sinkronisasi_notifikasi_user")
+}
+
+enum HistoryScope {
+  POINTS
+  WASTE_DEPOSITS
+  KKN_ACTIVITIES
+  PETUGAS_TASKS
+}
+
+model UserHistoryCutoff {
+  id         Int          @id @default(autoincrement())
+  userId     String       @map("id_pengguna")
+  scope      HistoryScope @map("cakupan")
+  clearedAt  DateTime     @default(now()) @map("dibersihkan_pada")
+  createdAt  DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime     @updatedAt @map("diperbarui_pada")
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope])
+  @@index([userId])
+  @@map("pengguna_riwayat_cutoff")
 }
 
 // ─────────────────────────────────────────────
