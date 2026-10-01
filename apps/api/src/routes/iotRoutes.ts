@@ -11,8 +11,21 @@ router.post("/readings/ingest", (req, res) => iotController.ingestReading(req, r
 // Dropdown petugas lapangan untuk penugasan PIC
 router.get("/officers", authMiddleware, (req, res) => iotController.getOfficers(req, res));
 
-// Ringkasan dashboard pemantauan IoT
+// Ringkasan dashboard pemantauan IoT (Monitoring View)
 router.get("/summary", authMiddleware, (req, res) => iotController.getDashboardSummary(req, res));
+
+// Rekomendasi analisis sistem (Google Gemini / Standar ISO)
+router.get("/recommendations", authMiddleware, (req, res) =>
+  iotController.getAiRecommendation(req, res)
+);
+
+// Data sensor telemetri (Paginasi dan Filter untuk Data Sensor View)
+router.get("/readings", authMiddleware, (req, res) => iotController.getReadings(req, res));
+
+// Ekspor data sensor ke berkas CSV standar ISO
+router.get("/readings/export", authMiddleware, (req, res) =>
+  iotController.exportReadingsCsv(req, res)
+);
 
 // Pembersihan berkala data riwayat lama (retensi data)
 router.delete(
@@ -22,7 +35,16 @@ router.delete(
   (req, res) => iotController.cleanupOldReadings(req, res)
 );
 
-// CRUD Perangkat IoT
+// Konfigurasi sistem IoT & MQTT & Gemini & RBAC Grup IoT
+router.get("/config", authMiddleware, (req, res) => iotController.getSystemConfig(req, res));
+router.put(
+  "/config",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  (req, res) => iotController.updateSystemConfig(req, res)
+);
+
+// CRUD & Manajemen Perangkat IoT
 router.get("/devices", authMiddleware, (req, res) => iotController.getAllDevices(req, res));
 router.get("/devices/:id", authMiddleware, (req, res) => iotController.getDeviceById(req, res));
 router.post(
@@ -44,6 +66,12 @@ router.delete(
   (req, res) => iotController.deleteDevice(req, res)
 );
 router.post(
+  "/devices/:id/ota",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  (req, res) => iotController.updateFirmwareOta(req, res)
+);
+router.post(
   "/devices/:id/regenerate-key",
   authMiddleware,
   roleMiddleware(["SUPER_USER", "DEVELOPER", "PIMPINAN", "ADMIN_DLH"]),
@@ -51,6 +79,28 @@ router.post(
 );
 router.get("/devices/:id/readings", authMiddleware, (req, res) =>
   iotController.getDeviceReadings(req, res)
+);
+
+// Validasi API Key Gemini & Pengambilan Model Resmi
+router.post("/ai/validate-key", authMiddleware, (req, res) =>
+  iotController.validateGeminiApiKey(req, res)
+);
+
+// Simulator Background Service (Server-side persistent continuous stream)
+router.get("/simulator/status", authMiddleware, (req, res) =>
+  iotController.getSimulatorStatus(req, res)
+);
+router.post(
+  "/simulator/start",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  (req, res) => iotController.startSimulator(req, res)
+);
+router.post(
+  "/simulator/stop",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  (req, res) => iotController.stopSimulator(req, res)
 );
 
 export default router;
