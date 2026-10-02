@@ -165,9 +165,15 @@ export const IotKonfigurasiPage: React.FC = () => {
 
       if (simStatus) {
         setBackendSimStatus(simStatus);
-        if (simStatus.isActive && simStatus.deviceId) {
-          setSimDeviceId(simStatus.deviceId);
-          setStreamIntervalMinutes(simStatus.intervalMinutes || 15);
+        if (simStatus.isActive) {
+          if (simStatus.isAllDevices) {
+            setSimDeviceId("all");
+          } else if (simStatus.deviceId) {
+            setSimDeviceId(simStatus.deviceId);
+          }
+          if (simStatus.intervalMinutes) {
+            setStreamIntervalMinutes(simStatus.intervalMinutes);
+          }
         }
       }
 
@@ -425,22 +431,29 @@ export const IotKonfigurasiPage: React.FC = () => {
     }
   };
 
-  // Polling status background simulation service di backend setiap 5 detik
+  // Polling status background simulation service di backend setiap 3 detik
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
+    let isMounted = true;
     const fetchSimStatus = async () => {
       try {
         const status = await iotWebservice.getSimulatorStatus();
-        setBackendSimStatus(status);
+        if (isMounted) {
+          setBackendSimStatus(status);
+        }
       } catch (e) {
         // silent fail on polling
       }
     };
 
-    if (activeTab === "simulator" || backendSimStatus?.isActive) {
-      timer = setInterval(fetchSimStatus, 5000);
+    // Segera perbarui status saat tab dibuka atau state berubah
+    fetchSimStatus();
+
+    if (activeTab === "emulator" || backendSimStatus?.isActive) {
+      timer = setInterval(fetchSimStatus, 3000);
     }
     return () => {
+      isMounted = false;
       if (timer) clearInterval(timer);
     };
   }, [activeTab, backendSimStatus?.isActive]);
@@ -798,7 +811,7 @@ export const IotKonfigurasiPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-[11px] font-mono shrink-0 bg-white/80 px-3 py-1.5 rounded-lg border border-emerald-200">
+              <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono shrink-0 bg-white/80 px-3 py-1.5 rounded-lg border border-emerald-200">
                 <div>
                   <span className="text-slate-500 font-sans">Total Paket:</span>{" "}
                   <span className="font-bold text-emerald-800">
@@ -815,8 +828,24 @@ export const IotKonfigurasiPage: React.FC = () => {
                 </div>
                 <div className="border-l border-emerald-200 pl-3">
                   <span className="text-slate-500 font-sans">Interval:</span>{" "}
-                  <span className="font-bold text-emerald-900">{backendSimStatus.intervalMinutes}m</span>
+                  <span className="font-bold text-emerald-900">
+                    {backendSimStatus.intervalMinutes < 1
+                      ? `${Math.round(backendSimStatus.intervalMinutes * 60)}d`
+                      : `${backendSimStatus.intervalMinutes}m`}
+                  </span>
                 </div>
+                {backendSimStatus.nextPulseAt && (
+                  <div className="border-l border-emerald-200 pl-3">
+                    <span className="text-slate-500 font-sans">Denyut Berikut:</span>{" "}
+                    <span className="font-bold text-emerald-800">
+                      {new Date(backendSimStatus.nextPulseAt).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1021,11 +1050,12 @@ export const IotKonfigurasiPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200/70">
                   <span className="text-[11px] font-semibold text-slate-500 mr-1">Pilihan Cepat:</span>
                   {[
-                    { label: "15 Menit (Default)", val: 15 },
+                    { label: "12 Detik (Demo Cepat)", val: 0.2 },
+                    { label: "1 Menit (Uji Cepat)", val: 1 },
+                    { label: "5 Menit", val: 5 },
+                    { label: "15 Menit (Baku Mutu)", val: 15 },
                     { label: "30 Menit", val: 30 },
                     { label: "60 Menit (1 Jam)", val: 60 },
-                    { label: "120 Menit (2 Jam)", val: 120 },
-                    { label: "360 Menit (6 Jam)", val: 360 },
                     { label: "1440 Menit (24 Jam)", val: 1440 },
                   ].map((p) => (
                     <button
@@ -1083,7 +1113,11 @@ export const IotKonfigurasiPage: React.FC = () => {
                       <span>
                         {isStoppingSim
                           ? "Menghentikan Server..."
-                          : `Hentikan Aliran Server (${backendSimStatus.intervalMinutes} Menit)`}
+                          : `Hentikan Aliran Server (${
+                              backendSimStatus.intervalMinutes < 1
+                                ? `${Math.round(backendSimStatus.intervalMinutes * 60)} Detik`
+                                : `${backendSimStatus.intervalMinutes} Menit`
+                            })`}
                       </span>
                     </>
                   ) : (
@@ -1096,7 +1130,11 @@ export const IotKonfigurasiPage: React.FC = () => {
                       <span>
                         {isStartingSim
                           ? "Memulai di Server..."
-                          : `Mulai Aliran Server (${streamIntervalMinutes} Menit)`}
+                          : `Mulai Aliran Server (${
+                              streamIntervalMinutes < 1
+                                ? `${Math.round(streamIntervalMinutes * 60)} Detik`
+                                : `${streamIntervalMinutes} Menit`
+                            })`}
                       </span>
                     </>
                   )}

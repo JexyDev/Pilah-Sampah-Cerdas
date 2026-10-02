@@ -1001,6 +1001,14 @@ if (isPrimaryWorker) {
         "[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Please run naming sanitization scripts manually."
       );
     }
+
+    // Auto-restore IoT background telemetri simulator jika sebelumnya aktif sebelum restart
+    try {
+      const { iotSimulationService } = await import("./services/iotSimulationService.js");
+      await iotSimulationService.restoreFromPersistence();
+    } catch (iotRestoreErr: any) {
+      console.warn("[IoT Simulation] Gagal memulihkan status aliran otomatis:", iotRestoreErr?.message);
+    }
   } catch (e: any) {
     console.error("[AutoMigration Log]", e?.message || e);
   }

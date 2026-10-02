@@ -144,6 +144,7 @@ export interface SimulatorStatus {
   pulseCount: number;
   totalReadingsSent?: number;
   lastPulseAt: string | null;
+  nextPulseAt?: string | null;
   currentPpm: number;
   currentBattery: number;
   currentRssi: number;

@@ -1,5 +1,12 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { prisma } from "../lib/prisma.js";
 import { iotService } from "./iotService.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STATE_FILE_PATH = path.resolve(__dirname, "../../.iot-simulation-state.json");
 
 export interface DevicePulseState {
   deviceId: string;
@@ -28,6 +35,7 @@ export interface SimulationState {
   pulseCount: number;
   totalReadingsSent: number;
   lastPulseAt: string | null;
+  nextPulseAt?: string | null;
   lastError: string | null;
   // Properti backward-compatibility untuk tampilan single node
   deviceId: string | null;
@@ -55,6 +63,7 @@ class IoTSimulationService {
     pulseCount: 0,
     totalReadingsSent: 0,
     lastPulseAt: null,
+    nextPulseAt: null,
     lastError: null,
     deviceId: null,
     nodeCode: null,
@@ -75,11 +84,18 @@ class IoTSimulationService {
     const devList = Array.from(this.activeDevices.values());
     const primary = devList[0];
 
+    let nextPulseAt: string | null = null;
+    if (this.state.isActive && this.state.lastPulseAt && this.state.intervalMinutes) {
+      const nextMs = new Date(this.state.lastPulseAt).getTime() + this.state.intervalMinutes * 60 * 1000;
+      nextPulseAt = new Date(nextMs).toISOString();
+    }
+
     return {
       ...this.state,
       targetDeviceCount: devList.length,
       deviceIds: devList.map((d) => d.deviceId),
       devices: devList,
+      nextPulseAt,
       deviceId: primary ? primary.deviceId : null,
       nodeCode: primary ? primary.nodeCode : null,
       deviceName: primary ? primary.deviceName : null,
@@ -286,6 +302,7 @@ class IoTSimulationService {
       pulseCount: 0,
       totalReadingsSent: 0,
       lastPulseAt: null,
+      nextPulseAt: null,
       lastError: null,
       deviceId: null,
       nodeCode: null,
@@ -311,6 +328,15 @@ class IoTSimulationService {
       });
     }, intervalMs);
 
+    // Persist status aktif agar tetap bertahan saat proses server/PM2 direstart
+    this.savePersistedState({
+      isActive: true,
+      isAllDevices: isAll,
+      deviceIds: Array.from(this.activeDevices.keys()),
+      deviceId: isAll ? undefined : (deviceId || targetDeviceList[0]?.id),
+      intervalMinutes: safeIntervalMinutes,
+    });
+
     return this.getStatus();
   }
 
@@ -324,7 +350,57 @@ class IoTSimulationService {
     }
 
     this.state.isActive = false;
+
+    // Persist status nonaktif ke disk
+    this.savePersistedState({
+      isActive: false,
+      intervalMinutes: this.state.intervalMinutes,
+    });
+
     return this.getStatus();
+  }
+
+  /**
+   * Menyimpan status aliran simulator ke disk lokal agar tahan restart server/PM2
+   */
+  private savePersistedState(data: {
+    isActive: boolean;
+    isAllDevices?: boolean;
+    deviceIds?: string[];
+    deviceId?: string;
+    intervalMinutes: number;
+  }) {
+    try {
+      fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
+    } catch (err: any) {
+      console.warn("[IoT Simulation Service] Gagal menyimpan status simulator ke disk:", err?.message);
+    }
+  }
+
+  /**
+   * Memulihkan status aliran simulator dari disk lokal saat server booting
+   */
+  async restoreFromPersistence(): Promise<void> {
+    try {
+      if (!fs.existsSync(STATE_FILE_PATH)) {
+        return;
+      }
+      const raw = fs.readFileSync(STATE_FILE_PATH, "utf-8");
+      const saved = JSON.parse(raw);
+      if (saved && saved.isActive === true) {
+        console.log(
+          `[IoT Simulation Service] Memulihkan aliran otomatis telemetri (interval: ${saved.intervalMinutes}m)...`
+        );
+        await this.start({
+          deviceId: saved.deviceId,
+          deviceIds: saved.isAllDevices ? "all" : saved.deviceIds,
+          intervalMinutes: saved.intervalMinutes || 15,
+        });
+        console.log("[IoT Simulation Service] Aliran otomatis telemetri berhasil direstore dari konfigurasi persisten.");
+      }
+    } catch (err: any) {
+      console.warn("[IoT Simulation Service] Gagal memulihkan status simulator:", err?.message);
+    }
   }
 }
 
