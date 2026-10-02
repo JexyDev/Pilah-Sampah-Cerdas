@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { CH4StatusLevel, IoTDeviceStatus } from "@prisma/client";
 import crypto from "crypto";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { clearAllPermissionCache } from "../lib/permissionCache.js";
 
 // Cooldown Map untuk alert darurat status BAHAYA: 15 menit per node
 const deviceEmergencyCooldown = new Map<string, number>();
@@ -150,6 +151,7 @@ export const iotService = {
       mqttTopicCh4: config.mqttTopicTemplate || "berseka/iot/telemetry/#",
       geminiApiKey: config.geminiApiKey || null,
       geminiModel: config.geminiModel || "gemini-3.1-flash-lite",
+      simulatorRandomFluctuation: config.simulatorRandomFluctuation ?? true,
       rbacPermissions: {
         iot_monitoring: Array.isArray(config.roleAccessMonitoring) ? config.roleAccessMonitoring : ["DEVELOPER", "SUPER_USER"],
         iot_data_sensor: Array.isArray(config.roleAccessDataSensor) ? config.roleAccessDataSensor : ["DEVELOPER", "SUPER_USER"],
@@ -186,6 +188,7 @@ export const iotService = {
     roleAccessPerangkat?: string[];
     roleAccessKonfigurasi?: string[];
     rbacPermissions?: Record<string, string[]>;
+    simulatorRandomFluctuation?: boolean;
   }) {
     const current = await prisma.ioTSystemConfig.findFirst({
       orderBy: { createdAt: "desc" },
@@ -233,6 +236,9 @@ export const iotService = {
         ...(data.geminiApiKey !== undefined && { geminiApiKey: data.geminiApiKey }),
         ...(data.geminiModel !== undefined && { geminiModel: data.geminiModel }),
         ...(data.cacheTtlSeconds !== undefined && { cacheTtlSeconds: data.cacheTtlSeconds }),
+        ...(data.simulatorRandomFluctuation !== undefined && {
+          simulatorRandomFluctuation: data.simulatorRandomFluctuation,
+        }),
         ...(roleMonitoring && {
           roleAccessMonitoring: ensureDeveloper(roleMonitoring),
         }),
@@ -249,6 +255,7 @@ export const iotService = {
     });
 
     recommendationCacheMap.clear();
+    clearAllPermissionCache();
     return this.formatSystemConfig(updated);
   },
 

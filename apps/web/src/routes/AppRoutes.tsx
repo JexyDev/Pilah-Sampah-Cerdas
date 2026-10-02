@@ -171,6 +171,11 @@ const ProtectedRoute: React.FC<{
   if (resource) {
     const hasPermission = can(resource, action);
     if (!hasPermission) {
+      // Untuk modul Internet of Things, jika dinonaktifkan di dynamic permissions, DILARANG fallback ke allowedRoles statis!
+      if (resource.startsWith("iot_") || resource === "internet_of_things") {
+        return <Navigate to="/dasbor" replace />;
+      }
+
       // If resource check fails, check if fallback allowedRoles allows it
       const fallbackAllowed =
         allowedRoles &&
@@ -776,7 +781,10 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/iot/monitoring"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute
+              resource="iot_monitoring"
+              allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}
+            >
               <IotMonitoringPage />
             </ProtectedRoute>
           }
@@ -784,7 +792,10 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/iot/data-sensor"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute
+              resource="iot_data_sensor"
+              allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "CAMAT", "LURAH", "PANITIA_TASKFORCE"]}
+            >
               <IotDataSensorPage />
             </ProtectedRoute>
           }
@@ -792,7 +803,10 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/iot/perangkat"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute
+              resource="iot_perangkat"
+              allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE"]}
+            >
               <IotPerangkatPage />
             </ProtectedRoute>
           }
@@ -800,7 +814,10 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/iot/konfigurasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+            <ProtectedRoute
+              resource="iot_konfigurasi"
+              allowedRoles={["DEVELOPER", "SUPER_USER"]}
+            >
               <IotKonfigurasiPage />
             </ProtectedRoute>
           }

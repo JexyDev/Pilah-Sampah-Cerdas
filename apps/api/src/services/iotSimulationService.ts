@@ -37,6 +37,7 @@ export interface SimulationState {
   lastPulseAt: string | null;
   nextPulseAt?: string | null;
   lastError: string | null;
+  randomFluctuation?: boolean;
   // Properti backward-compatibility untuk tampilan single node
   deviceId: string | null;
   nodeCode: string | null;
@@ -155,9 +156,14 @@ class IoTSimulationService {
     }
 
     try {
+      const config = await iotService.getOrCreateSystemConfig();
+      const shouldFluctuate = config.simulatorRandomFluctuation !== false;
+
       for (const [, devState] of this.activeDevices.entries()) {
-        // Generate fluktuasi acak baru untuk node ini
-        this.generateNextDeviceValues(devState);
+        // Generate fluktuasi acak baru untuk node ini jika aktif
+        if (shouldFluctuate) {
+          this.generateNextDeviceValues(devState);
+        }
 
         // Ingest telemetri melalui iotService
         const reading = await iotService.ingestReading({

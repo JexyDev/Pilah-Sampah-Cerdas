@@ -1732,6 +1732,7 @@ model IoTSystemConfig {
   roleAccessDataSensor      Json     @default("[\"DEVELOPER\", \"SUPER_USER\", \"ADMIN_DLH\", \"PIMPINAN\"]") @map("akses_role_data_sensor")
   roleAccessPerangkat       Json     @default("[\"DEVELOPER\", \"SUPER_USER\", \"ADMIN_DLH\"]") @map("akses_role_perangkat")
   roleAccessKonfigurasi     Json     @default("[\"DEVELOPER\", \"SUPER_USER\"]") @map("akses_role_konfigurasi")
+  simulatorRandomFluctuation Boolean @default(true) @map("simulator_fluktuasi_acak")
   createdAt                 DateTime @default(now()) @map("dibuat_pada")
   updatedAt                 DateTime @updatedAt @map("diperbarui_pada")
 
