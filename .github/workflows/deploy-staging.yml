@@ -42,8 +42,8 @@ jobs:
       - name: Type Check Backend API (apps/api)
         run: cd apps/api && npx tsc --noEmit
 
-      - name: Type Check Web Dashboard (apps/web)
-        run: cd apps/web && npx tsc --noEmit
+      - name: Validate & Build Web Dashboard (apps/web)
+        run: npm run build:web
 
   deploy:
     name: Deploy to Staging VPS
