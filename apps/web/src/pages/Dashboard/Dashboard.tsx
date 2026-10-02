@@ -1720,15 +1720,8 @@ const Dashboard: React.FC = () => {
     userPeran === "MITRA_PENDAMPING_LAPANGAN" ||
     userPeran === "MITRA";
   const canAccessKknSub = isPimpinan || isSuperOrDev;
-  const canAccessGisSub =
-    isPimpinan ||
-    isSuperOrDev ||
-    userPeran === "ADMIN" ||
-    userPeran === "SUPER_ADMIN" ||
-    userPeran === "ADMIN_DLH" ||
-    userPeran === "CAMAT" ||
-    userPeran === "LURAH" ||
-    userPeran === "RW";
+  // NOTE: Tab GIS Eksekutif di-hide sementara di production
+  const canAccessGisSub = false;
   const canAccessTabs = canAccessKknSub || canAccessGisSub;
 
   const tabParam = searchParams.get("tab");

@@ -388,21 +388,52 @@ class IoTSimulationService {
    */
   async restoreFromPersistence(): Promise<void> {
     try {
-      if (!fs.existsSync(STATE_FILE_PATH)) {
-        return;
+      let shouldStart = false;
+      let interval = 15;
+      let deviceIds: string[] | "all" = "all";
+      let deviceId: string | undefined = undefined;
+
+      if (fs.existsSync(STATE_FILE_PATH)) {
+        try {
+          const raw = fs.readFileSync(STATE_FILE_PATH, "utf-8");
+          const saved = JSON.parse(raw);
+          if (saved) {
+            if (saved.isActive === false) {
+              console.log("[IoT Simulation Service] Simulator dalam status nonaktif menurut berkas persisten.");
+              return;
+            }
+            if (saved.isActive === true) {
+              shouldStart = true;
+              interval = saved.intervalMinutes || 15;
+              deviceIds = saved.isAllDevices ? "all" : (saved.deviceIds || "all");
+              deviceId = saved.deviceId;
+            }
+          }
+        } catch (readErr: any) {
+          console.warn("[IoT Simulation Service] Berkas state rusak, memakai pengaturan default aktif:", readErr?.message);
+          shouldStart = true;
+        }
+      } else {
+        // Berkas state belum ada (fresh deploy/restart) -> periksa apakah ada perangkat IoT di database
+        const deviceCount = await prisma.ioTDevice.count({
+          where: { status: { in: ["ACTIVE", "MAINTENANCE"] } },
+        });
+        if (deviceCount > 0) {
+          console.log(`[IoT Simulation Service] Ditemukan ${deviceCount} perangkat IoT aktif. Menginisialisasi aliran otomatis bawaan...`);
+          shouldStart = true;
+        }
       }
-      const raw = fs.readFileSync(STATE_FILE_PATH, "utf-8");
-      const saved = JSON.parse(raw);
-      if (saved && saved.isActive === true) {
+
+      if (shouldStart) {
         console.log(
-          `[IoT Simulation Service] Memulihkan aliran otomatis telemetri (interval: ${saved.intervalMinutes}m)...`
+          `[IoT Simulation Service] Memulai aliran otomatis telemetri (interval: ${interval}m)...`
         );
         await this.start({
-          deviceId: saved.deviceId,
-          deviceIds: saved.isAllDevices ? "all" : saved.deviceIds,
-          intervalMinutes: saved.intervalMinutes || 15,
+          deviceId,
+          deviceIds,
+          intervalMinutes: interval,
         });
-        console.log("[IoT Simulation Service] Aliran otomatis telemetri berhasil direstore dari konfigurasi persisten.");
+        console.log("[IoT Simulation Service] Aliran otomatis telemetri berhasil berjalan.");
       }
     } catch (err: any) {
       console.warn("[IoT Simulation Service] Gagal memulihkan status simulator:", err?.message);

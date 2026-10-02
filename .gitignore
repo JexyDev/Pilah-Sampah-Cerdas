@@ -91,6 +91,7 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+.iot-simulation-state.json
 scratch/
 uploads/
 apps/api/uploads/
