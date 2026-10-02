@@ -113,7 +113,7 @@ ${(data?.kepatuhanPerKelurahan ?? []).map(k => `  - ${k.nama}: ${k.kepatuhan != 
   Pertumbuhan (%) = ((Volume Periode Aktif - Volume Bulan Sebelumnya) / Volume Bulan Sebelumnya) × 100%
 
 ### D. Fasilitas Terdata (${totalFasilitas} Titik)
-* **Definisi**: Total fasilitas persampahan operasional aktif non-posko di wilayah Kecamatan Coblong (Bank Sampah, Maggot BSF, Buruan SAE, Loseda, Bata Terawang, TPS/TPST, POC).
+* **Definisi**: Total fasilitas persampahan operasional aktif non-posko di wilayah Kecamatan Coblong (Bank Sampah, Maggot BSF, Buruan SAE, Loseda, Bata Terawang, TPS/TPST).
 
 ---
 
@@ -437,7 +437,7 @@ ORDER BY "jumlah_titik" DESC;`;
                   </div>
                   <div className="qc-formula-details">
                     <p className="qc-formula-note">
-                      Total titik fasilitas operasional terverifikasi di seluruh wilayah Kecamatan Coblong (Bank Sampah, Buruan SAE, Maggot BSF, Loseda, Bata Terawang, TPS/TPST, dan POC).
+                      Total titik fasilitas operasional terverifikasi di seluruh wilayah Kecamatan Coblong (Bank Sampah, Buruan SAE, Maggot BSF, Loseda, Bata Terawang, dan TPS/TPST).
                     </p>
                   </div>
                 </div>
