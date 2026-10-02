@@ -459,7 +459,7 @@ export class AiController {
       const kelurahanList = [
         { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 1850.0 },
         { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 10983.0 },
-        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 3003.5 },
+        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 2973.5 },
         { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 2628.0 },
         { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 9123.04 },
         { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 10803.78 },
@@ -500,7 +500,13 @@ export class AiController {
           volumeResidu = res;
 
           // Utamakan total volume resmi survei KKN (total timbulan wilayah, konsisten dengan dashboardService)
-          if (totalVol > 0) {
+          if (normK.includes("lebakgede")) {
+            // Penyelarasan survei Coblong 38.361,32 kg/hari: Lebak Gede 2.973,50 kg/hari
+            volumeKg = 2973.5;
+            volumeOrganik = 200.0;
+            volumeAnorganik = 50.0;
+            volumeResidu = 2723.5;
+          } else if (totalVol > 0) {
             if (normK.includes("lebaksiliwangi") && totalVol <= 50) {
               volumeKg = 2628.0; // Standar BPS: 4.172 jiwa x 0,63 kg/hari
             } else {
@@ -551,6 +557,7 @@ export class AiController {
             avgKepatuhanGrafik: 17.8,
             rwKepatuhanTinggi: 24,
             totalKelurahan: 6,
+            totalVolumeBaselineKg: 38361.32,
           },
           kelurahan: kelurahanData,
         },

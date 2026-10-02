@@ -134,7 +134,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       isWargaApp ? "Baseline Timbulan (kg)" : "Baseline Berat Sampah (kg)",
       isWargaApp ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)",
       isWargaApp ? "Sampah Terpilah Mandiri (kg)" : "Reduksi Berat ke TPA (kg)",
-      isWargaApp ? "Tingkat Partisipasi Volume Terpilah (%)" : "Reduksi Berat ke TPA (%)",
+      isWargaApp ? "Tingkat Partisipasi Berat Terpilah (%)" : "Reduksi Berat ke TPA (%)",
       "Baseline Kepatuhan (%)",
       "Aktual Kepatuhan (%)",
       "Perubahan Kepatuhan (%)",
@@ -379,7 +379,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Delta (kg)"}
               </th>
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[105px]">
-                {selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Volume Terpilah" : "Delta (%)"}
+                {selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Berat Terpilah" : "Delta (%)"}
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
                 Baseline (%)
@@ -475,7 +475,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Kolom Berdampingan 2: Penurunan Berat (%) / Tingkat Partisipasi Volume Terpilah */}
+                  {/* Kolom Berdampingan 2: Penurunan Berat (%) / Tingkat Partisipasi Berat Terpilah */}
                   <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
                     {isWargaApp ? (
                       <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
@@ -620,7 +620,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 )}
               </td>
 
-              {/* Total Penurunan Berat (%) / Tingkat Partisipasi Volume Terpilah */}
+              {/* Total Penurunan Berat (%) / Tingkat Partisipasi Berat Terpilah */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
                 {selectedSource === "WARGA_APP" ? (
                   <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-200 border border-blue-300">
@@ -711,7 +711,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             {selectedSource === "WARGA_APP" ? (
               <>
                 <p><strong>Sampah Terpilah Mandiri (kg)</strong> = Berat Aktual Setoran Warga via App</p>
-                <p><strong>Tingkat Partisipasi Volume Terpilah (%)</strong> = [Aktual Warga (kg) ÷ Baseline Timbulan (kg)] × 100%</p>
+                <p><strong>Tingkat Partisipasi Berat Terpilah (%)</strong> = [Aktual Warga (kg) ÷ Baseline Timbulan (kg)] × 100%</p>
               </>
             ) : (
               <>

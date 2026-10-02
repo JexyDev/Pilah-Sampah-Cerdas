@@ -349,7 +349,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                 </span>
                 <div>
                   <h2 className="text-base font-black text-slate-900 dark:text-slate-100">Pilar Neraca Pengolahan dan Pemanfaatan Sampah</h2>
-                  <p className="text-xs text-slate-500 font-medium">Volume material sampah terkumpul dan efektivitas konversi non-TPA</p>
+                  <p className="text-xs text-slate-500 font-medium">Berat material sampah terkumpul dan efektivitas konversi non-TPA</p>
                 </div>
               </div>
             </div>
@@ -362,7 +362,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                     <FormulaTooltip
                       title="Total Sampah Terkumpul"
                       formula="SUM(setoran_sampah.berat_kg) + Log Penimbangan Tempat Sampah"
-                      description="Volume agregat material sampah masuk dalam ekosistem Berseka."
+                      description="Berat agregat material sampah masuk dalam ekosistem Berseka."
                     />
                   </div>
                   <Recycle className="text-amber-500" size={18} />

@@ -70,6 +70,7 @@ describe("AiController - Waste Baseline & Actual Trends", () => {
       expect(jsonResponse.data.summary.avgKepatuhanGrafik).toBe(17.8);
       expect(jsonResponse.data.summary.rwKepatuhanTinggi).toBe(24);
       expect(jsonResponse.data.summary.totalKelurahan).toBe(6);
+      expect(jsonResponse.data.summary.totalVolumeBaselineKg).toBe(38361.32);
 
       const sekeloa = jsonResponse.data.kelurahan.find((k: any) => k.kelurahan === "Sekeloa");
       expect(sekeloa).toBeDefined();

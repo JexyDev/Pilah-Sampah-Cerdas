@@ -34,7 +34,7 @@ export const LAYERS: LayerItem[] = [
   { id: "kep", label: "Kepatuhan" },
   { id: "org", label: "Organik" },
   { id: "ano", label: "Anorganik" },
-  { id: "total", label: "Volume total" },
+  { id: "total", label: "Berat total" },
 ];
 
 const hexToRgb = (h: string): [number, number, number] => {
@@ -109,7 +109,7 @@ function getThematicStyle(
   const max = maxVal[valKey] || 1;
   const ratio = Math.max(0, Math.min(1, val / max));
 
-  let labelName = "Volume Total";
+  let labelName = "Berat Total";
   if (layer === "org") labelName = "Sampah Organik";
   else if (layer === "ano") labelName = "Sampah Anorganik";
   else if (layer === "res") labelName = "Sampah Residu";
