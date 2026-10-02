@@ -25,6 +25,10 @@ describe("filterTestingUtils (Default Active Anti-Test Governance)", () => {
       expect(isTestOrDummyString("sample user")).toBe(true);
       expect(isTestOrDummyString("percobaan 1")).toBe(true);
       expect(isTestOrDummyString("testing_account")).toBe(true);
+      expect(isTestOrDummyString("QC Berseka")).toBe(true);
+      expect(isTestOrDummyString("DPL Penguji Berseka")).toBe(true);
+      expect(isTestOrDummyString("Kelompok KKN Uji Coba Berseka")).toBe(true);
+      expect(isTestOrDummyString("Farhan Pratama (Tim Berseka)")).toBe(true);
     });
 
     it("should allow valid real names", () => {

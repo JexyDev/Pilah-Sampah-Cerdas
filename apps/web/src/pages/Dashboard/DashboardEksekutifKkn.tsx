@@ -37,6 +37,9 @@ import {
   XCircle,
   AlertCircle,
   Phone,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -544,6 +547,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [prokerFilter, setProkerFilter] = useState<"ALL" | "UNDER_60" | "GE_60">("ALL");
   const [selectedDplFilter, setSelectedDplFilter] = useState<string>("ALL");
 
+  // Mode tampilan kelompok KKN: "table" (default eksekutif) atau "cards"
+  const [groupViewMode, setGroupViewMode] = useState<"table" | "cards">("table");
+  const [groupSortBy, setGroupSortBy] = useState<"name" | "att_desc" | "att_asc" | "proker_desc" | "proker_asc">("name");
+  const [groupCurrentPage, setGroupCurrentPage] = useState<number>(1);
+  const [groupsPerPage, setGroupsPerPage] = useState<number>(10);
+
   // Leaderboard data & state
   const [leaderboardData, setLeaderboardData] = useState<{
     students: Array<{
@@ -694,6 +703,43 @@ export const DashboardEksekutifKkn: React.FC = () => {
       countProkerUnder60,
     };
   }, [filteredGroups]);
+
+  // Pengurutan Dinamis Kelompok KKN
+  const sortedAndFilteredGroups = useMemo(() => {
+    const list = [...filteredGroups];
+    list.sort((a, b) => {
+      if (groupSortBy === "att_asc") {
+        return (a.avgAttendanceRate || 0) - (b.avgAttendanceRate || 0);
+      }
+      if (groupSortBy === "att_desc") {
+        return (b.avgAttendanceRate || 0) - (a.avgAttendanceRate || 0);
+      }
+      if (groupSortBy === "proker_asc") {
+        const rateA = calculateProkerMetrics(a.programKerja).rate;
+        const rateB = calculateProkerMetrics(b.programKerja).rate;
+        return rateA - rateB;
+      }
+      if (groupSortBy === "proker_desc") {
+        const rateA = calculateProkerMetrics(a.programKerja).rate;
+        const rateB = calculateProkerMetrics(b.programKerja).rate;
+        return rateB - rateA;
+      }
+      return (a.name || "").localeCompare(b.name || "", undefined, { numeric: true });
+    });
+    return list;
+  }, [filteredGroups, groupSortBy]);
+
+  const totalGroupPages = groupsPerPage === 0 ? 1 : Math.max(1, Math.ceil(sortedAndFilteredGroups.length / groupsPerPage));
+  const paginatedGroups = useMemo(() => {
+    if (groupsPerPage === 0) return sortedAndFilteredGroups;
+    const start = (groupCurrentPage - 1) * groupsPerPage;
+    return sortedAndFilteredGroups.slice(start, start + groupsPerPage);
+  }, [sortedAndFilteredGroups, groupCurrentPage, groupsPerPage]);
+
+  // Reset ke halaman 1 jika filter berubah
+  useEffect(() => {
+    setGroupCurrentPage(1);
+  }, [groupSearchQuery, attendanceFilter, prokerFilter, selectedDplFilter, selectedKelurahan, groupSortBy, groupsPerPage]);
 
   // Filter mahasiswa untuk modal detail anggota kelompok
   const modalGroupStudents = useMemo(() => {
@@ -1494,27 +1540,29 @@ export const DashboardEksekutifKkn: React.FC = () => {
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Col 1: Status Program Kerja (5 cols) */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3.5">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <FileCheck2 size={16} className="text-amber-500" />
-              <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
+              <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                <FileCheck2 size={16} />
+              </div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Status Program Kerja
               </h2>
             </div>
-            <span className="text-[11px] text-slate-400 font-extrabold">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-extrabold bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
               Total: {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0} Proker
             </span>
           </div>
 
           {/* Dimensi 1: Status Usulan (Mandiri, Ditolak Terpisah & Pie Chart) */}
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
               Status Usulan Program Kerja:
             </p>
-            <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3.5">
               {/* Pie Chart Usulan */}
-              <div className="relative h-24 w-24 shrink-0">
+              <div className="relative h-28 w-28 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <Pie
@@ -1537,8 +1585,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       ]}
                       cx="50%"
                       cy="50%"
-                      innerRadius={20}
-                      outerRadius={40}
+                      innerRadius={24}
+                      outerRadius={46}
                       paddingAngle={2}
                       dataKey="value"
                     >
@@ -1551,7 +1599,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         if (active && payload && payload.length) {
                           const d = payload[0];
                           return (
-                            <div className="bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded shadow">
+                            <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-2.5 rounded-lg shadow-lg">
                               <span>{d.name}: </span>
                               <span className="text-emerald-400 font-extrabold">{d.value} Proker</span>
                             </div>
@@ -1563,64 +1611,64 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[11px] font-black text-slate-800 dark:text-slate-200">
+                  <span className="text-xs font-black text-slate-900 dark:text-slate-100">
                     {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0}
                   </span>
-                  <span className="text-[7.5px] text-slate-400">Total</span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Total</span>
                 </div>
               </div>
 
               {/* Grid 4 Metrik Status Usulan */}
               <div className="grid grid-cols-4 gap-2 flex-1 w-full">
                 {/* Total Usulan */}
-                <div className="bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300 mb-0.5">
-                    <Calendar size={11} />
-                    <span className="text-[9px] font-bold">Total</span>
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200 mb-0.5">
+                    <Calendar size={12} className="text-slate-500" />
+                    <span className="text-[10px] font-bold">Total</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100">
+                  <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                     {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0}
                   </p>
                 </div>
 
                 {/* Usulan Disetujui */}
-                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
-                  <div className="flex items-center gap-1 text-[#009966] dark:text-emerald-400 mb-0.5">
-                    <CheckCircle2 size={11} />
-                    <span className="text-[9px] font-bold">Disetujui</span>
+                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
+                  <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 mb-0.5">
+                    <CheckCircle2 size={12} />
+                    <span className="text-[10px] font-bold">Disetujui</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-black text-[#009966] dark:text-emerald-400">
+                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-400">
                     {data?.statusProker?.usulan?.disetujui?.count ?? data?.statusProker?.disetujui?.count ?? 0}
                   </p>
-                  <p className="text-[8.5px] text-slate-400 font-medium">
+                  <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-bold">
                     {data?.statusProker?.usulan?.disetujui?.percentage ?? data?.statusProker?.disetujui?.percentage ?? 0}%
                   </p>
                 </div>
 
                 {/* Usulan Belum Disetujui */}
-                <div className="bg-amber-50/80 dark:bg-amber-950/40 p-2 rounded-xl border border-amber-200 dark:border-amber-800/40">
-                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 mb-0.5">
-                    <Clock size={11} />
-                    <span className="text-[9px] font-bold">Menunggu</span>
+                <div className="bg-amber-50/80 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/40">
+                  <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 mb-0.5">
+                    <Clock size={12} />
+                    <span className="text-[10px] font-bold">Menunggu</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
+                  <p className="text-sm font-black text-amber-700 dark:text-amber-400">
                     {data?.statusProker?.usulan?.belumDisetujui?.count ?? data?.statusProker?.diusulkan?.count ?? 0}
                   </p>
-                  <p className="text-[8.5px] text-slate-400 font-medium">
+                  <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-bold">
                     {data?.statusProker?.usulan?.belumDisetujui?.percentage ?? data?.statusProker?.diusulkan?.percentage ?? 0}%
                   </p>
                 </div>
 
                 {/* Usulan DITOLAK */}
-                <div className="bg-rose-50/80 dark:bg-rose-950/40 p-2 rounded-xl border border-rose-200 dark:border-rose-800/40">
-                  <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 mb-0.5">
-                    <XCircle size={11} />
-                    <span className="text-[9px] font-bold">Ditolak</span>
+                <div className="bg-rose-50/80 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/40">
+                  <div className="flex items-center gap-1 text-rose-700 dark:text-rose-400 mb-0.5">
+                    <XCircle size={12} />
+                    <span className="text-[10px] font-bold">Ditolak</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-black text-rose-600 dark:text-rose-400">
+                  <p className="text-sm font-black text-rose-700 dark:text-rose-400">
                     {data?.statusProker?.usulan?.ditolak?.count ?? data?.statusProker?.ditolak?.count ?? 0}
                   </p>
-                  <p className="text-[8.5px] text-slate-400 font-medium">
+                  <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-bold">
                     {data?.statusProker?.usulan?.ditolak?.percentage ?? data?.statusProker?.ditolak?.percentage ?? 0}%
                   </p>
                 </div>
@@ -1629,17 +1677,17 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
 
           {/* Dimensi 2: Status Pelaksanaan Program Kerja (Donut / Pie Chart) */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 Status Pelaksanaan:
               </p>
-              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-xs font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/40">
                 {data?.statusProker?.pelaksanaan?.total ?? data?.statusProker?.disetujui?.count ?? 0} Disetujui
               </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5">
               {/* Mini Donut Chart for Pelaksanaan */}
               <div className="relative h-28 w-28 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1678,7 +1726,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         if (active && payload && payload.length) {
                           const d = payload[0];
                           return (
-                            <div className="bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded shadow">
+                            <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-2.5 rounded-lg shadow-lg">
                               <span>{d.name}: </span>
                               <span className="text-emerald-400 font-extrabold">{d.value} Proker</span>
                             </div>
@@ -1690,44 +1738,44 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                  <span className="text-sm font-black text-slate-900 dark:text-slate-100">
                     {data?.statusProker?.pelaksanaan?.total ?? 0}
                   </span>
-                  <span className="text-[8px] text-slate-400">Proker</span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Proker</span>
                 </div>
               </div>
 
               {/* Status Pelaksanaan Legend & Breakdown */}
-              <div className="flex-1 space-y-1.5 w-full">
+              <div className="flex-1 space-y-2 w-full">
                 {/* Belum Mulai */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Belum Mulai</span>
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Belum Mulai</span>
                   </div>
-                  <span className="font-extrabold text-slate-700 dark:text-slate-200">
+                  <span className="font-extrabold text-slate-800 dark:text-slate-100">
                     {data?.statusProker?.pelaksanaan?.belum?.count ?? 0} ({data?.statusProker?.pelaksanaan?.belum?.percentage ?? 0}%)
                   </span>
                 </div>
 
                 {/* Sedang Berjalan */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30">
+                  <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Sedang Berjalan</span>
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Sedang Berjalan</span>
                   </div>
-                  <span className="font-extrabold text-blue-600 dark:text-blue-400">
+                  <span className="font-extrabold text-blue-700 dark:text-blue-400">
                     {data?.statusProker?.pelaksanaan?.sedangBerjalan?.count ?? data?.statusProker?.sedangDilaksanakan?.count ?? 0} ({data?.statusProker?.pelaksanaan?.sedangBerjalan?.percentage ?? data?.statusProker?.sedangDilaksanakan?.percentage ?? 0}%)
                   </span>
                 </div>
 
                 {/* Sudah Selesai */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30">
+                  <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Sudah Selesai</span>
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Sudah Selesai</span>
                   </div>
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
                     {data?.statusProker?.pelaksanaan?.selesai?.count ?? data?.statusProker?.selesai?.count ?? 0} ({data?.statusProker?.pelaksanaan?.selesai?.percentage ?? data?.statusProker?.selesai?.percentage ?? 0}%)
                   </span>
                 </div>
@@ -1737,24 +1785,28 @@ export const DashboardEksekutifKkn: React.FC = () => {
         </div>
 
         {/* Col 2: Presensi Mahasiswa (3 cols) */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 mb-2">
-            <UserCheck size={16} className="text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Presensi Mahasiswa
-            </h2>
+        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
+                <UserCheck size={16} />
+              </div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Presensi Mahasiswa
+              </h2>
+            </div>
           </div>
 
           {/* Donut Chart Besar Simetris di Tengah Atas */}
-          <div className="relative h-40 w-full flex items-center justify-center my-auto">
+          <div className="relative h-44 w-full flex items-center justify-center my-auto">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPieChart>
                 <Pie
                   data={data?.presensiMahasiswa?.breakdown || []}
                   cx="50%"
                   cy="50%"
-                  innerRadius={44}
-                  outerRadius={64}
+                  innerRadius={46}
+                  outerRadius={68}
                   paddingAngle={3}
                   dataKey="count"
                 >
@@ -1767,7 +1819,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
+                        <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-lg">
                           <span>{d.label}: </span>
                           <span className="text-emerald-400 font-extrabold">{d.count} ({d.percentage}%)</span>
                         </div>
@@ -1781,30 +1833,30 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
             {/* Inner Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-black text-slate-900 dark:text-slate-100 leading-none">
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none">
                 {data?.presensiMahasiswa?.percentageHadir ?? 0}%
               </span>
-              <span className="text-[10px] text-slate-400 font-semibold mt-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">
                 Hadir
               </span>
             </div>
           </div>
 
           {/* Breakdown List di Bawah (Simetris & Terbaca Jelas) */}
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
             {(data?.presensiMahasiswa?.breakdown || []).map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between gap-1">
+              <div key={idx} className="flex items-center justify-between gap-1 p-1 rounded-lg bg-slate-50/60 dark:bg-slate-800/40">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-slate-600 dark:text-slate-300 font-medium text-[10.5px] truncate">
+                  <span className="text-slate-700 dark:text-slate-200 font-semibold text-xs truncate">
                     {item.label}
                   </span>
                 </div>
-                <span className="font-bold text-slate-800 dark:text-slate-100 text-[10.5px] shrink-0">
-                  {item.count} <span className="text-slate-400 font-normal">({item.percentage}%)</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 text-xs shrink-0">
+                  {item.count} <span className="text-slate-500 dark:text-slate-400 font-normal">({item.percentage}%)</span>
                 </span>
               </div>
             ))}
@@ -1812,58 +1864,61 @@ export const DashboardEksekutifKkn: React.FC = () => {
         </div>
 
         {/* Col 3: Rasio Kehadiran terhadap Target 200 Jam (4 cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <TrendingUp size={16} className="text-blue-600 dark:text-blue-400" />
-              <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                Rasio Kehadiran terhadap Target 200 Jam
+              <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                <TrendingUp size={16} />
+              </div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Target 200 Jam Kerja
               </h2>
             </div>
             <div className="text-right">
-              <span className="text-sm font-black text-[#009966] dark:text-emerald-400">
+              <span className="text-sm font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
                 {data?.rasioKehadiranTrend?.percentage ?? 0}%
               </span>
-              <p className="text-[9.5px] text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
                 {data?.rasioKehadiranTrend?.remainingHours ?? 200} Jam tersisa
               </p>
             </div>
           </div>
 
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Capaian:</span>
             <span className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
               {data?.rasioKehadiranTrend?.currentAvgHours ?? 0} Jam / {data?.rasioKehadiranTrend?.targetHours || 200} Jam
             </span>
           </div>
 
-          <div className="h-36 w-full">
+          <div className="h-40 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={data?.rasioKehadiranTrend?.weeklyTrends || []}
                 margin={{ top: 10, right: 10, left: -5, bottom: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5e1" />
                 <XAxis
                   dataKey="week"
-                  tick={{ fontSize: 9.5, fill: "#94a3b8" }}
+                  tick={{ fontSize: 11, fontWeight: 600, fill: "#475569" }}
                   tickLine={false}
-                  axisLine={{ stroke: "#e2e8f0" }}
-                  label={{ value: "Pekan KKN", position: "insideBottom", offset: -5, fontSize: 9.5, fill: "#94a3b8" }}
+                  axisLine={{ stroke: "#cbd5e1" }}
+                  label={{ value: "Pekan KKN", position: "insideBottom", offset: -5, fontSize: 11, fontWeight: 700, fill: "#475569" }}
                 />
                 <YAxis
                   domain={[0, 200]}
                   ticks={[0, 50, 100, 150, 200]}
-                  tick={{ fontSize: 9, fill: "#94a3b8" }}
+                  tick={{ fontSize: 11, fontWeight: 600, fill: "#475569" }}
                   tickLine={false}
                   axisLine={false}
-                  label={{ value: "Jam Kerja", angle: -90, position: "insideLeft", offset: 15, fontSize: 9.5, fill: "#94a3b8" }}
+                  label={{ value: "Jam Kerja", angle: -90, position: "insideLeft", offset: 15, fontSize: 11, fontWeight: 700, fill: "#475569" }}
                 />
                 <RechartsTooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
+                        <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-lg">
                           <span>{d.week}: </span>
                           <span className="text-emerald-400 font-extrabold">{d.avgHours} Jam</span>
                         </div>
@@ -1876,8 +1931,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="target"
-                  stroke="#cbd5e1"
-                  strokeWidth={1.5}
+                  stroke="#94a3b8"
+                  strokeWidth={2}
                   strokeDasharray="4 4"
                   dot={false}
                 />
@@ -1885,25 +1940,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <Line
                   type="monotone"
                   dataKey="avgHours"
-                  stroke="#009966"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#009966" }}
-                  activeDot={{ r: 5 }}
+                  stroke="#059669"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "#059669" }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-4 text-[10.5px] font-medium pt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#009966]" />
-              <span className="text-slate-600 dark:text-slate-400">Rata-rata jam per mahasiswa</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-0.5 border-b border-dashed border-slate-400 inline-block" />
-              <span className="text-slate-400">Target 200 jam</span>
-            </div>
           </div>
         </div>
       </div>
@@ -2293,15 +2336,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
             <span>Memuat data papan peringkat...</span>
           </div>
         ) : leaderboardTab === "students" ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 px-3 font-extrabold w-12 text-center">Peringkat</th>
-                  <th className="py-2.5 px-3 font-extrabold">Mahasiswa & NIM</th>
-                  <th className="py-2.5 px-3 font-extrabold">Kelompok KKN</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Jam Lapangan</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Skor Akhir</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
+                  <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
+                  <th className="py-3 px-3.5 font-bold">Mahasiswa & NIM</th>
+                  <th className="py-3 px-3.5 font-bold">Kelompok KKN</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Jam Lapangan</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Skor Akhir</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -2313,41 +2356,41 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       key={st.id || idx}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-3 px-3.5 text-center">
                         {rank === 1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 font-black text-xs shadow-xs border border-amber-300/60">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 font-black text-xs shadow-xs border border-amber-300/60">
                             👑 1
                           </span>
                         ) : rank === 2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-black text-xs shadow-xs">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-black text-xs shadow-xs">
                             🥈 2
                           </span>
                         ) : rank === 3 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 font-black text-xs shadow-xs">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 font-black text-xs shadow-xs">
                             🥉 3
                           </span>
                         ) : (
-                          <span className="font-extrabold text-slate-400">#{rank}</span>
+                          <span className="font-extrabold text-slate-600 dark:text-slate-400">#{rank}</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3">
-                        <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <td className="py-3 px-3.5">
+                        <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
                           <span>{st.name}</span>
                           {isTop3 && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800/40">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800/40">
                               Teladan
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-400 font-medium">NIM: {st.nim}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">NIM: {st.nim}</div>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300 font-medium">
+                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-200 font-semibold text-xs">
                         {st.kelompok}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">
+                      <td className="py-3 px-3.5 text-right font-black text-emerald-700 dark:text-emerald-400 text-xs">
                         {st.totalHours} Jam
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-3 px-3.5 text-right">
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-200 dark:border-emerald-700/40">
                           {st.finalScore} Poin
                         </span>
@@ -2359,15 +2402,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </table>
           </div>
         ) : leaderboardTab === "groups" ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 px-3 font-extrabold w-12 text-center">Peringkat</th>
-                  <th className="py-2.5 px-3 font-extrabold">Nama Kelompok</th>
-                  <th className="py-2.5 px-3 font-extrabold">DPL Pengampu</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Jumlah Anggota</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Rata-Rata Skor</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
+                  <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
+                  <th className="py-3 px-3.5 font-bold">Nama Kelompok</th>
+                  <th className="py-3 px-3.5 font-bold">DPL Pengampu</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Jumlah Anggota</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Rata-Rata Skor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -2378,19 +2421,19 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       key={g.id || idx}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="py-2.5 px-3 text-center font-extrabold text-slate-500">
+                      <td className="py-3 px-3.5 text-center font-extrabold text-slate-600 dark:text-slate-400">
                         #{rank}
                       </td>
-                      <td className="py-2.5 px-3 font-black text-slate-900 dark:text-slate-100">
+                      <td className="py-3 px-3.5 font-black text-slate-900 dark:text-slate-100 text-xs">
                         {g.name}
                       </td>
-                      <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300 font-semibold">
+                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-200 font-semibold text-xs">
                         {g.dplName}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
+                      <td className="py-3 px-3.5 text-right font-extrabold text-slate-800 dark:text-slate-200 text-xs">
                         {g.membersCount} Mahasiswa
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-3 px-3.5 text-right">
                         <span
                           className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200 dark:border-blue-700/40 cursor-help"
                           title={`Poin Kelompok = (Poin Proker × 60%) + (Rerata Anggota × 40%) = (${g.poinProker ?? 0} × 60%) + (${g.rataRataPoinAnggota ?? 0} × 40%) = ${g.avgScore}`}
@@ -2405,15 +2448,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </table>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-                  <th className="py-2.5 px-3 font-extrabold w-12 text-center">Peringkat</th>
-                  <th className="py-2.5 px-3 font-extrabold">Nama Dosen (DPL)</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Kelompok Dibina</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Mahasiswa Bimbingan</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Skor Pembimbingan</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
+                  <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
+                  <th className="py-3 px-3.5 font-bold">Nama Dosen (DPL)</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Kelompok Dibina</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Mahasiswa Bimbingan</th>
+                  <th className="py-3 px-3.5 font-bold text-right">Skor Pembimbingan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -2425,40 +2468,40 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       key={d.id || idx}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-3 px-3.5 text-center">
                         {rank === 1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 font-black text-xs shadow-xs border border-amber-300/60">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 font-black text-xs shadow-xs border border-amber-300/60">
                             👑 1
                           </span>
                         ) : rank === 2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-black text-xs shadow-xs">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100 font-black text-xs shadow-xs">
                             🥈 2
                           </span>
                         ) : rank === 3 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 font-black text-xs shadow-xs">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-300 font-black text-xs shadow-xs">
                             🥉 3
                           </span>
                         ) : (
-                          <span className="font-extrabold text-slate-400">#{rank}</span>
+                          <span className="font-extrabold text-slate-600 dark:text-slate-400">#{rank}</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 font-black text-slate-900 dark:text-slate-100">
+                      <td className="py-3 px-3.5 font-black text-slate-900 dark:text-slate-100 text-xs">
                         <div className="flex items-center gap-1.5">
                           <span>{d.name}</span>
                           {isTop3 && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold border border-teal-200 dark:border-teal-800/40">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold border border-teal-200 dark:border-teal-800/40">
                               DPL Teladan
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
+                      <td className="py-3 px-3.5 text-right font-extrabold text-slate-800 dark:text-slate-200 text-xs">
                         {d.totalGroups} Kelompok
                       </td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
+                      <td className="py-3 px-3.5 text-right font-extrabold text-slate-800 dark:text-slate-200 text-xs">
                         {d.totalStudents} Mahasiswa
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-3 px-3.5 text-right">
                         <span
                           className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-xs border border-teal-200 dark:border-teal-700/40 cursor-help"
                           title={`Poin DPL = (Poin Logbook × 50%) + (Poin Kelompok × 50%) = (${d.poinLogbook ?? (d.hasLogbook ? 6 : 0)} × 50%) + (${d.poinKelompok ?? 0} × 50%) = ${d.points}`}
@@ -2639,18 +2682,230 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
+        {/* Toolbar: Urutkan, Mode Tampilan (Tabel/Kartu), & Info Data */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Urutkan:</span>
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+              <ArrowUpDown size={13} className="text-slate-500" />
+              <select
+                value={groupSortBy}
+                onChange={(e) => setGroupSortBy(e.target.value as any)}
+                aria-label="Urutkan Kelompok"
+                className="bg-transparent outline-none cursor-pointer font-bold text-xs"
+              >
+                <option value="name">Nama Kelompok (A - Z)</option>
+                <option value="att_desc">Presensi Tertinggi (99% - 0%)</option>
+                <option value="att_asc">Presensi Terendah (0% - 99%)</option>
+                <option value="proker_desc">Progres Proker Tertinggi</option>
+                <option value="proker_asc">Progres Proker Terendah</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* View Mode Toggle */}
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setGroupViewMode("table")}
+                className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition cursor-pointer ${
+                  groupViewMode === "table"
+                    ? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+                title="Tampilan Tabel Eksekutif"
+              >
+                <List size={15} />
+                <span className="hidden sm:inline">Tabel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGroupViewMode("cards")}
+                className={`px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition cursor-pointer ${
+                  groupViewMode === "cards"
+                    ? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+                title="Tampilan Kartu Ringkas"
+              >
+                <LayoutGrid size={15} />
+                <span className="hidden sm:inline">Kartu</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {loadingGroups ? (
           <div className="p-8 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
             <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
             <span>Memuat data kelompok KKN...</span>
           </div>
-        ) : filteredGroups.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+        ) : sortedAndFilteredGroups.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-850 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs font-semibold">
             Belum ada kelompok KKN yang sesuai dengan parameter pencarian atau filter aktif.
           </div>
+        ) : groupViewMode === "table" ? (
+          /* TAMPILAN TABEL EKSEKUTIF */
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
+                  <th className="py-3 px-3.5 font-bold w-12 text-center">#</th>
+                  <th className="py-3 px-3.5 font-bold">Nama Kelompok & Posko</th>
+                  <th className="py-3 px-3.5 font-bold">Wilayah (Kel / RW)</th>
+                  <th className="py-3 px-3.5 font-bold">DPL Pengampu</th>
+                  <th className="py-3 px-3.5 font-bold">Ketua & NIM</th>
+                  <th className="py-3 px-3.5 font-bold text-center">Mahasiswa</th>
+                  <th className="py-3 px-3.5 font-bold">Rerata Presensi</th>
+                  <th className="py-3 px-3.5 font-bold">Progres Proker</th>
+                  <th className="py-3 px-3.5 font-bold text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {paginatedGroups.map((g, idx) => {
+                  const globalIdx = groupsPerPage === 0 ? idx + 1 : (groupCurrentPage - 1) * groupsPerPage + idx + 1;
+                  const rwFormatted = Array.isArray(g.cakupanRw)
+                    ? g.cakupanRw.join(", ")
+                    : typeof g.cakupanRw === "string"
+                    ? g.cakupanRw
+                    : "-";
+                  const prokerMetrics = calculateProkerMetrics(g.programKerja);
+                  const isLowAtt = (g.avgAttendanceRate || 0) < 60;
+                  const isLowProker = prokerMetrics.isLowProker;
+
+                  return (
+                    <tr
+                      key={g.id}
+                      className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${
+                        isLowAtt || isLowProker ? "bg-amber-50/20 dark:bg-amber-950/10" : ""
+                      }`}
+                    >
+                      <td className="py-3 px-3.5 text-center font-bold text-slate-500 dark:text-slate-400">
+                        {globalIdx}
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <div className="font-black text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                          <span>{g.name}</span>
+                          {isLowAtt && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40">
+                              Presensi &lt;60%
+                            </span>
+                          )}
+                        </div>
+                        {g.posko && (
+                          <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1.5">
+                            <span>Posko: {g.posko.nama}</span>
+                            {g.posko.latitude && g.posko.longitude && (
+                              <a
+                                href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-500 hover:underline flex items-center gap-0.5 text-[10px]"
+                                title="Buka peta lokasi posko"
+                              >
+                                <MapPin size={10} /> Peta
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-200 font-semibold text-xs">
+                        <div>Kel. {g.kelurahan || "-"}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">RW: {rwFormatted}</div>
+                      </td>
+                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-200 font-semibold text-xs">
+                        {g.dpl ? (
+                          <div>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">{g.dpl.name}</span>
+                            {g.dpl.nip && <span className="block text-xs text-slate-500 dark:text-slate-400">NIP: {g.dpl.nip}</span>}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Belum ditugaskan</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-200 font-semibold text-xs">
+                        {g.ketua ? (
+                          <div>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">{g.ketua.name}</span>
+                            <span className="block text-xs text-slate-500 dark:text-slate-400">NIM: {g.ketua.nim}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3.5 text-center">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                          {g.studentCount || 0} Orang
+                        </span>
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <div className="flex items-center gap-2">
+                          <strong className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block ${getAttendanceBadgeClass(g.avgAttendanceRate || 0).badge}`}>
+                            {g.avgAttendanceRate || 0}%
+                          </strong>
+                          <div className="w-16 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden hidden md:block">
+                            <div
+                              className={`h-full rounded-full ${
+                                (g.avgAttendanceRate || 0) >= 80
+                                  ? "bg-emerald-500"
+                                  : (g.avgAttendanceRate || 0) >= 60
+                                  ? "bg-blue-500"
+                                  : "bg-rose-500"
+                              }`}
+                              style={{ width: `${Math.min(100, g.avgAttendanceRate || 0)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <span
+                          className={`font-black text-xs px-2.5 py-1 rounded-lg border inline-block ${
+                            prokerMetrics.rate >= 80
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : prokerMetrics.rate >= 60
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300"
+                              : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
+                          }`}
+                          title={prokerMetrics.tooltip}
+                        >
+                          {prokerMetrics.rate}% ({prokerMetrics.ratioLabel})
+                        </span>
+                      </td>
+                      <td className="py-3 px-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedGroupForDetail(g);
+                              setGroupStudentSearchQuery("");
+                              setGroupStudentPage(1);
+                            }}
+                            className="py-1 px-2.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                            title="Lihat detail anggota kelompok"
+                          >
+                            <Users size={12} />
+                            <span>Anggota</span>
+                          </button>
+                          <Link
+                            to="/pelaksanaan/kelompok"
+                            className="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs transition flex items-center justify-center cursor-pointer"
+                            title="Buka Menu Kelompok"
+                          >
+                            <ChevronRight size={13} />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
+          /* TAMPILAN KARTU RINGKAS */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filteredGroups.map((g) => {
+            {paginatedGroups.map((g) => {
               const rwFormatted = Array.isArray(g.cakupanRw)
                 ? g.cakupanRw.join(", ")
                 : typeof g.cakupanRw === "string"
@@ -2675,34 +2930,34 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{g.name}</h4>
                       <div className="flex items-center gap-1.5">
                         {isLowAtt && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40">
                             Presensi &lt;60%
                           </span>
                         )}
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
                           {g.studentCount || 0} Mahasiswa
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold">
                       Kel. {g.kelurahan || "-"} {g.kecamatan ? `• Kec. ${g.kecamatan}` : ""} • RW {rwFormatted}
                     </p>
                     {g.dpl && (
-                      <p className="text-[11px] text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1 truncate" title={`DPL: ${g.dpl.name}${g.dpl.nip ? ` (${g.dpl.nip})` : ""}`}>
-                        <span className="text-slate-400 font-normal">DPL:</span> {g.dpl.name} {g.dpl.nip ? `(${g.dpl.nip})` : ""}
+                      <p className="text-xs text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1 truncate" title={`DPL: ${g.dpl.name}${g.dpl.nip ? ` (${g.dpl.nip})` : ""}`}>
+                        <span className="text-slate-500 dark:text-slate-400 font-normal">DPL:</span> {g.dpl.name} {g.dpl.nip ? `(${g.dpl.nip})` : ""}
                       </p>
                     )}
                     {g.ketua && (
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
-                        <span className="text-slate-400 font-normal">Ketua:</span> {g.ketua.name} ({g.ketua.nim})
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
+                        <span className="text-slate-500 dark:text-slate-400 font-normal">Ketua:</span> {g.ketua.name} ({g.ketua.nim})
                       </p>
                     )}
                     {g.posko && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center justify-between" title={g.posko.alamat}>
-                        <span><span className="font-semibold text-slate-600 dark:text-slate-300">Posko:</span> {g.posko.nama}</span>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate flex items-center justify-between" title={g.posko.alamat}>
+                        <span><span className="font-semibold text-slate-700 dark:text-slate-300">Posko:</span> {g.posko.nama}</span>
                         {g.posko.latitude && g.posko.longitude && (
-                          <a href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`} target="_blank" rel="noreferrer" className="text-[10px] flex items-center gap-1 text-blue-500 hover:underline">
-                            <MapPin size={10} /> Lokasi
+                          <a href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 text-blue-500 hover:underline">
+                            <MapPin size={11} /> Lokasi
                           </a>
                         )}
                       </p>
@@ -2712,14 +2967,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   {/* Dual Metrics: Presensi & Proker */}
                   <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-medium">Rerata Presensi</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block font-semibold">Rerata Presensi</span>
                       <strong className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block mt-0.5 ${getAttendanceBadgeClass(g.avgAttendanceRate || 0).badge}`}>
                         {g.avgAttendanceRate || 0}%
                       </strong>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-medium">Progres Proker</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block font-semibold">Progres Proker</span>
                       <span
                         className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block mt-0.5 ${
                           prokerMetrics.rate >= 80
@@ -2759,6 +3014,107 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination Bar */}
+        {sortedAndFilteredGroups.length > 0 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-semibold">
+              <span>
+                Menampilkan{" "}
+                <strong className="text-slate-900 dark:text-slate-100">
+                  {groupsPerPage === 0 ? 1 : (groupCurrentPage - 1) * groupsPerPage + 1}
+                </strong>{" "}
+                –{" "}
+                <strong className="text-slate-900 dark:text-slate-100">
+                  {groupsPerPage === 0
+                    ? sortedAndFilteredGroups.length
+                    : Math.min(groupCurrentPage * groupsPerPage, sortedAndFilteredGroups.length)}
+                </strong>{" "}
+                dari{" "}
+                <strong className="text-slate-900 dark:text-slate-100">
+                  {sortedAndFilteredGroups.length}
+                </strong>{" "}
+                kelompok
+              </span>
+
+              {/* Per Page Selector */}
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className="text-slate-400">| Per hal:</span>
+                <select
+                  value={groupsPerPage}
+                  onChange={(e) => {
+                    setGroupsPerPage(Number(e.target.value));
+                    setGroupCurrentPage(1);
+                  }}
+                  aria-label="Jumlah per halaman"
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none font-bold cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={0}>Semua</option>
+                </select>
+              </div>
+            </div>
+
+            {groupsPerPage > 0 && totalGroupPages > 1 && (
+              <div className="flex items-center gap-1 self-center sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setGroupCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={groupCurrentPage === 1}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft size={14} />
+                  <span>Sebelumnya</span>
+                </button>
+
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalGroupPages }, (_, i) => i + 1).map((pg) => {
+                    if (
+                      pg === 1 ||
+                      pg === totalGroupPages ||
+                      Math.abs(pg - groupCurrentPage) <= 1
+                    ) {
+                      return (
+                        <button
+                          key={pg}
+                          type="button"
+                          onClick={() => setGroupCurrentPage(pg)}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            pg === groupCurrentPage
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          {pg}
+                        </button>
+                      );
+                    }
+                    if (
+                      (pg === 2 && groupCurrentPage > 3) ||
+                      (pg === totalGroupPages - 1 && groupCurrentPage < totalGroupPages - 2)
+                    ) {
+                      return <span key={pg} className="px-1 text-slate-400">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setGroupCurrentPage((p) => Math.min(totalGroupPages, p + 1))}
+                  disabled={groupCurrentPage === totalGroupPages}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Selanjutnya</span>
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
