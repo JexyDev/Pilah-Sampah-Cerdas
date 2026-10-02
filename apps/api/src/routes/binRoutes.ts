@@ -477,6 +477,55 @@ router.put(
   binController.reviewResetRequest
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/reset-request/{id}/cancel:
+ *   put:
+ *     summary: Batalkan pengajuan pengosongan tempat sampah oleh warga pemohon
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pengajuan pengosongan berhasil dibatalkan
+ *       400:
+ *         description: Pengajuan sudah diproses atau bukan status PENDING
+ *       403:
+ *         description: Bukan pemilik pengajuan
+ *       404:
+ *         description: Pengajuan tidak ditemukan
+ */
+router.put(
+  "/reset-request/:id/cancel",
+  authMiddleware,
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequest
+);
+router.delete(
+  "/reset-request/:id/cancel",
+  authMiddleware,
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequest
+);
+router.put(
+  "/reset-requests/:id/cancel",
+  authMiddleware,
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequest
+);
+router.delete(
+  "/reset-requests/:id/cancel",
+  authMiddleware,
+  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequest
+);
+
 router.post(
   "/qr-batch",
   authMiddleware,

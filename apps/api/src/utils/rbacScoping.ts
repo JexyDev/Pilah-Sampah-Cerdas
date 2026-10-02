@@ -48,6 +48,17 @@ export async function getScopingFilters(user: {
       ].includes(r)
     )
       return "MPL";
+    if (
+      [
+        "PETUGAS_PEMILAHAN",
+        "PETUGAS_GASLAH",
+        "PETUGAS_TPS3R",
+        "Petugas Pemilahan",
+        "Petugas Gaslah",
+      ].includes(r)
+    ) {
+      return "PETUGAS_RESIDU";
+    }
     return r;
   };
   const role = normalizeRole(user.role);
@@ -570,11 +581,20 @@ export async function getScopingFilters(user: {
   // 5b. PETUGAS_RESIDU can see WARGA users for manual deposits and bin requests scoped by their RW
   if (role === "PETUGAS_RESIDU") {
     const userRwId = dbUser.rwId;
+    const userKelurahanId = dbUser.rw?.kelurahanId;
+
+    let binFilter: any = {};
+    if (userRwId) {
+      binFilter = { rwId: userRwId };
+    } else if (userKelurahanId) {
+      binFilter = { rw: { kelurahanId: userKelurahanId } };
+    }
+
     return {
       userFilter: userRwId
         ? { role: { name: "WARGA" }, rwId: userRwId }
         : { role: { name: "WARGA" } },
-      binFilter: userRwId ? { rwId: userRwId } : {},
+      binFilter,
       householdFilter: userRwId ? { rwId: userRwId } : {},
       wasteLogFilter: userRwId ? { bin: { rwId: userRwId } } : {},
       pemanfaatanFilter: { id: "none" },

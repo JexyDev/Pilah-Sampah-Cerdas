@@ -1074,93 +1074,99 @@ export const PemanfaatanSampah: React.FC = () => {
     </div>
   );
 
-  return (
-    <div className="pb-24 lg:pb-8">
-      <PageHeader
-        title="Fasilitas Pengelolaan Sampah"
-        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, TPS) di seluruh wilayah binaan."
-        icon={Sprout}
-      />
-
+    <div className="pb-24 lg:pb-8 pt-4 sm:pt-6">
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
-        
-        {/* Banner Penjelasan Data Real-Time & Tata Letak */}
-        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 sm:p-4.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
-              <Database size={18} />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                  Data Inventaris Operasional Terverifikasi
-                </span>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
-                  100% Real-Time Database
-                </span>
+        <PageHeader
+          category="Tata Kelola Sampah • Fasilitas"
+          scope={
+            user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
+              ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
+              : user?.peran === "RW"
+              ? `RW ${user?.rw || user?.rtRwId || ""}`
+              : user?.peran === "LURAH"
+              ? `Kelurahan ${user?.kelurahan || ""}`
+              : "Kecamatan Coblong"
+          }
+          title="Fasilitas Pengelolaan Sampah"
+          description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, TPS) di seluruh wilayah binaan."
+          icon={Sprout}
+          actions={
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("split");
+                    setSearchParams((prev: URLSearchParams) => {
+                      const next = new URLSearchParams(prev);
+                      next.delete("view");
+                      return next;
+                    });
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    viewMode === "split"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                  }`}
+                  title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
+                >
+                  <LayoutGrid size={14} />
+                  <span>Split-View (Monitoring)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("table");
+                    setSearchParams((prev: URLSearchParams) => {
+                      const next = new URLSearchParams(prev);
+                      next.set("view", "table");
+                      return next;
+                    });
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    viewMode === "table"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                  }`}
+                  title="Tampilan tabel tabular data inventaris lengkap"
+                >
+                  <Table2 size={14} />
+                  <span>Tabel Data Lengkap</span>
+                </button>
               </div>
-              <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
-                Menampilkan direktori 87 fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
-              </p>
+
+              {isDeveloper && (
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#035941] dark:bg-emerald-600 text-white hover:bg-[#024432] dark:hover:bg-emerald-700 shadow-sm transition-all cursor-pointer active:scale-95"
+                  title="Tambah Fasilitas Baru (Khusus Developer / Super User)"
+                >
+                  <Plus size={14} />
+                  <span>Tambah Fasilitas</span>
+                </button>
+              )}
             </div>
+          }
+        />
+
+        {/* Banner Penjelasan Data Real-Time */}
+        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 sm:p-4.5 flex items-start gap-3.5 shadow-2xs">
+          <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
+            <Database size={18} />
           </div>
-
-          {/* Switcher Tampilan (Split vs Table) & Tombol Tambah Fasilitas (Developer/SU) */}
-          <div className="flex items-center gap-2 flex-wrap self-stretch sm:self-auto justify-end">
-            <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-emerald-200 dark:border-slate-700 shadow-2xs shrink-0 justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode("split");
-                  setSearchParams((prev: URLSearchParams) => {
-                    const next = new URLSearchParams(prev);
-                    next.delete("view");
-                    return next;
-                  });
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  viewMode === "split"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
-                }`}
-                title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
-              >
-                <LayoutGrid size={14} />
-                <span>Split-View (Monitoring)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode("table");
-                  setSearchParams((prev: URLSearchParams) => {
-                    const next = new URLSearchParams(prev);
-                    next.set("view", "table");
-                    return next;
-                  });
-                }}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
-                }`}
-                title="Tampilan tabel tabular data inventaris lengkap"
-              >
-                <Table2 size={14} />
-                <span>Tabel Data Lengkap</span>
-              </button>
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                Data Inventaris Operasional Terverifikasi
+              </span>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
+                100% Real-Time Database
+              </span>
             </div>
-
-            {isDeveloper && (
-              <button
-                type="button"
-                onClick={() => setIsCreateOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#035941] dark:bg-emerald-600 text-white hover:bg-[#024432] dark:hover:bg-emerald-700 shadow-sm transition-all cursor-pointer active:scale-95"
-                title="Tambah Fasilitas Baru (Khusus Developer / Super User)"
-              >
-                <Plus size={14} />
-                <span>Tambah Fasilitas</span>
-              </button>
-            )}
+            <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+              Menampilkan direktori {items.length > 0 ? items.length : 87} fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
+            </p>
           </div>
         </div>
 

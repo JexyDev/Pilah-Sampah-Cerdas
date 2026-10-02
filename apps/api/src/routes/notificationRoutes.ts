@@ -359,6 +359,9 @@ router.get("/", authMiddleware, async (req, res) => {
       "RW",
       "RT",
       "PETUGAS_RESIDU",
+      "PETUGAS_PEMILAHAN",
+      "PETUGAS_GASLAH",
+      "PETUGAS_TPS3R",
     ].includes(role);
 
     // Fetch user details for area scoping
@@ -406,7 +409,21 @@ router.get("/", authMiddleware, async (req, res) => {
       // 1. Fetch real PENDING BinResetRequests scoped by area/role
       try {
         let reqWhere: any = { status: "PENDING" };
-        if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+        const isPetugasRole = [
+          "PETUGAS_RESIDU",
+          "PETUGAS_PEMILAHAN",
+          "PETUGAS_GASLAH",
+          "PETUGAS_TPS3R",
+        ].includes(role);
+
+        if (isPetugasRole) {
+          const binCondition: any =
+            areaIds.length > 0 ? { rwId: { in: areaIds } } : { rwId: -1 };
+          reqWhere.OR = [
+            { petugasId: userId },
+            { bin: binCondition },
+          ];
+        } else if (["RW", "RT", "MAHASISWA_KKN"].includes(role)) {
           if (areaIds.length > 0) {
             reqWhere.bin = { rwId: { in: areaIds } };
           } else {
@@ -466,7 +483,16 @@ router.get("/", authMiddleware, async (req, res) => {
         let criticalBinNotifs: any[] = [];
         try {
           let binWhere: any = {};
-          if (["RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+          if (
+            [
+              "RW",
+              "PETUGAS_RESIDU",
+              "PETUGAS_PEMILAHAN",
+              "PETUGAS_GASLAH",
+              "PETUGAS_TPS3R",
+              "MAHASISWA_KKN",
+            ].includes(role)
+          ) {
             if (areaIds.length > 0) {
               binWhere.rwId = { in: areaIds };
             } else {
