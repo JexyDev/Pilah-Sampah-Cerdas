@@ -36,10 +36,9 @@ import {
   Table2,
   Navigation,
   Database,
-  Info,
-  Sparkles,
-  Filter
+  Plus
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -240,21 +239,32 @@ export const PemanfaatanSampah: React.FC = () => {
   
   const { user } = useAuthStore();
   const isDeveloper = user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER";
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editingFacility, setEditingFacility] = useState<FacilityItem | null>(null);
-  const [viewMode, setViewMode] = useState<"split" | "table">("split");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"split" | "table">(
+    searchParams.get("view") === "table" ? "table" : "split"
+  );
 
-
+  useEffect(() => {
+    const v = searchParams.get("view");
+    if (v === "table") {
+      setViewMode("table");
+    } else {
+      setViewMode("split");
+    }
+  }, [searchParams]);
 
   const handleDeleteFacility = async (id: string) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus fasilitas ini?")) return;
     try {
       const res = await api.delete(`/facilities/${id}`);
       if (res.data.success) {
-        showToast("success", "Fasilitas berhasil dihapus");
+        showToast.success("Fasilitas berhasil dihapus");
         setItems(prev => prev.filter(item => item.id !== id));
       }
     } catch (error: any) {
-      showToast("error", error.response?.data?.message || "Gagal menghapus fasilitas");
+      showToast.error(error.response?.data?.message || "Gagal menghapus fasilitas");
     }
   };
 
@@ -523,7 +533,7 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </div>
         <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.inovasiOrganik}
+          {metrics.organik}
         </div>
         <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
           Loseda / Maggot
@@ -1105,7 +1115,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setViewMode("split");
-                  setSearchParams((prev) => {
+                  setSearchParams((prev: URLSearchParams) => {
                     const next = new URLSearchParams(prev);
                     next.delete("view");
                     return next;
@@ -1125,7 +1135,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setViewMode("table");
-                  setSearchParams((prev) => {
+                  setSearchParams((prev: URLSearchParams) => {
                     const next = new URLSearchParams(prev);
                     next.set("view", "table");
                     return next;
@@ -1942,10 +1952,10 @@ const CreateFacilityModal: React.FC<{
     setLoading(true);
     try {
       await api.post("/facilities", formData);
-      showToast("success", "Fasilitas baru berhasil didaftarkan");
+      showToast.success("Fasilitas baru berhasil didaftarkan");
       onSuccess();
     } catch (error: any) {
-      showToast("error", error.response?.data?.message || "Gagal menambahkan fasilitas");
+      showToast.error(error.response?.data?.message || "Gagal menambahkan fasilitas");
     } finally {
       setLoading(false);
     }
@@ -2042,10 +2052,10 @@ const EditFacilityModal: React.FC<{
     setLoading(true);
     try {
       await api.put(`/facilities/${facility.id}`, formData);
-      showToast("success", "Fasilitas berhasil diperbarui");
+      showToast.success("Fasilitas berhasil diperbarui");
       onSuccess();
     } catch (error: any) {
-      showToast("error", error.response?.data?.message || "Gagal memperbarui fasilitas");
+      showToast.error(error.response?.data?.message || "Gagal memperbarui fasilitas");
     } finally {
       setLoading(false);
     }
