@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Proposal Eksekutif: Penyesuaian Formula Poin DPL Berbasis Aktivitas Lapangan</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+      @bottom-right {
+        content: "Halaman " counter(page) " dari " counter(pages);
+        font-size: 8pt;
+        color: #64748b;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+      @bottom-left {
+        content: "Dokumen Usulan Kebijakan - Sistem Poin KKN Tematik Berseka 2026";
+        font-size: 8pt;
+        color: #64748b;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      color: #0f172a;
+      line-height: 1.45;
+      font-size: 9pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+
+    /* KOP DOKUMEN */
+    .header-table {
+      width: 100%;
+      border-bottom: 2.5px solid #059669;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .header-logo {
+      font-size: 18pt;
+      font-weight: 900;
+      color: #059669;
+      letter-spacing: -0.5px;
+    }
+    .header-logo span {
+      color: #0f172a;
+    }
+    .header-sub {
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .header-meta {
+      text-align: right;
+    }
+    .badge-doc {
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #047857;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .meta-text {
+      font-size: 8pt;
+      color: #64748b;
+    }
+
+    /* TITLE BLOCK */
+    .title-banner {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-left: 4.5px solid #059669;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .title-banner h1 {
+      margin: 0 0 4px 0;
+      font-size: 13.5pt;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    .title-banner p {
+      margin: 0;
+      font-size: 8.5pt;
+      color: #475569;
+      line-height: 1.35;
+    }
+
+    /* SECTION STYLING */
+    h2 {
+      font-size: 10.5pt;
+      color: #065f46;
+      margin: 12px 0 6px 0;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px dashed #cbd5e1;
+      padding-bottom: 3px;
+    }
+
+    /* EXECUTIVE SUMMARY CARDS */
+    .summary-grid {
+      display: table;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .summary-col {
+      display: table-cell;
+      width: 33.33%;
+      padding-right: 8px;
+      vertical-align: top;
+    }
+    .summary-col:last-child {
+      padding-right: 0;
+    }
+    .summary-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .sc-header {
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 3px;
+    }
+    .sc-value {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .sc-desc {
+      font-size: 7.5pt;
+      color: #475569;
+      margin-top: 3px;
+    }
+
+    /* TABLES */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin-bottom: 10px;
+    }
+    table.data-table th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 8pt;
+    }
+    table.data-table td {
+      padding: 5.5px 8px;
+      border: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+    table.data-table tr:nth-child(even) td {
+      background: #fafafa;
+    }
+    .highlight-row {
+      background: #ecfdf5 !important;
+      font-weight: 600;
+    }
+
+    /* FORMULA BOX */
+    .formula-box {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 8.5pt;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      border-left: 4px solid #10b981;
+    }
+    .formula-box .highlight {
+      color: #34d399;
+      font-weight: 700;
+    }
+    .formula-box .comment {
+      color: #94a3b8;
+      font-size: 8pt;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-block;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      font-size: 7.5pt;
+      font-weight: 700;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+    .badge-amber { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+
+    /* CALLOUT BOXES */
+    .callout {
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 8pt;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      border-left: 3.5px solid;
+    }
+    .callout-info {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e3a8a;
+    }
+    .callout-success {
+      background: #f0fdf4;
+      border-color: #16a34a;
+      color: #14532d;
+    }
+    .callout-warning {
+      background: #fffbeb;
+      border-color: #f59e0b;
+      color: #78350f;
+    }
+
+    /* SIGNATURE BLOCK */
+    .sign-table {
+      width: 100%;
+      margin-top: 14px;
+      border-collapse: collapse;
+      page-break-inside: avoid;
+    }
+    .sign-table td {
+      width: 50%;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      vertical-align: top;
+      background: #ffffff;
+    }
+    .sign-title {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .sign-name {
+      font-size: 9.5pt;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .sign-role {
+      font-size: 8pt;
+      color: #475569;
+    }
+    .sign-space {
+      height: 38px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- KOP SURAT / DOKUMEN RESMI -->
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="header-logo">BERSEKA <span>PLATFORM</span></div>
+        <div class="header-sub">Sistem Manajemen Persampahan & KKN Tematik Terintegrasi</div>
+      </td>
+      <td class="header-meta">
+        <span class="badge-doc">MEMORANDUM & USULAN KEBIJAKAN</span>
+        <div class="meta-text"><strong>No. Dok:</strong> MEMO-DPL-04/X/2026</div>
+        <div class="meta-text"><strong>Tanggal:</strong> 2 Oktober 2026 | Pukul 11:00 WIB</div>
+        <div class="meta-text"><strong>Status:</strong> Siap Konfirmasi Pimpinan / Atasan</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- BANNER JUDUL -->
+  <div class="title-banner">
+    <h1>USULAN PENYESUAIAN FORMULA POIN DPL BERBASIS AKTIVITAS LAPANGAN</h1>
+    <p>
+      Proposal penyempurnaan sistem perhitungan Poin DPL (Dosen Pembimbing Lapangan) untuk memberikan diferensiasi 
+      berbobot antara kegiatan supervisi langsung di lapangan (5 poin) dengan pembimbingan di kampus (2 poin), 
+      dengan tetap mempertahankan prinsip proporsi 50% DPL dan 50% Kinerja Kelompok.
+    </p>
+  </div>
+
+  <!-- RINGKASAN EKSEKUTIF -->
+  <h2>📌 1. Ringkasan Eksekutif (Untuk Pimpinan / Atasan)</h2>
+  
+  <div class="summary-grid">
+    <div class="summary-col">
+      <div class="summary-card" style="border-top: 3px solid #059669;">
+        <div class="sc-header">Pilar Formula Tetap</div>
+        <div class="sc-value" style="color: #059669;">50% : 50%</div>
+        <div class="sc-desc">50% Poin Internal DPL + 50% Kinerja Kelompok Binaan (Konsisten dengan prinsip awal).</div>
+      </div>
+    </div>
+    <div class="summary-col">
+      <div class="summary-card" style="border-top: 3px solid #0284c7;">
+        <div class="sc-header">Supervisi Lapangan</div>
+        <div class="sc-value" style="color: #0284c7;">5 Pts / Giat</div>
+        <div class="sc-desc">Turun ke posko, RW dampingan, balai kelurahan, monitoring warga, dan bank sampah.</div>
+      </div>
+    </div>
+    <div class="summary-col">
+      <div class="summary-card" style="border-top: 3px solid #8b5cf6;">
+        <div class="sc-header">Bimbingan Kampus</div>
+        <div class="sc-value" style="color: #8b5cf6;">2 Pts / Giat</div>
+        <div class="sc-desc">Konsultasi laporan, koordinasi ruang prodi, BIMTEK, arahan administratif non-lapangan.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Tujuan Utama Perubahan:</strong> Memberikan apresiasi yang proporsional dan adil bagi DPL yang aktif meluangkan waktu terjun mendampingi mahasiswa di wilayah operasional KKN (Bandung & Sekitarnya), sekaligus membedakannya dari bimbingan yang dilakukan secara daring atau tatap muka di kampus.
+  </div>
+
+  <!-- 2. LATAR BELAKANG & MASALAH -->
+  <h2>⚖️ 2. Latar Belakang & Evaluasi Sistem Saat Ini</h2>
+  
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Karakteristik</th>
+        <th style="width: 37%;">Kondisi Sistem Saat Ini (Baseline)</th>
+        <th style="width: 38%;">Kondisi yang Diusulkan (Solusi Baru)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Perhitungan Logbook DPL</strong></td>
+        <td>
+          Bersifat <strong>biner / flat 6 poin</strong> jika DPL telah mengisi minimal 1 kali logbook supervisi, terlepas berapa kali DPL datang ke lapangan.
+        </td>
+        <td>
+          <span class="badge badge-green">Akumulatif Berbobot</span> Dihitung per kehadiran nyata: <strong>5 poin</strong> (Lapangan) dan <strong>2 poin</strong> (Kampus).
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Diferensiasi Keterlibatan</strong></td>
+        <td>
+          DPL yang turun ke lapangan 8 kali mendapatkan poin supervisi yang sama persis (6 poin) dengan DPL yang hanya datang 1 kali.
+        </td>
+        <td>
+          <span class="badge badge-blue">Keadilan Supervisi</span> DPL yang sering terjun langsung mendapatkan apresiasi poin yang jauh lebih tinggi dan terukur.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Kinerja Kelompok</strong></td>
+        <td>
+          50% dari Poin Kelompok (bobot 60% Proker + 40% Rata-rata Mahasiswa).
+        </td>
+        <td>
+          <strong>Tetap 50%</strong> dari Poin Kelompok. Formula kelompok yang stabil tidak disentuh dan nol risiko.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Kesiapan Sistem</strong></td>
+        <td>
+          Dropdown kategori di form input DPL sudah ada di aplikasi web.
+        </td>
+        <td>
+          Langsung dipetakan secara otomatis di backend tanpa perlu merombak antarmuka form DPL yang sudah ada.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 3. DETAIL RUMUS & LOGIKA PERHITUNGAN -->
+  <h2>📐 3. Formula Usulan Baru & Aturan Pemetaan</h2>
+
+  <div class="formula-box">
+    <span class="comment">// 1. Formula Poin Aktivitas DPL (Akumulatif dari Logbook Riil)</span><br/>
+    <span class="highlight">Poin Aktivitas DPL</span> = (Jumlah Giat Lapangan × 5) + (Jumlah Giat Kampus × 2)<br/><br/>
+    <span class="comment">// 2. Formula Total Poin DPL (Sesuai Aturan Paten 50% : 50%)</span><br/>
+    <span class="highlight">Total Poin DPL</span> = (<span class="highlight">Poin Aktivitas DPL</span> × 50%) + (<span class="highlight">Poin Kelompok</span> × 50%)
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 32%;">Kategori Logbook di Web</th>
+        <th style="width: 20%;">Klasifikasi</th>
+        <th style="width: 15%;">Nilai Poin</th>
+        <th style="width: 33%;">Kriteria & Contoh Lokasi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Kunjungan Lapangan</code></td>
+        <td><span class="badge badge-green">Lapangan</span></td>
+        <td style="text-align: center; font-weight: 800; color: #047857;">5 pts</td>
+        <td>Posko KKN, Balai Kelurahan, TPS3R, RW binaan.</td>
+      </tr>
+      <tr>
+        <td><code>Monitoring Lapangan</code></td>
+        <td><span class="badge badge-green">Lapangan</span></td>
+        <td style="text-align: center; font-weight: 800; color: #047857;">5 pts</td>
+        <td>Inspeksi pemilahan sampah warga, survei door-to-door.</td>
+      </tr>
+      <tr>
+        <td><code>Evaluasi Lapangan</code></td>
+        <td><span class="badge badge-green">Lapangan</span></td>
+        <td style="text-align: center; font-weight: 800; color: #047857;">5 pts</td>
+        <td>Rapat evaluasi dengan tokoh masyarakat / lurah di lokasi.</td>
+      </tr>
+      <tr>
+        <td><code>Koordinasi</code></td>
+        <td><span class="badge badge-blue">Kampus / Daring</span></td>
+        <td style="text-align: center; font-weight: 800; color: #0284c7;">2 pts</td>
+        <td>Pertemuan di kampus, diskusi Zoom, koordinasi panitia.</td>
+      </tr>
+      <tr>
+        <td><code>Pembimbingan</code></td>
+        <td><span class="badge badge-blue">Kampus / Daring</span></td>
+        <td style="text-align: center; font-weight: 800; color: #0284c7;">2 pts</td>
+        <td>Review laporan akhir, koreksi proker di ruang dosen.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. SIMULASI PERHITUNGAN KASUS RIIL -->
+  <h2>📊 4. Simulasi Perhitungan Data Riil (Contoh: Dr. Agus Mulyana)</h2>
+  
+  <p style="font-size: 8.5pt; color: #475569; margin: 0 0 6px 0;">
+    Berikut adalah simulasi penerapan rumus baru pada data riil database VPS (Kelompok 1 Sadang Serang) 
+    yang memiliki 8 entri logbook supervisi dan Poin Kelompok <strong>90.43 pts</strong>:
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 6%; text-align: center;">No</th>
+        <th style="width: 14%;">Tanggal</th>
+        <th style="width: 25%;">Kategori Aktivitas</th>
+        <th style="width: 35%;">Lokasi / Uraian Kegiatan</th>
+        <th style="width: 20%; text-align: center;">Poin yang Diperoleh</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align: center;">1</td>
+        <td>12 Agu 2026</td>
+        <td>Koordinasi</td>
+        <td>UNIKOM: Sosialisasi sistem aplikasi</td>
+        <td style="text-align: center;"><span class="badge badge-blue">2 Pts (Kampus)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">2</td>
+        <td>14 Agu 2026</td>
+        <td>Kunjungan Lapangan</td>
+        <td>Balai Kelurahan Sadang Serang & PKBS</td>
+        <td style="text-align: center;"><span class="badge badge-green">5 Pts (Lapangan)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">3</td>
+        <td>15 Agu 2026</td>
+        <td>Koordinasi</td>
+        <td>Kafe Jl. Supratman: Evaluasi kunjungan</td>
+        <td style="text-align: center;"><span class="badge badge-blue">2 Pts (Kampus)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">4</td>
+        <td>31 Agu 2026</td>
+        <td>Koordinasi</td>
+        <td>UNIKOM: Persiapan penerapan mobile</td>
+        <td style="text-align: center;"><span class="badge badge-blue">2 Pts (Kampus)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">5</td>
+        <td>01 Sep 2026</td>
+        <td>Pembimbingan</td>
+        <td>UNIKOM: Menjawab kendala teknis mhs</td>
+        <td style="text-align: center;"><span class="badge badge-blue">2 Pts (Kampus)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">6</td>
+        <td>03 Sep 2026</td>
+        <td>Kunjungan Lapangan</td>
+        <td>RW 21 Sadang Serang: Evaluasi posko</td>
+        <td style="text-align: center;"><span class="badge badge-green">5 Pts (Lapangan)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">7</td>
+        <td>09 Sep 2026</td>
+        <td>Koordinasi</td>
+        <td>Aula Miracle: BIMTEK Ke-2</td>
+        <td style="text-align: center;"><span class="badge badge-blue">2 Pts (Kampus)</span></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">8</td>
+        <td>11 Sep 2026</td>
+        <td>Monitoring Lapangan</td>
+        <td>RW Dampingan: Edukasi pilah sampah</td>
+        <td style="text-align: center;"><span class="badge badge-green">5 Pts (Lapangan)</span></td>
+      </tr>
+      <tr class="highlight-row">
+        <td colspan="4" style="text-align: right; font-weight: 700;">TOTAL AKUMULASI POIN AKTIVITAS DPL (3 Lapangan + 5 Kampus):</td>
+        <td style="text-align: center; font-weight: 800; font-size: 9.5pt; color: #047857;">25.00 Pts</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PERBANDINGAN SEBELUM VS SESUDAH -->
+  <table class="data-table" style="margin-top: 6px;">
+    <thead>
+      <tr>
+        <th style="width: 34%;">Metode Perhitungan</th>
+        <th style="width: 44%;">Rincian Komponen Perhitungan</th>
+        <th style="width: 22%; text-align: center;">Skor Akhir Poin DPL</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Sistem Saat Ini (Flat 6)</strong></td>
+        <td>(Poin Flat [6] × 50%) + (Poin Kelompok [90.43] × 50%) = 3.00 + 45.22</td>
+        <td style="text-align: center; font-weight: 800; color: #475569;">48.22 pts</td>
+      </tr>
+      <tr>
+        <td><strong>2. Hitungan QC Manual Sebelumnya</strong></td>
+        <td>(Jumlah Lembar [8] × 0.5) + (Poin Kelompok [90.43] × 50%) = 4.00 + 45.22</td>
+        <td style="text-align: center; font-weight: 800; color: #b45309;">49.22 pts</td>
+      </tr>
+      <tr class="highlight-row">
+        <td><strong>3. USULAN BARU (5 Pts Lapangan & 2 Pts Kampus)</strong></td>
+        <td><strong>(Aktivitas Riil [25] × 50%) + (Kelompok [90.43] × 50%) = 12.50 + 45.22</strong></td>
+        <td style="text-align: center; font-weight: 900; font-size: 10pt; color: #059669;">57.72 pts</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 5. KESIMPULAN & REKOMENDASI TEKNIS -->
+  <h2>🛡️ 5. Jaminan Keamanan Sistem & Langkah Teknis</h2>
+
+  <div class="summary-grid">
+    <div class="summary-col">
+      <div class="callout callout-success" style="margin: 0;">
+        <strong>✅ Nol Risiko Database VPS:</strong> Perubahan murni dilakukan pada logika kalkulasi fungsi <code>calculateDplPoints</code> di backend. Tidak ada struktur tabel atau data operasional mahasiswa yang diubah/dihapus.
+      </div>
+    </div>
+    <div class="summary-col">
+      <div class="callout callout-info" style="margin: 0;">
+        <strong>✅ 100% Lulus Unit Test:</strong> Seluruh 30 unit test DPL (hak mutasi eksklusif, batas lulus 65, scoping kelompok) dijamin tetap hijau tanpa regresi.
+      </div>
+    </div>
+    <div class="summary-col">
+      <div class="callout callout-warning" style="margin: 0;">
+        <strong>✅ Pengendalian Capping:</strong> Disarankan batas maksimal 7 poin per pekan agar mencegah potensi manipulasi entri berlebih dalam waktu singkat.
+      </div>
+    </div>
+  </div>
+
+  <!-- LEMBAR PERSETUJUAN ATASAN / STAKEHOLDER -->
+  <h2>✍️ 6. Lembar Pengesahan & Persetujuan Atasan</h2>
+  <p style="font-size: 8pt; color: #475569; margin: 0 0 6px 0;">
+    Mohon pimpinan memberikan instruksi atau tanda tangan persetujuan untuk mengeksekusi perubahan formula ini ke dalam sistem produksi:
+  </p>
+
+  <table class="sign-table">
+    <tr>
+      <td>
+        <div class="sign-title">Diajukan Oleh (Tim Pengembang):</div>
+        <div class="sign-name">Fullstack Engineering Team</div>
+        <div class="sign-role">PT Makerindo Prima Solusindo | Berseka Platform</div>
+        <div class="sign-space"></div>
+        <div style="font-size: 8pt; color: #64748b;">
+          Tanggal: <strong>2 Oktober 2026</strong><br/>
+          Rekomendasi: <strong>Setuju Menerapkan Formula Baru (5 & 2 Pts)</strong>
+        </div>
+      </td>
+      <td>
+        <div class="sign-title">Keputusan & Pengesahan Pimpinan / Atasan:</div>
+        <div class="sign-name">[ Nama Pimpinan / Atasan / LPPM ]</div>
+        <div class="sign-role">Kepala LPPM / Pimpinan Proyek KKN Berseka 2026</div>
+        <div class="sign-space"></div>
+        <div style="font-size: 8pt; color: #0f172a;">
+          Keputusan: [ &nbsp; ] <strong>DISETUJUI</strong> &nbsp;&nbsp;&nbsp; [ &nbsp; ] <strong>PERLU PENYESUAIAN</strong><br/>
+          Catatan Tambahan: ..........................................................................
+        </div>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

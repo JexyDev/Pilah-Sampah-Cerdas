@@ -77,6 +77,7 @@ vi.mock("../lib/prisma.js", () => {
       },
       logbookDpl: {
         count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
       },
     },
   };
@@ -373,18 +374,42 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(res.totalCumulativeMemberPointsWithNormalization).toBe(20);
     });
 
-    it("should calculate Poin DPL using binary logbook (6 or 0) and 50% Logbook + 50% Kelompok", async () => {
-      // Skenario A: Logbook DPL tersedia (count > 0) -> 6 poin
-      vi.mocked(prisma.logbookDpl.count).mockResolvedValue(2);
+    it("should calculate Poin DPL using 5 pts Field + 2 pts Campus and 50% Activities + 50% Kelompok", async () => {
+      // Skenario A: 1 Giat Lapangan (5 pts) + 1 Giat Kampus (2 pts) = 7 pts
+      vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([
+        { id: "lb-1", kategori: "Kunjungan Lapangan", tempat: "Posko RW 21" } as any,
+        { id: "lb-2", kategori: "Koordinasi", tempat: "UNIKOM" } as any,
+      ]);
       const resWithLogbook = await calculateDplPoints("dpl-1", "kel-1", 16);
 
       expect(resWithLogbook.hasLogbookDpl).toBe(true);
-      expect(resWithLogbook.poinLogbookDpl).toBe(6);
+      expect(resWithLogbook.poinLogbookDpl).toBe(7);
+      expect(resWithLogbook.countLapangan).toBe(1);
+      expect(resWithLogbook.countKampus).toBe(1);
       expect(resWithLogbook.poinKelompok).toBe(16);
-      // Rumus: (6 * 0.5) + (16 * 0.5) = 3 + 8 = 11
-      expect(resWithLogbook.poinDpl).toBe(11);
+      // Rumus: (7 * 0.5) + (16 * 0.5) = 3.5 + 8 = 11.5
+      expect(resWithLogbook.poinDpl).toBe(11.5);
 
-      // Skenario B: Logbook DPL tidak tersedia (count = 0) -> 0 poin
+      // Skenario B: Simulasi Dr. Agus Mulyana (3 Lapangan [15 pts] + 5 Kampus [10 pts] = 25 pts, Kelompok 90.43)
+      vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([
+        { id: "1", kategori: "Koordinasi", tempat: "UNIKOM" } as any,
+        { id: "2", kategori: "Kunjungan Lapangan", tempat: "Balai Kelurahan" } as any,
+        { id: "3", kategori: "Koordinasi", tempat: "Kafe Jl. Supratman" } as any,
+        { id: "4", kategori: "Koordinasi", tempat: "UNIKOM" } as any,
+        { id: "5", kategori: "Pembimbingan", tempat: "UNIKOM" } as any,
+        { id: "6", kategori: "Kunjungan Lapangan", tempat: "RW 21 Sadang Serang" } as any,
+        { id: "7", kategori: "Koordinasi", tempat: "Aula Miracle" } as any,
+        { id: "8", kategori: "Monitoring Lapangan", tempat: "RW Dampingan" } as any,
+      ]);
+      const resAgus = await calculateDplPoints("dpl-agus", "kel-1", 90.43);
+      expect(resAgus.poinLogbookDpl).toBe(25);
+      expect(resAgus.countLapangan).toBe(3);
+      expect(resAgus.countKampus).toBe(5);
+      // Rumus: (25 * 0.5) + (90.43 * 0.5) = 12.5 + 45.215 = 57.72
+      expect(resAgus.poinDpl).toBe(57.72);
+
+      // Skenario C: Logbook DPL tidak tersedia (count = 0) -> 0 poin
+      vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([]);
       vi.mocked(prisma.logbookDpl.count).mockResolvedValue(0);
       const resWithoutLogbook = await calculateDplPoints("dpl-1", "kel-1", 16);
 
