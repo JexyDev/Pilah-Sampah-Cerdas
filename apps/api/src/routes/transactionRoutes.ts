@@ -52,6 +52,27 @@ router.get(
 );
 
 router.post(
+  "/deposits/clear",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  transactionController.clearMyDeposits
+);
+
+router.post(
+  "/my-deposits/clear",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  transactionController.clearMyDeposits
+);
+
+router.delete(
+  "/my-deposits/history",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  transactionController.clearMyDeposits
+);
+
+router.post(
   "/manual",
   authMiddleware,
   roleMiddleware(["PETUGAS_RESIDU", "SUPER_USER"]),

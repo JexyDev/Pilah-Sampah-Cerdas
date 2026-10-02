@@ -154,9 +154,73 @@ export class CronService {
       tzOptions
     );
 
+    // Pengingat presensi pagi Mahasiswa KKN pada pukul 07:00 WIB (Senin - Sabtu)
+    cron.schedule(
+      "0 7 * * 1-6",
+      () => {
+        this.triggerMahasiswaMorningReminder();
+      },
+      tzOptions
+    );
+
     console.log(
       "[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone)."
     );
+  }
+
+  public async triggerMahasiswaMorningReminder() {
+    try {
+      console.log("[CronService] Mengirim pengingat presensi pagi ke Mahasiswa KKN...");
+
+      // 1. Periksa konfigurasi Rule Engine / SystemConfig jika notifikasi dinonaktifkan
+      const reminderConfig = await prisma.systemConfig.findUnique({
+        where: { key: "kkn_morning_reminder_enabled" },
+      });
+      if (reminderConfig && reminderConfig.value === "false") {
+        console.log("[CronService] Pengingat pagi mahasiswa dinonaktifkan via SystemConfig.");
+        return;
+      }
+
+      // 2. Ambil seluruh mahasiswa KKN aktif
+      const mahasiswaList = await prisma.user.findMany({
+        where: {
+          role: { name: "MAHASISWA_KKN" },
+          status: "Aktif",
+        },
+        select: {
+          id: true,
+          fcmToken: true,
+          name: true,
+        },
+      });
+
+      if (mahasiswaList.length === 0) {
+        console.log("[CronService] Tidak ada mahasiswa KKN aktif untuk dikirimi pengingat.");
+        return;
+      }
+
+      const title = "🌅 Semangat Pagi! Waktunya Presensi KKN";
+      const message =
+        "Jangan lupa lakukan check-in presensi di Posko hari ini dan catat progres logbook kegiatan Anda!";
+
+      const userIds = mahasiswaList.map((m) => m.id);
+      await notificationIntegrationService.sendToUsers({
+        userIds,
+        title,
+        message,
+        triggerType: "PRESENSI_MORNING_REMINDER",
+        dataPayload: {
+          route: "/kkn/presensi",
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
+
+      console.log(
+        `[CronService] Pengingat pagi berhasil dikirim ke ${mahasiswaList.length} mahasiswa KKN.`
+      );
+    } catch (error) {
+      console.error("[CronService] Gagal menjalankan triggerMahasiswaMorningReminder:", error);
+    }
   }
 
   public async checkExpiredProkers() {

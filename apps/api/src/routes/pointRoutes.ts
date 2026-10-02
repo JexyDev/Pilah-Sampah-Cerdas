@@ -34,6 +34,9 @@ const router = Router();
  *         description: Success
  */
 router.get("/me", authMiddleware, pointController.getMyLedger);
+router.post("/clear", authMiddleware, pointController.clearMyHistory);
+router.post("/history/clear", authMiddleware, pointController.clearMyHistory);
+router.delete("/history", authMiddleware, pointController.clearMyHistory);
 
 router.post("/convert", authMiddleware, pointController.convertPoints);
 

@@ -38,7 +38,12 @@ export class PointRepository {
    * Get point history by user ID, ordered by newest
    * Role-aware: Mahasiswa KKN mengecualikan KKN_PROKER, REDUKSI_TONASE, dan BONUS_LOGIN_PERTAMA
    */
-  async getHistoryByUserId(userId: string, isStudent: boolean = false): Promise<PointHistory[]> {
+  async getHistoryByUserId(
+    userId: string,
+    isStudent: boolean = false,
+    clearedAt?: Date | null,
+    excludedIds?: string[]
+  ): Promise<PointHistory[]> {
     const excludedCategories = isStudent
       ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"]
       : ["KKN_PROKER"];
@@ -48,6 +53,8 @@ export class PointRepository {
         userId,
         kategori: { notIn: excludedCategories },
         NOT: { description: { contains: "[ProkerID:" } },
+        ...(clearedAt ? { createdAt: { gt: clearedAt } } : {}),
+        ...(excludedIds && excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
       },
       orderBy: { createdAt: "desc" },
     });

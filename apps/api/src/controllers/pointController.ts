@@ -30,6 +30,27 @@ export class PointController {
   }
 
   /**
+   * Clear point history display for the current user
+   */
+  async clearMyHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const result = await pointService.clearHistory(userId);
+
+      res.status(200).json({
+        success: true,
+        message: "Riwayat poin berhasil dibersihkan",
+        data: result,
+      });
+    } catch (error) {
+      console.error("Clear Point History Error:", error);
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membersihkan riwayat poin" });
+    }
+  }
+
+  /**
    * Get point ledger for a specific user (Admin only)
    */
   async getUserLedger(req: Request, res: Response): Promise<void> {

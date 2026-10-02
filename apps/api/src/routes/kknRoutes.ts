@@ -320,6 +320,20 @@ router.get(
   kknController.getActivityLog
 );
 
+router.post(
+  "/activity-log/clear",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER"]),
+  kknController.clearActivityLog
+);
+
+router.delete(
+  "/activity-log/history",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER"]),
+  kknController.clearActivityLog
+);
+
 /**
  * @swagger
  * /api/v1/kkn/fasilitas/bantu-input:

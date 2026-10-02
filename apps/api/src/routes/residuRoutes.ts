@@ -193,6 +193,38 @@ router.get(
   residuController.getRiwayat
 );
 
+router.post(
+  "/riwayat/clear",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.clearRiwayat
+);
+
+router.post(
+  "/history/clear",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.clearRiwayat
+);
+
+router.delete(
+  "/riwayat/clear",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.clearRiwayat
+);
+
+router.delete(
+  "/history/clear",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.clearRiwayat
+);
+
 router.get(
   "/pengajuan",
   authMiddleware,

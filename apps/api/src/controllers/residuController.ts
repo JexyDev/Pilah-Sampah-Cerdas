@@ -156,6 +156,21 @@ export class ResiduController {
     }
   }
 
+  async clearRiwayat(req: Request, res: Response) {
+    try {
+      const petugasUserId = req.user!.userId;
+      await residuService.clearRiwayat(petugasUserId);
+      res.status(200).json({
+        success: true,
+        message: "Riwayat tugas dan timbangan residu berhasil dibersihkan dari tampilan",
+        data: [],
+      });
+    } catch (error: any) {
+      console.error("[ResiduController] clearRiwayat error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async getPetugasPoints(req: Request, res: Response): Promise<void> {
     try {
       const petugasUserId = req.user!.userId;

@@ -281,6 +281,21 @@ export class KknController {
     }
   }
 
+  async clearActivityLog(req: Request, res: Response) {
+    try {
+      const kknUserId = req.user!.userId;
+      await kknService.clearActivityLog(kknUserId);
+      res.status(200).json({
+        success: true,
+        message: "Riwayat aktivitas KKN berhasil dibersihkan dari tampilan",
+        data: [],
+      });
+    } catch (error: any) {
+      console.error("[KknController] clearActivityLog error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async handover(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
@@ -771,26 +786,30 @@ export class KknController {
       try {
         const { notificationIntegrationService } =
           await import("../services/notificationIntegrationService.js");
-        const title = "Pengajuan Program Kerja ✅";
-        const message = `Program ${data.judul} berhasil diajukan dan sedang direview oleh DPL.`;
 
-        await prisma.notification
-          .create({
-            data: {
-              userId,
-              title,
-              message,
-              isRead: false,
-            },
-          })
-          .catch(() => {});
+        const isLaporanAkhir =
+          String(payload.kategori || "").toUpperCase().includes("LAPORAN") ||
+          String(data.kategori || "").toUpperCase().includes("LAPORAN");
 
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user?.fcmToken) {
-          await notificationIntegrationService
-            .sendPushNotification(user.fcmToken, title, message)
-            .catch(() => {});
-        }
+        const title = isLaporanAkhir
+          ? "Pengajuan Laporan Akhir ✅"
+          : "Pengajuan Program Kerja ✅";
+
+        const cleanJudul = data.judul ? data.judul.replace(/^\[.*?\]\s*/, "") : "Kegiatan";
+        const message = isLaporanAkhir
+          ? `Laporan Akhir "${cleanJudul}" berhasil diajukan dan sedang direview oleh DPL.`
+          : `Program "${data.judul}" berhasil diajukan dan sedang direview oleh DPL.`;
+
+        await notificationIntegrationService.sendToUser({
+          userId,
+          title,
+          message,
+          triggerType: isLaporanAkhir ? "PROKER_LAPORAN_AKHIR" : "PROKER_PENGAJUAN",
+          dataPayload: {
+            type: isLaporanAkhir ? "LAPORAN_AKHIR" : "PROKER",
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        });
       } catch (e) {
         console.error("Failed to send notification for program kerja", e);
       }

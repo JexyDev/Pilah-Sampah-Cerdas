@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import {
@@ -2046,10 +2047,17 @@ export class KknService {
   }
 
   async getActivityLog(kknUserId: string) {
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES),
+      historyCutoffService.getExcludedItemIds(kknUserId, "KKN_ACTIVITY"),
+    ]);
+
     const auditLogs = await prisma.auditTrail.findMany({
       where: {
         userId: kknUserId,
         action: "REQUEST_ACTIVATE_BIN",
+        ...(cutoff ? { timestamp: { gt: cutoff } } : {}),
+        ...(excludedIds && excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
       },
       orderBy: { timestamp: "desc" },
       take: 50,
@@ -2068,6 +2076,11 @@ export class KknService {
 
     combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     return combined.slice(0, 100);
+  }
+
+  async clearActivityLog(kknUserId: string) {
+    await historyCutoffService.setCutoff(kknUserId, HistoryScope.KKN_ACTIVITIES);
+    return [];
   }
 
   async handover(fromKknUserId: string, toKknUserId: string, rwId: number, notes?: string) {
@@ -4613,12 +4626,21 @@ export class KknService {
 
     // Notify DPL
     if (kelompok.dplId) {
+      const isLaporanAkhir = finalKategori === "LAPORAN_AKHIR";
+      const cleanJudul = judul.trim();
+      const dplTitle = isLaporanAkhir
+        ? "Pengajuan Laporan Akhir Mahasiswa 📑"
+        : "Pengajuan Program Kerja Baru";
+      const dplMessage = isLaporanAkhir
+        ? `Mahasiswa ${authorName} telah mengunggah Laporan Akhir: "${cleanJudul}". Silakan ditinjau dan dinilai.`
+        : `Mahasiswa ${authorName} mengajukan ide program kerja: "${cleanJudul}". Silakan ditinjau.`;
+
       await prisma.notification
         .create({
           data: {
             userId: kelompok.dplId,
-            title: "Pengajuan Program Kerja Baru",
-            message: `Mahasiswa ${authorName} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
+            title: dplTitle,
+            message: dplMessage,
             isRead: false,
           },
         })

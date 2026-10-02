@@ -10,6 +10,7 @@ import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { websocketService } from "./websocketService.js";
 import { binRepository } from "../repositories/binRepository.js";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 
 export class ResiduService {
   /**
@@ -397,6 +398,10 @@ export class ResiduService {
    */
   async getRiwayat(petugasUserId: string, range?: string, type?: string) {
     const logs: any[] = [];
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(petugasUserId, HistoryScope.PETUGAS_TASKS),
+      historyCutoffService.getExcludedItemIds(petugasUserId, "PETUGAS_TASK"),
+    ]);
 
     // Date range filtering
     let dateFilter: any = undefined;
@@ -414,6 +419,12 @@ export class ResiduService {
       }
     }
 
+    const effectiveDateFilter = {
+      ...(dateFilter || {}),
+      ...(cutoff ? { gt: cutoff } : {}),
+    };
+    const hasDateCondition = Object.keys(effectiveDateFilter).length > 0;
+
     const typeUpper = (type || "SEMUA").toUpperCase();
 
     // 1. Fetch Violations (Pelanggaran)
@@ -421,7 +432,7 @@ export class ResiduService {
       const violations = await prisma.violation.findMany({
         where: {
           petugasUserId,
-          ...(dateFilter ? { createdAt: dateFilter } : {}),
+          ...(hasDateCondition ? { createdAt: effectiveDateFilter } : {}),
         },
         include: {
           user: true,
@@ -459,7 +470,7 @@ export class ResiduService {
       const setoranManual = await prisma.setoranManual.findMany({
         where: {
           petugasResiduId: petugasUserId,
-          ...(dateFilter ? { createdAt: dateFilter } : {}),
+          ...(hasDateCondition ? { createdAt: effectiveDateFilter } : {}),
         },
         include: { rw: true },
         orderBy: { createdAt: "desc" },
@@ -514,7 +525,7 @@ export class ResiduService {
       const handledResets = await prisma.binResetRequest.findMany({
         where: {
           reviewedById: petugasUserId,
-          ...(dateFilter ? { createdAt: dateFilter } : {}),
+          ...(hasDateCondition ? { createdAt: effectiveDateFilter } : {}),
         },
         include: {
           bin: { include: { category: true, rw: true } },
@@ -584,6 +595,10 @@ export class ResiduService {
     }
 
     logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (excludedIds && excludedIds.length > 0) {
+      const excludedSet = new Set(excludedIds);
+      return logs.filter((l) => !excludedSet.has(l.id) && !excludedSet.has(l.logId));
+    }
     return logs;
   }
 
@@ -626,8 +641,13 @@ export class ResiduService {
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
     const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 5;
 
+    const pointsCutoff = await historyCutoffService.getCutoff(petugasUserId, HistoryScope.POINTS);
+
     const history = await prisma.pointHistory.findMany({
-      where: { userId: petugasUserId },
+      where: {
+        userId: petugasUserId,
+        ...(pointsCutoff ? { createdAt: { gt: pointsCutoff } } : {}),
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -640,6 +660,11 @@ export class ResiduService {
       kpiScore: user.petugasProfile?.kpiScore ? Number(user.petugasProfile.kpiScore) : 100,
       history,
     };
+  }
+
+  async clearRiwayat(petugasUserId: string) {
+    await historyCutoffService.setCutoff(petugasUserId, HistoryScope.PETUGAS_TASKS);
+    return [];
   }
 
   /**

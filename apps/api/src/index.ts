@@ -73,6 +73,7 @@ import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import gisEksekutifRouter from "./routes/gisEksekutifRoutes.js";
 import laporanKknRouter from "./routes/laporanKknRoutes.js";
 import iotRouter from "./routes/iotRoutes.js";
+import { historyRouter } from "./routes/historyRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
 import { kknController } from "./controllers/kknController.js";
@@ -242,6 +243,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use(["/api/v1/notifications", "/api/v1/notifikasi"], notificationRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
+app.use(["/api/v1/history", "/api/history"], historyRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
 app.use("/api/v1/config", configRouter);
@@ -885,7 +887,7 @@ if (isPrimaryWorker) {
         "tipe_aktivitas" "TipeAktivitasKkn" NOT NULL DEFAULT 'KELOMPOK',
         "id_program_kerja" TEXT,
         "id_fasilitas" TEXT,
-        "status_persetujuan" "StatusLogbookKkn" NOT NULL DEFAULT 'MENUNGGU_PERSETUJUAN_KETUA',
+        "status_persetujuan" "StatusLogbookKkn" NOT NULL DEFAULT 'MENUNGGU_VERIFIKASI_DPL',
         "id_ketua_penyetuju" TEXT,
         "disetujui_ketua_pada" TIMESTAMP(3),
         "catatan_ketua" TEXT,

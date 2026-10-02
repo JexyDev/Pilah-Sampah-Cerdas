@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { pointRepository } from "../repositories/pointRepository.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { historyCutoffService, HistoryScope } from "./historyCutoffService.js";
 
 /**
  * 🛡️ FUNGSI SENTRALISASI ANTI-BOCOR POIN INDIVIDU MAHASISWA & PENGGUNA (SSOT)
@@ -199,14 +200,31 @@ export class PointService {
 
     const effectiveRoleName = roleName || (isStudent ? "MAHASISWA_KKN" : "WARGA");
 
+    const [cutoff, excludedIds] = await Promise.all([
+      historyCutoffService.getCutoff(userId, HistoryScope.POINTS),
+      historyCutoffService.getExcludedItemIds(userId, "POINT"),
+    ]);
+
     const [history, totalPoints] = await Promise.all([
-      pointRepository.getHistoryByUserId(userId, isStudent),
+      pointRepository.getHistoryByUserId(userId, isStudent, cutoff, excludedIds),
       calculateValidIndividualPoints(userId, effectiveRoleName),
     ]);
 
     return {
       totalPoints,
       history,
+    };
+  }
+
+  /**
+   * Clear point history display for a user
+   */
+  async clearHistory(userId: string) {
+    await historyCutoffService.setCutoff(userId, HistoryScope.POINTS);
+    const totalPoints = await calculateValidIndividualPoints(userId);
+    return {
+      totalPoints,
+      history: [],
     };
   }
 
