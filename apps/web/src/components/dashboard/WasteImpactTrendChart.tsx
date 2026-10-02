@@ -352,6 +352,9 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-center text-[10.5px] text-slate-400 font-medium -mt-2 mb-1">
+              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Berat Sampah (kg/hari)
+            </p>
 
             {/* Mini Rekapitulasi Berat Sampah */}
             <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
@@ -500,6 +503,9 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-center text-[10.5px] text-slate-400 font-medium -mt-2 mb-1">
+              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Persentase Kepatuhan (%)
+            </p>
 
             {/* Mini Rekapitulasi Kepatuhan */}
             <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
