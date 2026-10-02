@@ -41,3 +41,5 @@ export const isStagingEnv = (): boolean => {
 
   return false;
 };
+
+export const isProductionEnv = (): boolean => !isStagingEnv();

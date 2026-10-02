@@ -44,6 +44,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
 import showToast from "../../../utils/showToast";
 import type { LucideIcon } from "lucide-react";
+import { isStagingEnv } from "../../../utils/envUtils";
 // import FallingLeavesBackground from "./FallingLeavesBackground";
 
 interface SidebarProps {
@@ -887,6 +888,7 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, can } = useAuthStore();
+  const isStaging = isStagingEnv();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
   let normalizedRoleStr = rawRole;
   if (["PEMIMPIN", "PIMPINAN"].includes(rawRole))
@@ -1051,39 +1053,42 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
-        // NOTE: Menu Analisis Sistem KKN di-hide sementara di production agar antarmuka lebih terfokus
-        // {
-        //   to: "/analisis-sistem/kkn",
-        //   icon: Activity,
-        //   label: "Analisis Sistem",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //     "PEMIMPIN",
-        //     "DPL",
-        //     "DOSEN_PEMBIMBING",
-        //   ] as UserRole[],
-        // },
-        // NOTE: Menu BERSEKA AI KKN di-hide sementara di production
-        // {
-        //   to: "/berseka-ai?tab=kkn",
-        //   icon: Sparkles,
-        //   label: "BERSEKA AI",
-        //   badge: "Cerdas",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //     "PEMIMPIN",
-        //     "DPL",
-        //     "DOSEN_PEMBIMBING",
-        //   ] as UserRole[],
-        // },
+        ...(isStaging
+          ? [
+              {
+                to: "/analisis-sistem/kkn",
+                icon: Activity,
+                label: "Analisis Sistem (QC)",
+                badge: "QC",
+                allowed: [
+                  "DEVELOPER",
+                  "SUPER_USER",
+                  "ADMIN_DLH",
+                  "PANITIA_TASKFORCE",
+                  "PIMPINAN",
+                  "PEMIMPIN",
+                  "DPL",
+                  "DOSEN_PEMBIMBING",
+                ] as UserRole[],
+              },
+              {
+                to: "/berseka-ai?tab=kkn",
+                icon: Sparkles,
+                label: "BERSEKA AI (QC)",
+                badge: "QC",
+                allowed: [
+                  "DEVELOPER",
+                  "SUPER_USER",
+                  "ADMIN_DLH",
+                  "PANITIA_TASKFORCE",
+                  "PIMPINAN",
+                  "PEMIMPIN",
+                  "DPL",
+                  "DOSEN_PEMBIMBING",
+                ] as UserRole[],
+              },
+            ]
+          : []),
         {
           type: "group",
           label: "Pelaksanaan",
@@ -1447,41 +1452,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
-        // NOTE: Menu Analisis Sistem di-hide sementara di production agar antarmuka lebih terfokus
-        // {
-        //   to: "/analisis-sistem/tata-kelola-sampah",
-        //   icon: BarChart3,
-        //   label: "Analisis Sistem",
-        //   resource: "monitoring_sampah",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "CAMAT",
-        //     "LURAH",
-        //     "RW",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //   ] as UserRole[],
-        // },
-        // NOTE: Menu BERSEKA AI Tata Kelola di-hide sementara di production
-        // {
-        //   to: "/berseka-ai?tab=tata-kelola",
-        //   icon: Sparkles,
-        //   label: "BERSEKA AI",
-        //   badge: "Cerdas",
-        //   resource: "monitoring_sampah",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "CAMAT",
-        //     "LURAH",
-        //     "RW",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //   ] as UserRole[],
-        // },
+        ...(isStaging
+          ? [
+              {
+                to: "/analisis-sistem/tata-kelola-sampah",
+                icon: BarChart3,
+                label: "Analisis Sistem (QC)",
+                badge: "QC",
+                resource: "monitoring_sampah",
+                allowed: [
+                  "DEVELOPER",
+                  "SUPER_USER",
+                  "ADMIN_DLH",
+                  "CAMAT",
+                  "LURAH",
+                  "RW",
+                  "PANITIA_TASKFORCE",
+                  "PIMPINAN",
+                ] as UserRole[],
+              },
+              {
+                to: "/berseka-ai?tab=tata-kelola",
+                icon: Sparkles,
+                label: "BERSEKA AI (QC)",
+                badge: "QC",
+                resource: "monitoring_sampah",
+                allowed: [
+                  "DEVELOPER",
+                  "SUPER_USER",
+                  "ADMIN_DLH",
+                  "CAMAT",
+                  "LURAH",
+                  "RW",
+                  "PANITIA_TASKFORCE",
+                  "PIMPINAN",
+                ] as UserRole[],
+              },
+            ]
+          : []),
         {
           type: "group",
           label: "Peta Sebaran",

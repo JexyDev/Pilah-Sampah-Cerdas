@@ -8,6 +8,7 @@
  */
 
 import type { User, UserRole } from "../store/useAuthStore";
+import { isStagingEnv } from "./envUtils";
 
 export function normalizeUserRole(rawRole?: string): UserRole {
   const r = String(rawRole || "").toUpperCase();
@@ -225,6 +226,9 @@ export function canAccessSidebarRoute(
     cleanPath === "/manajemen-iot" ||
     cleanPath === "/iot"
   ) {
+    if (cleanPath === "/berseka-ai" || cleanPath.startsWith("/analisis-sistem")) {
+      return isStagingEnv();
+    }
     return true;
   }
 
