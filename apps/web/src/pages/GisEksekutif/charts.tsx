@@ -133,12 +133,12 @@ export function Donut({
     : "Belum ada data survei";
 
   return (
-    <section className="card chart-card donut-card-full" aria-label="Komposisi volume">
+    <section className="card chart-card donut-card-full" aria-label="Komposisi berat sampah">
       <CardTitle
         icon="pie"
         subtitle={cardSubtitle}
       >
-        Komposisi volume
+        Komposisi Berat Sampah
       </CardTitle>
 
       <div className="donut-container">
@@ -803,7 +803,7 @@ export function Trend({
                 onPointerMove={onMove}
                 onPointerLeave={() => setHover(null)}
                 role="img"
-                aria-label="Grafik tren volume bulanan"
+                aria-label="Grafik tren berat bulanan"
               >
                 <defs>
                   <linearGradient id="trendGradientFill" x1="0" y1="0" x2="0" y2="1">
@@ -817,9 +817,9 @@ export function Trend({
                   x={m.l - 4}
                   y={m.t - 10}
                   textAnchor="start"
-                  style={{ fontSize: 10.5, fontWeight: 500, fill: "#64748b" }}
+                  style={{ fontSize: 10.5, fontWeight: 700, fill: "#475569" }}
                 >
-                  {`Volume (${isKg ? "kg/bln" : "m³/bln"})`}
+                  {`Sumbu Y: Berat (${isKg ? "kg/bln" : "m³/bln"})`}
                 </text>
 
                 {/* Gridlines & Ticks Sumbu Y */}
@@ -926,10 +926,17 @@ export function Trend({
               </svg>
             </div>
 
-            {/* Tabel Nilai Volume Sesuai Mode Tampilan */}
+            {/* Keterangan Sumbu X dan Sumbu Y */}
+            <p className="text-center text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-1 mb-2">
+              Sumbu X: Linimasa Pelaksanaan ({PROGRAM_MONTH_LABELS[0]} – {PROGRAM_MONTH_LABELS[PROGRAM_MONTH_LABELS.length - 1]} 2026) • Sumbu Y: Berat Sampah ({isKg ? "kg/bulan" : "m³/bulan"})
+            </p>
+
+            {/* Tabel Nilai Berat Sesuai Mode Tampilan */}
             <div className="trend-table-wrap">
               <div className="trend-table-title">
-                {`Nilai volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
+                {isCumulative
+                  ? `Nilai berat akumulatif (${isKg ? "kg" : "m³"})`
+                  : `Nilai berat per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
               </div>
               <div className="trend-table-grid">
                 <div className="trend-table-row trend-table-head">
