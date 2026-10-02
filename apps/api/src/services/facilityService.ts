@@ -88,6 +88,83 @@ export const facilityService = {
   },
 
   /**
+   * Update waste facility
+   */
+  updateFacility: async (
+    id: string,
+    data: {
+      jenis?: string;
+      nama?: string;
+      pic?: string;
+      kontak?: string;
+      kapasitas?: number;
+      latitude?: number;
+      longitude?: number;
+      alamat?: string;
+      foto?: string;
+      kepemilikan?: "MILIK_RW" | "PRIBADI";
+    }
+  ) => {
+    const existing = await prisma.facility.findUnique({ where: { id } });
+    if (!existing) throw new Error("FACILITY_NOT_FOUND");
+
+    const updateData: any = {};
+    if (data.nama !== undefined) updateData.nama = data.nama.trim();
+    if (data.pic !== undefined) updateData.pic = data.pic.trim();
+    if (data.kontak !== undefined) updateData.kontak = data.kontak ? String(data.kontak).trim() : null;
+    if (data.alamat !== undefined) updateData.alamat = data.alamat ? data.alamat.trim() : null;
+    if (data.foto !== undefined) updateData.foto = data.foto || null;
+    if (data.kepemilikan !== undefined) updateData.kepemilikan = data.kepemilikan;
+
+    if (data.jenis) {
+      const validTypes = [
+        "loseda",
+        "bata_terawang",
+        "rumah_maggot",
+        "bank_sampah",
+        "tps",
+        "buruan_sae",
+        "poc",
+        "posko_kkn",
+      ];
+      if (validTypes.includes(data.jenis)) {
+        updateData.jenis = data.jenis as FacilityType;
+      }
+    }
+
+    if (data.kapasitas !== undefined) {
+      updateData.kapasitas =
+        data.kapasitas !== null && !isNaN(Number(data.kapasitas))
+          ? Math.min(Math.max(Number(data.kapasitas), 0), 99999999)
+          : null;
+    }
+
+    if (data.latitude !== undefined && !isNaN(Number(data.latitude))) {
+      updateData.latitude = Number(data.latitude);
+    }
+    if (data.longitude !== undefined && !isNaN(Number(data.longitude))) {
+      updateData.longitude = Number(data.longitude);
+    }
+
+    return prisma.facility.update({
+      where: { id },
+      data: updateData,
+    });
+  },
+
+  /**
+   * Delete waste facility
+   */
+  deleteFacility: async (id: string) => {
+    const existing = await prisma.facility.findUnique({ where: { id } });
+    if (!existing) throw new Error("FACILITY_NOT_FOUND");
+
+    return prisma.facility.delete({
+      where: { id },
+    });
+  },
+
+  /**
    * Master Data Jenis Fasilitas
    */
   getJenisFasilitas: async () => {

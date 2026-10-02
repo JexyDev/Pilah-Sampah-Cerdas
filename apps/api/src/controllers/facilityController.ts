@@ -137,6 +137,55 @@ export class FacilityController {
   }
 
   /**
+   * Update an existing facility
+   */
+  async updateFacility(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, kepemilikan } =
+        req.body;
+
+      if (req.file) {
+        foto = `/uploads/${req.file.filename}`;
+      }
+
+      const updated = await facilityService.updateFacility(id, {
+        jenis,
+        nama,
+        pic,
+        foto,
+        kontak,
+        kapasitas: kapasitas !== undefined && kapasitas !== "" ? Number(kapasitas) : undefined,
+        latitude: latitude !== undefined && latitude !== "" ? Number(latitude) : undefined,
+        longitude: longitude !== undefined && longitude !== "" ? Number(longitude) : undefined,
+        alamat,
+        kepemilikan,
+      });
+
+      res.status(200).json({ success: true, message: "Fasilitas berhasil diperbarui", data: updated });
+    } catch (error: any) {
+      res
+        .status(error.message === "FACILITY_NOT_FOUND" ? 404 : 400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
+   * Delete an existing facility
+   */
+  async deleteFacility(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      await facilityService.deleteFacility(id);
+      res.status(200).json({ success: true, message: "Fasilitas berhasil dihapus" });
+    } catch (error: any) {
+      res
+        .status(error.message === "FACILITY_NOT_FOUND" ? 404 : 400)
+        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
+    }
+  }
+
+  /**
    * Get facilities list
    */
   async getFacilities(req: Request, res: Response): Promise<void> {

@@ -1088,7 +1088,7 @@ export class KknController {
         res.status(400).json({
           success: false,
           error: "NO_ACTIVE_BINS",
-          message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim.",
+          message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim. Silakan lakukan Aktivasi Tempat Sampah QR terlebih dahulu.",
         });
         return;
       }

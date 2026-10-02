@@ -36,7 +36,8 @@ interface InactiveBin {
 
 export const MasterQrManager: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const isDeveloper = String(user?.peran || user?.role || "").toUpperCase() === "DEVELOPER";
+  const isReadOnly = !isDeveloper;
   const [qrs, setQrs] = useState<BinQr[]>([]);
   const [inactiveBins, setInactiveBins] = useState<InactiveBin[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -421,13 +422,17 @@ export const MasterQrManager: React.FC = () => {
                       {new Date(b.lastActivity).toLocaleDateString("id-ID")}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => handleReactivate(b.id)}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <PlayCircle size={14} />
-                        Aktifkan Kembali
-                      </button>
+                      {isDeveloper ? (
+                        <button
+                          onClick={() => handleReactivate(b.id)}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <PlayCircle size={14} />
+                          Aktifkan Kembali
+                        </button>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-slate-400 italic">Khusus Developer</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -505,14 +510,14 @@ export const MasterQrManager: React.FC = () => {
                   <th className="px-6 py-3.5">Status & Kategori</th>
                   <th className="px-6 py-3.5">Batch / Wilayah</th>
                   <th className="px-6 py-3.5">Pemilik Warga</th>
-                  {!isReadOnly && <th className="px-6 py-3.5 text-center">Ubah Status</th>}
-                  {!isReadOnly && <th className="px-6 py-3.5 text-right">Aksi Kelola</th>}
+                  {isDeveloper && <th className="px-6 py-3.5 text-center">Ubah Status</th>}
+                  <th className="px-6 py-3.5 text-right">{isDeveloper ? "Aksi Kelola" : "Aksi"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                 {paginatedQrs.length === 0 ? (
                   <EmptyTableState
-                    colSpan={isReadOnly ? 4 : 6}
+                    colSpan={isDeveloper ? 6 : 5}
                     entityName="QR Code Tempat Sampah"
                     isSearch={!!(searchQuery || statusFilter)}
                     searchQuery={searchQuery}
@@ -562,7 +567,7 @@ export const MasterQrManager: React.FC = () => {
                             <span className="text-xs text-slate-400 dark:text-slate-500 italic">Belum terikat Warga</span>
                           )}
                         </td>
-                        {!isReadOnly && (
+                        {isDeveloper && (
                           <td className="px-6 py-4 text-center">
                             <select
                               value={q.status}
@@ -579,72 +584,74 @@ export const MasterQrManager: React.FC = () => {
                             </select>
                           </td>
                         )}
-                        {!isReadOnly && (
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => handlePrintPdf([q])}
-                                title="Cetak Poster Resmi QR Ini"
-                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
-                                <span className="hidden xl:inline">Cetak Poster</span>
-                              </button>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handlePrintPdf([q])}
+                              title="Cetak Poster Resmi QR Ini"
+                              className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
+                              <span className="hidden xl:inline">Cetak Poster</span>
+                            </button>
 
-                              <button
-                                onClick={() => handleOpenEditModal(q)}
-                                title="Ubah Data / Kategori / Wilayah QR"
-                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <Pencil size={14} />
-                                <span className="hidden xl:inline">Edit</span>
-                              </button>
-
-                              {(isBroken || isInactive) && (
+                            {isDeveloper && (
+                              <>
                                 <button
-                                   onClick={() => handleReactivate(q.id)}
-                                   title="Aktifkan Kembali"
-                                   className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer inline-flex items-center gap-1"
-                                 >
-                                   <PlayCircle size={14} />
-                                   <span className="hidden sm:inline">Aktifkan</span>
-                                 </button>
-                              )}
+                                  onClick={() => handleOpenEditModal(q)}
+                                  title="Ubah Data / Kategori / Wilayah QR"
+                                  className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
+                                >
+                                  <Pencil size={14} />
+                                  <span className="hidden xl:inline">Edit</span>
+                                </button>
 
-                              {isBroken && (
+                                {(isBroken || isInactive) && (
+                                  <button
+                                     onClick={() => handleReactivate(q.id)}
+                                     title="Aktifkan Kembali"
+                                     className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer inline-flex items-center gap-1"
+                                   >
+                                     <PlayCircle size={14} />
+                                     <span className="hidden sm:inline">Aktifkan</span>
+                                   </button>
+                                )}
+
+                                {isBroken && (
+                                  <button
+                                     onClick={() => handleOpenReplaceModal(q)}
+                                     title="Ganti QR Code Rusak"
+                                     className="p-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-bold transition-all border border-blue-200 dark:border-blue-800 cursor-pointer inline-flex items-center gap-1"
+                                   >
+                                     <RefreshCw size={14} />
+                                     <span className="hidden sm:inline">Ganti QR</span>
+                                   </button>
+                                )}
+
                                 <button
-                                   onClick={() => handleOpenReplaceModal(q)}
-                                   title="Ganti QR Code Rusak"
-                                   className="p-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-bold transition-all border border-blue-200 dark:border-blue-800 cursor-pointer inline-flex items-center gap-1"
-                                 >
-                                   <RefreshCw size={14} />
-                                   <span className="hidden sm:inline">Ganti QR</span>
-                                 </button>
-                              )}
+                                  onClick={() => setResetOwnershipModal({ id: q.id, qrCode: q.qrCode })}
+                                  title="Reset Kepemilikan & Status ke PRINTED (Belum Terikat)"
+                                  className={`p-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1 ${
+                                    q.user || q.status !== "PRINTED"
+                                      ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800"
+                                      : "bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                                  }`}
+                                >
+                                  <RotateCcw size={14} className={q.user || q.status !== "PRINTED" ? "text-amber-600 dark:text-amber-400" : "text-slate-400"} />
+                                  <span className="hidden sm:inline">Reset</span>
+                                </button>
 
-                              <button
-                                onClick={() => setResetOwnershipModal({ id: q.id, qrCode: q.qrCode })}
-                                title="Reset Kepemilikan & Status ke PRINTED (Belum Terikat)"
-                                className={`p-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1 ${
-                                  q.user || q.status !== "PRINTED"
-                                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800"
-                                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
-                                }`}
-                              >
-                                <RotateCcw size={14} className={q.user || q.status !== "PRINTED" ? "text-amber-600 dark:text-amber-400" : "text-slate-400"} />
-                                <span className="hidden sm:inline">Reset</span>
-                              </button>
-
-                              <button
-                                onClick={() => handleDeleteBin(q.id, q.qrCode)}
-                                title="Hapus QR Code"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-all cursor-pointer"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </td>
-                        )}
+                                <button
+                                  onClick={() => handleDeleteBin(q.id, q.qrCode)}
+                                  title="Hapus QR Code"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-all cursor-pointer"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -699,18 +706,24 @@ export const MasterQrManager: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() => verifyPetugas(petugas.id, "APPROVED")}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                          >
-                            Setujui
-                          </button>
-                          <button
-                            onClick={() => verifyPetugas(petugas.id, "REJECTED")}
-                            className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-                          >
-                            Tolak
-                          </button>
+                          {isDeveloper ? (
+                            <>
+                              <button
+                                onClick={() => verifyPetugas(petugas.id, "APPROVED")}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                              >
+                                Setujui
+                              </button>
+                              <button
+                                onClick={() => verifyPetugas(petugas.id, "REJECTED")}
+                                className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                              >
+                                Tolak
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-slate-400 italic">Khusus Developer</span>
+                          )}
                         </div>
                       </td>
                     </tr>

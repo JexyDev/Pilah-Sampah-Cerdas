@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { EmptyTableState } from "../../../components/common/EmptyTableState";
 import { downloadKelompokZip, printQrStickers, type QrStickerItem } from "../../../utils/printQrStickers";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 export interface KelompokDistributionItem {
   id: string;
@@ -49,6 +50,8 @@ export interface KelompokDistributionItem {
 }
 
 export const KelompokQrDistributionTab: React.FC = () => {
+  const { user } = useAuthStore();
+  const isDeveloper = String(user?.peran || user?.role || "").toUpperCase() === "DEVELOPER";
   const [data, setData] = useState<KelompokDistributionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -469,7 +472,9 @@ export const KelompokQrDistributionTab: React.FC = () => {
                   <th className="py-3 px-4 min-w-[180px]">Kuota QR (10 Org + 10 Anorg)</th>
                   <th className="py-3 px-4 min-w-[150px]">Status Distribusi</th>
                   <th className="py-3 px-4 min-w-[260px]">Google Drive Kelompok</th>
-                  <th className="py-3 px-4 min-w-[240px] text-right">Aksi Developer</th>
+                  <th className="py-3 px-4 min-w-[240px] text-right">
+                    {isDeveloper ? "Aksi Developer" : "Aksi Unduh & Cetak"}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal text-slate-700 dark:text-slate-300">
@@ -646,16 +651,18 @@ export const KelompokQrDistributionTab: React.FC = () => {
                             )}
 
                             <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                onClick={() => {
-                                  setEditingGdriveId(item.id);
-                                  setGdriveInputVal(item.linkGoogleDrive || "");
-                                }}
-                                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                                title="Edit Link Google Drive"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
+                              {isDeveloper && (
+                                <button
+                                  onClick={() => {
+                                    setEditingGdriveId(item.id);
+                                    setGdriveInputVal(item.linkGoogleDrive || "");
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                                  title="Edit Link Google Drive"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
 
                               {item.linkGoogleDrive && (
                                 <a
@@ -677,16 +684,20 @@ export const KelompokQrDistributionTab: React.FC = () => {
                       {/* Aksi Developer */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Generate 20 QR button */}
+                          {/* Generate 20 QR button (Developer Only) */}
                           {!isComplete ? (
-                            <button
-                              onClick={() => handleGenerate10Qr(item)}
-                              disabled={isGenerating}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              {isGenerating ? "Membuat..." : "Generate 20 QR"}
-                            </button>
+                            isDeveloper ? (
+                              <button
+                                onClick={() => handleGenerate10Qr(item)}
+                                disabled={isGenerating}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                {isGenerating ? "Membuat..." : "Generate 20 QR"}
+                              </button>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-slate-400 italic">Generate khusus Developer</span>
+                            )
                           ) : (
                             <>
                               {/* Download ZIP Package */}

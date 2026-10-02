@@ -59,6 +59,11 @@ describe("sidebarAccess utility", () => {
         mockCan
       )
     ).toBe(false);
+
+    // Menu Laporan (Khusus Pimpinan Di-Hide)
+    expect(canAccessSidebarRoute("/laporan/kkn", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/laporan-pimpinan/kkn", pimpinan, mockCan)).toBe(false);
   });
 
   it("allows PIMPINAN to access their legitimate executive modules", () => {

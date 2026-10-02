@@ -24,6 +24,23 @@ router.post(
 router.get("/jenis", authMiddleware, facilityController.getJenisFasilitas);
 router.get("/", authMiddleware, facilityController.getFacilities);
 
+// Update fasilitas — DEVELOPER / SUPER_USER / ADMIN_DLH
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  safeUploadSingleImage("foto"),
+  facilityController.updateFacility
+);
+
+// Hapus fasilitas — DEVELOPER / SUPER_USER / ADMIN_DLH
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  facilityController.deleteFacility
+);
+
 // Input log produksi — MAHASISWA_KKN bisa input
 router.post(
   "/:id/production",

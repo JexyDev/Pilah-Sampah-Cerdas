@@ -228,16 +228,35 @@ export function canAccessSidebarRoute(
     return true;
   }
 
-  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook, Hasil Survei, dan Laporan Resmi KKN (Terbuka untuk PIMPINAN)
+  // 7.1. Rute Laporan (Khusus PIMPINAN di-hide dari sidebar)
+  const isLaporanRoute =
+    cleanPath.startsWith("/laporan/") ||
+    cleanPath === "/laporan" ||
+    cleanPath === "/laporan/kkn" ||
+    cleanPath === "/laporan/tata-kelola-sampah" ||
+    cleanPath === "/laporan-pimpinan/kkn";
+
+  if (isLaporanRoute) {
+    if (role === "PIMPINAN") return false;
+    const allowedLaporan: UserRole[] = [
+      "ADMIN_DLH",
+      "CAMAT",
+      "LURAH",
+      "PANITIA_TASKFORCE",
+      "DPL",
+      "DOSEN_PEMBIMBING",
+      "MPL",
+    ];
+    return allowedLaporan.includes(role);
+  }
+
+  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook, dan Hasil Survei (Terbuka untuk PIMPINAN)
   const isKknExecutiveAllowed =
     cleanPath.startsWith("/pelaksanaan/") ||
     cleanPath.startsWith("/monitoring-kegiatan/") ||
     cleanPath.startsWith("/penilaian/") ||
     cleanPath.startsWith("/log-aktivitas/") ||
-    cleanPath.startsWith("/hasil-survei/") ||
-    cleanPath.startsWith("/laporan/") ||
-    cleanPath === "/laporan/kkn" ||
-    cleanPath === "/laporan-pimpinan/kkn";
+    cleanPath.startsWith("/hasil-survei/");
 
   if (isKknExecutiveAllowed) {
     return true;
