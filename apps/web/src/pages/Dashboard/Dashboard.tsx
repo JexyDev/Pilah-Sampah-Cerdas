@@ -2640,43 +2640,27 @@ const Dashboard: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Penekanan Informasi pada Angka & Nilai Komposisi */}
-                <div className="w-full space-y-2.5 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
-                        Organik
-                      </div>
-                      <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                        {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
-                      </div>
+                {/* Penekanan Informasi pada Angka & Nilai Komposisi (Legend Ringkas tanpa Redundansi Bar) */}
+                <div className="w-full space-y-2 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                  <div className="flex justify-between items-center text-xs">
+                    <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
+                      Organik
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#34d399] rounded-full transition-all duration-500"
-                        style={{ width: `${pctOrg}%` }}
-                      />
+                    <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
+                      {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
-                        Anorganik
-                      </div>
-                      <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                        {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
-                        <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
-                      </div>
+                  <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
+                      Anorganik
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#fbbf24] rounded-full transition-all duration-500"
-                        style={{ width: `${pctAnorg}%` }}
-                      />
+                    <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
+                      {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                      <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                     </div>
                   </div>
                 </div>
