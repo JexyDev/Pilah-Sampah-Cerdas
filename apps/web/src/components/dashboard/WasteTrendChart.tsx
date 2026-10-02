@@ -457,7 +457,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-            Tren Pemilahan Sampah Harian/Mingguan
+            Monitoring tren berat sampah (kg) dan evaluasi capaian penurunan timbulan sampah sesuai target KKN
           </p>
 
           {/* Data Series Legends: HANYA 2 Kategori (Organik & Anorganik), Residu Ditiadakan */}
@@ -626,16 +626,6 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
             </p>
           </div>
         )}
-      </div>
-
-      {/* Keterangan Sumbu X & Sumbu Y Eksplisit */}
-      <div className="pt-2 px-1 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
-        <span className="font-semibold text-slate-600 dark:text-slate-300">
-          Sumbu X: Linimasa Waktu ({currentRangeConfig.label}) • Sumbu Y: Berat Sampah (kg)
-        </span>
-        <span className="text-[10px] text-slate-400 italic">
-          Data riil terpilah berdasarkan pemindaian QR tempat sampah
-        </span>
       </div>
     </div>
   );
