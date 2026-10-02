@@ -220,6 +220,8 @@ export const PoskoKknPage: React.FC = () => {
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PEMBIMBING_LAPANGAN"].some((r) => userRole.includes(r));
   const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) => userRole.includes(r));
+  const isPimpinan = ["PIMPINAN", "PEMIMPIN"].some((r) => userRole.includes(r));
+  const canViewGeofence = ["DEVELOPER", "SUPER_USER"].includes(userRole) && !isPimpinan;
   const isDeveloperOrAdmin = [
     "DEVELOPER",
     "SUPER_USER",
@@ -252,7 +254,7 @@ export const PoskoKknPage: React.FC = () => {
   // Layer Toggles
   const [showPoskoLayer, setShowPoskoLayer] = useState(true);
   const [showFacilitiesLayer, setShowFacilitiesLayer] = useState(true);
-  const [showGeofenceLayer, setShowGeofenceLayer] = useState(true);
+  const [showGeofenceLayer, setShowGeofenceLayer] = useState(false);
   const [showBoundaryLayer] = useState(true);
 
   // Filter & Search States
@@ -1842,10 +1844,10 @@ export const PoskoKknPage: React.FC = () => {
               </span>
               <div>
                 <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                  Peta Sebaran Posko KKN &amp; Fasilitas Kebersihan
+                  Peta Sebaran Posko KKN
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Cakupan Wilayah Binaan ({filteredItems.length} posko aktif, {facilities.length} fasilitas)
+                  Cakupan Wilayah Binaan ({filteredItems.length} posko aktif)
                 </p>
               </div>
             </div>
@@ -1865,30 +1867,20 @@ export const PoskoKknPage: React.FC = () => {
                   <GraduationCap size={12} />
                   <span>Posko</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowFacilitiesLayer((v) => !v)}
-                  className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
-                    showFacilitiesLayer
-                      ? "bg-emerald-600 text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <FileCheck size={12} />
-                  <span>Fasilitas ({facilities.length})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowGeofenceLayer((v) => !v)}
-                  className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
-                    showGeofenceLayer
-                      ? "bg-purple-600 text-white shadow-2xs"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <Radio size={12} />
-                  <span>Geofence</span>
-                </button>
+                {canViewGeofence && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGeofenceLayer((v) => !v)}
+                    className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer ${
+                      showGeofenceLayer
+                        ? "bg-purple-600 text-white shadow-2xs"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Radio size={12} />
+                    <span>Geofence</span>
+                  </button>
+                )}
               </div>
 
               {selectedKelurahan !== "ALL" && (
@@ -1916,7 +1908,7 @@ export const PoskoKknPage: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                     <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                      Legenda Peta Posko &amp; Fasilitas
+                      Legenda Peta Posko KKN
                     </span>
                   </div>
                 </div>
@@ -1927,21 +1919,6 @@ export const PoskoKknPage: React.FC = () => {
                       <GraduationCap size={10} />
                     </span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">Posko Mahasiswa KKN</span>
-                  </div>
-
-                  {/* Kategori Fasilitas */}
-                  <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
-                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                      Fasilitas Kebersihan
-                    </span>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#2563eb]" /><span className="font-medium text-slate-600 dark:text-slate-400">Bank Sampah</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#7c3aed]" /><span className="font-medium text-slate-600 dark:text-slate-400">Rumah Maggot</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#65a30d]" /><span className="font-medium text-slate-600 dark:text-slate-400">Buruan SAE</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#64748b]" /><span className="font-medium text-slate-600 dark:text-slate-400">TPS</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#0d9488]" /><span className="font-medium text-slate-600 dark:text-slate-400">Loseda</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#f59e0b]" /><span className="font-medium text-slate-600 dark:text-slate-400">Bata Terawang</span></div>
-                    </div>
                   </div>
 
                   <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
@@ -2010,7 +1987,7 @@ export const PoskoKknPage: React.FC = () => {
 
                 return (
                   <React.Fragment key={item.id}>
-                    {showGeofenceLayer && (
+                    {canViewGeofence && showGeofenceLayer && (
                       <Circle
                         center={[latNum, lngNum]}
                         radius={itemRadius}
@@ -2076,10 +2053,12 @@ export const PoskoKknPage: React.FC = () => {
                               <MapPin size={13} className="shrink-0 mt-0.5 text-emerald-500" />
                               <span className="line-clamp-2">{item.alamat || `Kel. ${item.kelurahan}`}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 pt-1 border-t border-slate-100 dark:border-slate-800 font-bold">
-                              <Radio size={12} className="text-indigo-500" />
-                              <span>Radius Geofence: {itemRadius} meter</span>
-                            </div>
+                            {canViewGeofence && (
+                              <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 pt-1 border-t border-slate-100 dark:border-slate-800 font-bold">
+                                <Radio size={12} className="text-indigo-500" />
+                                <span>Radius Geofence: {itemRadius} meter</span>
+                              </div>
+                            )}
                           </div>
 
                           <div className="pt-1 flex gap-2">
@@ -2106,56 +2085,6 @@ export const PoskoKknPage: React.FC = () => {
                       </Popup>
                     </Marker>
                   </React.Fragment>
-                );
-              })}
-
-              {/* Marker Fasilitas Kebersihan (TPS, Bank Sampah, Maggot, dll) */}
-              {showFacilitiesLayer && facilities.map((fac) => {
-                const lat = Number(fac.latitude);
-                const lng = Number(fac.longitude);
-                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
-
-                if (selectedKelurahan !== "ALL") {
-                  const fKel = (fac.rw?.kelurahan?.name || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
-                  const fAlamat = (fac.alamat || "").toLowerCase();
-                  const filterKel = selectedKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
-                  const isMatch = (fKel && (fKel.includes(filterKel) || filterKel.includes(fKel))) || fAlamat.includes(filterKel);
-                  if (!isMatch) return null;
-                }
-
-                return (
-                  <Marker
-                    key={`fac-${fac.id}`}
-                    position={[lat, lng]}
-                    icon={createFacilityIcon(fac.jenis, fac.nama)}
-                  >
-                    <Popup maxWidth={280}>
-                      <div className="p-1.5 space-y-1.5 text-xs text-slate-800 dark:text-slate-100">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                            {fac.jenis.replace(/_/g, " ")}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-500">
-                            {fac.rw?.kelurahan?.name ? `Kel. ${fac.rw.kelurahan.name}` : ""}
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight">
-                          {fac.nama}
-                        </h4>
-                        {fac.alamat && (
-                          <p className="text-slate-500 text-[11px] flex items-start gap-1">
-                            <MapPin size={11} className="shrink-0 mt-0.5 text-rose-500" />
-                            <span>{fac.alamat}</span>
-                          </p>
-                        )}
-                        {fac.pic && (
-                          <div className="text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
-                            <strong>PIC:</strong> {fac.pic} {fac.kontak ? `(${fac.kontak})` : ""}
-                          </div>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
                 );
               })}
             </MapContainer>
