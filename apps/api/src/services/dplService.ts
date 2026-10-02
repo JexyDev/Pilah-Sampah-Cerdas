@@ -1147,6 +1147,10 @@ export async function calculateDplPoints(
   poinKelompok: number;
   hasLogbookDpl: boolean;
   logbookCount: number;
+  countLapangan?: number;
+  countKampus?: number;
+  poinAktivitasLapangan?: number;
+  poinAktivitasKampus?: number;
 }> {
   try {
     let resolvedGroupPoints = groupPoints;
@@ -1168,21 +1172,74 @@ export async function calculateDplPoints(
 
     const poinKelompok = resolvedGroupPoints || 0;
 
-    // Cek ketersediaan logbook DPL
+    // Ambil data aktivitas logbook DPL untuk diferensiasi aktivitas
     const logbookWhere: any = { dplId: dplUserId };
     if (targetKelompokId) {
       logbookWhere.kelompokId = targetKelompokId;
     }
 
-    const logbookCount = await prisma.logbookDpl.count({
-      where: logbookWhere,
-    });
+    let logbooks: any[] = [];
+    if (typeof (prisma as any).logbookDpl?.findMany === "function") {
+      logbooks = await prisma.logbookDpl.findMany({
+        where: logbookWhere,
+        select: {
+          id: true,
+          kategori: true,
+          tempat: true,
+        },
+      });
+    }
+
+    let logbookCount = logbooks.length;
+    if (logbookCount === 0 && typeof (prisma as any).logbookDpl?.count === "function") {
+      const rawCount = await prisma.logbookDpl.count({ where: logbookWhere });
+      if (rawCount > 0) {
+        logbookCount = rawCount;
+      }
+    }
 
     const hasLogbookDpl = logbookCount > 0;
-    // Formula Resmi Poin DPL: (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
-    // - Jika logbook DPL tersedia: 6 poin
-    // - Jika tidak tersedia: 0 poin
-    const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
+
+    // Klasifikasi Poin Berbobot Aktivitas DPL:
+    // 1. Kegiatan Turun Langsung ke Lapangan: 5 Poin
+    // 2. Pembimbingan / Koordinasi Kampus: 2 Poin
+    let poinAktivitasLapangan = 0;
+    let poinAktivitasKampus = 0;
+    let countLapangan = 0;
+    let countKampus = 0;
+
+    if (logbooks.length > 0) {
+      for (const lb of logbooks) {
+        const kat = (lb.kategori || "").toLowerCase().trim();
+        const tempat = (lb.tempat || "").toLowerCase().trim();
+        const isLapangan =
+          kat.includes("lapangan") ||
+          kat.includes("kunjungan") ||
+          kat.includes("monitoring") ||
+          tempat.includes("rw") ||
+          tempat.includes("posko") ||
+          tempat.includes("kelurahan") ||
+          tempat.includes("desa") ||
+          tempat.includes("lapangan");
+
+        if (isLapangan) {
+          poinAktivitasLapangan += 5;
+          countLapangan++;
+        } else {
+          poinAktivitasKampus += 2;
+          countKampus++;
+        }
+      }
+    } else if (logbookCount > 0) {
+      // Fallback jika hanya ada count tanpa detail entri (backward compatibility)
+      poinAktivitasLapangan = logbookCount * 5;
+      countLapangan = logbookCount;
+    }
+
+    // Total Poin Aktivitas Supervisi DPL
+    const poinLogbookDpl = poinAktivitasLapangan + poinAktivitasKampus;
+
+    // Formula Resmi Poin DPL: (Poin Aktivitas DPL * 0.5) + (Poin Kelompok * 0.5)
     const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 100) / 100;
 
     return {
@@ -1191,6 +1248,10 @@ export async function calculateDplPoints(
       poinKelompok,
       hasLogbookDpl,
       logbookCount,
+      countLapangan,
+      countKampus,
+      poinAktivitasLapangan,
+      poinAktivitasKampus,
     };
   } catch (err) {
     console.warn("[calculateDplPoints] Error:", err);
