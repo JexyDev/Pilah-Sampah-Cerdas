@@ -17,6 +17,11 @@ const TEST_KEYWORDS = [
   "tester",
   "dpl test",
   "kelompok test",
+  "qc berseka",
+  "berseka qa",
+  "uji coba berseka",
+  "penguji berseka",
+  "tim berseka",
 ];
 
 /**
@@ -47,6 +52,10 @@ const TEST_PHONES = [
   "081234567890",
   "08123456789",
   "08999999999",
+  "+6281223344551",
+  "081223344551",
+  "+6281223344552",
+  "081223344552",
 ];
 
 const TEST_NIMS = [
@@ -55,6 +64,7 @@ const TEST_NIMS = [
   "123456789",
   "999999999",
   "000000000",
+  "10124099",
 ];
 
 /**
