@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Radio,
   RefreshCw,
@@ -196,16 +196,36 @@ export const IotMonitoringPage: React.FC = () => {
   const rssiLabel =
     currentRssi < -95 ? "Lemah" : currentRssi < -80 ? "Cukup" : "Kuat";
 
-  // Sparklines formatting
-  const ch4Sparkline = (summary?.sparklines || []).map((s) => ({
+  // Sparklines formatting dengan sinkronisasi zona waktu WIB
+  const sparklines = useMemo(() => {
+    return (summary?.sparklines || []).map((s) => {
+      let clientTime = s.time;
+      if (s.timestamp) {
+        const d = new Date(s.timestamp);
+        if (!isNaN(d.getTime())) {
+          clientTime = d.toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Jakarta",
+          });
+        }
+      }
+      return {
+        ...s,
+        time: clientTime,
+      };
+    });
+  }, [summary?.sparklines]);
+
+  const ch4Sparkline = sparklines.map((s) => ({
     time: s.time,
     value: s.ch4Ppm,
   }));
-  const batSparkline = (summary?.sparklines || []).map((s) => ({
+  const batSparkline = sparklines.map((s) => ({
     time: s.time,
     value: s.baterai ?? 0,
   }));
-  const rssiSparkline = (summary?.sparklines || []).map((s) => ({
+  const rssiSparkline = sparklines.map((s) => ({
     time: s.time,
     value: s.rssi ?? -100,
   }));
@@ -391,6 +411,7 @@ export const IotMonitoringPage: React.FC = () => {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
+                timeZone: "Asia/Jakarta",
               })}{" "}
               WIB
             </span>
@@ -489,7 +510,7 @@ export const IotMonitoringPage: React.FC = () => {
 
       {/* SECTION 3: GRAFIK TELEMETRI TIME-SERIES */}
       <IotTelemetryChart
-        data={summary?.sparklines || []}
+        data={sparklines}
         heightClass="h-80"
         warningThreshold={warningThreshold}
         dangerThreshold={dangerThreshold}

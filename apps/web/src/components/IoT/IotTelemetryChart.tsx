@@ -149,10 +149,18 @@ export const IotTelemetryChart: React.FC<IotTelemetryChartProps> = ({
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     const row = payload[0].payload as TelemetryPoint;
+                    const formattedDetailTime = row.timestamp
+                      ? new Date(row.timestamp).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          timeZone: "Asia/Jakarta",
+                        }) + " WIB"
+                      : `${label} WIB`;
                     return (
                       <div className="bg-slate-900/95 backdrop-blur-xs text-white p-2.5 rounded-xl shadow-xl border border-slate-800 text-xs space-y-1">
                         <div className="text-[10px] text-slate-400 font-mono">
-                          Waktu: {label}
+                          Waktu: {formattedDetailTime}
                         </div>
                         <div className="font-bold flex items-center justify-between gap-3">
                           <span className="text-slate-300">{current.label}:</span>

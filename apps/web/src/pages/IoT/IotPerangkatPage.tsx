@@ -278,6 +278,7 @@ export const IotPerangkatPage: React.FC = () => {
                             Denyut: {new Date(dev.lastSeenAt).toLocaleTimeString("id-ID", {
                               hour: "2-digit",
                               minute: "2-digit",
+                              timeZone: "Asia/Jakarta",
                             })} WIB
                           </div>
                         ) : (
