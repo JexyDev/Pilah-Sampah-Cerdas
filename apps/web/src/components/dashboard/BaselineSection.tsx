@@ -601,7 +601,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                             onMouseLeave={() => setHoveredRateIndex(null)}
                           >
                             <span
-                              className={`text-[11px] sm:text-xs font-bold truncate w-full transition-colors ${
+                              className={`text-[11px] sm:text-xs font-bold leading-tight w-full transition-colors ${
                                 isHovered
                                   ? "text-emerald-700 dark:text-emerald-300 font-extrabold"
                                   : "text-slate-700 dark:text-slate-300"
@@ -610,7 +610,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                             >
                               {item.kelurahan}
                             </span>
-                            <span className="text-[9px] text-slate-400 font-semibold">
+                            <span className="text-[9px] text-slate-400 font-semibold mt-0.5">
                               {item.rwKepatuhanTinggi || 0} RW &gt;85%
                             </span>
                           </div>
@@ -618,6 +618,11 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                       })}
                     </div>
                   </div>
+
+                  {/* Keterangan Satuan Sumbu X & Sumbu Y */}
+                  <p className="text-center text-[10.5px] text-slate-400 dark:text-slate-500 font-medium pt-3 select-none">
+                    Sumbu X: Kelurahan &amp; RW Patuh (&gt;85%) • Sumbu Y: Tingkat Kepatuhan (%)
+                  </p>
                 </div>
               </div>
             </div>
@@ -640,13 +645,13 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
               <div className="w-full relative overflow-visible pt-2">
                 <div className="min-w-[340px]">
                   <div className="flex gap-2 items-end">
-                    {/* Sumbu Y (kg) */}
-                    <div className="w-12 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 font-extrabold pr-1 border-r border-slate-200 dark:border-slate-700 h-64 text-right pb-1 select-none">
-                      <span>{maxVolumeKg.toLocaleString("id-ID")}</span>
-                      <span>{(maxVolumeKg * 0.75).toLocaleString("id-ID")}</span>
-                      <span>{(maxVolumeKg * 0.5).toLocaleString("id-ID")}</span>
-                      <span>{(maxVolumeKg * 0.25).toLocaleString("id-ID")}</span>
-                      <span>0</span>
+                    {/* Sumbu Y (kg/hari) */}
+                    <div className="w-16 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 dark:border-slate-700 h-64 text-right pb-1 select-none">
+                      <span>{maxVolumeKg.toLocaleString("id-ID")} kg</span>
+                      <span>{(maxVolumeKg * 0.75).toLocaleString("id-ID")} kg</span>
+                      <span>{(maxVolumeKg * 0.5).toLocaleString("id-ID")} kg</span>
+                      <span>{(maxVolumeKg * 0.25).toLocaleString("id-ID")} kg</span>
+                      <span>0 kg</span>
                     </div>
 
                     {/* Grid Bar 6 Kelurahan */}
@@ -739,17 +744,6 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                               </div>
                             )}
 
-                            {/* Label Angka Volume di Atas Batang */}
-                            <span
-                              className={`text-[10px] sm:text-[11px] font-black mb-1.5 tracking-tight transition-transform ${
-                                isHovered
-                                  ? "text-indigo-500 scale-110 font-black"
-                                  : "text-indigo-700 dark:text-indigo-400 group-hover:scale-105"
-                              }`}
-                            >
-                              {volKg > 0 ? (volKg >= 1000 ? `${(volKg / 1000).toFixed(1)}k` : `${Math.round(volKg)}`) : "—"}
-                            </span>
-
                             {/* Batang Grafik */}
                             <div
                               className={`w-full max-w-[42px] bg-indigo-100/50 dark:bg-indigo-950/30 rounded-t-xl overflow-hidden h-full flex items-end border-x border-t transition-all ${
@@ -775,7 +769,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
 
                   {/* Sumbu X: Nama Kelurahan */}
                   <div className="flex gap-2 pt-2 text-center">
-                    <div className="w-12 shrink-0" />
+                    <div className="w-16 shrink-0" />
                     <div className="flex-1 grid grid-cols-6 gap-2 sm:gap-3">
                       {kelurahanList.map((item, idx) => {
                         const volKg = item.volumeBaselineKg || 0;
@@ -790,7 +784,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                             onMouseLeave={() => setHoveredVolumeIndex(null)}
                           >
                             <span
-                              className={`text-[11px] sm:text-xs font-bold truncate w-full transition-colors ${
+                              className={`text-[11px] sm:text-xs font-bold leading-tight w-full transition-colors ${
                                 isHovered
                                   ? "text-indigo-700 dark:text-indigo-300 font-extrabold"
                                   : "text-slate-700 dark:text-slate-300"
@@ -799,7 +793,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                             >
                               {item.kelurahan}
                             </span>
-                            <span className="text-[9px] text-slate-400 font-semibold truncate w-full">
+                            <span className="text-[9.5px] text-slate-500 dark:text-slate-400 font-bold truncate w-full mt-0.5">
                               {volKg > 0 ? `${volKg.toLocaleString("id-ID", { maximumFractionDigits: 0 })} kg` : "—"}
                             </span>
                           </div>
@@ -807,6 +801,11 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                       })}
                     </div>
                   </div>
+
+                  {/* Keterangan Satuan Sumbu X & Sumbu Y */}
+                  <p className="text-center text-[10.5px] text-slate-400 dark:text-slate-500 font-medium pt-3 select-none">
+                    Sumbu X: Kelurahan &amp; Berat Sampah (kg) • Sumbu Y: Berat Sampah (kg/hari)
+                  </p>
                 </div>
               </div>
             </div>
@@ -993,6 +992,11 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                     })}
                   </div>
                 </div>
+
+                {/* Keterangan Satuan Sumbu X & Sumbu Y */}
+                <p className="text-center text-[10.5px] text-slate-400 dark:text-slate-500 font-medium pt-3 select-none">
+                  Sumbu X: Kelurahan &amp; RW Patuh (&gt;85%) • Sumbu Y: Tingkat Kepatuhan (%)
+                </p>
               </div>
             </div>
           </div>
@@ -1014,12 +1018,12 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
             <div className="w-full relative overflow-visible pt-2">
               <div className="min-w-[620px]">
                 <div className="flex gap-3 items-end">
-                  <div className="w-14 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-700 h-64 text-right pb-1 select-none">
-                    <span>{maxVolumeKg}</span>
-                    <span>{maxVolumeKg * 0.75}</span>
-                    <span>{maxVolumeKg * 0.5}</span>
-                    <span>{maxVolumeKg * 0.25}</span>
-                    <span>0</span>
+                  <div className="w-18 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-700 h-64 text-right pb-1 select-none">
+                    <span>{maxVolumeKg.toLocaleString("id-ID")} kg</span>
+                    <span>{(maxVolumeKg * 0.75).toLocaleString("id-ID")} kg</span>
+                    <span>{(maxVolumeKg * 0.5).toLocaleString("id-ID")} kg</span>
+                    <span>{(maxVolumeKg * 0.25).toLocaleString("id-ID")} kg</span>
+                    <span>0 kg</span>
                   </div>
 
                   <div className="flex-1 grid grid-cols-6 gap-4 sm:gap-6 items-end h-64 border-b border-slate-200 dark:border-slate-700 pb-1 relative">
@@ -1135,7 +1139,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 </div>
 
                 <div className="flex gap-3 pt-2 text-center">
-                  <div className="w-14 shrink-0" />
+                  <div className="w-18 shrink-0" />
                   <div className="flex-1 grid grid-cols-6 gap-4 sm:gap-6">
                     {kelurahanList.map((item, idx) => {
                       const volKg = item.volumeBaselineKg || 0;
@@ -1166,6 +1170,11 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                     })}
                   </div>
                 </div>
+
+                {/* Keterangan Satuan Sumbu X & Sumbu Y */}
+                <p className="text-center text-[10.5px] text-slate-400 dark:text-slate-500 font-medium pt-3 select-none">
+                  Sumbu X: Kelurahan &amp; Berat Sampah (kg) • Sumbu Y: Berat Sampah (kg/hari)
+                </p>
               </div>
             </div>
           </div>
