@@ -143,7 +143,6 @@ const Monitoring: React.FC = () => {
     return "google_satellite"; // Default Satelit untuk semua role
   });
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
-  const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
 
   // QC-17b: Sync default satellite untuk semua role (termasuk Pimpinan) saat user load
   useEffect(() => {
@@ -1024,7 +1023,7 @@ const Monitoring: React.FC = () => {
                   title="Tampilkan Legenda Peta"
                 >
                   <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
-                  <span>Legenda Monitoring</span>
+                  <span>Legenda Tempat Sampah</span>
                   <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               ) : (
@@ -1033,7 +1032,7 @@ const Monitoring: React.FC = () => {
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                        Legenda Monitoring
+                        Legenda Tempat Sampah
                       </span>
                     </div>
                     <button
@@ -1046,129 +1045,51 @@ const Monitoring: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
-                    <button
-                      type="button"
-                      onClick={() => setActiveLegendTab("sampah")}
-                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
-                        activeLegendTab === "sampah"
-                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                      }`}
-                    >
-                      Tempat Sampah
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveLegendTab("fasilitas_wilayah")}
-                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
-                        activeLegendTab === "fasilitas_wilayah"
-                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                      }`}
-                    >
-                      Fasilitas &amp; Wilayah
-                    </button>
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                        Kategori Tempat Sampah
+                      </span>
+                      <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
+                          <span>Organik</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
+                          <span>Anorganik</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
+                          <span>Residu</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
+                      <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                        Status Volume &amp; Okupansi
+                      </span>
+                      <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
+                          <span>Aman (&lt; 70% Terisi)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
+                          <span>Sedang / Waspada (70% - 90%)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
+                          <span className="font-bold text-rose-600">Penuh (&gt; 90% Terisi)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
+                          <span>Tempat Sampah Rusak</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-
-                  {activeLegendTab === "sampah" ? (
-                    <div className="space-y-2">
-                      <div className="space-y-1">
-                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Kategori Tempat Sampah
-                        </span>
-                        <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
-                            <span>Organik</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
-                            <span>Anorganik</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
-                            <span>Residu</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
-                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Status Volume &amp; Okupansi
-                        </span>
-                        <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
-                            <span>Aman (&lt; 70% Terisi)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
-                            <span>Sedang / Waspada (70% - 90%)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
-                            <span className="font-bold text-rose-600">Penuh (&gt; 90% Terisi)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
-                            <span>Tempat Sampah Rusak</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
-                      <div className="space-y-1">
-                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Fasilitas Pengolahan Sampah
-                        </span>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bata Terawang</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Loseda</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" />
-                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Incinerator</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
-                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
-                          Batas Kelurahan Terdata
-                        </span>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
-                          {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                            <div key={kg.id} className="flex items-center gap-1.5">
-                              <span
-                                className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10 shadow-2xs"
-                                style={{ backgroundColor: kg.color }}
-                              />
-                              <span className="font-bold text-slate-700 dark:text-slate-300 truncate">{kg.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
                     <span>Diperbarui: {lastSyncTime.toLocaleTimeString("id-ID")}</span>

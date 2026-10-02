@@ -1098,34 +1098,62 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </div>
 
-          {/* Switcher Tampilan (Split vs Table) */}
-          <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-emerald-200 dark:border-slate-700 shadow-2xs shrink-0 self-stretch sm:self-auto justify-center">
-            <button
-              type="button"
-              onClick={() => setViewMode("split")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                viewMode === "split"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
-              }`}
-              title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
-            >
-              <LayoutGrid size={14} />
-              <span>Split-View (Anti-Scroll)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
-              }`}
-              title="Tampilan tabel tabular penuh konvensional"
-            >
-              <Table2 size={14} />
-              <span>Tabel Lengkap</span>
-            </button>
+          {/* Switcher Tampilan (Split vs Table) & Tombol Tambah Fasilitas (Developer/SU) */}
+          <div className="flex items-center gap-2 flex-wrap self-stretch sm:self-auto justify-end">
+            <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-emerald-200 dark:border-slate-700 shadow-2xs shrink-0 justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("split");
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete("view");
+                    return next;
+                  });
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  viewMode === "split"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                }`}
+                title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
+              >
+                <LayoutGrid size={14} />
+                <span>Split-View (Monitoring)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("table");
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.set("view", "table");
+                    return next;
+                  });
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                }`}
+                title="Tampilan tabel tabular data inventaris lengkap"
+              >
+                <Table2 size={14} />
+                <span>Tabel Data Lengkap</span>
+              </button>
+            </div>
+
+            {isDeveloper && (
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#035941] dark:bg-emerald-600 text-white hover:bg-[#024432] dark:hover:bg-emerald-700 shadow-sm transition-all cursor-pointer active:scale-95"
+                title="Tambah Fasilitas Baru (Khusus Developer / Super User)"
+              >
+                <Plus size={14} />
+                <span>Tambah Fasilitas</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1879,6 +1907,115 @@ export const PemanfaatanSampah: React.FC = () => {
           }}
         />
       )}
+
+      {isCreateOpen && (
+        <CreateFacilityModal
+          onClose={() => setIsCreateOpen(false)}
+          onSuccess={() => {
+            setIsCreateOpen(false);
+            fetchItems();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const CreateFacilityModal: React.FC<{
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    nama: "",
+    jenis: "bank_sampah",
+    pic: "",
+    kontak: "",
+    alamat: "",
+    kapasitas: "",
+    latitude: -6.885,
+    longitude: 107.615,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post("/facilities", formData);
+      showToast("success", "Fasilitas baru berhasil didaftarkan");
+      onSuccess();
+    } catch (error: any) {
+      showToast("error", error.response?.data?.message || "Gagal menambahkan fasilitas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Plus size={18} className="text-emerald-500" /> Tambah Fasilitas Baru
+          </h3>
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-5 overflow-y-auto">
+          <form id="create-facility-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Fasilitas</label>
+              <input type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Contoh: Bank Sampah Resik Dago" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis Fasilitas</label>
+              <select value={formData.jenis} onChange={e => setFormData({...formData, jenis: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required>
+                <option value="bank_sampah">Bank Sampah</option>
+                <option value="buruan_sae">Buruan Sae</option>
+                <option value="loseda">Loseda</option>
+                <option value="rumah_maggot">Rumah Maggot</option>
+                <option value="bata_terawang">Bata Terawang</option>
+                <option value="poc">POC</option>
+                <option value="tps">TPS</option>
+                <option value="posko_kkn">Posko KKN</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">PIC (Penanggung Jawab)</label>
+              <input type="text" value={formData.pic} onChange={e => setFormData({...formData, pic: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Nama PIC warga pengelola" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kontak PIC</label>
+              <input type="text" value={formData.kontak} onChange={e => setFormData({...formData, kontak: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="08xxxxxxxxxx" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas (kg)</label>
+              <input type="number" value={formData.kapasitas} onChange={e => setFormData({...formData, kapasitas: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Kapasitas tampung/kelola" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap</label>
+              <textarea value={formData.alamat} onChange={e => setFormData({...formData, alamat: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" rows={2} placeholder="Alamat jalan, nomor, RT/RW, kelurahan" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Latitude</label>
+                <input type="number" step="any" value={formData.latitude} onChange={e => setFormData({...formData, latitude: parseFloat(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Longitude</label>
+                <input type="number" step="any" value={formData.longitude} onChange={e => setFormData({...formData, longitude: parseFloat(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-3">
+          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 cursor-pointer">Batal</button>
+          <button type="submit" form="create-facility-form" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 cursor-pointer">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Simpan Fasilitas
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

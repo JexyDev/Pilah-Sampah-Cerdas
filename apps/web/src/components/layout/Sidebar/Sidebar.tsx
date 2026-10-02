@@ -408,6 +408,14 @@ const checkRouteActive = (
       );
     }
 
+    // View parameter handling (e.g. ?view=table)
+    if (targetParams.has("view")) {
+      return (
+        (targetParams.get("view") || "").toLowerCase() ===
+        (currentParams.get("view") || "").toLowerCase()
+      );
+    }
+
     // Cluster parameter handling
     if (targetParams.has("cluster")) {
       const targetCluster = (targetParams.get("cluster") || "").toLowerCase();
@@ -458,7 +466,8 @@ const checkRouteActive = (
     currentParams.has("tab") ||
     currentParams.has("role") ||
     currentParams.has("kategori") ||
-    currentParams.has("jenis")
+    currentParams.has("jenis") ||
+    currentParams.has("view")
   ) {
     return false;
   }
@@ -1480,9 +1489,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         //   ] as UserRole[],
         // },
         {
-          to: "/monitoring-wilayah",
+          type: "group",
+          label: "Peta Sebaran",
           icon: MapPin,
-          label: "Monitoring Wilayah",
           resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
@@ -1495,27 +1504,51 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MPL",
             "PIMPINAN",
+            "WARGA",
+            "MAHASISWA_KKN",
           ] as UserRole[],
+          children: [
+            {
+              to: "/monitoring-wilayah",
+              label: "Tempat Sampah Aktif",
+              resource: "monitoring_sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "PANITIA_TASKFORCE",
+                "MPL",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pengelolaan/fasilitas",
+              label: "Fasilitas Pengelolaan Sampah",
+              resource: "pemanfaatan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MPL",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+          ],
         },
-        // NOTE: Menu Manajemen IoT (Perangkat) di-hide sementara di production agar selaras dengan berseka.id
-        // {
-        //   to: "/manajemen-iot",
-        //   icon: Cpu,
-        //   label: "Manajemen IoT (CH4)",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "CAMAT",
-        //     "LURAH",
-        //     "RW",
-        //     "PIMPINAN",
-        //     "PEMIMPIN",
-        //   ] as UserRole[],
-        // },
         {
           type: "group",
-          label: "Infrastruktur & Fasilitas",
+          label: "Data & Fasilitas",
           icon: Trash2,
           allowed: [
             "DEVELOPER",
@@ -1534,7 +1567,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/monitoring-pengelolaan/tempat-sampah",
-              label: "Tempat Sampah",
+              label: "Data Tempat Sampah",
               resource: "manajemen_tempat_sampah",
               allowed: [
                 "DEVELOPER",
@@ -1552,8 +1585,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/monitoring-pengelolaan/fasilitas",
-              label: "Fasilitas",
+              to: "/monitoring-pengelolaan/fasilitas?view=table",
+              label: "Data Fasilitas",
               resource: "pemanfaatan",
               allowed: [
                 "DEVELOPER",
@@ -1592,7 +1625,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/monitoring-pemilahan/penyetoran-sampah",
-              label: "Pemilahan",
+              label: "Pemilahan Sampah",
               resource: "monitoring_sampah",
               allowed: [
                 "DEVELOPER",
@@ -1605,6 +1638,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "WARGA",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/pengangkutan-sampah",
+              label: "Pengangkutan Sampah",
+              resource: "pengangkutan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "PANITIA_TASKFORCE",
                 "PIMPINAN",
               ] as UserRole[],
             },
@@ -1624,108 +1673,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PIMPINAN",
               ] as UserRole[],
             },
-            {
-              to: "/monitoring-pemilahan/pengangkutan-sampah",
-              label: "Pengangkutan",
-              resource: "pengangkutan",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "PETUGAS_RESIDU",
-                "PANITIA_TASKFORCE",
-                "PIMPINAN",
-              ] as UserRole[],
-            },
-            {
-              type: "subgroup",
-              label: "Point & Peringkat",
-              to: "/monitoring-pemilahan/peringkat-warga",
-              resource: "poin_warga",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "PETUGAS_RESIDU",
-                "MAHASISWA_KKN",
-                "PANITIA_TASKFORCE",
-                "WARGA",
-                "PIMPINAN",
-              ] as UserRole[],
-              children: [
-                {
-                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=citizens",
-                  label: "Warga",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "ADMIN_DLH",
-                    "CAMAT",
-                    "LURAH",
-                    "RW",
-                    "PETUGAS_RESIDU",
-                    "MAHASISWA_KKN",
-                    "PANITIA_TASKFORCE",
-                    "WARGA",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=pengangkut",
-                  label: "Petugas",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "ADMIN_DLH",
-                    "CAMAT",
-                    "LURAH",
-                    "RW",
-                    "PETUGAS_RESIDU",
-                    "MAHASISWA_KKN",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=rtrw",
-                  label: "RW",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "ADMIN_DLH",
-                    "CAMAT",
-                    "LURAH",
-                    "RW",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=kelurahan",
-                  label: "Kelurahan",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "ADMIN_DLH",
-                    "CAMAT",
-                    "LURAH",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-              ],
-            },
           ],
         },
         {
           type: "group",
-          label: "Pemanfaatan & Dampak",
+          label: "Pengolahan & Pemanfaatan",
           icon: Recycle,
           resource: "hasil_pemanfaatan",
           allowed: [
@@ -1744,7 +1696,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/monitoring-pemanfaatan?kategori=ORGANIK",
-              label: "Organik",
+              label: "Pengolahan Sampah Organik",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1761,7 +1713,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemanfaatan?kategori=ANORGANIK",
-              label: "Anorganik",
+              label: "Pemanfaatan Sampah Anorganik",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1776,22 +1728,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
-            // NOTE: Menu Residu di-hide sementara karena fitur belum diperlukan
-            // {
-            //   to: "/pengangkutan-residu",
-            //   label: "Residu",
-            //   allowed: [
-            //     "DEVELOPER",
-            //     "SUPER_USER",
-            //     "ADMIN_DLH",
-            //     "CAMAT",
-            //     "LURAH",
-            //     "RW",
-            //     "PETUGAS_RESIDU",
-            //     "PIMPINAN",
-            //     "PANITIA_TASKFORCE",
-            //   ] as UserRole[],
-            // },
             {
               to: "/monitoring-pengelolaan/fasilitas?jenis=bank_sampah",
               label: "Bank Sampah",
@@ -1820,6 +1756,87 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "PIMPINAN",
                 "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Poin & Peringkat",
+          icon: Award,
+          resource: "poin_warga",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "MAHASISWA_KKN",
+            "PANITIA_TASKFORCE",
+            "WARGA",
+            "PIMPINAN",
+          ] as UserRole[],
+          children: [
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=citizens",
+              label: "Warga",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "WARGA",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=pengangkut",
+              label: "Petugas",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=rtrw",
+              label: "RW",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=kelurahan",
+              label: "Kelurahan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
               ] as UserRole[],
             },
           ],
