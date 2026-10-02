@@ -70,21 +70,42 @@ export class HouseholdController {
       const userId = req.user!.userId;
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { jumlahAnggotaKeluarga: true },
+        select: { jumlahAnggotaKeluarga: true, rwId: true },
       });
       const households = await householdService.getHouseholdsByUser(userId);
       const effectiveFamilySize =
         households[0]?.familySize ?? households[0]?.jumlahAnggotaKeluarga ?? user?.jumlahAnggotaKeluarga ?? 1;
+
+      const { authRepository } = await import("../repositories/authRepository.js");
+      const mentorUser: any = await authRepository.findCitizenMentor(userId, user?.rwId);
+      
+      let pendamping: any = null;
+      if (mentorUser) {
+        pendamping = {
+          id: mentorUser.id,
+          name: mentorUser.name,
+          phone: mentorUser.phone,
+          nim: mentorUser.studentProfile?.nim || null,
+          jurusan: mentorUser.studentProfile?.jurusan || null,
+          fakultas: mentorUser.studentProfile?.fakultas || null,
+          kelompokId: mentorUser.studentProfile?.kelompok?.id || null,
+          kelompokName: mentorUser.studentProfile?.kelompok?.name || null,
+        };
+      }
 
       res.status(200).json({
         success: true,
         message: "Berhasil mengambil data",
         familySize: effectiveFamilySize,
         jumlahAnggotaKeluarga: effectiveFamilySize,
+        pendamping,
+        pendampingName: pendamping?.name || null,
         data: households,
         user: {
           familySize: effectiveFamilySize,
           jumlahAnggotaKeluarga: effectiveFamilySize,
+          pendamping,
+          pendampingName: pendamping?.name || null,
         },
       });
     } catch (error) {

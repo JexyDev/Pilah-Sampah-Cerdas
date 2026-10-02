@@ -220,3 +220,44 @@ export function extractFirstUploadedFileUrl(
   }
   return undefined;
 }
+
+/**
+ * Middleware upload khusus berkas PDF Laporan Akhir KKN (Limit: 15MB)
+ */
+const pdfFileFilter = (_req: Request, file: any, cb: multer.FileFilterCallback) => {
+  const mimetypeLower = (file.mimetype || "").toLowerCase();
+  const extLower = path.extname(file.originalname || "").toLowerCase();
+  if (
+    mimetypeLower === "application/pdf" ||
+    mimetypeLower === "application/x-pdf" ||
+    mimetypeLower === "application/octet-stream" ||
+    extLower === ".pdf"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Hanya berkas format PDF yang diperbolehkan untuk Laporan Akhir.") as any, false);
+  }
+};
+
+export const uploadPdfLaporanAkhir = multer({
+  storage,
+  fileFilter: pdfFileFilter,
+  limits: {
+    fileSize: 15 * 1024 * 1024, // 15MB
+  },
+});
+
+export const safeUploadPdfLaporanAkhir = (fieldName: string = "filePdf") => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    uploadPdfLaporanAkhir.single(fieldName)(req, res, (err: any) => {
+      if (err) {
+        console.error(`[UploadMiddleware] Upload error on PDF field '${fieldName}':`, err.message);
+        return res.status(400).json({
+          success: false,
+          message: err.message || "Gagal mengunggah berkas PDF laporan akhir.",
+        });
+      }
+      next();
+    });
+  };
+};

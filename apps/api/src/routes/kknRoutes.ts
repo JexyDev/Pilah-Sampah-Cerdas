@@ -17,6 +17,7 @@ import {
   uploadPemanfaatanImage,
   safeUploadPemanfaatanImage,
 } from "../middlewares/uploadMiddleware.js";
+import laporanAkhirRouter from "./laporanAkhirRoutes.js";
 
 const router = Router();
 
@@ -867,7 +868,8 @@ router.put(
   kknController.updateProgramKerja
 );
 
-router.get("/laporan-akhir/me", authMiddleware, kknController.getLaporanAkhirMe);
+// Sub-router terisolasi untuk domain Laporan Akhir KKN Mahasiswa (Per-Individu)
+router.use("/laporan-akhir", laporanAkhirRouter);
 
 router.get(
   [
