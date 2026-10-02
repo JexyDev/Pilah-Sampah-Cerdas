@@ -1373,11 +1373,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/hasil-survei/data-survei",
-              label: "Unggah Data Survei",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "ADMIN_DLH"] as UserRole[],
-            },
-            {
               to: "/hasil-survei/endline",
               label: "Endline",
               allowed: [
@@ -1402,6 +1397,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "CAMAT",
                 "LURAH",
               ] as UserRole[],
+            },
+            {
+              to: "/hasil-survei/data-survei",
+              label: "Unggah Data Survei",
+              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "ADMIN_DLH"] as UserRole[],
             },
           ],
         },
