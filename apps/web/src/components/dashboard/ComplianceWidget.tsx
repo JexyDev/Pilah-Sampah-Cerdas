@@ -15,7 +15,7 @@
  * 6. Keterbukaan Prinsip: Penghapusan time-lock (24/7 pelaporan) & pencatatan neraca massa utuh
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Info,
   CheckCircle2,
@@ -58,16 +58,21 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
   const [showTooltip, setShowTooltip] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"frekuensi" | "bobot">("frekuensi");
 
+  const onMetricsLoadedRef = useRef(onMetricsLoaded);
+  onMetricsLoadedRef.current = onMetricsLoaded;
+
   useEffect(() => {
     if (initialMetrics) {
       setMetrics(initialMetrics);
       setLoading(false);
-      onMetricsLoaded?.(initialMetrics);
+      onMetricsLoadedRef.current?.(initialMetrics);
       return;
     }
 
     let isMounted = true;
-    setLoading(true);
+    if (!metrics) {
+      setLoading(true);
+    }
 
     const kelurahanParam =
       wilayah && !wilayah.toLowerCase().includes("semua")
@@ -80,7 +85,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
         if (isMounted) {
           setMetrics(data);
           setLoading(false);
-          onMetricsLoaded?.(data);
+          onMetricsLoadedRef.current?.(data);
         }
       })
       .catch((err) => {
@@ -90,14 +95,14 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           const fallback = complianceService.calculateComplianceMetrics([]);
           setMetrics(fallback);
           setLoading(false);
-          onMetricsLoaded?.(fallback);
+          onMetricsLoadedRef.current?.(fallback);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [initialMetrics, wilayah, onMetricsLoaded]);
+  }, [initialMetrics, wilayah]);
 
   const kepatuhanRate = metrics?.indeksKepatuhan ?? 0;
   const kepatuhanBobot = metrics?.kepatuhanBobotPersen ?? 0;
@@ -234,7 +239,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
 
             <div className="flex items-baseline gap-2 my-2">
               <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-                {loading ? "..." : `${displayRate.toFixed(1)}%`}
+                {metrics ? `${displayRate.toFixed(1)}%` : (loading ? "Memuat..." : "0.0%")}
               </span>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {activeTab === "frekuensi"

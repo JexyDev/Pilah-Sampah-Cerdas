@@ -11,7 +11,7 @@ import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf
  * - Strict Standard Rukun Warga (RW) Terminology
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { RwDashboard } from "../RwPortal/RwDashboard";
 import api from "../../services/api";
@@ -1818,6 +1818,13 @@ const Dashboard: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [complianceWidgetMetrics, setComplianceWidgetMetrics] = useState<ComplianceMetricsResult | null>(null);
+  const handleOpenComplianceDetail = useCallback((m?: ComplianceMetricsResult | null) => {
+    if (m) setComplianceWidgetMetrics(m);
+    setShowComplianceModal(true);
+  }, []);
+  const handleComplianceMetricsLoaded = useCallback((m: ComplianceMetricsResult) => {
+    setComplianceWidgetMetrics(m);
+  }, []);
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
   const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
@@ -2516,13 +2523,8 @@ const Dashboard: React.FC = () => {
       {/* Evaluasi Kepatuhan Pemilahan & Kamus Definisi UI */}
       <ComplianceWidget
         wilayah={effectiveWilayah}
-        onOpenDetail={(m) => {
-          if (m) setComplianceWidgetMetrics(m);
-          setShowComplianceModal(true);
-        }}
-        onMetricsLoaded={(m) => {
-          if (m) setComplianceWidgetMetrics(m);
-        }}
+        onOpenDetail={handleOpenComplianceDetail}
+        onMetricsLoaded={handleComplianceMetricsLoaded}
       />
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
