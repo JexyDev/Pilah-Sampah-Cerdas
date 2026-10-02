@@ -65,13 +65,14 @@ describe("sidebarAccess utility", () => {
     expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", pimpinan, mockCan)).toBe(false);
     expect(canAccessSidebarRoute("/laporan-pimpinan/kkn", pimpinan, mockCan)).toBe(false);
 
-    // Unggah Data Survei (Khusus Pimpinan Di-Hide)
-    expect(canAccessSidebarRoute("/hasil-survei/data-survei", pimpinan, mockCan)).toBe(false);
   });
 
   it("allows PIMPINAN to access their legitimate executive modules", () => {
     const pimpinan = createMockUser("PIMPINAN");
     const mockCan = (resource: string) => resource === "monitoring_sampah";
+
+    // Unggah Data Survei (Diizinkan muncul di Hasil Survei)
+    expect(canAccessSidebarRoute("/hasil-survei/data-survei", pimpinan, mockCan)).toBe(true);
 
     expect(canAccessSidebarRoute("/dasbor", pimpinan, mockCan)).toBe(true);
     expect(

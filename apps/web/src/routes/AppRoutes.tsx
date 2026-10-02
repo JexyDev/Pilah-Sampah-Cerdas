@@ -1413,7 +1413,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/superUser/import-survei-kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "ADMIN_DLH", "CAMAT", "LURAH", "DEVELOPER"]}>
               <ImportSurveiKkn />
             </ProtectedRoute>
           }
@@ -1421,7 +1421,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/hasil-survei/data-survei"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "ADMIN_DLH", "CAMAT", "LURAH", "DEVELOPER"]}>
               <ImportSurveiKkn />
             </ProtectedRoute>
           }

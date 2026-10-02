@@ -255,9 +255,6 @@ export function canAccessSidebarRoute(
   }
 
   // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook, dan Hasil Survei (Terbuka untuk PIMPINAN)
-  if (cleanPath === "/hasil-survei/data-survei" && (role === "PIMPINAN" || role === "PEMIMPIN")) {
-    return false;
-  }
 
   const isKknExecutiveAllowed =
     cleanPath.startsWith("/pelaksanaan/") ||
