@@ -1374,7 +1374,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/hasil-survei/endline",
-              label: "Endline",
+              label: "Arsip Survei Endline",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
