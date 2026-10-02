@@ -725,24 +725,26 @@ export class BinRepository {
       include: {
         bin: true,
         user: true,
+        petugas: true,
       },
     });
   }
 
   async updateResetRequestStatus(
     id: string,
-    status: "APPROVED" | "REJECTED",
-    reviewedById: string
+    status: "APPROVED" | "REJECTED" | "COMPLETED" | "ON_PROGRESS" | "CANCELLED" | string,
+    reviewedById?: string | null
   ) {
     return prisma.binResetRequest.update({
       where: { id },
       data: {
         status,
-        reviewedById,
+        ...(reviewedById !== undefined ? { reviewedById } : {}),
       },
       include: {
         bin: true,
         user: true,
+        petugas: true,
       },
     });
   }

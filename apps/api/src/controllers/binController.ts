@@ -1632,6 +1632,35 @@ export class BinController {
   }
 
   /**
+   * Cancel reset request by requester (or admin/staff)
+   */
+  async cancelResetRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+      const userRole = req.user!.role;
+
+      const result = await binService.cancelResetRequest(id, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Pengajuan pengosongan berhasil dibatalkan",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[BinController] cancelResetRequest error:", error);
+      if (error.message === "REQUEST_NOT_FOUND" || error.message === "RESOURCE_NOT_FOUND") {
+        res.status(404).json({ error: "RESOURCE_NOT_FOUND", message: "Pengajuan tidak ditemukan" });
+      } else if (error.message === "FORBIDDEN") {
+        res.status(403).json({ error: "FORBIDDEN", message: "Anda tidak berhak membatalkan pengajuan ini" });
+      } else if (error.message === "ALREADY_PROCESSED") {
+        res.status(400).json({ error: "ALREADY_PROCESSED", message: "Pengajuan sudah diproses atau tidak dalam status PENDING" });
+      } else {
+        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membatalkan pengajuan" });
+      }
+    }
+  }
+
+  /**
    * Create QR Batch (SUPER USER/Admin DLH)
    */
   async createQrBatch(req: Request, res: Response): Promise<void> {

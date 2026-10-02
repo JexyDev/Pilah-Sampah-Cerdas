@@ -1720,7 +1720,27 @@ export class BinService {
     if (currentUser) {
       const { getScopingFilters } = await import("../utils/rbacScoping.js");
       const scoping = await getScopingFilters(currentUser);
-      if (scoping.binFilter) {
+
+      const isPetugas = [
+        "PETUGAS_RESIDU",
+        "PETUGAS_PEMILAHAN",
+        "PETUGAS_GASLAH",
+        "PETUGAS_TPS3R",
+      ].includes(currentUser.role);
+
+      if (isPetugas) {
+        // Prioritaskan pengajuan yang ditujukan langsung ke petugasId ini,
+        // ATAU pengajuan di area RW tempat sampah petugas
+        const orConditions: any[] = [{ petugasId: currentUser.userId }];
+        if (
+          scoping.binFilter &&
+          scoping.binFilter.id !== "none" &&
+          Object.keys(scoping.binFilter).length > 0
+        ) {
+          orConditions.push({ bin: scoping.binFilter });
+        }
+        whereClause.OR = orConditions;
+      } else if (scoping.binFilter) {
         whereClause.bin = scoping.binFilter;
       }
     }
@@ -1742,6 +1762,7 @@ export class BinService {
           },
         },
         user: true,
+        petugas: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -1860,6 +1881,75 @@ export class BinService {
           userId: reviewedById,
           oldValue: { status: request.status, request: id },
           newValue: { status, binId: request.binId },
+        },
+      })
+      .catch(() => {});
+
+    return updated;
+  }
+
+  /**
+   * Batalkan pengajuan pengosongan oleh warga pemohon (atau admin/staff)
+   */
+  async cancelResetRequest(requestId: string, userId: string, userRole?: string) {
+    const request = await prisma.binResetRequest.findUnique({
+      where: { id: requestId },
+      include: { bin: true, user: true },
+    });
+
+    if (!request) {
+      throw new Error("REQUEST_NOT_FOUND");
+    }
+
+    const isStaffOrAdmin = [
+      "DEVELOPER",
+      "SUPER_USER",
+      "ADMIN_DLH",
+      "RW",
+      "PANITIA_TASKFORCE",
+    ].includes(userRole || "");
+
+    // Guard: Hanya pemilik pengajuan atau admin/staff yang berwenang yang boleh membatalkan
+    if (request.userId !== userId && !isStaffOrAdmin) {
+      throw new Error("FORBIDDEN");
+    }
+
+    // Guard: Hanya boleh dibatalkan jika status masih PENDING
+    if (request.status !== "PENDING") {
+      throw new Error("ALREADY_PROCESSED");
+    }
+
+    const updated = await prisma.binResetRequest.update({
+      where: { id: requestId },
+      data: {
+        status: "CANCELLED",
+      },
+      include: {
+        bin: true,
+        user: true,
+      },
+    });
+
+    // Kirim notifikasi konfirmasi pembatalan ke pemohon
+    const binQr = request.bin?.qrCode || "Tempat Sampah";
+    await prisma.notification
+      .create({
+        data: {
+          userId: request.userId,
+          title: "Pengajuan Dibatalkan",
+          message: `Pengajuan pengosongan tempat sampah ${binQr} telah berhasil dibatalkan.`,
+        },
+      })
+      .catch(() => {});
+
+    // Log to Audit Trail
+    await prisma.auditTrail
+      .create({
+        data: {
+          action: "CANCEL_RESET_REQUEST",
+          userId,
+          oldValue: { status: request.status, request: requestId },
+          newValue: { status: "CANCELLED", binId: request.binId },
         },
       })
       .catch(() => {});
