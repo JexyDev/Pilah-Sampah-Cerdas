@@ -14,7 +14,9 @@ let firebaseMessaging: any = null;
 
 async function initFirebase() {
   try {
+    // @ts-ignore
     const adminApp = await import("firebase-admin/app");
+    // @ts-ignore
     const adminMessaging = await import("firebase-admin/messaging");
 
     if (adminApp.getApps().length === 0) {
