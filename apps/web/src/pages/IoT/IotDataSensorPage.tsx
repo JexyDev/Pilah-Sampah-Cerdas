@@ -130,18 +130,20 @@ export const IotDataSensorPage: React.FC = () => {
     }
   };
 
-  // Helper date formatting
+  // Helper date formatting dengan zona waktu WIB
   const formatTimeStacked = (isoString: string) => {
     const d = new Date(isoString);
     const timeStr = d.toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
+      timeZone: "Asia/Jakarta",
     });
     const dateStr = d.toLocaleDateString("id-ID", {
       day: "numeric",
       month: "long",
       year: "numeric",
+      timeZone: "Asia/Jakarta",
     });
     return { timeStr: `${timeStr} WIB`, dateStr };
   };
