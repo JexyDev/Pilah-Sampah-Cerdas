@@ -773,11 +773,15 @@ export const iotService = {
     return readings.map((r) => {
       const dateObj = new Date(r.timestamp);
       const isoTime = dateObj.toISOString();
-      const timePart = dateObj.toLocaleTimeString("id-ID", { hour12: false });
+      const timePart = dateObj.toLocaleTimeString("id-ID", {
+        hour12: false,
+        timeZone: "Asia/Jakarta",
+      });
       const datePart = dateObj.toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
+        timeZone: "Asia/Jakarta",
       });
 
       return {
@@ -988,6 +992,7 @@ export const iotService = {
       timeLabel: new Date(r.timestamp).toLocaleTimeString("id-ID", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Asia/Jakarta",
       }),
       ch4: Number(r.nilaiPpm),
       battery: r.baterai !== null ? Number(r.baterai) : null,
