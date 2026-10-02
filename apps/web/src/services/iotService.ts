@@ -95,6 +95,7 @@ export interface IoTSystemConfig {
   mqttTopicCh4: string;
   geminiApiKey: string | null;
   geminiModel: string;
+  simulatorRandomFluctuation?: boolean;
   rbacPermissions: Record<string, string[]>;
 }
 
@@ -152,6 +153,7 @@ export interface SimulatorStatus {
   currentHumidity: number;
   lastStatusLevel: string | null;
   lastError: string | null;
+  randomFluctuation?: boolean;
 }
 
 export interface ReadingsPagination {

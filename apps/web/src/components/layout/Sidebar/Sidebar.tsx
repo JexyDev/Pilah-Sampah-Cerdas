@@ -932,6 +932,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   const hasAccess = (allowed?: UserRole[], resource?: string) => {
     if (userRole === "DEVELOPER" || userRole === "SUPER_USER") return true;
 
+    // Modul Internet of Things: dynamic RBAC dari IoTSystemConfig adalah otoritatif mutlak!
+    // Jika resource iot_* bernilai false pada permissions dinamis, tidak boleh fallback ke allowed statis.
+    if (resource && (resource.startsWith("iot_") || resource === "internet_of_things")) {
+      return can(resource, "canView");
+    }
+
     // 1. Dynamic RBAC check jika resource didefinisikan
     if (resource && can(resource, "canView")) {
       return true;
@@ -1836,6 +1842,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/iot/monitoring",
               label: "Monitoring",
+              resource: "iot_monitoring",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1849,6 +1856,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/iot/data-sensor",
               label: "Data Sensor",
+              resource: "iot_data_sensor",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1862,6 +1870,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/iot/perangkat",
               label: "Perangkat",
+              resource: "iot_perangkat",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1873,6 +1882,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/iot/konfigurasi",
               label: "Konfigurasi",
+              resource: "iot_konfigurasi",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

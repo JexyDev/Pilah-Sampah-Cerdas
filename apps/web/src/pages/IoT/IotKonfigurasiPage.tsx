@@ -39,6 +39,7 @@ import {
   type SimulatorStatus,
 } from "../../services/iotService";
 import { IotPageHeader } from "../../components/IoT/IotPageHeader";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const IOT_SUBPAGES = [
   {
@@ -191,6 +192,10 @@ export const IotKonfigurasiPage: React.FC = () => {
       setGeminiApiKey(cfg.geminiApiKey || "");
       setGeminiModel(cfg.geminiModel || "gemini-3.1-flash-lite");
       setRbacPermissions(cfg.rbacPermissions || {});
+      if (cfg.simulatorRandomFluctuation !== undefined) {
+        setSimRandomFluctuation(Boolean(cfg.simulatorRandomFluctuation));
+        simStateRef.current.randomFluctuation = Boolean(cfg.simulatorRandomFluctuation);
+      }
 
       // Jika ada API Key tersimpan, muat daftar model resmi secara background
       if (cfg.geminiApiKey && cfg.geminiApiKey.trim().length > 10) {
@@ -231,8 +236,10 @@ export const IotKonfigurasiPage: React.FC = () => {
         geminiApiKey: geminiApiKey.trim() || null,
         geminiModel,
         rbacPermissions,
+        simulatorRandomFluctuation: simRandomFluctuation,
       });
       setConfig(updated);
+      await useAuthStore.getState().fetchPermissions();
       toast.success("Konfigurasi sistem IoT berhasil diperbarui.");
     } catch (err: any) {
       console.error("Gagal menyimpan konfigurasi:", err);

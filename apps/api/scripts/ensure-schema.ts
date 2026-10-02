@@ -22,6 +22,7 @@ async function main() {
         ALTER TABLE "pengguna" ADD CONSTRAINT "pengguna_id_universitas_fkey" FOREIGN KEY ("id_universitas") REFERENCES "universitas_mitra"("id") ON DELETE SET NULL ON UPDATE CASCADE;
       END IF;
     END $$;`,
+    `ALTER TABLE "konfigurasi_sistem_iot" ADD COLUMN IF NOT EXISTS "simulator_fluktuasi_acak" BOOLEAN NOT NULL DEFAULT true;`,
   ];
 
   for (const q of queries) {
