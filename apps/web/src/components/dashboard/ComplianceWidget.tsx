@@ -59,7 +59,9 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
   const [activeTab, setActiveTab] = useState<"frekuensi" | "bobot">("frekuensi");
 
   const onMetricsLoadedRef = useRef(onMetricsLoaded);
-  onMetricsLoadedRef.current = onMetricsLoaded;
+  useEffect(() => {
+    onMetricsLoadedRef.current = onMetricsLoaded;
+  }, [onMetricsLoaded]);
 
   useEffect(() => {
     if (initialMetrics) {
@@ -70,9 +72,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
     }
 
     let isMounted = true;
-    if (!metrics) {
-      setLoading(true);
-    }
+    setLoading(true);
 
     const kelurahanParam =
       wilayah && !wilayah.toLowerCase().includes("semua")
@@ -165,7 +165,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <Sparkles size={12} /> Definisi Akumulasi Sistem:
                   </p>
                   <p className="text-slate-200">
-                    "Kepatuhan warga diukur dari perpaduan tingkat partisipasi aktif masyarakat dan ketepatan pemilahan sampah pada tempat sampah yang sesuai, bukan semata-mata klaim deteksi kamera AI."
+                    "Kepatuhan warga diukur dari perpaduan tingkat partisipasi aktif masyarakat dan ketepatan pemilahan sampah organik dan anorganik yang sesuai, bukan semata-mata klaim deteksi kamera AI."
                   </p>
                   <span className="block mt-2 text-[9.5px] text-slate-400 italic">
                     Klik ikon (i) untuk membaca kamus istilah &amp; matriks lengkap.
@@ -176,13 +176,13 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           </div>
 
           <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Evaluasi riil berbasis keaktifan partisipasi seluruh warga dan ketepatan pemilahan tempat sampah
+            Evaluasi riil berbasis keaktifan partisipasi seluruh warga dan ketepatan pemilahan sampah.
           </p>
         </div>
 
         {/* Action & Toggle Controls */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {/* Toggle Mode: Frekuensi vs Bobot */}
+          {/* Toggle Mode: Hasil Scan vs Bobot */}
           <div className="inline-flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
             <button
               type="button"
@@ -192,9 +192,9 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                   ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-2xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
               }`}
-              title="Kepatuhan berdasarkan frekuensi pembuangan tepat"
+              title="Kepatuhan dan akurasi berdasarkan hasil scan pemilahan warga"
             >
-              Frekuensi Scan
+              Hasil Scan
             </button>
             <button
               type="button"
@@ -230,7 +230,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {activeTab === "frekuensi" ? "Tingkat Kepatuhan (Akumulasi Warga)" : "Kemurnian Tonase (Massa)"}
+                {activeTab === "frekuensi" ? "Hasil Evaluasi Kepatuhan & Partisipasi Warga" : "Kemurnian Tonase Pemilahan (kg)"}
               </span>
               <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${statusBadgeColor}`}>
                 {statusPredikat}
@@ -239,14 +239,14 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
 
             <div className="flex items-baseline gap-2 my-2">
               <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics ? `${displayRate.toFixed(1)}%` : (loading ? "Memuat..." : "0.0%")}
+                {loading && !metrics ? "..." : `${displayRate.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
               </span>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {activeTab === "frekuensi"
                   ? (metrics?.partisipasiWarga && metrics.partisipasiWarga.totalWargaTerdaftar > 0
-                      ? "Akumulasi partisipasi & ketepatan tempat sampah"
-                      : "dari total setoran terverifikasi")
-                  : "dari total massa sampah terdata"}
+                      ? "Akumulasi partisipasi warga & ketepatan pemilahan sampah"
+                      : "dari total hasil scan terverifikasi")
+                  : "dari total massa sampah terdata (kg)"}
               </span>
             </div>
           </div>
@@ -264,7 +264,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               <div
                 className="h-full bg-rose-400/40 dark:bg-rose-900/50 transition-all duration-700"
                 style={{ width: `${Math.min(100, Math.max(0, 100 - displayRate))}%` }}
-                title={`Ketidakpatuhan: ${(100 - displayRate).toFixed(1)}%`}
+                title={`Ketidakpatuhan: ${(100 - displayRate).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
               />
             </div>
 
@@ -281,12 +281,12 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     </span>
                   </div>
                   <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Ketepatan Tempat Sampah</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Akurasi Pemilahan Sampah</span>
                     <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
                       {metrics.akurasiPilahPersen ?? (metrics.wadahOrganik.kesesuaianPersen || 0)}%
                     </span>
-                    <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.totalPatuh} tepat, ${metrics.totalTidakPatuh} salah tempat sampah`}>
-                      {metrics.totalPatuh} tepat, {metrics.totalTidakPatuh} salah
+                    <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.totalPatuh} tepat, ${metrics.totalTidakPatuh} tidak sesuai`}>
+                      {metrics.totalPatuh} tepat, {metrics.totalTidakPatuh} tidak sesuai
                     </span>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     Formula Akumulasi (50 : 50):
                   </span>
                   <span className="font-semibold text-slate-700 dark:text-slate-200">
-                    ({metrics.partisipasiWarga.partisipasiPersen}% + {metrics.akurasiPilahPersen ?? (metrics.wadahOrganik.kesesuaianPersen || 0)}%) ÷ 2 = <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{displayRate.toFixed(1)}%</strong>
+                    ({metrics.partisipasiWarga.partisipasiPersen}% + {metrics.akurasiPilahPersen ?? (metrics.wadahOrganik.kesesuaianPersen || 0)}%) ÷ 2 = <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{displayRate.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</strong>
                   </span>
                 </div>
               </div>
@@ -309,16 +309,16 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 </span>
                 <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
                   <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-                  Salah Tempat Sampah: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalTidakPatuh} setoran` : `${metrics.totalBeratKontaminasiKg} kg`) : "0"}
+                  Tidak Sesuai: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalTidakPatuh} setoran` : `${metrics.totalBeratKontaminasiKg} kg`) : "0"}
                 </span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Kolom Kanan (7 cols): Sub-Analisis Akurasi Tempat Sampah Organik vs Anorganik */}
+        {/* Kolom Kanan (7 cols): Sub-Analisis Akurasi Pemilahan Sampah Organik vs Anorganik */}
         <div className="md:col-span-7 flex flex-col justify-between gap-3">
-          {/* Sub-Analisis 1: Tempat Sampah Organik */}
+          {/* Sub-Analisis 1: Pemilahan Sampah Organik */}
           <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 border border-emerald-200/70 dark:border-emerald-800/40 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
@@ -327,15 +327,15 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 </span>
                 <div>
                   <h5 className="font-extrabold text-xs text-emerald-950 dark:text-emerald-200">
-                    Akurasi Tempat Sampah Organik
+                    Akurasi Pemilahan Sampah Organik
                   </h5>
                   <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400">
-                    Ketepatan pemilahan sampah organik pada wadah yang sesuai
+                    Ketepatan pemilahan sampah organik sesuai kategorinya
                   </p>
                 </div>
               </div>
               <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                {orgKesesuaian.toFixed(1)}%
+                {orgKesesuaian.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
               </span>
             </div>
 
@@ -351,12 +351,12 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 {metrics ? `${metrics.wadahOrganik.aktivitasSesuai} dari ${metrics.wadahOrganik.totalAktivitas} setoran tepat (Sudah sangat bagus)` : "0 setoran tepat"}
               </span>
               <span>
-                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toFixed(1)}%` : "0%"} (Sudah standar industri persampahan)
+                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : "0%"} (Sudah standar industri persampahan)
               </span>
             </div>
           </div>
 
-          {/* Sub-Analisis 2: Tempat Sampah Anorganik */}
+          {/* Sub-Analisis 2: Pemilahan Sampah Anorganik */}
           <div className="bg-amber-50/40 dark:bg-amber-950/20 rounded-2xl p-4 border border-amber-200/70 dark:border-amber-800/40 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
@@ -365,15 +365,15 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 </span>
                 <div>
                   <h5 className="font-extrabold text-xs text-amber-950 dark:text-amber-200">
-                    Akurasi Tempat Sampah Anorganik
+                    Akurasi Pemilahan Sampah Anorganik
                   </h5>
                   <p className="text-[10px] text-amber-700/80 dark:text-amber-400">
-                    Ketepatan pemilahan sampah anorganik pada wadah yang sesuai
+                    Ketepatan pemilahan sampah anorganik sesuai kategorinya
                   </p>
                 </div>
               </div>
               <span className="text-base font-black text-amber-700 dark:text-amber-300">
-                {anorgKesesuaian.toFixed(1)}%
+                {anorgKesesuaian.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
               </span>
             </div>
 
@@ -389,28 +389,28 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 {metrics ? `${metrics.wadahAnorganik.aktivitasSesuai} dari ${metrics.wadahAnorganik.totalAktivitas} setoran tepat` : "0 setoran tepat"}
               </span>
               <span>
-                Kontaminasi Organik: {metrics ? `${metrics.wadahAnorganik.kontaminasiPersen.toFixed(1)}%` : "0%"}
+                Kontaminasi Organik: {metrics ? `${metrics.wadahAnorganik.kontaminasiPersen.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : "0%"}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Penjelasan Sederhana Akumulasi Sistem (Bahasa Manusia & Transparan) */}
+      {/* Penjelasan Akumulasi Sistem (Bahasa Manusia & Transparan) */}
       <div className="mt-2.5 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-start gap-3 text-xs">
         <div className="p-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
           <Sparkles size={16} />
         </div>
         <div className="space-y-0.5 flex-1">
           <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-xs">
-            <span>Penjelasan Sederhana Akumulasi Kepatuhan:</span>
+            <span>Penjelasan Akumulasi Kepatuhan:</span>
             <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300/50 dark:border-emerald-700/50 font-bold">
               Real Data Warga
             </span>
           </div>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
             {metrics?.penjelasanSistem ||
-              "Skor kepatuhan akumulasi wilayah dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga yang rutin menyetor dan ketepatan pemilahan pada tempat sampah yang sesuai, merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI."}
+              "Skor kepatuhan akumulasi wilayah dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga yang rutin menyetor dan ketepatan pemilahan sampah organik dan anorganik yang sesuai, merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI."}
           </p>
         </div>
       </div>
@@ -478,7 +478,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <span>Kepatuhan (Compliance)</span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">
-                    Rasio ketepatan pembuangan sampah pada tempat sampah yang sesuai dibagi total aktivitas pemilahan terdata. Mengukur persentase sampah yang dibuang ke tempat sampah berkategori identik.
+                    Rasio ketepatan pemilahan sampah sesuai kategorinya dibagi total aktivitas pemilahan terdata. Mengukur persentase akurasi pemilahan sampah organik dan anorganik secara tepat.
                   </p>
                 </div>
 
@@ -488,7 +488,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <span>Ketidakpatuhan (Kontaminasi)</span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">
-                    Kejadian penempatan jenis sampah yang tidak cocok dengan kategori tempat sampah (salah tempat sampah). Menyebabkan kontaminasi silang pada alur pengolahan.
+                    Kejadian ketidaksesuaian kategori pemilahan jenis sampah organik atau anorganik. Menyebabkan kontaminasi silang pada alur pengolahan.
                   </p>
                 </div>
               </div>
@@ -504,7 +504,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                       <tr>
                         <th className="py-2 px-3">Sampah Terdeteksi</th>
-                        <th className="py-2 px-3">Tempat Sampah (Stiker QR)</th>
+                        <th className="py-2 px-3">Kategori Wadah / QR</th>
                         <th className="py-2 px-3">Status Sistem</th>
                         <th className="py-2 px-3">Keterangan Teknis</th>
                       </tr>
@@ -512,7 +512,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                       <tr className="bg-emerald-50/30 dark:bg-emerald-950/20">
                         <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Organik</td>
-                        <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Tempat Sampah Organik</td>
+                        <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Wadah Organik</td>
                         <td className="py-2 px-3">
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
                             Patuh &amp; Sesuai
@@ -522,7 +522,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                       </tr>
                       <tr className="bg-emerald-50/30 dark:bg-emerald-950/20">
                         <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Anorganik</td>
-                        <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Tempat Sampah Anorganik</td>
+                        <td className="py-2 px-3 font-bold text-emerald-800 dark:text-emerald-300">Wadah Anorganik</td>
                         <td className="py-2 px-3">
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
                             Patuh &amp; Sesuai
@@ -532,7 +532,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                       </tr>
                       <tr className="bg-rose-50/30 dark:bg-rose-950/20">
                         <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Organik</td>
-                        <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Tempat Sampah Anorganik</td>
+                        <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Wadah Anorganik</td>
                         <td className="py-2 px-3">
                           <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300 text-[10px] font-bold">
                             Tidak Sesuai
@@ -542,7 +542,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                       </tr>
                       <tr className="bg-rose-50/30 dark:bg-rose-950/20">
                         <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Anorganik</td>
-                        <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Tempat Sampah Organik</td>
+                        <td className="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">Wadah Organik</td>
                         <td className="py-2 px-3">
                           <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300 text-[10px] font-bold">
                             Tidak Sesuai
@@ -578,7 +578,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                       Pencatatan Fisik Neraca Massa
                     </strong>
                     <p className="text-slate-600 dark:text-slate-400">
-                      Jika terdeteksi "Tidak Patuh", berat sampah tetap dihitung ke dalam total timbulan tonase fisik, namun dipisahkan sebagai indeks kontaminasi tempat sampah (tidak dibatalkan sebagai anomali).
+                      Jika terdeteksi "Tidak Patuh", berat sampah tetap dihitung ke dalam total timbulan tonase fisik, namun dipisahkan sebagai indeks kontaminasi pemilahan (tidak dibatalkan sebagai anomali).
                     </p>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { redisService } from "./redisService.js";
 import { evaluateCompliance } from "./complianceService.js";
-import { filterNonTestStudents, filterNonTestDpl } from "../utils/filterTestingUtils.js";
+import { filterNonTestStudents, filterNonTestDpl, getNonTestUserWhere } from "../utils/filterTestingUtils.js";
 
 interface ResolvedAreaContext {
   isFiltered: boolean;
@@ -256,10 +256,8 @@ export const dashboardService = {
     }
 
     // 1. Total Warga Aktif
-    const wargaWhere: any = { role: { name: "WARGA" } };
-    if (!includeTestAccounts) {
-      wargaWhere.isTestAccount = false;
-    }
+    const nonTestWhere = getNonTestUserWhere(includeTestAccounts);
+    const wargaWhere: any = { role: { name: "WARGA" }, ...nonTestWhere };
     if (isFiltered && rtRwMatch) {
       wargaWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
@@ -277,10 +275,7 @@ export const dashboardService = {
     });
 
     // Total Users
-    const usersWhere: any = {};
-    if (!includeTestAccounts) {
-      usersWhere.isTestAccount = false;
-    }
+    const usersWhere: any = { ...nonTestWhere };
     if (isFiltered && rtRwMatch) {
       usersWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
@@ -291,14 +286,12 @@ export const dashboardService = {
     });
 
     // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU)
-    // Sesuai mandat operasional: Terdaftar 293 Warga dan 85 Petugas
+    // Sesuai mandat operasional: Terdaftar Warga dan Petugas non-testing
     const sampahRoles = ["WARGA", "PETUGAS_RESIDU"];
     const sampahUserWhere: any = {
       role: { name: { in: sampahRoles } },
+      ...nonTestWhere,
     };
-    if (!includeTestAccounts) {
-      sampahUserWhere.isTestAccount = false;
-    }
     if (isFiltered && rtRwMatch) {
       sampahUserWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
@@ -562,9 +555,6 @@ export const dashboardService = {
         berat: true,
       },
     });
-    const setoranHariIniKg = wasteLogsPeriode._sum.berat
-      ? Number(wasteLogsPeriode._sum.berat)
-      : 0;
 
     // 8. Total Poin Warga & Petugas Pemilah (Aktual dari pemilahan warga dan petugas pemilah saja)
     const pointsWhere: any = {
@@ -640,8 +630,24 @@ export const dashboardService = {
     });
 
     residuLogs.forEach((log: any) => {
-      residuKg += Number(log.berat);
+      const kg = Number(log.berat || 0);
+      const kat = String(log.kategori || "").toLowerCase().trim();
+      if (kat.includes("organik") && !kat.includes("anorganik") && !kat.includes("non")) {
+        organikKg += kg;
+      } else if (kat.includes("anorganik") || kat.includes("non organik") || kat.includes("an-organik")) {
+        anorganikKg += kg;
+      } else if (kat.includes("residu")) {
+        residuKg += kg;
+      } else {
+        // Jika tidak tertera atau data lama tanpa kategori spesifik
+        residuKg += kg;
+      }
     });
+
+    const manualBeratPeriode = residuLogs.reduce((acc: number, curr: any) => acc + (Number(curr.berat) || 0), 0);
+    const setoranHariIniKg = parseFloat(
+      ((wasteLogsPeriode._sum.berat ? Number(wasteLogsPeriode._sum.berat) : 0) + manualBeratPeriode).toFixed(2)
+    );
 
     // 10. Jadwal Tugas
     const jadwalWhere: any = {};
@@ -1150,9 +1156,9 @@ export const dashboardService = {
       setoranHariIniKg,
       totalPoin,
       komposisiSampah: {
-        organikKg,
-        anorganikKg,
-        residuKg,
+        organikKg: parseFloat(organikKg.toFixed(2)),
+        anorganikKg: parseFloat(anorganikKg.toFixed(2)),
+        residuKg: parseFloat(residuKg.toFixed(2)),
       },
       jadwalTotal,
       jadwalSelesai,
@@ -1354,6 +1360,7 @@ export const dashboardService = {
         where: residuWhere,
         select: {
           berat: true,
+          kategori: true,
         },
       });
 
@@ -1372,7 +1379,17 @@ export const dashboardService = {
       });
 
       residuLogs.forEach((l: any) => {
-        residuWeight += Number(l.berat) || 0;
+        const kg = Number(l.berat || 0);
+        const kat = String(l.kategori || "").toLowerCase().trim();
+        if (kat.includes("organik") && !kat.includes("anorganik") && !kat.includes("non")) {
+          organicWeight += kg;
+        } else if (kat.includes("anorganik") || kat.includes("non organik") || kat.includes("an-organik")) {
+          inorganicWeight += kg;
+        } else if (kat.includes("residu")) {
+          residuWeight += kg;
+        } else {
+          residuWeight += kg;
+        }
       });
 
       const totalWeight = organicWeight + inorganicWeight + residuWeight;

@@ -186,5 +186,45 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
       expect(years).toEqual([2026]);
     });
   });
+
+  describe("dashboardService getKpi Waste Composition by Category (SetoranManual Support)", () => {
+    it("should correctly aggregate setoranManual into organikKg and anorganikKg based on kategori field", async () => {
+      // Simulate setoranOtomatis
+      (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
+        { berat: 100, hasilKlasifikasiAi: "organik" },
+        { berat: 50, hasilKlasifikasiAi: "anorganik" },
+      ]);
+
+      // Simulate setoranManual with actual petugas categories
+      (prisma.setoranManual.findMany as any).mockResolvedValue([
+        { id: "sm-1", berat: 580.32, kategori: "Organik" },
+        { id: "sm-2", berat: 119.33, kategori: "Anorganik" },
+        { id: "sm-3", berat: 25.5, kategori: "Residu" },
+      ]);
+
+      const result = await dashboardService.getKpi();
+
+      // Expected:
+      // Organik: 100 (auto) + 580.32 (manual) = 680.32
+      // Anorganik: 50 (auto) + 119.33 (manual) = 169.33
+      // Residu: 25.5 (manual)
+      expect(result.komposisiSampah.organikKg).toBeCloseTo(680.32, 2);
+      expect(result.komposisiSampah.anorganikKg).toBeCloseTo(169.33, 2);
+      expect(result.komposisiSampah.residuKg).toBeCloseTo(25.5, 2);
+    });
+
+    it("should fall back unclassified setoranManual to residuKg", async () => {
+      (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
+      (prisma.setoranManual.findMany as any).mockResolvedValue([
+        { id: "sm-4", berat: 15.0, kategori: "Lainnya / Tidak Jelas" },
+      ]);
+
+      const result = await dashboardService.getKpi();
+      expect(result.komposisiSampah.organikKg).toBe(0);
+      expect(result.komposisiSampah.anorganikKg).toBe(0);
+      expect(result.komposisiSampah.residuKg).toBe(15.0);
+    });
+  });
 });
+
 

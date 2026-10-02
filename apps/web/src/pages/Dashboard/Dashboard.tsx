@@ -38,6 +38,7 @@ import { WasteImpactSummaryTable } from "../../components/dashboard/WasteImpactS
 import { WasteImpactTrendChart } from "../../components/dashboard/WasteImpactTrendChart";
 import { BaselineSection } from "../../components/dashboard/BaselineSection";
 import type { WasteImpactItem, WasteSourceType } from "../../utils/wasteCalculations";
+import { isStagingEnv } from "../../utils/envUtils";
 
 export interface KelurahanBaselineData {
   id: string;
@@ -77,7 +78,7 @@ export const SURVEY_BASELINE_RATES: Record<string, number> = {
 export const SURVEY_BASELINE_KG: Record<string, number> = {
   cipaganti: 1850.0,
   dago: 10983.0,
-  lebakgede: 3003.5,
+  lebakgede: 2973.5,
   lebaksiliwangi: 2628.0,
   sadangserang: 9123.04,
   sekeloa: 10803.78,
@@ -86,7 +87,7 @@ export const SURVEY_BASELINE_KG: Record<string, number> = {
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
   { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 1850.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
   { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.0, baselineKg: 10983.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 3003.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 2973.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
   { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.0, baselineKg: 2628.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
   { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.8, baselineKg: 9123.04, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
   { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.8, baselineKg: 10803.78, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
@@ -214,17 +215,17 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
                 <div className="relative group inline-block">
                   <span
                     className="w-4 h-4 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-600 dark:text-slate-400 inline-flex items-center justify-center cursor-pointer text-[10px] font-bold"
-                    title="Kepatuhan adalah kesesuaian penempatan jenis sampah pada tempat sampah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada tempat sampah yang tidak cocok."
+                    title="Kepatuhan adalah ketepatan pemilahan jenis sampah organik dan anorganik sesuai kategorinya. Ketidakpatuhan terjadi jika sampah tidak dipilah sesuai dengan kategorinya."
                   >
                     i
                   </span>
                   <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl border border-slate-700 leading-relaxed pointer-events-none">
-                    Kepatuhan adalah kesesuaian penempatan jenis sampah pada tempat sampah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada tempat sampah yang tidak cocok.
+                    Kepatuhan adalah ketepatan pemilahan jenis sampah organik dan anorganik sesuai kategorinya. Ketidakpatuhan terjadi jika sampah tidak dipilah sesuai dengan kategorinya.
                   </div>
                 </div>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-                Persentase keaktifan rumah tangga dan kepatuhan pemilahan sampah terdata per Rukun Warga (RW)
+                Persentase keaktifan rumah tangga dan akurasi pemilahan sampah terdata per Rukun Warga (RW)
               </p>
             </div>
           </div>
@@ -241,14 +242,14 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
         <div className="px-5 py-3 bg-emerald-50/50 dark:bg-emerald-950/20 border-b border-emerald-200/50 dark:border-emerald-800/30 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <span className="font-extrabold text-emerald-700 dark:text-emerald-400">Definisi:</span>
-            <span>Kesesuaian penempatan sampah biner: Sampah Organik ke Tempat Sampah Organik, Anorganik ke Tempat Sampah Anorganik.</span>
+            <span>Akurasi pemilahan sampah: Sampah Organik ke Wadah Organik, Anorganik ke Wadah Anorganik.</span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-bold">
             <span className="text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              Tempat Sampah Organik: {organikRate != null ? `${Number(organikRate).toFixed(1)}% Sesuai` : "Memuat..."}
+              Akurasi Pemilahan Organik: {organikRate != null ? `${Number(organikRate).toFixed(1)}% Sesuai` : "Memuat..."}
             </span>
             <span className="text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-              Tempat Sampah Anorganik: {anorganikRate != null ? `${Number(anorganikRate).toFixed(1)}% Sesuai` : "Memuat..."}
+              Akurasi Pemilahan Anorganik: {anorganikRate != null ? `${Number(anorganikRate).toFixed(1)}% Sesuai` : "Memuat..."}
             </span>
           </div>
         </div>
@@ -381,7 +382,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-1 flex items-center gap-2">
-                        <span>{loc.titikCount || 0} Titik Tempat Sampah</span>
+                        <span>{loc.titikCount || 0} Titik Pemilahan</span>
                       </p>
                     </div>
 
@@ -1711,7 +1712,10 @@ const Dashboard: React.FC = () => {
   const isPimpinan =
     user?.peran === "PIMPINAN" ||
     user?.peran === "PEMIMPIN" ||
-    user?.peran === "PANITIA_TASKFORCE";
+    user?.peran === "PANITIA_TASKFORCE" ||
+    user?.peran === "TASK_FORCE" ||
+    (user as any)?.role === "PIMPINAN" ||
+    (user as any)?.role === "PEMIMPIN";
   const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
   const userPeran = (user?.peran || (user as any)?.role || "").toUpperCase();
   const isMpl =
@@ -1719,9 +1723,18 @@ const Dashboard: React.FC = () => {
     userPeran === "MITRA_PEMBIMBING_LAPANGAN" ||
     userPeran === "MITRA_PENDAMPING_LAPANGAN" ||
     userPeran === "MITRA";
-  const canAccessKknSub = isPimpinan || isSuperOrDev;
-  // NOTE: Tab GIS Eksekutif di-hide sementara di production
-  const canAccessGisSub = false;
+  const isStaging = isStagingEnv();
+  const canAccessKknSub = isPimpinan || isSuperOrDev || isStaging;
+  const canAccessGisSub =
+    isStaging &&
+    (isSuperOrDev ||
+      isPimpinan ||
+      userPeran === "ADMIN" ||
+      userPeran === "SUPER_ADMIN" ||
+      userPeran === "ADMIN_DLH" ||
+      userPeran === "CAMAT" ||
+      userPeran === "LURAH" ||
+      userPeran === "RW");
   const canAccessTabs = canAccessKknSub || canAccessGisSub;
 
   const tabParam = searchParams.get("tab");
@@ -1748,7 +1761,7 @@ const Dashboard: React.FC = () => {
   const [timeFilter, setTimeFilter] = useState("semua");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [selectedWasteSource, setSelectedWasteSource] = useState<WasteSourceType>("WARGA_APP");
+  const [selectedWasteSource, setSelectedWasteSource] = useState<WasteSourceType>("ALL");
 
   // Wilayah selection state (Default: Kecamatan Coblong)
   const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
@@ -1818,12 +1831,12 @@ const Dashboard: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [complianceWidgetMetrics, setComplianceWidgetMetrics] = useState<ComplianceMetricsResult | null>(null);
-  const handleOpenComplianceDetail = useCallback((m?: ComplianceMetricsResult | null) => {
-    if (m) setComplianceWidgetMetrics(m);
-    setShowComplianceModal(true);
-  }, []);
   const handleComplianceMetricsLoaded = useCallback((m: ComplianceMetricsResult) => {
     setComplianceWidgetMetrics(m);
+  }, []);
+  const handleOpenComplianceDetail = useCallback((m: ComplianceMetricsResult | null) => {
+    if (m) setComplianceWidgetMetrics(m);
+    setShowComplianceModal(true);
   }, []);
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
@@ -1948,8 +1961,8 @@ const Dashboard: React.FC = () => {
           trendUp: true,
         },
         setoranHariIni: {
-          value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} kg`,
-          trend: "Aktivitas Pemilahan",
+          value: `${Number(kpi.setoranHariIniKg ?? 0).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`,
+          trend: "Tonase Sampah",
           trendLabel: periodTrendLabel,
           trendUp: true,
         },
@@ -2495,12 +2508,12 @@ const Dashboard: React.FC = () => {
           iconName="shopping_bag"
           color="amber"
           label={
-            timeFilter === "custom" && startDate && endDate ? "Pemilahan Periode Ini" :
-            timeFilter === "harian" ? "Pemilahan Hari Ini" :
-            timeFilter === "mingguan" ? "Pemilahan Minggu Ini" :
-            timeFilter === "bulanan" ? "Pemilahan Bulan Ini" :
-            timeFilter === "tahunan" ? "Pemilahan Tahun Ini" :
-            "Total Pemilahan"
+            timeFilter === "custom" && startDate && endDate ? "Tonase Sampah Periode Ini" :
+            timeFilter === "harian" ? "Tonase Sampah Hari Ini" :
+            timeFilter === "mingguan" ? "Tonase Sampah Minggu Ini" :
+            timeFilter === "bulanan" ? "Tonase Sampah Bulan Ini" :
+            timeFilter === "tahunan" ? "Tonase Sampah Tahun Ini" :
+            "Tonase Sampah Terpilah"
           }
           value={stats?.setoranHariIni?.value}
           trend={stats?.setoranHariIni?.trend}
@@ -2532,26 +2545,26 @@ const Dashboard: React.FC = () => {
         Analisis Tren Pemilahan dan Komposisi Sampah
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
-        {/* Left Column (6 cols): Trend Pemilahan Chart */}
+        {/* Left Column (8 cols): Trend Pemilahan Chart Lebih Luas */}
         <WasteTrendChart
-          className="lg:col-span-6"
+          className="lg:col-span-8"
           wilayah={effectiveWilayah}
           initialData={trendData}
           rawOrg={rawOrg}
           rawAnorg={rawAnorg}
         />
 
-        {/* Right Column (6 cols): Komposisi Sampah Card */}
-        <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex justify-between items-center mb-3">
+        {/* Right Column (4 cols): Komposisi Sampah Card Kompak & Fokus Nilai */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2 gap-2">
             <div>
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">
-                Akumulasi Hasil Pemilahan Sampah Organik dan Anorganik
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-snug">
+                Akumulasi hasil pencatatan dilakukan sejak sistem digunakan, terhitung mulai pekan pertama Agustus 2026 sampai dengan saat ini.
               </p>
             </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-3 py-1 rounded-full uppercase tracking-wider">
-              Persentase Berat
+            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+              Massa (kg)
             </span>
           </div>
 
@@ -2560,7 +2573,7 @@ const Dashboard: React.FC = () => {
             const pctOrg = totalKg > 0 ? Math.round((rawOrg / totalKg) * 100) : 0;
             const pctAnorg = totalKg > 0 ? 100 - pctOrg : 0;
 
-            const c = 2 * Math.PI * 50;
+            const c = 2 * Math.PI * 40;
             const valOrg = (pctOrg / 100) * c;
             const valAnorg = (pctAnorg / 100) * c;
 
@@ -2576,74 +2589,66 @@ const Dashboard: React.FC = () => {
 
             return (
               <div className="flex-1 flex flex-col items-center justify-between my-1">
-                <div className="w-40 h-40 relative flex items-center justify-center my-2 group cursor-pointer">
-                  <svg className="w-40 h-40 transform -rotate-90">
-                    <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="12" />
+                {/* Donut Chart Ringkas & Proporsional */}
+                <div className="w-28 h-28 relative flex items-center justify-center my-2 group">
+                  <svg className="w-28 h-28 transform -rotate-90">
+                    <circle cx="56" cy="56" r="40" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="10" />
                     {pctOrg > 0 && (
                       <circle
-                        cx="80"
-                        cy="80"
-                        r="50"
+                        cx="56"
+                        cy="56"
+                        r="40"
                         fill="transparent"
                         stroke="#34d399"
-                        strokeWidth="12"
+                        strokeWidth="10"
                         strokeDasharray={`${valOrg} ${c}`}
                         strokeDashoffset={0}
-                        className="transition-all duration-500 hover:stroke-[15]"
+                        className="transition-all duration-500 hover:stroke-[12]"
                       />
                     )}
                     {pctAnorg > 0 && (
                       <circle
-                        cx="80"
-                        cy="80"
-                        r="50"
+                        cx="56"
+                        cy="56"
+                        r="40"
                         fill="transparent"
                         stroke="#fbbf24"
-                        strokeWidth="12"
+                        strokeWidth="10"
                         strokeDasharray={`${valAnorg} ${c}`}
                         strokeDashoffset={-valOrg}
-                        className="transition-all duration-500 hover:stroke-[15]"
+                        className="transition-all duration-500 hover:stroke-[12]"
                       />
                     )}
                   </svg>
-                  <div className="absolute text-center flex flex-col items-center justify-center">
-                    <span className={`block text-2xl font-black leading-none ${dominantColor}`}>
+                  <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
+                    <span className={`block text-xl font-black leading-none ${dominantColor}`}>
                       {dominantPct}%
                     </span>
-                    <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider mt-1 block">
+                    <span className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider mt-0.5 block">
                       {dominantLabel}
-                    </span>
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5 font-mono">
-                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg Terpilah
                     </span>
                   </div>
                 </div>
 
-                {/* Sub-indikator Komposisi Sampah Terpilah */}
-                <div className="w-full flex items-center justify-between text-[10px] font-bold px-3 py-1.5 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Organik: {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                {/* Angka Total Akumulasi Terpilah */}
+                <div className="text-center mb-2">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                    Total Sampah Terpilah
                   </span>
-                  <span className="text-slate-300 dark:text-slate-600">+</span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Anorganik: {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                  </span>
-                  <span className="text-slate-300 dark:text-slate-600">=</span>
-                  <span className="font-extrabold text-slate-800 dark:text-slate-100 font-mono">
+                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                     {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                   </span>
                 </div>
 
-                <div className="mt-3 w-full space-y-3 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                {/* Penekanan Informasi pada Angka & Nilai Komposisi */}
+                <div className="w-full space-y-2.5 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
                         Organik
                       </div>
-                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
+                      <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
                         {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                         <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                       </div>
@@ -2658,11 +2663,11 @@ const Dashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
                         Anorganik
                       </div>
-                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
+                      <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
                         {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                         <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                       </div>
@@ -2678,13 +2683,6 @@ const Dashboard: React.FC = () => {
               </div>
             );
           })()}
-
-          <button
-            onClick={() => setShowCompositionDetail(true)}
-            className="mt-3 w-full py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-extrabold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
-          >
-            Lihat Detail Komposisi
-          </button>
         </div>
       </div>
 
@@ -2900,80 +2898,7 @@ const Dashboard: React.FC = () => {
         />
       )}
 
-      {/* Composition Detail Modal */}
-      {showCompositionDetail && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
-            <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
-                  <BarChart size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    Rincian Komposisi &amp; Aliran Sampah
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Data material timbulan sampah organik dan anorganik terpilah warga
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowCompositionDetail(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
-                title="Tutup dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-5 sm:p-6 space-y-4 max-h-[420px] overflow-y-auto text-sm">
-              <div className="space-y-3">
-                <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40">
-                  <h4 className="font-bold text-emerald-800 dark:text-emerald-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Leaf size={15} />
-                    Material Organik ({stats?.komposisiSampah?.organik?.persentase || "0%"})
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} kg</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Pengolahan</span>
-                      <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">Loseda &amp; Maggot</strong>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="p-4 bg-amber-50/70 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/40">
-                  <h4 className="font-bold text-amber-800 dark:text-amber-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Recycle size={15} />
-                    Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "0%"})
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} kg</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Daur Ulang</span>
-                      <strong className="text-amber-700 dark:text-amber-400 font-semibold">Bank Sampah &amp; Poin</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => setShowCompositionDetail(false)}
-                className="px-4 py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
-              >
-                Tutup Detail
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Detail Bin Modal */}
       {selectedBinForDetail && (
