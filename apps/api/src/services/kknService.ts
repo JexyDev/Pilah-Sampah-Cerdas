@@ -5002,7 +5002,12 @@ export class KknService {
           updatedAt: item.updatedAt.toISOString(),
         };
       })
-      .filter((p) => !isTestProker(p) && !isTestKelompok({ name: p.kelompokName }));
+      .filter((p) => {
+        if (roleName.includes("MAHASISWA") || roleName.includes("DPL") || (user as any).isTestAccount) {
+          return true;
+        }
+        return !isTestProker(p) && !isTestKelompok({ name: p.kelompokName });
+      });
   }
 
   async getProgramKerjaById(userId: string, id: string) {
