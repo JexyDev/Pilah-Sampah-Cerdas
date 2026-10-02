@@ -133,14 +133,14 @@ async function ensureIoTData() {
             locationName: node.locationName,
             latitude: node.lat,
             longitude: node.lng,
-            radiusMeter: 50,
+            sensorRadius: 50,
             firmwareVersion: "1.1.0",
             status: "ACTIVE",
             apiKey,
             kelurahan: node.kelurahanName,
             kelurahanId: kel?.id || null,
             rwId: kel?.rws[0]?.id || null,
-            lastActive: new Date(),
+            lastSeenAt: new Date(),
           },
         });
         deviceId = created.id;
