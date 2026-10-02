@@ -11,6 +11,7 @@
 import { prisma } from "../lib/prisma.js";
 import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
 import { getKelompokWhere } from "./dplService.js";
+import { isTestKelompok } from "../utils/filterTestingUtils.js";
 import { configService } from "./configService.js";
 import { auditTrailService } from "./auditTrailService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
@@ -141,11 +142,13 @@ export class LogbookService {
     if (isDpl) {
       const allowedGroups = await prisma.kelompokKkn.findMany({
         where: await getKelompokWhere(userId, userRole),
-        select: { id: true },
+        select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
       });
-      const dplGroupIds = allowedGroups.map((g) => g.id);
+      const dplGroupIds = allowedGroups
+        .filter((g) => !isTestKelompok(g))
+        .map((g) => g.id);
 
-      if (filters.groupId && filters.groupId !== "ALL") {
+      if (filters.groupId && filters.groupId !== "ALL" && filters.groupId !== "Semua Kelompok") {
         where.kelompokId = filters.groupId;
       } else if (dplGroupIds.length > 0) {
         where.kelompokId = { in: dplGroupIds };
@@ -153,8 +156,23 @@ export class LogbookService {
     } else if (isMhs) {
       // Mahasiswa KKN hanya melihat logbook aktivitas per individu (penulisId)
       where.penulisId = userId;
-    } else if (filters.groupId && filters.groupId !== "ALL") {
+    } else if (filters.groupId && filters.groupId !== "ALL" && filters.groupId !== "Semua Kelompok") {
       where.kelompokId = filters.groupId;
+    } else {
+      // Untuk peran admin/super user/pimpinan melihat semua logbook:
+      // Pastikan mengecualikan kelompok testing/dummy
+      const validGroups = await prisma.kelompokKkn.findMany({
+        select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
+      });
+      const cleanGroupIds = validGroups
+        .filter((g) => !isTestKelompok(g))
+        .map((g) => g.id);
+      where.kelompokId = { in: cleanGroupIds };
+    }
+
+    // Kecualikan akun penulis bertanda uji coba untuk selain mahasiswa sendiri
+    if (!isMhs) {
+      where.penulis = { isTestAccount: false };
     }
 
     if (filters.pekanKe) {
@@ -1409,18 +1427,33 @@ export class LogbookService {
     if (!isSuper) {
       const allowedGroups = await prisma.kelompokKkn.findMany({
         where: await getKelompokWhere(dplUserId, userRole),
-        select: { id: true },
+        select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
       });
-      const allowedGroupIds = allowedGroups.map((g) => g.id);
+      const allowedGroupIds = allowedGroups
+        .filter((g) => !isTestKelompok(g))
+        .map((g) => g.id);
 
       where.OR = [
         { dplId: dplUserId },
         { kelompokId: { in: allowedGroupIds } },
         { kelompok: { dplId: dplUserId } },
       ];
+    } else {
+      if (groupId && groupId !== "ALL" && groupId !== "Semua Kelompok") {
+        where.kelompokId = groupId;
+      } else {
+        const validGroups = await prisma.kelompokKkn.findMany({
+          select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
+        });
+        const cleanGroupIds = validGroups
+          .filter((g) => !isTestKelompok(g))
+          .map((g) => g.id);
+        where.kelompokId = { in: cleanGroupIds };
+      }
+      where.dpl = { isTestAccount: false };
     }
 
-    if (groupId && groupId !== "ALL") {
+    if (groupId && groupId !== "ALL" && groupId !== "Semua Kelompok") {
       where.kelompokId = groupId;
     }
 

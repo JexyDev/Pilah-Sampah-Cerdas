@@ -4654,9 +4654,11 @@ export const dplService = {
 
     const allowedGroups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
-      select: { id: true },
+      select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
     });
-    const allowedGroupIds = allowedGroups.map((g) => g.id);
+    const allowedGroupIds = allowedGroups
+      .filter((g) => !isTestKelompok(g))
+      .map((g) => g.id);
 
     const where: any = {};
 
@@ -4666,7 +4668,10 @@ export const dplService = {
         { kelompokId: { in: allowedGroupIds } },
         { kelompok: { dplId: dplUserId } },
       ];
+    } else {
+      where.kelompokId = { in: allowedGroupIds };
     }
+    where.dpl = { isTestAccount: false };
 
     if (params?.groupId && params.groupId !== "ALL" && params.groupId !== "Semua Kelompok") {
       where.kelompokId = params.groupId;
@@ -4707,7 +4712,10 @@ export const dplService = {
 
     // 1. Ambil Agregasi Statistik Real Database
     const baseWhereForDpl: any = isSuper
-      ? {}
+      ? {
+          kelompokId: { in: allowedGroupIds },
+          dpl: { isTestAccount: false },
+        }
       : {
           OR: [
             { dplId: dplUserId },

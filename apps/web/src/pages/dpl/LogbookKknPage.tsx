@@ -786,6 +786,13 @@ export const LogbookKknPage: React.FC = () => {
             Tervalidasi
           </span>
         );
+      case "MENUNGGU_PERSETUJUAN_KETUA":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+            <Clock className="w-3 h-3" />
+            Menunggu Ketua
+          </span>
+        );
       case "MENUNGGU_VERIFIKASI_DPL":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
@@ -850,11 +857,11 @@ export const LogbookKknPage: React.FC = () => {
         </div>
 
         {/* ─────────────────────────────────────────────
-            2. 4 SUMMARY STAT CARDS
+            2. 5 SUMMARY STAT CARDS
             ───────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
           {/* Card 1: Total Log Kelompok */}
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex items-center justify-between col-span-2 md:col-span-1">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Log Kelompok</p>
               <h3 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
@@ -866,7 +873,20 @@ export const LogbookKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2: Menunggu Validasi */}
+          {/* Card 2: Menunggu Ketua */}
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/50 shadow-xs flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">Menunggu Ketua</p>
+              <h3 className="text-3xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-300">
+                {stats.pendingKetua}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200 dark:border-indigo-800">
+              <Clock className="w-6 h-6" />
+            </div>
+          </div>
+
+          {/* Card 3: Menunggu Validasi (DPL) */}
           <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-amber-200/80 dark:border-amber-900/50 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Menunggu Validasi</p>
@@ -879,7 +899,7 @@ export const LogbookKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 3: Tervalidasi */}
+          {/* Card 4: Tervalidasi */}
           <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/50 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Tervalidasi</p>
@@ -892,7 +912,7 @@ export const LogbookKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 4: Perlu Perbaikan */}
+          {/* Card 5: Perlu Perbaikan */}
           <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-rose-200/80 dark:border-rose-900/50 shadow-xs flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-semibold text-rose-700 dark:text-rose-400">Perlu Perbaikan</p>
@@ -994,6 +1014,7 @@ export const LogbookKknPage: React.FC = () => {
                   className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">Semua Status</option>
+                  <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Persetujuan Ketua</option>
                   <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
                   <option value="DISETUJUI_DPL">Tervalidasi</option>
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
