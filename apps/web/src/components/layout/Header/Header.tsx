@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       const params = new URLSearchParams(search);
       const jenis = params.get("jenis");
       if (jenis === "bank_sampah") return ["Pemanfaatan & Dampak", "Bank Sampah"];
-      return ["Monitoring Pengelolaan", "Fasilitas"];
+      return ["Peta Sebaran", "Data Fasilitas"];
     }
 
     switch (pathname) {

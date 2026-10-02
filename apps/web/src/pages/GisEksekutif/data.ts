@@ -175,7 +175,6 @@ export const TIPE: FacilityType[] = [
   { id: "loseda", nama: "Loseda", fungsi: "Resapan organik", warna: "#0f8f8a", jumlah: 12 },
   { id: "bata_terawang", nama: "Bata Terawang", fungsi: "Kompos bata", warna: "#ef8a17", jumlah: 9 },
   { id: "tps", nama: "TPS / TPST", fungsi: "Penampungan", warna: "#5b6b7c", jumlah: 14 },
-  { id: "poc", nama: "POC", fungsi: "Pupuk organik cair", warna: "#0aa7cc", jumlah: 8 },
 ];
 
 const _entries = Object.fromEntries(TIPE.map((t) => [t.id, t]));

@@ -968,10 +968,7 @@ export const PemanfaatanSampah: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4] shrink-0" />
-                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">POC</span>
-                  </div>
+
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
@@ -1081,7 +1078,7 @@ export const PemanfaatanSampah: React.FC = () => {
     <div className="pb-24 lg:pb-8">
       <PageHeader
         title="Fasilitas Pengelolaan Sampah"
-        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di seluruh wilayah binaan."
+        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, TPS) di seluruh wilayah binaan."
         icon={Sprout}
       />
 
@@ -1103,7 +1100,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
-                Menampilkan direktori 87 fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/POC/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
+                Menampilkan direktori 87 fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
               </p>
             </div>
           </div>
@@ -1315,7 +1312,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 {metrics.organik}
               </div>
               <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Loseda, Maggot, POC
+                Loseda / Maggot
               </p>
             </div>
           </button>
@@ -1468,7 +1465,6 @@ export const PemanfaatanSampah: React.FC = () => {
                     <option value="loseda">Loseda</option>
                     <option value="bata_terawang">Bata Terawang</option>
                     <option value="rumah_maggot">Rumah Maggot</option>
-                    <option value="poc">POC</option>
                     <option value="tps">TPS</option>
                   </select>
                 </div>
@@ -1986,7 +1982,6 @@ const CreateFacilityModal: React.FC<{
                 <option value="loseda">Loseda</option>
                 <option value="rumah_maggot">Rumah Maggot</option>
                 <option value="bata_terawang">Bata Terawang</option>
-                <option value="poc">POC</option>
                 <option value="tps">TPS</option>
                 <option value="posko_kkn">Posko KKN</option>
               </select>
@@ -2086,7 +2081,6 @@ const EditFacilityModal: React.FC<{
                 <option value="loseda">Loseda</option>
                 <option value="rumah_maggot">Rumah Maggot</option>
                 <option value="bata_terawang">Bata Terawang</option>
-                <option value="poc">POC</option>
                 <option value="tps">TPS</option>
                 <option value="posko_kkn">Posko KKN</option>
               </select>
