@@ -93,11 +93,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       return ["Survei", "Detail Survei"];
     }
 
-    // Breadcrumb untuk /monitoring-pengelolaan/fasilitas dengan filter jenis
+    // Breadcrumb untuk /monitoring-pengelolaan/fasilitas
     if (pathname === "/monitoring-pengelolaan/fasilitas" || pathname === "/pengelolaan-sampah" || pathname === "/pemanfaatan-sampah") {
-      const params = new URLSearchParams(search);
-      const jenis = params.get("jenis");
-      if (jenis === "bank_sampah") return ["Pemanfaatan & Dampak", "Bank Sampah"];
       return ["Peta Sebaran", "Data Fasilitas"];
     }
 

@@ -1680,23 +1680,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/monitoring-pengelolaan/fasilitas?jenis=bank_sampah",
-              label: "Bank Sampah",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "PETUGAS_RESIDU",
-                "WARGA",
-                "PIMPINAN",
-                "PANITIA_TASKFORCE",
-                "MAHASISWA_KKN",
-              ] as UserRole[],
-            },
-            {
               to: "/evaluasi-dampak-kkn",
               label: "Dampak & Nilai Ekonomis",
               allowed: [
