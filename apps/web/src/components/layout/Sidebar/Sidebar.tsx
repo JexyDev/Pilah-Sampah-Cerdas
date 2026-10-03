@@ -382,15 +382,28 @@ const checkRouteActive = (
         if (["petugas", "pengangkut"].includes(t)) return "pengangkut";
         if (["rw", "rtrw"].includes(t)) return "rtrw";
         if (["kelurahan"].includes(t)) return "kelurahan";
+        if (["students", "mahasiswa"].includes(t)) return "students";
+        if (["groups", "kelompok"].includes(t)) return "groups";
+        if (["dpl", "dosen"].includes(t)) return "dpl";
         return t;
       };
 
       const normTarget = normalizeLeaderboardTab(targetTab);
       const normCurrent = normalizeLeaderboardTab(currentTab);
       if (normTarget && normCurrent) {
-        return normTarget === normCurrent;
+        if (normTarget !== normCurrent) return false;
+      } else if (targetTab !== currentTab) {
+        return false;
       }
-      return targetTab === currentTab;
+
+      // Check system parameter if present (e.g. system1 for Tata Kelola, system2 for KKN)
+      if (targetParams.has("system")) {
+        const targetSystem = targetParams.get("system");
+        const currentSystem = currentParams.get("system") || "system1";
+        if (targetSystem !== currentSystem) return false;
+      }
+
+      return true;
     }
 
     // Kategori parameter handling (e.g. ?kategori=ORGANIK)
@@ -1451,6 +1464,86 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "CAMAT",
                 "LURAH",
                 "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Poin & Peringkat",
+          icon: Award,
+          resource: "kkn",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "MPL",
+            "MAHASISWA_KKN",
+            "PANITIA_TASKFORCE",
+            "WARGA",
+            "PIMPINAN",
+          ] as UserRole[],
+          children: [
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system2&tab=students",
+              label: "Mahasiswa",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "MPL",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "WARGA",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system2&tab=groups",
+              label: "Kelompok KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "MPL",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "WARGA",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemilahan/peringkat-warga?system=system2&tab=dpl",
+              label: "Dosen Pembimbing (DPL)",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "MPL",
+                "MAHASISWA_KKN",
+                "PANITIA_TASKFORCE",
+                "WARGA",
+                "PIMPINAN",
               ] as UserRole[],
             },
           ],

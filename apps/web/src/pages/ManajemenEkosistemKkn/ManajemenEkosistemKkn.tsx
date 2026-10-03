@@ -206,6 +206,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [uniList, setUniList] = useState<any[]>([]);
   const [loadingUni, setLoadingUni] = useState(false);
   const [newUniName, setNewUniName] = useState("");
+  const [editingUni, setEditingUni] = useState<{ id: string; name: string } | null>(null);
+  const [editUniName, setEditUniName] = useState("");
   const [deleteUniId, setDeleteUniId] = useState<string | null>(null);
   const [deleteUniName, setDeleteUniName] = useState<string | null>(null);
 

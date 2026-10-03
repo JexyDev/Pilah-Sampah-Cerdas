@@ -175,7 +175,7 @@ const ManajemenMahasiswa: React.FC = () => {
 
   // Filtered List
   const filteredMahasiswas = useMemo(() => {
-    return mahasiswas.filter((m) => {
+    const list = mahasiswas.filter((m) => {
       const matchesSearch =
         (m.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (m.studentProfile?.nim || "").toLowerCase().includes(searchTerm.toLowerCase()) ||

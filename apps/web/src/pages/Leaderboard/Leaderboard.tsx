@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Loader2,
   Medal,
@@ -18,35 +18,20 @@ import {
   GraduationCap,
   Trophy,
   Recycle,
-  Activity,
-  LayoutList,
-  BarChart3,
   CheckCircle2,
   FileText,
   X,
   Crown,
   Award,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-  CartesianGrid,
-} from "recharts";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 type SystemType = "system1" | "system2";
-type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan" | "overview";
+type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan";
 type System2Tab = "students" | "groups" | "dpl";
-type ViewMode = "GRID_TABLE" | "CHART_ONLY" | "BOTH";
 
 interface GenericItem {
   id: string;
@@ -56,19 +41,6 @@ interface GenericItem {
   extraInfo?: string;
   points: number;
 }
-
-const BAR_COLORS = [
-  "#009966",
-  "#10b981",
-  "#059669",
-  "#047857",
-  "#3b82f6",
-  "#2563eb",
-  "#f59e0b",
-  "#d97706",
-  "#8b5cf6",
-  "#6d28d9",
-];
 
 const getInitials = (name: string) => {
   if (!name) return "U";
@@ -95,6 +67,7 @@ const Leaderboard: React.FC = () => {
   } = useLeaderboardStore();
 
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const systemParam = searchParams.get("system") as SystemType;
   const tabParam = searchParams.get("tab");
@@ -104,7 +77,7 @@ const Leaderboard: React.FC = () => {
     return "system1";
   });
   const [s1Tab, setS1Tab] = useState<System1Tab>(() => {
-    if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan", "overview"].includes(tabParam || "")) {
+    if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan"].includes(tabParam || "")) {
       return tabParam as System1Tab;
     }
     return "citizens";
@@ -120,7 +93,6 @@ const Leaderboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<"rank" | "name" | "points" | "subtitle">("rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedItem, setSelectedItem] = useState<GenericItem | null>(null);
-  const [viewDisplayMode, setViewDisplayMode] = useState<ViewMode>("BOTH");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,7 +105,7 @@ const Leaderboard: React.FC = () => {
 
     if (systemParam === "system1" || systemParam === "system2") {
       setSystem(systemParam);
-      if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan", "overview"].includes(tabParam || "")) {
+      if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan"].includes(tabParam || "")) {
         setS1Tab(tabParam as System1Tab);
       } else if (systemParam === "system2" && ["students", "groups", "dpl"].includes(tabParam || "")) {
         setS2Tab(tabParam as System2Tab);
@@ -377,30 +349,6 @@ const Leaderboard: React.FC = () => {
     return [...currentData].sort((a, b) => a.rank - b.rank).slice(0, 3);
   }, [currentData, searchTerm]);
 
-  const top10ChartData = currentData.slice(0, 10).map((item) => ({
-    name: item.name.length > 14 ? item.name.substring(0, 12) + "..." : item.name,
-    fullName: item.name,
-    points: Math.round(item.points),
-    rank: item.rank,
-    subtitle: item.subtitle,
-  }));
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl border border-slate-800 text-xs space-y-1">
-          <p className="font-black text-amber-400">Peringkat #{data.rank}</p>
-          <p className="font-bold text-sm">{data.fullName}</p>
-          <p className="text-[11px] text-slate-300">{data.subtitle}</p>
-          <div className="border-t border-slate-800 pt-1 mt-1 font-mono text-emerald-400 font-extrabold">
-            {data.points.toLocaleString("id-ID")} {pointsLabel}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   // CONDITIONAL RENDERING FOR LOADING / ERROR (AFTER ALL HOOKS HAVE INITIALIZED)
   if (isLoading && users.length === 0 && kknStudents.length === 0 && kknDpl.length === 0) {
@@ -436,91 +384,19 @@ const Leaderboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Papan Peringkat
+              {system === "system2" ? "Papan Peringkat Program KKN" : "Papan Peringkat"}
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Papan klasemen &amp; apresiasi kinerja pemilahan sampah di seluruh wilayah binaan dan program KKN.
+              {system === "system2"
+                ? "Papan klasemen & apresiasi kinerja mahasiswa, kelompok binaan, dan DPL program KKN."
+                : "Papan klasemen & apresiasi kinerja pemilahan sampah di seluruh wilayah binaan."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* 2. SYSTEM TOGGLE + SUB-TABS */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        {/* System Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setSystem("system1");
-                setSearchTerm("");
-              }}
-              className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
-                system === "system1"
-                  ? "bg-[#009966] text-white shadow-2xs"
-                  : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-              }`}
-            >
-              <Users size={14} /> Warga dan Wilayah
-            </button>
-            <button
-              onClick={() => {
-                setSystem("system2");
-                setSearchTerm("");
-              }}
-              className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
-                system === "system2"
-                  ? "bg-[#009966] text-white shadow-2xs"
-                  : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-              }`}
-            >
-              <GraduationCap size={14} /> Program KKN
-            </button>
-          </div>
-
-          {/* View Mode Toggle (Visual Chart vs Table vs Both) */}
-          {system === "system1" && s1Tab !== "overview" && (
-            <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-start sm:self-auto">
-              <button
-                onClick={() => setViewDisplayMode("BOTH")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                  viewDisplayMode === "BOTH"
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-                title="Tampilkan Grafik & Tabel"
-              >
-                <BarChart3 size={13} className="text-[#009966] dark:text-emerald-400" />
-                <span className="hidden md:inline">Grafik &amp; Tabel</span>
-              </button>
-              <button
-                onClick={() => setViewDisplayMode("CHART_ONLY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                  viewDisplayMode === "CHART_ONLY"
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-                title="Tampilkan Grafik Saja"
-              >
-                <BarChart3 size={13} className="text-amber-500" />
-                <span className="hidden md:inline">Grafik</span>
-              </button>
-              <button
-                onClick={() => setViewDisplayMode("GRID_TABLE")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                  viewDisplayMode === "GRID_TABLE"
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-                title="Tampilkan Tabel Saja"
-              >
-                <LayoutList size={13} className="text-blue-600 dark:text-blue-400" />
-                <span className="hidden md:inline">Tabel</span>
-              </button>
-            </div>
-          )}
-        </div>
-
+      {/* 2. SUB-TABS */}
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         {/* Sub-Category Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {system === "system1" ? (
@@ -530,7 +406,6 @@ const Leaderboard: React.FC = () => {
                 { id: "pengangkut" as System1Tab, label: "Peringkat Petugas", icon: TrendingUp },
                 { id: "rtrw" as System1Tab, label: "Peringkat RW", icon: MapPin },
                 { id: "kelurahan" as System1Tab, label: "Peringkat Kelurahan", icon: BarChart2 },
-                { id: "overview" as System1Tab, label: "Rekap Wilayah", icon: Activity },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const active = s1Tab === tab.id;
@@ -540,6 +415,7 @@ const Leaderboard: React.FC = () => {
                     onClick={() => {
                       setS1Tab(tab.id);
                       setSearchTerm("");
+                      navigate(`?system=system1&tab=${tab.id}`, { replace: true });
                     }}
                     className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                       active
@@ -568,6 +444,7 @@ const Leaderboard: React.FC = () => {
                     onClick={() => {
                       setS2Tab(tab.id);
                       setSearchTerm("");
+                      navigate(`?system=system2&tab=${tab.id}`, { replace: true });
                     }}
                     className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                       active
@@ -586,11 +463,7 @@ const Leaderboard: React.FC = () => {
       </div>
 
       {/* 3. CONTENT AREA */}
-      {system === "system1" && s1Tab === "overview" ? (
-        <AnalyticsOverviewBoard />
-      ) : (
-        <>
-          {/* Stats Cards */}
+      {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black border border-amber-200">
@@ -775,59 +648,9 @@ const Leaderboard: React.FC = () => {
             </div>
           )}
 
-          {/* VISUAL RECHARTS BAR CHART PANEL (Bentuk Chart UI) */}
-          {(viewDisplayMode === "BOTH" || viewDisplayMode === "CHART_ONLY") && top10ChartData.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0">
-                    <BarChart3 size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-slate-800 dark:text-slate-100 tracking-tight">
-                      Grafik Perbandingan Top 10 — {pageTitle}
-                    </h3>
-                    <p className="text-xs text-slate-500 font-semibold">
-                      Visualisasi batang distribusi perolehan {pointsLabel.toLowerCase()} peserta terbaik
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[11px] bg-emerald-50 text-[#009966] px-3 py-1 rounded-full font-black border border-emerald-200">
-                  Real-time DB
-                </span>
-              </div>
-
-              <div className="h-72 w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={top10ChartData} margin={{ top: 20, right: 20, left: 0, bottom: 25 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      interval={0}
-                      angle={-15}
-                      textAnchor="end"
-                    />
-                    <YAxis
-                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="points" radius={[8, 8, 0, 0]} maxBarSize={48}>
-                      {top10ChartData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
 
           {/* TABLE DISPLAY PANEL WITH STANDARDIZED PAGINATION */}
-          {(viewDisplayMode === "BOTH" || viewDisplayMode === "GRID_TABLE") && (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
               <div>
                 {/* Search Toolbar */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -946,9 +769,6 @@ const Leaderboard: React.FC = () => {
                 />
               )}
             </div>
-          )}
-        </>
-      )}
 
       {/* MODAL DETAIL POP-UP (PREMIUM TRASHCARE UX & TYPOGRAPHY) */}
       {selectedItem && (

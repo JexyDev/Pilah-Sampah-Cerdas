@@ -144,17 +144,17 @@ interface RawKelurahan {
 }
 
 const RAW_KELURAHAN: RawKelurahan[] = [
-  { id: "dago", nama: "Dago", kep: 85, org: 12, ano: 7, res: 3, rw: 6, fac: 15, label: [483, 92],
+  { id: "dago", nama: "Dago", kep: 85, org: 12, ano: 7, res: 3, rw: 6, fac: 14, label: [483, 92],
     poly: P("V3 T1 T2 T3 T4 T5 T6 T7 D1 D2 D3 D4 V5 V4") },
-  { id: "lebak-gede", nama: "Lebak Gede", kep: 72, org: 13, ano: 7, res: 4, rw: 7, fac: 15, label: [715, 300],
+  { id: "lebak-gede", nama: "Lebak Gede", kep: 72, org: 13, ano: 7, res: 4, rw: 7, fac: 14, label: [715, 300],
     poly: P("S10 S9 S8 S7 G1 G2 G3 G4 G5 G6 G7 L3 L2 L1") },
-  { id: "lebak-siliwangi", nama: "Lebak Siliwangi", kep: 58, org: 9, ano: 5, res: 2, rw: 5, fac: 15, label: [433, 245],
+  { id: "lebak-siliwangi", nama: "Lebak Siliwangi", kep: 58, org: 9, ano: 5, res: 2, rw: 5, fac: 13, label: [433, 245],
     poly: P("V5 D4 D3 D2 D1 E1 S10 L1 L2 L3 L4 L5 L6 L7 L8 V7 V6") },
-  { id: "sekeloa", nama: "Sekeloa", kep: 78, org: 12, ano: 6, res: 3, rw: 6, fac: 15, label: [780, 158],
+  { id: "sekeloa", nama: "Sekeloa", kep: 78, org: 12, ano: 6, res: 3, rw: 6, fac: 14, label: [780, 158],
     poly: P("T7 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 E1 D1") },
-  { id: "sadang-serang", nama: "Sadang Serang", kep: 42, org: 8, ano: 5, res: 2, rw: 5, fac: 12, label: [1015, 228],
+  { id: "sadang-serang", nama: "Sadang Serang", kep: 42, org: 8, ano: 5, res: 2, rw: 5, fac: 11, label: [1015, 228],
     poly: P("S5 R1 R2 R3 R4 R5 R6 R7 R8 R9 G1 S7 S6") },
-  { id: "cipaganti", nama: "Cipaganti", kep: 68, org: 12, ano: 6, res: 4, rw: 6, fac: 11, label: [300, 146],
+  { id: "cipaganti", nama: "Cipaganti", kep: 68, org: 12, ano: 6, res: 4, rw: 6, fac: 9, label: [300, 146],
     poly: P("V1 V2 V3 V4 V5 V6 V7 V8 V9 V10 V11") },
 ];
 
@@ -310,7 +310,7 @@ const insideWithMargin = (p: [number, number], poly: [number, number][], m: numb
 export const pad2 = (n: number | string): string => String(n).padStart(2, "0");
 export const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 
-// ---------- Fasilitas (83 titik, posisi deterministik) ----------
+// ---------- Fasilitas (75 titik, posisi deterministik) ----------
 export const FALLBACKS: string[] = [];
 
 function buildFacilities(): FacilityItem[] {
@@ -350,7 +350,8 @@ function buildFacilities(): FacilityItem[] {
         FALLBACKS.push(kel.id);
       }
 
-      const tipe = bag[idx];
+      const tipe = (bag.length > 0 ? bag[idx % bag.length] : undefined) || TIPE[0]?.id || "bank_sampah";
+      const tipeData = TIPE_BY_ID[tipe] || TIPE[0];
       const rw = n < kel.rw ? n + 1 : 1 + Math.floor(rand() * kel.rw);
 
       out.push({
@@ -360,7 +361,7 @@ function buildFacilities(): FacilityItem[] {
         rw,
         x: pt[0],
         y: pt[1],
-        nama: `${TIPE_BY_ID[tipe].nama} ${kel.nama} RW ${pad2(rw)}`,
+        nama: `${tipeData?.nama || "Fasilitas"} ${kel.nama} RW ${pad2(rw)}`,
         ll: toLL([pt[0], pt[1]]),
       });
       idx++;
