@@ -285,6 +285,32 @@ export default function SetorSampah() {
     return filteredLogs.reduce((acc, curr) => acc + (Number(curr.berat) || 0), 0);
   }, [filteredLogs]);
 
+  const beratWarga = useMemo(() => {
+    return filteredLogs
+      .filter((l) => !l.isManual)
+      .reduce((acc, curr) => acc + (Number(curr.berat) || 0), 0);
+  }, [filteredLogs]);
+
+  const beratPetugas = useMemo(() => {
+    return filteredLogs
+      .filter((l) => l.isManual)
+      .reduce((acc, curr) => acc + (Number(curr.berat) || 0), 0);
+  }, [filteredLogs]);
+
+  const countWargaLogs = useMemo(() => {
+    return filteredLogs.filter((l) => !l.isManual).length;
+  }, [filteredLogs]);
+
+  const countPetugasLogs = useMemo(() => {
+    return filteredLogs.filter((l) => l.isManual).length;
+  }, [filteredLogs]);
+
+  const formatBeratMetric = (val: number) => {
+    return val >= 1000
+      ? `${(val / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`
+      : `${val.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`;
+  };
+
   const totalPoin = useMemo(() => {
     return Math.round(filteredLogs.reduce((acc, curr) => acc + (Number(curr.poin) || 0), 0));
   }, [filteredLogs]);
@@ -416,52 +442,88 @@ export default function SetorSampah() {
       {/* KPI Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Weight */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Total Sampah Terpilah
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Total Sampah Terpilah
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {totalBerat >= 1000
+                ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                {totalBerat >= 1000 ? "Ton" : "kg"}
+              </span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {totalBerat >= 1000
-              ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-              : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-              {totalBerat >= 1000 ? "Ton" : "kg"}
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+              Warga: {formatBeratMetric(beratWarga)}
+              <span className="text-[10px] text-slate-400 font-normal">
+                ({totalBerat > 0 ? Math.round((beratWarga / totalBerat) * 100) : 0}%)
+              </span>
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+              Petugas: {formatBeratMetric(beratPetugas)}
+              <span className="text-[10px] text-slate-400 font-normal">
+                ({totalBerat > 0 ? 100 - Math.round((beratWarga / totalBerat) * 100) : 0}%)
+              </span>
             </span>
           </div>
         </div>
 
         {/* Points Awarded */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Poin Diterbitkan
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Poin Diterbitkan
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {totalPoin.toLocaleString("id-ID")}{" "}
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Pts</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {totalPoin.toLocaleString("id-ID")}{" "}
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Pts</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex items-center">
+            <span>Reward Pemilahan Warga</span>
           </div>
         </div>
 
         {/* AI Model Accuracy */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Akurasi Model AI
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Akurasi Model AI
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {akurasiAi !== null ? `${akurasiAi}%` : "—"}{" "}
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                {akurasiAi !== null ? "(Rerata)" : "(Tidak ada data AI)"}
+              </span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {akurasiAi !== null ? `${akurasiAi}%` : "—"}{" "}
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-              {akurasiAi !== null ? "(Rerata)" : "(Tidak ada data AI)"}
-            </span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex items-center">
+            <span>Validasi BERSEKA Vision</span>
           </div>
         </div>
 
         {/* Total Transactions */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-            Total Transaksi
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Total Transaksi
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+              {totalItems}{" "}
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Transaksi</span>
+            </div>
           </div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {totalItems}{" "}
-            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Transaksi</span>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{countWargaLogs} Warga</span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">{countPetugasLogs} Petugas</span>
           </div>
         </div>
       </div>

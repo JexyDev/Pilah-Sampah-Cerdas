@@ -68,21 +68,29 @@ export const transactionController = {
       });
 
       const mappedManual = (manualList || []).map((m: any) => {
+        let finalJenis = "Residu";
+        if (m.kategori) {
+          const kat = String(m.kategori).toLowerCase();
+          if (kat.includes("anorganik")) finalJenis = "Anorganik";
+          else if (kat.includes("organik")) finalJenis = "Organik";
+          else if (kat.includes("residu")) finalJenis = "Residu";
+        }
+
         return {
           id: m.id,
-          warga: `Petugas: ${m.petugas?.name || "Petugas Residu"}`,
+          warga: `Petugas: ${m.petugas?.name || "Petugas Pemilah"}`,
           phone: m.petugas?.phone || "-",
           rw: m.rw?.name || `RW ${m.rwId}`,
           kelurahan: m.rw?.kelurahan?.name || "Coblong",
-          jenis: "Residu",
+          jenis: finalJenis,
           berat: Number(m.berat),
           poin: 0,
           waktu: m.createdAt,
           status: m.status || "ACCEPTED",
           lokasi: "Posko Penimbangan Lapangan",
           confidence: null,
-          organikPercent: 0,
-          anorganikPercent: 0,
+          organikPercent: finalJenis === "Organik" ? 100 : 0,
+          anorganikPercent: finalJenis === "Anorganik" ? 100 : 0,
           ai_confidence: null,
           aiConfidence: null,
           discrepancy_status: "NONE",
