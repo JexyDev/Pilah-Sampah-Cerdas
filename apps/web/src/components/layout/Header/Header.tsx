@@ -293,6 +293,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring-pemilahan/papan-peringkat":
       case "/peringkat":
       case "/leaderboard":
+        if (location.search.includes("system=system2")) {
+          return ["Program KKN", "Poin & Peringkat"];
+        }
         return ["Monitoring Pemilahan", "Papan Peringkat"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
