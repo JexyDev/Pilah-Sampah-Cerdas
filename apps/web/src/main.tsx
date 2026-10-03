@@ -13,12 +13,15 @@ import App from "./App.tsx";
 
 // Auto-reload when dynamic import / code-splitting chunk fails due to new deployment
 window.addEventListener("vite:preloadError", (event) => {
-  event.preventDefault();
+  // CRITICAL: Do NOT call event.preventDefault()!
+  // Calling event.preventDefault() suppresses the error throw in Vite's preload helper,
+  // causing the dynamic import promise to resolve with undefined.
+  // React.lazy then crashes with: "TypeError: undefined is not an object (evaluating 'e._result.default')"
   console.warn("Vite dynamic import preload error detected. Busting cache & reloading...", event);
   const reloadKey = "vite_preload_last_reload";
   const lastReload = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
   const now = Date.now();
-  if (now - lastReload > 8000) {
+  if (now - lastReload > 5000) {
     sessionStorage.setItem(reloadKey, now.toString());
     if (typeof window !== "undefined" && "caches" in window) {
       caches
