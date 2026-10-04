@@ -51,6 +51,8 @@ import {
   ChevronDown,
   BarChart2,
   SlidersHorizontal,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
@@ -72,6 +74,7 @@ export default function RekapSetoran() {
 
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Detail Modal & Image Lightbox State
   const [selectedDeposit, setSelectedDeposit] = useState<any | null>(null);
@@ -132,16 +135,23 @@ export default function RekapSetoran() {
 
   const fetchDeposits = async (silent = false) => {
     if (!silent) setLoading(true);
+    setError(null);
     try {
       const response = await api.get("/transactions/deposits");
       if (response.data?.success && Array.isArray(response.data.data)) {
         setDeposits(response.data.data);
       } else {
         setDeposits([]);
+        setError(response.data?.message || "Format data setoran tidak valid dari server");
       }
     } catch (err: any) {
       console.error("Gagal memuat data setoran:", err);
-      showToast.error("Gagal memuat rekapitulasi setoran");
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Terjadi kendala saat menghubungkan ke database server. Silakan coba kembali.";
+      setError(errorMsg);
+      showToast.error(errorMsg);
       setDeposits([]);
     } finally {
       setLoading(false);
@@ -554,8 +564,8 @@ export default function RekapSetoran() {
           <div className="min-w-0">
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider truncate">Sampah Organik</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-              {beratOrganik >= 1000 ? (beratOrganik / 1000).toFixed(2) : beratOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{beratOrganik >= 1000 ? "Ton" : "kg"}</span>
+              {beratOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
               {totalWeight > 0 ? `${((beratOrganik / totalWeight) * 100).toFixed(1)}% porsi` : "0% porsi"}
@@ -571,8 +581,8 @@ export default function RekapSetoran() {
           <div className="min-w-0">
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider truncate">Sampah Anorganik</p>
             <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">
-              {beratAnorganik >= 1000 ? (beratAnorganik / 1000).toFixed(2) : beratAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{beratAnorganik >= 1000 ? "Ton" : "kg"}</span>
+              {beratAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
             <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
               {totalWeight > 0 ? `${((beratAnorganik / totalWeight) * 100).toFixed(1)}% porsi` : "0% porsi"}
@@ -588,8 +598,8 @@ export default function RekapSetoran() {
           <div className="min-w-0">
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider truncate">Residu Non-Terpilah</p>
             <p className="text-lg font-black text-rose-700 dark:text-rose-400 mt-0.5">
-              {beratResidu >= 1000 ? (beratResidu / 1000).toFixed(2) : beratResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{beratResidu >= 1000 ? "Ton" : "kg"}</span>
+              {beratResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
             <p className="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">
               {totalWeight > 0 ? `${((beratResidu / totalWeight) * 100).toFixed(1)}% porsi` : "0% porsi"}
@@ -625,8 +635,8 @@ export default function RekapSetoran() {
           <div className="min-w-0">
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">Total Akumulasi</p>
             <p className="text-sm font-black text-slate-900 dark:text-slate-100">
-              {totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-[11px] font-semibold text-slate-500">{totalWeight >= 1000 ? "Ton" : "kg"}</span>
+              {totalWeight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-[11px] font-semibold text-slate-500">kg</span>
             </p>
           </div>
         </div>
@@ -794,7 +804,7 @@ export default function RekapSetoran() {
                 <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase">Total</span>
                   <span className="text-sm font-black text-slate-900 dark:text-slate-100">
-                    {totalWeight >= 1000 ? `${(totalWeight / 1000).toFixed(1)} Ton` : `${Math.round(totalWeight).toLocaleString("id-ID")} kg`}
+                    {totalWeight.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
                   </span>
                 </div>
               )}
@@ -805,19 +815,19 @@ export default function RekapSetoran() {
               <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-100 dark:border-emerald-700/50">
                 <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 block">Organik</span>
                 <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
-                  {beratOrganik >= 1000 ? `${(beratOrganik / 1000).toFixed(1)}T` : `${Math.round(beratOrganik)}kg`}
+                  {beratOrganik.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
                 </span>
               </div>
               <div className="p-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl border border-amber-100 dark:border-amber-700/50">
                 <span className="text-[10px] font-black text-amber-800 dark:text-amber-300 block">Anorganik</span>
                 <span className="text-xs font-black text-amber-700 dark:text-amber-400">
-                  {beratAnorganik >= 1000 ? `${(beratAnorganik / 1000).toFixed(1)}T` : `${Math.round(beratAnorganik)}kg`}
+                  {beratAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
                 </span>
               </div>
               <div className="p-2 bg-rose-50 dark:bg-rose-950/60 rounded-2xl border border-rose-100 dark:border-rose-700/50">
                 <span className="text-[10px] font-black text-rose-800 dark:text-rose-300 block">Residu</span>
                 <span className="text-xs font-black text-rose-700 dark:text-rose-400">
-                  {beratResidu >= 1000 ? `${(beratResidu / 1000).toFixed(1)}T` : `${Math.round(beratResidu)}kg`}
+                  {beratResidu.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
                 </span>
               </div>
             </div>
@@ -993,6 +1003,25 @@ export default function RekapSetoran() {
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
             <Loader2 className="animate-spin text-[#009966] dark:text-emerald-400" size={28} />
             <p className="text-xs font-bold">Memuat data rekapitulasi setoran...</p>
+          </div>
+        ) : error ? (
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3.5 border border-rose-200 dark:border-rose-800/60 shadow-xs">
+              <AlertTriangle size={28} />
+            </div>
+            <h4 className="text-base font-black text-slate-900 dark:text-slate-100">
+              Gagal Memuat Data Rekapitulasi Setoran
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mt-1 leading-relaxed">
+              {error}
+            </p>
+            <button
+              onClick={() => fetchDeposits()}
+              className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+            >
+              <RefreshCw size={14} />
+              <span>Muat Ulang Data</span>
+            </button>
           </div>
         ) : currentItems.length === 0 ? (
           <EmptyTableState
