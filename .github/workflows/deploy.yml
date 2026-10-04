@@ -105,11 +105,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          DEPLOY_SUCCESS=false
-          for attempt in 1 2 3; do
-            echo "SSH deployment attempt $attempt to $VPS_HOST..."
-            if sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
-              set -e
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+            set -e
             NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
             export PATH=$PATH:/usr/local/bin:$NODE_BIN_DIR
             PM2_BIN="$NODE_BIN_DIR/pm2"
@@ -286,17 +283,5 @@ jobs:
               $PM2_BIN logs --lines 50 --nostream 2>/dev/null || pm2 logs --lines 50 --nostream 2>/dev/null || true
               exit 1
             fi
-              echo "Production deployment successfully completed!"
-EOF
-            then
-              DEPLOY_SUCCESS=true
-              break
-            fi
-            echo "SSH command failed on attempt $attempt. Retrying in 5 seconds..."
-            sleep 5
-          done
-
-          if [ "$DEPLOY_SUCCESS" != "true" ]; then
-            echo "Deployment failed after 3 attempts!"
-            exit 1
-          fi
+            echo "Production deployment successfully completed!"
+          EOF

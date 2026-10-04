@@ -68,12 +68,9 @@ jobs:
           VPS_USER: ${{ secrets.STAGING_VPS_USERNAME || secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.STAGING_VPS_PASSWORD || secrets.VPS_PASSWORD }}
         run: |
-          DEPLOY_SUCCESS=false
-          for attempt in 1 2 3; do
-            echo "SSH staging deployment attempt $attempt to $VPS_HOST..."
-            if sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
-              set -e
-              NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+            set -e
+            NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
             export PATH=$PATH:/usr/local/bin:/usr/bin:$NODE_BIN_DIR
             PM2_BIN="$NODE_BIN_DIR/pm2"
             if ! command -v "$PM2_BIN" &> /dev/null; then PM2_BIN="pm2"; fi
@@ -234,16 +231,4 @@ jobs:
               exit 1
             fi
             echo "Staging deployment successfully completed!"
-EOF
-            then
-              DEPLOY_SUCCESS=true
-              break
-            fi
-            echo "SSH command failed on attempt $attempt. Retrying in 5 seconds..."
-            sleep 5
-          done
-
-          if [ "$DEPLOY_SUCCESS" != "true" ]; then
-            echo "Staging deployment failed after 3 attempts!"
-            exit 1
-          fi
+          EOF
