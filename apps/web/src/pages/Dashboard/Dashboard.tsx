@@ -24,7 +24,7 @@ import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import DashboardEksekutifKkn from "./DashboardEksekutifKkn";
-import GisEksekutifPage from "../GisEksekutif/GisEksekutifPage";
+const GisEksekutifPage = React.lazy(() => import("../GisEksekutif/GisEksekutifPage"));
 import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
 import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
@@ -2213,7 +2213,9 @@ const Dashboard: React.FC = () => {
     return (
       <div className="w-full space-y-6 pb-12 font-sans text-slate-800 relative">
         {renderTabSwitcher()}
-        <GisEksekutifPage />
+        <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-semibold text-xs">Memuat peta GIS Eksekutif...</div>}>
+          <GisEksekutifPage />
+        </React.Suspense>
       </div>
     );
   }

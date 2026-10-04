@@ -171,7 +171,7 @@ const MasterData: React.FC = () => {
           }`}
           onClick={() => setActiveTab("bins")}
         >
-          <Delete size={16} />
+          <Trash2 size={16} />
           Kode QR Tempat Sampah ({bins.length})
         </button>
       </div>

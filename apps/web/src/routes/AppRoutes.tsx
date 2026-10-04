@@ -18,6 +18,7 @@ import { isStagingEnv } from "../utils/envUtils";
 
 // Lazy Loaded Pages for Optimal Code-Splitting & Minimal Initial Bundle Size
 const Dashboard = React.lazy(() => import("../pages/Dashboard/Dashboard"));
+const MahasiswaMobileApp = React.lazy(() => import("../pages/KknDashboard/MahasiswaMobileApp"));
 const Monitoring = React.lazy(() => import("../pages/Monitoring/Monitoring"));
 const MasterData = React.lazy(() => import("../pages/MasterData/MasterData"));
 const MasterWilayah = React.lazy(() => import("../pages/MasterWilayah/MasterWilayah"));
@@ -260,6 +261,16 @@ const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
   </div>
 );
 
+// Dedicated route handler for /dasbor:
+// Isolates MAHASISWA_KKN on mobile to prevent preloading heavy desktop dependencies (Leaflet, Recharts, XLSX)
+const DashboardRouteHandler: React.FC = () => {
+  const { user } = useAuthStore();
+  if (user?.peran === "MAHASISWA_KKN") {
+    return <MahasiswaMobileApp />;
+  }
+  return <Dashboard />;
+};
+
 const AppRoutes: React.FC = () => {
   const isStaging = isStagingEnv();
   return (
@@ -279,7 +290,7 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/dasbor" element={<Dashboard />} />
+        <Route path="/dasbor" element={<DashboardRouteHandler />} />
         <Route path="/dashboard" element={<Navigate to="/dasbor" replace />} />
         <Route path="/dasbor-kkn-eksekutif" element={<Navigate to="/dasbor?tab=kkn" replace />} />
         <Route path="/dashboard-eksekutif-kkn" element={<Navigate to="/dasbor?tab=kkn" replace />} />
