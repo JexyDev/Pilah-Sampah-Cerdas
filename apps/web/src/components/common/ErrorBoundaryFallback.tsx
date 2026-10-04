@@ -15,7 +15,11 @@ const ErrorBoundaryFallback: React.FC<FallbackProps> = ({ error, resetErrorBound
   const isChunkError =
     errorMessage.includes("Failed to fetch dynamically imported module") ||
     errorMessage.includes("Importing a module script failed") ||
-    errorMessage.includes("error loading dynamically imported module");
+    errorMessage.includes("error loading dynamically imported module") ||
+    errorMessage.includes("Unable to preload CSS") ||
+    errorMessage.includes("_result.default") ||
+    errorMessage.includes("reading 'default'") ||
+    errorMessage.includes("undefined is not an object");
 
   const handleRetry = () => {
     if (isChunkError) {

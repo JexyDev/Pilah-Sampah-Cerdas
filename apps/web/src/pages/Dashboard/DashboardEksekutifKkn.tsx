@@ -2795,7 +2795,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         </div>
                         {g.posko && (
                           <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1.5">
-                            <span>Posko: {g.posko.nama}</span>
+                            <span>Posko: {g.posko?.nama || "-"}</span>
                             {g.posko.latitude && g.posko.longitude && (
                               <a
                                 href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`}
@@ -2954,7 +2954,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     )}
                     {g.posko && (
                       <p className="text-xs text-slate-600 dark:text-slate-400 truncate flex items-center justify-between" title={g.posko.alamat}>
-                        <span><span className="font-semibold text-slate-700 dark:text-slate-300">Posko:</span> {g.posko.nama}</span>
+                        <span><span className="font-semibold text-slate-700 dark:text-slate-300">Posko:</span> {g.posko?.nama || "-"}</span>
                         {g.posko.latitude && g.posko.longitude && (
                           <a href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-1 text-blue-500 hover:underline">
                             <MapPin size={11} /> Lokasi
@@ -3216,7 +3216,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Lokasi Posko KKN</span>
-                      <span className="block font-extrabold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{selectedGroupForDetail.posko.nama || "Posko Kelompok"}</span>
+                      <span className="block font-extrabold text-slate-800 dark:text-slate-100 text-sm mt-0.5">{selectedGroupForDetail.posko?.nama || "Posko Kelompok"}</span>
                       {selectedGroupForDetail.posko.alamat && <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{selectedGroupForDetail.posko.alamat}</span>}
                     </div>
                     {selectedGroupForDetail.posko.latitude && selectedGroupForDetail.posko.longitude && (
