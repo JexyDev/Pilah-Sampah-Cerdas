@@ -1,10 +1,24 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Halaman: Data Fasilitas Pengelolaan Sampah (/monitoring-pengelolaan/fasilitas)
+ * - Tampilan Full-Map GIS Interaktif (Satelit Hybrid Google / Vektor, Batas 6 Kelurahan Coblong)
+ * - Kontrol Peta Lengkap: Fullscreen (Layar Penuh), Tile Switcher, Layer Batas Wilayah, Quick In-Map Search & FlyTo
+ * - Legenda Simbol Peta Mengambang (Collapsible Floating Legend)
+ * - Kartu Ikon Metrik Agregat & Filter Cepat tepat di bawah peta (iconnya di bawah)
+ * - Direktori Fasilitas Lengkap: Mode Grid Kartu & Mode Tabel Data Lengkap
+ * - Integrasi WhatsApp PIC, Navigasi Google Maps, Salin Koordinat GPS, dan Lightbox Foto
+ */
+
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
   Popup,
   Polygon,
-  useMap
+  useMap,
 } from "react-leaflet";
 import {
   Loader2,
@@ -36,7 +50,11 @@ import {
   Table2,
   Navigation,
   Database,
-  Plus
+  Plus,
+  Maximize2,
+  Minimize2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
@@ -44,7 +62,11 @@ import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
-import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
+import {
+  ThemeTileLayer,
+  GOOGLE_SATELLITE_URL,
+  GOOGLE_VECTOR_URL,
+} from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { sortChronologicalList } from "../../utils/sortUtils";
@@ -122,7 +144,6 @@ export const getDisplayPic = (item: FacilityItem): {
   }
 
   // Kasus 2: Fasilitas Warga (Buruan Sae, Bank Sampah, Maggot, Loseda, Bata Terawang, POC, TPS)
-  // Jika rawPic berupa nama warga (bukan UUID)
   if (rawPic && rawPic !== "-" && !isUUID(rawPic)) {
     return {
       name: rawPic,
@@ -133,7 +154,7 @@ export const getDisplayPic = (item: FacilityItem): {
     };
   }
 
-  // Jika rawPic berupa UUID atau kosong (data lama yang terisi ID atau belum diset nama warganya)
+  // Kasus fallback jika rawPic berupa UUID atau kosong
   const defaultWargaLabel = item.rw?.name 
     ? `Warga Pengelola (${item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`})`
     : "Warga Pengelola Setempat";
@@ -167,7 +188,7 @@ export const formatFacilityTypeLabel = (jenis: string): string => {
     case "poc":
       return "POC (Pupuk Organik Cair)";
     case "tps":
-      return "TPS (Tempat Penampungan Sementara)";
+      return "TPS (Tempat Penampungan)";
     default:
       return jenis.replace(/_/g, " ").toUpperCase();
   }
@@ -219,6 +240,23 @@ export const getFacilityTypeIcon = (jenis: string) => {
   }
 };
 
+// Map Resizer Helper Component
+const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 80);
+    const t2 = setTimeout(() => map.invalidateSize(), 250);
+    const t3 = setTimeout(() => map.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen, map]);
+  return null;
+};
+
 // Map FlyTo Helper Component
 const MapFlyToController: React.FC<{ center: [number, number] | null; zoom?: number }> = ({
   center,
@@ -242,8 +280,10 @@ export const PemanfaatanSampah: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [editingFacility, setEditingFacility] = useState<FacilityItem | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"split" | "table">(
-    searchParams.get("view") === "table" ? "table" : "split"
+
+  // View Mode: "cards" (Grid Kartu) atau "table" (Tabel Data Lengkap)
+  const [viewMode, setViewMode] = useState<"cards" | "table">(
+    searchParams.get("view") === "table" ? "table" : "cards"
   );
 
   useEffect(() => {
@@ -251,9 +291,22 @@ export const PemanfaatanSampah: React.FC = () => {
     if (v === "table") {
       setViewMode("table");
     } else {
-      setViewMode("split");
+      setViewMode("cards");
     }
   }, [searchParams]);
+
+  const handleViewModeChange = (mode: "cards" | "table") => {
+    setViewMode(mode);
+    setSearchParams((prev: URLSearchParams) => {
+      const next = new URLSearchParams(prev);
+      if (mode === "table") {
+        next.set("view", "table");
+      } else {
+        next.delete("view");
+      }
+      return next;
+    });
+  };
 
   const handleDeleteFacility = async (id: string) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus fasilitas ini?")) return;
@@ -282,9 +335,14 @@ export const PemanfaatanSampah: React.FC = () => {
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
-  // Map Animation State
+  // Map Interactive States
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState(true);
+  const [mapTileProvider, setMapTileProvider] = useState<"google_satellite" | "google_vector">("google_satellite");
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  const [mapSearchInput, setMapSearchInput] = useState("");
   const [mapTargetCenter, setMapTargetCenter] = useState<[number, number] | null>(null);
   const [mapTargetZoom, setMapTargetZoom] = useState<number>(14);
   const mapSectionRef = useRef<HTMLDivElement>(null);
@@ -421,6 +479,26 @@ export const PemanfaatanSampah: React.FC = () => {
     return sortChronologicalList(result, (item) => item.createdAt || (item as any).updatedAt, "desc");
   }, [items, searchQuery, selectedJenis, selectedKelurahan, selectedRwId, selectedKelompokId, masterRwList]);
 
+  // Live in-map search results for quick flyTo
+  const mapSearchResults = useMemo(() => {
+    if (!mapSearchInput.trim()) return [];
+    const q = mapSearchInput.toLowerCase().trim();
+    return items
+      .filter((item) => {
+        const latNum = Number(item.latitude);
+        const lngNum = Number(item.longitude);
+        const hasCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
+        if (!hasCoords) return false;
+        return (
+          (item.nama || "").toLowerCase().includes(q) ||
+          (item.pic || "").toLowerCase().includes(q) ||
+          (item.alamat || "").toLowerCase().includes(q) ||
+          formatFacilityTypeLabel(item.jenis).toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 5);
+  }, [items, mapSearchInput]);
+
   // Reset pagination on search / filter
   useEffect(() => {
     setCurrentPage(1);
@@ -443,10 +521,8 @@ export const PemanfaatanSampah: React.FC = () => {
     }
     setMapTargetCenter([latNum, lngNum]);
     setMapTargetZoom(17);
-    if (viewMode === "table" || (typeof window !== "undefined" && window.innerWidth < 1024)) {
-      if (mapSectionRef.current) {
-        mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+    if (mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
 
@@ -459,490 +535,204 @@ export const PemanfaatanSampah: React.FC = () => {
     setTimeout(() => setCopiedCoordId(null), 2000);
   };
 
-  // Render Compact Metrics (Untuk Split-View Right Pane)
-  const renderCompactMetrics = () => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-      {/* 1. Semua Data */}
-      <button
-        type="button"
-        onClick={() => handleCardFilterClick("ALL")}
-        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-          selectedJenis === "ALL"
-            ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-xs ring-2 ring-emerald-500/20"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Total
-          </span>
-          <div className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
-            <Layers size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.total}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Semua Titik
-        </span>
-      </button>
-
-      {/* 2. Bank Sampah */}
-      <button
-        type="button"
-        onClick={() => handleCardFilterClick("bank_sampah")}
-        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-          selectedJenis === "bank_sampah"
-            ? "bg-teal-50 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-50 shadow-xs ring-2 ring-teal-500/20"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-teal-400"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Bank Sampah
-          </span>
-          <div className="p-1 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400">
-            <Recycle size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.bankSampah}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Unit Aktif
-        </span>
-      </button>
-
-      {/* 3. Inovasi Organik */}
-      <button
-        type="button"
-        onClick={() => handleCardFilterClick("organik_group")}
-        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-          selectedJenis === "organik_group"
-            ? "bg-amber-50 dark:bg-amber-950/60 border-amber-500 text-amber-950 dark:text-amber-50 shadow-xs ring-2 ring-amber-500/20"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-400"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Organik
-          </span>
-          <div className="p-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400">
-            <Sprout size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.organik}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Loseda / Maggot
-        </span>
-      </button>
-
-      {/* 4. Buruan Sae */}
-      <button
-        type="button"
-        onClick={() => handleCardFilterClick("buruan_sae")}
-        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-          selectedJenis === "buruan_sae"
-            ? "bg-lime-50 dark:bg-lime-950/60 border-lime-500 text-lime-950 dark:text-lime-50 shadow-xs ring-2 ring-lime-500/20"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-lime-400"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Buruan Sae
-          </span>
-          <div className="p-1 rounded-lg bg-lime-100 dark:bg-lime-950 text-lime-700 dark:text-lime-400">
-            <Leaf size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.buruanSae}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Kebun Warga
-        </span>
-      </button>
-
-      {/* 5. TPS */}
-      <button
-        type="button"
-        onClick={() => handleCardFilterClick("tps")}
-        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-          selectedJenis === "tps"
-            ? "bg-slate-100 dark:bg-slate-800 border-slate-500 text-slate-950 dark:text-slate-50 shadow-xs ring-2 ring-slate-500/20"
-            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-400"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            TPS
-          </span>
-          <div className="p-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-            <Trash2 size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.tps}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Penampungan
-        </span>
-      </button>
-
-      {/* 6. Kapasitas Olah */}
-      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-left flex flex-col justify-between">
-        <div className="flex items-center justify-between w-full mb-1">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Kapasitas
-          </span>
-          <div className="p-1 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400">
-            <Boxes size={13} />
-          </div>
-        </div>
-        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
-        </div>
-        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-          Total Kapasitas
-        </span>
-      </div>
-    </div>
-  );
-
-  // Render Filter Toolbar untuk Split-View
-  const renderCompactFilters = () => (
-    <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
-      {/* Search Bar */}
-      <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-        <input
-          type="text"
-          placeholder="Cari fasilitas, PIC, alamat, RW..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 placeholder-slate-400"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-          >
-            <X size={12} />
-          </button>
-        )}
-      </div>
-
-      {/* Dropdown Filters (2 Kolom) */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Filter Kelurahan */}
-        <select
-          value={selectedKelurahan}
-          onChange={(e) => {
-            setSelectedKelurahan(e.target.value);
-            setSelectedRwId("ALL");
-            setCurrentPage(1);
-          }}
-          className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-semibold outline-none focus:border-emerald-500 text-slate-800 dark:text-slate-200 truncate cursor-pointer"
-        >
-          <option value="ALL">Semua Kelurahan</option>
-          {masterKelurahanList.map((k) => (
-            <option key={k.id} value={k.name}>
-              Kel. {formatWilayahName(k.name)}
-            </option>
-          ))}
-        </select>
-
-        {/* Filter RW */}
-        <select
-          value={selectedRwId}
-          onChange={(e) => { setSelectedRwId(e.target.value); setCurrentPage(1); }}
-          className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-semibold outline-none focus:border-emerald-500 text-slate-800 dark:text-slate-200 truncate cursor-pointer"
-        >
-          <option value="ALL">Semua RW</option>
-          {rwFilterOptions.map((rw) => (
-            <option key={rw} value={rw}>
-              {formatRwLabel(rw)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Reset Filter Button if active */}
-      {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL" || searchQuery) && (
-        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">
-            Ditemukan: <strong className="text-emerald-600 dark:text-emerald-400">{filteredItems.length}</strong> fasilitas
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedJenis("ALL");
-              setSelectedKelurahan("ALL");
-              setSelectedRwId("ALL");
-              setSelectedKelompokId("ALL");
-              setCurrentPage(1);
-            }}
-            className="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 font-bold transition cursor-pointer"
-          >
-            <X size={12} /> Reset Filter
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  // Render Interactive Cards List untuk Split-View Right Pane
-  const renderFacilityCardsList = () => {
-    if (loading) {
-      return (
-        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Loader2 size={28} className="text-emerald-600 animate-spin mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-500">Memuat fasilitas...</p>
-        </div>
-      );
-    }
-
-    if (paginatedItems.length === 0) {
-      return (
-        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Sprout size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-          <p className="font-bold text-xs text-slate-700 dark:text-slate-300">Tidak ada fasilitas ditemukan</p>
-          <p className="text-[11px] text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau reset filter.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        {paginatedItems.map((item) => {
-          const picInfo = getDisplayPic(item);
-          const resolvedFoto = resolveImageUrl(item.foto);
-          const TypeIcon = getFacilityTypeIcon(item.jenis);
-          const latNum = Number(item.latitude);
-          const lngNum = Number(item.longitude);
-          const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
-
-          return (
-            <div
-              key={item.id}
-              className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-700/60 transition-all space-y-2.5"
-            >
-              {/* Header: Foto + Nama & Badge */}
-              <div className="flex items-start gap-3">
-                {resolvedFoto ? (
-                  <div
-                    className="relative group cursor-pointer overflow-hidden rounded-xl shrink-0 w-14 h-14 border border-slate-200 dark:border-slate-700"
-                    onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
-                    title="Klik perbesar foto"
-                  >
-                    <img
-                      src={resolvedFoto}
-                      alt={item.nama}
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition">
-                      <Eye size={13} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
-                    <TypeIcon size={22} className="text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
-                      <TypeIcon size={11} className="shrink-0" />
-                      {formatFacilityTypeLabel(item.jenis)}
-                    </span>
-                    {item.kapasitas && item.kapasitas > 0 ? (
-                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                        {item.kapasitas} kg
-                      </span>
-                    ) : null}
-                  </div>
-                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug line-clamp-1">
-                    {item.nama}
-                  </h4>
-                  <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    <MapPin size={11} className="text-emerald-600 shrink-0" />
-                    <span className="truncate">
-                      {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
-                      {item.alamat ? ` • ${item.alamat}` : ""}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* PIC Info & WhatsApp */}
-              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <User size={12} className="text-slate-400 shrink-0" />
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[130px]">
-                    {picInfo.name}
-                  </span>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
-                    picInfo.isWarga
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                      : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
-                  }`}>
-                    {picInfo.roleBadge}
-                  </span>
-                </div>
-
-                {picInfo.contact && picInfo.contact !== "-" && (
-                  <a
-                    href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
-                    title="Hubungi via WhatsApp"
-                  >
-                    <Phone size={11} />
-                    <span>{picInfo.contact}</span>
-                  </a>
-                )}
-              </div>
-
-              {/* Action Buttons: Fokus Peta + Copy GPS + Admin */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex items-center gap-1.5">
-                  {hasValidCoords && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-emerald-600 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition"
-                        title="Salin Koordinat"
-                      >
-                        {copiedCoordId === item.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
-                        <span>{latNum.toFixed(4)}, {lngNum.toFixed(4)}</span>
-                      </button>
-
-                      <a
-                        href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        title="Buka di Google Maps"
-                      >
-                        <ExternalLink size={12} />
-                      </a>
-                    </>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {hasValidCoords && (
-                    <button
-                      type="button"
-                      onClick={() => handleViewOnMap(latNum, lngNum)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
-                      title="Sorot lokasi titik ini di peta GIS sebelah kiri tanpa scroll halaman"
-                    >
-                      <Navigation size={12} />
-                      <span>Fokus Peta</span>
-                    </button>
-                  )}
-
-                  {isDeveloper && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setEditingFacility(item)}
-                        className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
-                        title="Edit Fasilitas"
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteFacility(item.id)}
-                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition cursor-pointer"
-                        title="Hapus Fasilitas"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Render Map GIS Section
-  const renderMapSection = (isSplit: boolean = false) => (
+  // =========================================================================
+  // RENDER SEKSI PETA SEBARAN FULL-MAP DENGAN KONTROL & LEGENDA
+  // =========================================================================
+  const renderFullMapSection = () => (
     <div
       ref={mapSectionRef}
-      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden ${
-        isSplit ? "lg:sticky lg:top-20" : ""
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden relative transition-all duration-300 ${
+        isMapFullscreen
+          ? "fixed inset-0 z-[9999] rounded-none p-3 sm:p-5 flex flex-col bg-white dark:bg-slate-950"
+          : "p-3 sm:p-4 space-y-3"
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 mb-2 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-            <MapPin size={16} />
+      {/* Header Bar Peta & Toolbar Aksi Kontrol */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800 shadow-2xs shrink-0">
+            <MapPin size={20} />
           </span>
           <div>
-            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
-              Peta Sebaran Fasilitas Pengelolaan Sampah
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Cakupan Wilayah Binaan ({filteredItems.length} titik aktif)
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
+                Peta Sebaran Fasilitas Pengelolaan Sampah
+              </h3>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {filteredItems.length} Titik Terpantau
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Cakupan Wilayah Binaan Kecamatan Coblong (Bank Sampah, Inovasi Organik, Buruan Sae, TPS)
             </p>
           </div>
         </div>
 
-        {selectedJenis !== "ALL" && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-              Filter Aktif: {selectedJenis === "organik_group" ? "Inovasi Organik" : formatFacilityTypeLabel(selectedJenis)}
-            </span>
+        {/* Action Controls: Filter Indicator, Tile Switcher, Boundary Layer & Fullscreen */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {selectedJenis !== "ALL" && (
+            <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/70 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+              <span>Filter: {selectedJenis === "organik_group" ? "Inovasi Organik" : formatFacilityTypeLabel(selectedJenis)}</span>
+              <button
+                type="button"
+                onClick={() => setSelectedJenis("ALL")}
+                className="text-slate-400 hover:text-rose-600 p-0.5 cursor-pointer ml-1"
+                title="Reset filter jenis"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
+
+          {/* Batas Wilayah Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowKelurahanBoundaries(!showKelurahanBoundaries)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border ${
+              showKelurahanBoundaries
+                ? "bg-emerald-50 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 shadow-xs"
+                : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+            }`}
+            title={showKelurahanBoundaries ? "Sembunyikan Poligon Batas Kelurahan" : "Tampilkan Poligon Batas Kelurahan"}
+          >
+            <Layers size={14} className={showKelurahanBoundaries ? "text-[#009966]" : "text-slate-400"} />
+            <span>Batas Wilayah</span>
+          </button>
+
+          {/* Tile Layer Provider Switcher */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
             <button
               type="button"
-              onClick={() => setSelectedJenis("ALL")}
-              className="text-xs text-slate-500 hover:text-rose-600 flex items-center gap-1 font-medium transition cursor-pointer"
+              onClick={() => setMapTileProvider("google_vector")}
+              className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                mapTileProvider === "google_vector"
+                  ? "bg-[#009966] text-white shadow-2xs"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+              }`}
             >
-              <X size={13} /> Reset Filter
+              Google Peta
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapTileProvider("google_satellite")}
+              className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                mapTileProvider === "google_satellite"
+                  ? "bg-[#009966] text-white shadow-2xs"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+              }`}
+            >
+              Google Satelit
             </button>
           </div>
-        )}
+
+          {/* Fullscreen Map Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#009966] to-emerald-600 hover:from-[#008055] hover:to-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+            title={isMapFullscreen ? "Keluar Layar Penuh" : "Mode Layar Penuh (Peta Lebar Maksimal)"}
+          >
+            {isMapFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            <span>{isMapFullscreen ? "Kecilkan" : "Layar Penuh"}</span>
+          </button>
+        </div>
       </div>
 
+      {/* Map Canvas Viewport */}
       <div
-        className={`relative rounded-xl overflow-hidden ${
-          isSplit
-            ? "h-[450px] sm:h-[500px] lg:h-[calc(100vh-220px)] min-h-[450px]"
-            : "h-[440px] sm:h-[480px]"
-        } z-0 border border-slate-200/80 dark:border-slate-800`}
+        className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 relative ${
+          isMapFullscreen ? "flex-1 min-h-0" : "h-[480px] sm:h-[530px]"
+        }`}
       >
-        {/* Legenda Monitoring Floating Card */}
-        <div className="absolute top-3 right-3 z-[999] max-w-[280px] pointer-events-auto">
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-xl p-3 border border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                  Legenda Simbol Peta
-                </span>
-              </div>
+        {/* Floating In-Map Search Box (Top-Left) */}
+        <div className="absolute top-3 left-3 z-[1000] pointer-events-auto">
+          <div className="relative w-64 sm:w-80 shadow-xl rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+            <div className="flex items-center px-3 py-2">
+              <Search size={14} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2" />
+              <input
+                type="text"
+                placeholder="Cari titik fasilitas atau PIC..."
+                value={mapSearchInput}
+                onChange={(e) => setMapSearchInput(e.target.value)}
+                className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+              />
+              {mapSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => setMapSearchInput("")}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
 
-            <div className="space-y-2.5">
-              {/* Fasilitas */}
+            {/* Quick Suggestions Dropdown */}
+            {mapSearchInput.trim() && (
+              <div className="border-t border-slate-100 dark:border-slate-800 max-h-56 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
+                {mapSearchResults.length > 0 ? (
+                  mapSearchResults.map((fac) => (
+                    <div
+                      key={`map-search-item-${fac.id}`}
+                      onClick={() => {
+                        setMapSearchInput("");
+                        handleViewOnMap(fac.latitude, fac.longitude);
+                      }}
+                      className="px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer transition flex items-center justify-between text-xs"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block truncate">{fac.nama}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">{fac.alamat || fac.rw?.name || "Wilayah Coblong"}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[9.5px] font-bold border shrink-0 ${getFacilityBadgeClass(fac.jenis)}`}>
+                        {formatFacilityTypeLabel(fac.jenis)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-3 py-2.5 text-xs text-slate-400 dark:text-slate-500 font-medium text-center">
+                    Tidak ada fasilitas yang cocok
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Floating Collapsible Legend (Bottom-Right) */}
+        <div className="absolute bottom-3 right-3 z-[1000] pointer-events-auto select-none max-w-[290px] sm:max-w-[310px]">
+          {!isLegendOpen ? (
+            <button
+              type="button"
+              onClick={() => setIsLegendOpen(true)}
+              className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 dark:border-slate-800 flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-[#009966] transition-all cursor-pointer group"
+              title="Tampilkan Legenda Simbol Peta"
+            >
+              <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
+              <span>Legenda Simbol Peta</span>
+              <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          ) : (
+            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl p-3 border border-slate-200/90 dark:border-slate-800 flex flex-col gap-2 min-w-[260px] animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                    Legenda Simbol Peta
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLegendOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  title="Tutup Legenda"
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+
+              {/* Jenis Fasilitas */}
               <div className="space-y-1">
                 <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                   Jenis Fasilitas
@@ -968,7 +758,6 @@ export const PemanfaatanSampah: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
                   </div>
-
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
@@ -991,33 +780,49 @@ export const PemanfaatanSampah: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
+        {/* Leaflet Map Renderer */}
         <MapContainer
           center={[-6.8903, 107.611]}
           zoom={14}
-          style={{ height: '100%', width: '100%' }}
-          className="z-0"
+          scrollWheelZoom={true}
+          attributionControl={false}
+          style={{ height: "100%", width: "100%", zIndex: 1 }}
         >
-          <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
+          <MapResizer isFullscreen={isMapFullscreen} />
+          <ThemeTileLayer
+            lightUrl={mapTileProvider === "google_satellite" ? GOOGLE_SATELLITE_URL : GOOGLE_VECTOR_URL}
+            darkUrl={mapTileProvider === "google_satellite" ? GOOGLE_SATELLITE_URL : GOOGLE_VECTOR_URL}
+          />
           <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
 
           {/* Render Kelurahan Boundaries */}
-          {Object.values(KELURAHAN_GEODATA).map((kg) => (
-            <Polygon
-              key={kg.id}
-              positions={kg.bounds as any}
-              pathOptions={{
-                color: kg.color,
-                weight: 2.5,
-                fillColor: kg.color,
-                fillOpacity: 0.08,
-              }}
-            />
-          ))}
+          {showKelurahanBoundaries &&
+            Object.values(KELURAHAN_GEODATA).map((kg) => (
+              <Polygon
+                key={kg.id}
+                positions={kg.bounds as any}
+                pathOptions={{
+                  color: kg.color,
+                  weight: 2.2,
+                  fillColor: kg.color,
+                  fillOpacity: 0.08,
+                  dashArray: "3, 3",
+                }}
+              >
+                <Popup>
+                  <div className="p-1 text-xs">
+                    <span className="font-extrabold text-slate-900 block">Kelurahan {kg.name}</span>
+                    <span className="text-[10.5px] text-slate-500 font-medium">Kecamatan Coblong</span>
+                  </div>
+                </Popup>
+              </Polygon>
+            ))}
 
-          {filteredItems.map(fac => {
+          {/* Render Markers for Facilities */}
+          {filteredItems.map((fac) => {
             if (!fac.latitude || !fac.longitude) return null;
             const latNum = Number(fac.latitude);
             const lngNum = Number(fac.longitude);
@@ -1029,40 +834,83 @@ export const PemanfaatanSampah: React.FC = () => {
             return (
               <Marker key={fac.id} position={[latNum, lngNum]} icon={icon}>
                 <Popup className="custom-popup">
-                  <div className="p-1 min-w-[220px]">
+                  <div className="p-1 min-w-[240px] max-w-[280px]">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-bold border ${getFacilityBadgeClass(fac.jenis)}`}>
                         {formatFacilityTypeLabel(fac.jenis)}
                       </span>
+                      {fac.kapasitas && fac.kapasitas > 0 ? (
+                        <span className="text-[9.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          {fac.kapasitas} kg
+                        </span>
+                      ) : null}
                     </div>
-                    <h3 className="font-bold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
+
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
+
                     {resolvedFoto && (
                       <div
-                        className="relative group cursor-pointer overflow-hidden rounded-lg mb-2"
+                        className="relative group cursor-pointer overflow-hidden rounded-lg mb-2 border border-slate-200"
                         onClick={() => setPreviewImage({ url: resolvedFoto, title: fac.nama, subtitle: fac.alamat })}
                       >
                         <img
                           src={resolvedFoto}
                           alt={fac.nama}
-                          className="w-full h-28 object-cover rounded-lg shadow-xs hover:scale-105 transition duration-300"
+                          className="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition duration-300"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = "none";
                           }}
                         />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
+                        <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
                           <Eye size={13} /> Lihat Foto
                         </div>
                       </div>
                     )}
+
                     <div className="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-1.5">
-                      <p><strong className="text-slate-900">PIC:</strong> {picInfo.name}</p>
+                      <p>
+                        <strong className="text-slate-900">PIC:</strong> {picInfo.name} ({picInfo.roleBadge})
+                      </p>
                       {picInfo.contact && picInfo.contact !== "-" && (
-                        <p><strong className="text-slate-900">Kontak:</strong> {picInfo.contact}</p>
+                        <p className="flex items-center gap-1">
+                          <strong className="text-slate-900">Kontak:</strong>
+                          <a
+                            href={`https://wa.me/${picInfo.contact.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-emerald-700 font-mono font-bold hover:underline"
+                          >
+                            {picInfo.contact}
+                          </a>
+                        </p>
                       )}
-                      <p><strong className="text-slate-900">Wilayah:</strong> {fac.rw?.name || fac.alamat || "-"}</p>
-                      <p className="text-[10.5px] text-slate-500 font-mono">
+                      <p>
+                        <strong className="text-slate-900">Wilayah:</strong> {fac.rw?.name || fac.alamat || "Coblong"}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-mono">
                         {latNum.toFixed(5)}, {lngNum.toFixed(5)}
                       </p>
+                    </div>
+
+                    <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                      <a
+                        href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10.5px] font-bold border border-blue-200 transition"
+                      >
+                        <ExternalLink size={11} /> Google Maps
+                      </a>
+
+                      {isDeveloper && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingFacility(fac)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10.5px] font-bold transition cursor-pointer"
+                        >
+                          <Edit2 size={11} /> Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                 </Popup>
@@ -1074,11 +922,612 @@ export const PemanfaatanSampah: React.FC = () => {
     </div>
   );
 
+  // =========================================================================
+  // RENDER METRIK & QUICK FILTER CARDS TEPAT DI BAWAH PETA ("ICONNYA DIBAWAH")
+  // =========================================================================
+  const renderMetricCardsBelowMap = () => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Ringkasan Inventaris &amp; Filter Kategori
+        </span>
+        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          Klik kartu untuk memfilter titik peta &amp; direktori
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+        {/* Card 1: Semua Data */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("ALL")}
+          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "ALL"
+              ? "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-md ring-2 ring-emerald-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Semua Titik
+            </span>
+            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "ALL" ? "bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"}`}>
+              <Layers size={17} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.total}
+            </div>
+            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "ALL" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Seluruh Wilayah
+            </p>
+          </div>
+        </button>
+
+        {/* Card 2: Bank Sampah */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("bank_sampah")}
+          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "bank_sampah"
+              ? "bg-blue-50/90 dark:bg-blue-950/60 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Bank Sampah
+            </span>
+            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
+              <Coins size={17} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.bankSampah}
+            </div>
+            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Unit Tabungan
+            </p>
+          </div>
+        </button>
+
+        {/* Card 3: Inovasi Organik */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("organik_group")}
+          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "organik_group"
+              ? "bg-teal-50/90 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Inovasi Organik
+            </span>
+            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
+              <Recycle size={17} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.organik}
+            </div>
+            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Loseda / Maggot
+            </p>
+          </div>
+        </button>
+
+        {/* Card 4: Buruan Sae */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("buruan_sae")}
+          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "buruan_sae"
+              ? "bg-lime-50/90 dark:bg-lime-950/60 border-lime-500 text-lime-950 dark:text-lime-50 shadow-md ring-2 ring-lime-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-lime-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-800 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Buruan Sae
+            </span>
+            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "buruan_sae" ? "bg-lime-200/60 dark:bg-lime-800/60 text-lime-900 dark:text-lime-200" : "bg-lime-50 dark:bg-lime-950/60 text-lime-600 dark:text-lime-400"}`}>
+              <Leaf size={17} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "buruan_sae" ? "text-lime-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.buruanSae}
+            </div>
+            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "buruan_sae" ? "text-lime-700 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Kebun Urban Warga
+            </p>
+          </div>
+        </button>
+
+        {/* Card 5: TPS */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("tps")}
+          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "tps"
+              ? "bg-amber-50/90 dark:bg-amber-950/60 border-amber-500 text-amber-950 dark:text-amber-50 shadow-md ring-2 ring-amber-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-amber-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "tps" ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+              TPS
+            </span>
+            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "tps" ? "bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"}`}>
+              <Trash2 size={17} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "tps" ? "text-amber-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.tps}
+            </div>
+            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "tps" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Penampungan
+            </p>
+          </div>
+        </button>
+
+        {/* Card 6: Kapasitas Olah Total */}
+        <div className="relative p-4 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs">
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Kapasitas Olah
+            </span>
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+              <Boxes size={17} />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 dark:text-white">
+              {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
+            </div>
+            <p className="text-[11.5px] font-semibold mt-0.5 truncate text-slate-500 dark:text-slate-400">
+              Total Kapasitas Terdata
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // =========================================================================
+  // RENDER GRID KARTU DIREKTORI FASILITAS (RESPONSIVE MULTI-COLUMN)
+  // =========================================================================
+  const renderCardsGridView = () => {
+    if (loading) {
+      return (
+        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Loader2 size={32} className="text-emerald-600 animate-spin mx-auto mb-2" />
+          <p className="text-xs font-semibold text-slate-500">Memuat direktori fasilitas...</p>
+        </div>
+      );
+    }
+
+    if (paginatedItems.length === 0) {
+      return (
+        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Sprout size={36} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+          <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Tidak ada fasilitas ditemukan</p>
+          <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau reset filter wilayah.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {paginatedItems.map((item) => {
+          const picInfo = getDisplayPic(item);
+          const resolvedFoto = resolveImageUrl(item.foto);
+          const TypeIcon = getFacilityTypeIcon(item.jenis);
+          const latNum = Number(item.latitude);
+          const lngNum = Number(item.longitude);
+          const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
+
+          return (
+            <div
+              key={item.id}
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group"
+            >
+              <div className="p-4 space-y-3">
+                {/* Header Card: Thumbnail + Info Pokok */}
+                <div className="flex items-start gap-3.5">
+                  {resolvedFoto ? (
+                    <div
+                      className="relative group/thumb cursor-pointer overflow-hidden rounded-xl shrink-0 w-16 h-16 border border-slate-200 dark:border-slate-700 bg-slate-100"
+                      onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
+                      title="Klik perbesar foto"
+                    >
+                      <img
+                        src={resolvedFoto}
+                        alt={item.nama}
+                        className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center text-white transition">
+                        <ZoomIn size={15} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
+                      <TypeIcon size={24} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
+                        <TypeIcon size={11} className="shrink-0" />
+                        {formatFacilityTypeLabel(item.jenis)}
+                      </span>
+                      {item.kapasitas && item.kapasitas > 0 ? (
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                          {item.kapasitas} kg
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-snug line-clamp-1 group-hover:text-[#009966] transition-colors">
+                      {item.nama}
+                    </h4>
+
+                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <MapPin size={12} className="text-emerald-600 shrink-0" />
+                      <span className="truncate">
+                        {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
+                        {item.alamat ? ` • ${item.alamat}` : ""}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PIC Info & WhatsApp */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <User size={13} className="text-slate-400 shrink-0" />
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[130px]">
+                      {picInfo.name}
+                    </span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                      picInfo.isWarga
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                        : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                    }`}>
+                      {picInfo.roleBadge}
+                    </span>
+                  </div>
+
+                  {picInfo.contact && picInfo.contact !== "-" && (
+                    <a
+                      href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
+                      title="Hubungi via WhatsApp"
+                    >
+                      <Phone size={11} />
+                      <span>{picInfo.contact}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Footer: Koordinat GPS, Fokus Peta & Aksi */}
+              <div className="px-4 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  {hasValidCoords && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-emerald-600 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition shadow-2xs"
+                        title="Salin Koordinat GPS"
+                      >
+                        {copiedCoordId === item.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                        <span>{latNum.toFixed(4)}, {lngNum.toFixed(4)}</span>
+                      </button>
+
+                      <a
+                        href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                        title="Buka di Google Maps"
+                      >
+                        <ExternalLink size={13} />
+                      </a>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {hasValidCoords && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewOnMap(latNum, lngNum)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+                      title="Sorot lokasi titik ini di peta GIS atas"
+                    >
+                      <Navigation size={12} />
+                      <span>Lihat di Peta</span>
+                    </button>
+                  )}
+
+                  {isDeveloper && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditingFacility(item)}
+                        className="p-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                        title="Edit Fasilitas"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFacility(item.id)}
+                        className="p-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition cursor-pointer"
+                        title="Hapus Fasilitas"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // =========================================================================
+  // RENDER TABEL DATA LENGKAP DIREKTORI FASILITAS (HIGH-DENSITY TABULAR)
+  // =========================================================================
+  const renderTableView = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse min-w-[950px]">
+        <thead>
+          <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+            <th className="py-3.5 px-4 w-12 text-center">No</th>
+            <th className="py-3.5 px-4 min-w-[240px]">Foto &amp; Fasilitas</th>
+            <th className="py-3.5 px-4 min-w-[150px]">Jenis Fasilitas</th>
+            <th className="py-3.5 px-4 min-w-[200px]">Penanggung Jawab (PIC)</th>
+            <th className="py-3.5 px-4 min-w-[220px]">Wilayah &amp; Koordinat</th>
+            <th className="py-3.5 px-4 min-w-[130px]">Waktu Terdaftar</th>
+            <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
+          {paginatedItems.map((item, index) => {
+            const picInfo = getDisplayPic(item);
+            const resolvedFoto = resolveImageUrl(item.foto);
+            const TypeIcon = getFacilityTypeIcon(item.jenis);
+            const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+            const latNum = Number(item.latitude);
+            const lngNum = Number(item.longitude);
+            const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0;
+
+            return (
+              <tr 
+                key={item.id} 
+                className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition duration-150 group"
+              >
+                {/* 1. Kolom Nomor */}
+                <td className="py-4 px-4 text-center font-bold text-slate-400 dark:text-slate-500">
+                  {rowNumber}
+                </td>
+
+                {/* 2. Kolom Foto & Nama Fasilitas */}
+                <td className="py-4 px-4">
+                  <div className="flex items-center gap-3">
+                    {resolvedFoto ? (
+                      <div
+                        className="relative group cursor-pointer overflow-hidden rounded-xl shrink-0 w-12 h-12 border border-slate-200 dark:border-slate-700"
+                        onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
+                        title="Klik perbesar foto"
+                      >
+                        <img
+                          src={resolvedFoto}
+                          alt={item.nama}
+                          className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition">
+                          <Eye size={12} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
+                        <TypeIcon size={20} className="text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
+                        {item.nama}
+                      </h4>
+                      {item.kapasitas && item.kapasitas > 0 ? (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+                          Kapasitas: <strong className="text-emerald-600 dark:text-emerald-400">{item.kapasitas} kg</strong>
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </td>
+
+                {/* 3. Kolom Jenis Fasilitas */}
+                <td className="py-4 px-4 whitespace-nowrap">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
+                    <TypeIcon size={13} className="shrink-0" />
+                    <span>{formatFacilityTypeLabel(item.jenis)}</span>
+                  </span>
+                </td>
+
+                {/* 4. Kolom Penanggung Jawab */}
+                <td className="py-4 px-4">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
+                        {picInfo.name}
+                      </span>
+                      <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${
+                        picInfo.isWarga
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                          : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                      }`}>
+                        {picInfo.roleBadge}
+                      </span>
+                    </div>
+
+                    {picInfo.contact && picInfo.contact !== "-" && (
+                      <a
+                        href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:underline"
+                        title="Hubungi via WhatsApp"
+                      >
+                        <Phone size={11} />
+                        <span>{picInfo.contact}</span>
+                      </a>
+                    )}
+                  </div>
+                </td>
+
+                {/* 5. Kolom Wilayah & Koordinat */}
+                <td className="py-4 px-4 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold">
+                      <MapPin size={12} className="text-emerald-600 shrink-0" />
+                      <span className="truncate max-w-[200px]">
+                        {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
+                        {item.alamat ? ` • ${item.alamat}` : ""}
+                      </span>
+                    </div>
+
+                    {hasValidCoords && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
+                          className="inline-flex items-center gap-1 text-[10.5px] font-mono text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition"
+                          title="Salin Koordinat GPS"
+                        >
+                          {copiedCoordId === item.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                          <span>{latNum.toFixed(5)}, {lngNum.toFixed(5)}</span>
+                        </button>
+
+                        <a
+                          href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-400 hover:text-blue-600 p-0.5"
+                          title="Buka di Google Maps"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </td>
+
+                {/* 6. Kolom Waktu Terdaftar */}
+                <td className="py-4 px-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-slate-400 shrink-0" />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {new Date(item.createdAt).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </td>
+
+                {/* 7. Kolom Aksi */}
+                <td className="py-4 px-4 text-center whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-2">
+                    {hasValidCoords ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewOnMap(latNum, lngNum)}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-[#009966] dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/80 transition active:scale-95 cursor-pointer shadow-2xs"
+                        title="Tampilkan lokasi titik ini di peta GIS atas"
+                      >
+                        <MapPin size={13} />
+                        <span>Peta</span>
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic px-2">-</span>
+                    )}
+                    
+                    {isDeveloper && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditingFacility(item)}
+                          className="inline-flex items-center justify-center p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/70 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80 transition active:scale-95 cursor-pointer"
+                          title="Edit Fasilitas"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFacility(item.id)}
+                          className="inline-flex items-center justify-center p-1.5 rounded-xl bg-red-50 dark:bg-red-950/70 hover:bg-red-100 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/80 transition active:scale-95 cursor-pointer"
+                          title="Hapus Fasilitas"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+
+          {paginatedItems.length === 0 && (
+            <tr>
+              <td colSpan={7} className="p-12 text-center text-slate-500 dark:text-slate-400">
+                <div className="max-w-xs mx-auto flex flex-col items-center">
+                  <Sprout size={32} className="text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="font-semibold text-sm">Tidak ada fasilitas yang ditemukan</p>
+                  <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter jenis fasilitas.</p>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="pb-24 lg:pb-8 pt-4 sm:pt-6">
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+        
+        {/* ========================================================================= */}
+        {/* HEADER HALAMAN RESMI                                                      */}
+        {/* ========================================================================= */}
         <PageHeader
-          category="Tata Kelola Sampah • Fasilitas"
+          category="Tata Kelola Sampah • Peta Sebaran"
           scope={
             user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
               ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -1088,51 +1537,38 @@ export const PemanfaatanSampah: React.FC = () => {
               ? `Kelurahan ${user?.kelurahan || ""}`
               : "Kecamatan Coblong"
           }
-          title="Fasilitas Pengelolaan Sampah"
-          description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, TPS) di seluruh wilayah binaan."
+          title="Data Fasilitas Pengelolaan Sampah"
+          description="Pemetaan spasial interaktif dan direktori inventaris fasilitas fisik daur ulang sampah (Bank Sampah, Buruan Sae, Inovasi Organik Loseda/Bata Terawang/Maggot, dan TPS) di seluruh wilayah binaan."
           icon={Sprout}
           actions={
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 justify-center">
+            <div className="flex items-center gap-2.5 flex-wrap justify-end">
+              {/* Toggle Switcher Tampilan Direktori */}
+              <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setViewMode("split");
-                    setSearchParams((prev: URLSearchParams) => {
-                      const next = new URLSearchParams(prev);
-                      next.delete("view");
-                      return next;
-                    });
-                  }}
+                  onClick={() => handleViewModeChange("cards")}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    viewMode === "split"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                    viewMode === "cards"
+                      ? "bg-[#009966] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-[#009966]"
                   }`}
-                  title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
+                  title="Tampilan kartu direktori fasilitas"
                 >
                   <LayoutGrid size={14} />
-                  <span>Split-View (Monitoring)</span>
+                  <span>Grid Kartu</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setViewMode("table");
-                    setSearchParams((prev: URLSearchParams) => {
-                      const next = new URLSearchParams(prev);
-                      next.set("view", "table");
-                      return next;
-                    });
-                  }}
+                  onClick={() => handleViewModeChange("table")}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                     viewMode === "table"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+                      ? "bg-[#009966] text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-[#009966]"
                   }`}
-                  title="Tampilan tabel tabular data inventaris lengkap"
+                  title="Tampilan tabel data tabular lengkap"
                 >
                   <Table2 size={14} />
-                  <span>Tabel Data Lengkap</span>
+                  <span>Tabel Lengkap</span>
                 </button>
               </div>
 
@@ -1151,273 +1587,21 @@ export const PemanfaatanSampah: React.FC = () => {
           }
         />
 
-        {/* Banner Penjelasan Data Real-Time */}
-        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 sm:p-4.5 flex items-start gap-3.5 shadow-2xs">
-          <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
-            <Database size={18} />
-          </div>
-          <div className="space-y-1 min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                Data Inventaris Operasional Terverifikasi
-              </span>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
-                100% Real-Time Database
-              </span>
-            </div>
-            <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
-              Menampilkan direktori {items.length > 0 ? items.length : 87} fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
-            </p>
-          </div>
-        </div>
+        {/* ========================================================================= */}
+        {/* 1. SEKSI FULL-MAP GIS INTERAKTIF (LEBAR PENUH & INTERAKTIF)                */}
+        {/* ========================================================================= */}
+        {renderFullMapSection()}
 
         {/* ========================================================================= */}
-        {/* TAMPILAN 1: MODE SPLIT-VIEW (PETA STICKY & DAFTAR KARTU FASILITAS)        */}
+        {/* 2. CARD METRIK & QUICK FILTER KATEGORI ("ICONNYA DIBAWAH PETA")           */}
         {/* ========================================================================= */}
-        {viewMode === "split" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Kolom Kiri: Peta GIS Leaflet Sticky */}
-            <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-8">
-              {renderMapSection(true)}
-            </div>
-
-            {/* Kolom Kanan: Panel Mandiri Ringkasan + Filter + Daftar Fasilitas */}
-            <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-4 space-y-3.5 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto lg:pr-1 custom-scrollbar">
-              {/* Ringkasan Agregat Ringkas (Quick Filter) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Ringkasan Fasilitas
-                  </span>
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Klik untuk filter
-                  </span>
-                </div>
-                {renderCompactMetrics()}
-              </div>
-
-              {/* Toolbar Pencarian & Filter */}
-              {renderCompactFilters()}
-
-              {/* Daftar Kartu Fasilitas Interaktif */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between px-0.5">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Direktori Fasilitas
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Hal {currentPage} dari {totalPages} ({filteredItems.length} total)
-                  </span>
-                </div>
-                {renderFacilityCardsList()}
-              </div>
-
-              {/* Paginasi Kartu */}
-              {!loading && filteredItems.length > 0 && (
-                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredItems.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={setCurrentPage}
-                    onItemsPerPageChange={setItemsPerPage}
-                    itemsPerPageOptions={[10, 20, 30, 50]}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {renderMetricCardsBelowMap()}
 
         {/* ========================================================================= */}
-        {/* TAMPILAN 2: MODE TABEL PENUH (METRIK LENGKAP & PETA LEBAR)                */}
+        {/* 3. DIREKTORI & TABEL INVENTARIS FASILITAS PERSAMPAHAN                     */}
         {/* ========================================================================= */}
-        {viewMode === "table" && (
-          <>
-        {/* ========================================================================= */}
-        {/* 1. CARD JUMLAH FASILITAS (METRIC & QUICK FILTER CARDS - CLEAN LOOK)       */}
-        {/* ========================================================================= */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4.5">
-          
-          {/* Card 1: Semua Fasilitas */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("ALL")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "ALL"
-                ? "bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-md ring-2 ring-emerald-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Semua Data
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "ALL" ? "bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"}`}>
-                <Layers size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.total}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "ALL" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Titik Terdata
-              </p>
-            </div>
-          </button>
-
-          {/* Card 2: Bank Sampah */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("bank_sampah")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "bank_sampah"
-                ? "bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Bank Sampah
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
-                <Coins size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.bankSampah}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Unit Tabungan
-              </p>
-            </div>
-          </button>
-
-          {/* Card 3: Inovasi Organik */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("organik_group")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "organik_group"
-                ? "bg-teal-50/90 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Inovasi Organik
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
-                <Recycle size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.organik}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Loseda / Maggot
-              </p>
-            </div>
-          </button>
-
-          {/* Card 4: Buruan Sae */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("buruan_sae")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "buruan_sae"
-                ? "bg-lime-50/90 dark:bg-lime-950/50 border-lime-500 text-lime-950 dark:text-lime-50 shadow-md ring-2 ring-lime-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-lime-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-800 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Buruan Sae
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "buruan_sae" ? "bg-lime-200/60 dark:bg-lime-800/60 text-lime-900 dark:text-lime-200" : "bg-lime-50 dark:bg-lime-950/60 text-lime-600 dark:text-lime-400"}`}>
-                <Leaf size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "buruan_sae" ? "text-lime-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.buruanSae}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "buruan_sae" ? "text-lime-700 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Kebun Urban Warga
-              </p>
-            </div>
-          </button>
-
-          {/* Card 5: TPS */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("tps")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "tps"
-                ? "bg-amber-50/90 dark:bg-amber-950/50 border-amber-500 text-amber-950 dark:text-amber-50 shadow-md ring-2 ring-amber-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-amber-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "tps" ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-                TPS
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "tps" ? "bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"}`}>
-                <Trash2 size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "tps" ? "text-amber-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.tps}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "tps" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Tempat Penampungan
-              </p>
-            </div>
-          </button>
-
-          {/* Card 6: Kapasitas Olah Total */}
-          <div
-            className="relative p-4 sm:p-4.5 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100"
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Kapasitas Olah
-              </span>
-              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                <Boxes size={17} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
-              </div>
-              <p className="text-xs font-semibold mt-1 truncate text-slate-500 dark:text-slate-400">
-                Kapasitas Fasilitas
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* ========================================================================= */}
-        {/* 2. PETA GIS INTERAKTIF (TABLE VIEW MODE)                                  */}
-        {/* ========================================================================= */}
-        {renderMapSection(false)}
-        </>
-        )}
-
-        {/* ========================================================================= */}
-        {/* 3. TABEL DATA INVENTARIS FASILITAS PERSAMPAHAN (TERPADU & RAPI)            */}
-        {/* ========================================================================= */}
-        {viewMode === "table" && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
-          
-          {/* Toolbar Pencarian & Filter */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
+          {/* Toolbar Pencarian & Filter Terpadu */}
           <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 md:items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
             <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-[#009966] dark:text-emerald-400">
@@ -1425,21 +1609,21 @@ export const PemanfaatanSampah: React.FC = () => {
               </span>
               <div>
                 <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
-                  Daftar Inventaris Fasilitas Pengelolaan Sampah
+                  Direktori Inventaris Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} fasilitas terdata di wilayah operasional
+                  Menampilkan {filteredItems.length} fasilitas terdata di wilayah binaan
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-2.5 w-full md:w-auto">
-              {/* Baris 1: Search */}
+              {/* Baris 1: Pencarian */}
               <div className="relative w-full min-w-[240px]">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   type="text"
-                  placeholder="Cari fasilitas, PIC, alamat, wilayah..."
+                  placeholder="Cari fasilitas, PIC, alamat, RW..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all"
@@ -1455,7 +1639,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 )}
               </div>
 
-              {/* Baris 2: Filter Dropdowns */}
+              {/* Baris 2: Dropdown Filter */}
               <div className="flex flex-wrap gap-2">
                 {/* Filter Jenis */}
                 <div className="relative flex items-center">
@@ -1497,7 +1681,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Filter Wilayah (RW) */}
+                {/* Filter RW */}
                 <div className="relative flex items-center">
                   <Globe size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
                   <select
@@ -1533,11 +1717,12 @@ export const PemanfaatanSampah: React.FC = () => {
                   </div>
                 )}
 
-                {/* Tombol Reset Filter (tampil jika ada filter aktif) */}
-                {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL") && (
+                {/* Reset Filter Button */}
+                {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL" || searchQuery) && (
                   <button
                     type="button"
                     onClick={() => {
+                      setSearchQuery("");
                       setSelectedJenis("ALL");
                       setSelectedKelurahan("ALL");
                       setSelectedRwId("ALL");
@@ -1554,285 +1739,12 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </div>
 
-          {/* Konten Tabel */}
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 size={36} className="text-[#009966] animate-spin mb-3" />
-              <p className="text-slate-500 text-sm font-medium">Memuat data fasilitas...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[920px]">
-                <thead>
-                  <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 text-[11px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 w-12 text-center">No</th>
-                    <th className="py-3.5 px-4 min-w-[240px]">Foto &amp; Fasilitas</th>
-                    <th className="py-3.5 px-4 min-w-[150px]">Jenis Fasilitas</th>
-                    <th className="py-3.5 px-4 min-w-[200px]">Penanggung Jawab (PIC)</th>
-                    <th className="py-3.5 px-4 min-w-[220px]">Wilayah &amp; Koordinat</th>
-                    <th className="py-3.5 px-4 min-w-[140px]">Waktu Terdaftar</th>
-                    <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
-                  {paginatedItems.map((item, index) => {
-                    const picInfo = getDisplayPic(item);
-                    const resolvedFoto = resolveImageUrl(item.foto);
-                    const TypeIcon = getFacilityTypeIcon(item.jenis);
-                    const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                    const latNum = Number(item.latitude);
-                    const lngNum = Number(item.longitude);
-                    const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0;
+          {/* Konten Direktori: Tampilan Kartu Grid ATAU Tabel Lengkap */}
+          <div className="p-4 sm:p-5">
+            {viewMode === "cards" ? renderCardsGridView() : renderTableView()}
+          </div>
 
-                    return (
-                      <tr 
-                        key={item.id} 
-                        className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition duration-150 group"
-                      >
-                        {/* 1. Kolom Nomor */}
-                        <td className="py-4 px-4 text-center font-bold text-slate-400 dark:text-slate-500">
-                          {rowNumber}
-                        </td>
-
-                        {/* 2. Kolom Foto & Nama Fasilitas */}
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3.5">
-                            {/* Thumbnail Foto */}
-                            {resolvedFoto ? (
-                              <div 
-                                className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 group/img cursor-pointer shadow-2xs"
-                                onClick={() => setPreviewImage({ 
-                                  url: resolvedFoto, 
-                                  title: item.nama, 
-                                  subtitle: item.alamat || item.rw?.name 
-                                })}
-                                title="Klik untuk memperbesar foto"
-                              >
-                                <img
-                                  src={resolvedFoto}
-                                  alt={item.nama}
-                                  className="w-full h-full object-cover group-hover/img:scale-110 transition duration-300"
-                                  onError={(e) => {
-                                    // Fallback ke icon jika URL gambar error 404
-                                    (e.target as HTMLElement).style.display = "none";
-                                    const fallbackDiv = (e.target as HTMLElement).nextElementSibling as HTMLElement;
-                                    if (fallbackDiv) fallbackDiv.style.display = "flex";
-                                  }}
-                                />
-                                <div className="hidden absolute inset-0 bg-emerald-50 dark:bg-emerald-950/60 items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                  <Sprout size={20} />
-                                </div>
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition">
-                                  <ZoomIn size={16} />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
-                                <TypeIcon size={22} />
-                              </div>
-                            )}
-
-                            {/* Info Nama & Kapasitas */}
-                            <div className="min-w-0 flex-1">
-                              <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm leading-snug">
-                                {item.nama}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                {item.kapasitas !== undefined && item.kapasitas !== null && item.kapasitas > 0 && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                    <Building2 size={10} /> Kapasitas: {item.kapasitas} kg
-                                  </span>
-                                )}
-                                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                  Aktif
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* 3. Kolom Jenis Fasilitas */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
-                            <TypeIcon size={13} className="shrink-0" />
-                            {formatFacilityTypeLabel(item.jenis)}
-                          </span>
-                        </td>
-
-                        {/* 4. Kolom Penanggung Jawab (PIC Warga / Posko) */}
-                        <td className="py-4 px-4">
-                          <div className="space-y-1.5">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <User size={13} className="text-slate-400 shrink-0" />
-                                <p className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug">
-                                  {picInfo.name}
-                                </p>
-                              </div>
-                              <span className={`inline-block mt-0.5 text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${
-                                picInfo.isWarga
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                  : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
-                              }`}>
-                                {picInfo.roleBadge}
-                              </span>
-                            </div>
-
-                            {picInfo.contact && picInfo.contact !== "-" && (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                                <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <a 
-                                  href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`} 
-                                  target="_blank" 
-                                  rel="noreferrer"
-                                  className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline font-mono text-[11px]"
-                                  title="Hubungi via WhatsApp"
-                                >
-                                  {picInfo.contact}
-                                </a>
-                              </div>
-                            )}
-
-                            {picInfo.registeredByName && (
-                              <div className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5 border-t border-slate-100 dark:border-slate-800/80">
-                                <span>Didata KKN:</span>
-                                <span className="font-medium text-slate-600 dark:text-slate-300 truncate max-w-[130px]">
-                                  {picInfo.registeredByName}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* 5. Kolom Wilayah & Koordinat */}
-                        <td className="py-4 px-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
-                              </span>
-                            </div>
-
-                            {item.alamat && (
-                              <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug line-clamp-2">
-                                {item.alamat}
-                              </p>
-                            )}
-
-                            {hasValidCoords && (
-                              <div className="flex items-center gap-1.5 pt-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
-                                  className="inline-flex items-center gap-1 text-[10.5px] font-mono text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition"
-                                  title="Salin Koordinat GPS"
-                                >
-                                  {copiedCoordId === item.id ? (
-                                    <Check size={11} className="text-emerald-600" />
-                                  ) : (
-                                    <Copy size={11} />
-                                  )}
-                                  <span>{latNum.toFixed(5)}, {lngNum.toFixed(5)}</span>
-                                </button>
-
-                                <a
-                                  href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-slate-400 hover:text-blue-600 p-0.5"
-                                  title="Buka di Google Maps"
-                                >
-                                  <ExternalLink size={12} />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* 6. Kolom Waktu Terdaftar */}
-                        <td className="py-4 px-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar size={12} className="text-slate-400 shrink-0" />
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              {new Date(item.createdAt).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                            <Clock size={11} className="shrink-0" />
-                            <span>
-                              {new Date(item.createdAt).toLocaleTimeString('id-ID', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })} WIB
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* 7. Kolom Aksi */}
-                        <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-2">
-                            {hasValidCoords ? (
-                              <button
-                                type="button"
-                                onClick={() => handleViewOnMap(latNum, lngNum)}
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-[#009966] dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/80 transition active:scale-95 cursor-pointer shadow-2xs"
-                                title="Tampilkan lokasi titik ini di peta GIS"
-                              >
-                                <MapPin size={13} />
-                                <span>Peta</span>
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 italic px-2">-</span>
-                            )}
-                            
-                            {isDeveloper && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingFacility(item)}
-                                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/70 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80 transition active:scale-95 cursor-pointer"
-                                  title="Edit Fasilitas"
-                                >
-                                  <Edit2 size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteFacility(item.id)}
-                                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-red-50 dark:bg-red-950/70 hover:bg-red-100 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/80 transition active:scale-95 cursor-pointer"
-                                  title="Hapus Fasilitas"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-
-                  {paginatedItems.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="p-12 text-center text-slate-500 dark:text-slate-400">
-                        <div className="max-w-xs mx-auto flex flex-col items-center">
-                          <Sprout size={32} className="text-slate-300 dark:text-slate-600 mb-2" />
-                          <p className="font-semibold text-sm">Tidak ada fasilitas yang ditemukan</p>
-                          <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter jenis fasilitas.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Paginasi */}
+          {/* Paginasi Terpadu */}
           {!loading && filteredItems.length > 0 && (
             <div className="border-t border-slate-200 dark:border-slate-800 p-2 sm:p-3 bg-slate-50/40 dark:bg-slate-800/20">
               <Pagination
@@ -1842,13 +1754,11 @@ export const PemanfaatanSampah: React.FC = () => {
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
                 onItemsPerPageChange={setItemsPerPage}
-                itemsPerPageOptions={[10, 25, 50, 100]}
+                itemsPerPageOptions={[6, 12, 24, 48]}
               />
             </div>
           )}
-
         </div>
-        )}
 
       </div>
 
@@ -1864,10 +1774,9 @@ export const PemanfaatanSampah: React.FC = () => {
             className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header Modal */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h4 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                <h4 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
                   {previewImage.title}
                 </h4>
                 {previewImage.subtitle && (
@@ -1885,7 +1794,6 @@ export const PemanfaatanSampah: React.FC = () => {
               </button>
             </div>
 
-            {/* Gambar Besar */}
             <div className="p-4 bg-slate-950 flex items-center justify-center max-h-[70vh] overflow-hidden">
               <img
                 src={previewImage.url}
@@ -1894,7 +1802,6 @@ export const PemanfaatanSampah: React.FC = () => {
               />
             </div>
 
-            {/* Footer Modal */}
             <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
               <span>Foto dokumentasi fasilitas terverifikasi</span>
               <a
@@ -1910,6 +1817,9 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
       )}
 
+      {/* ========================================================================= */}
+      {/* 5. MODAL EDIT & TAMBAH FASILITAS                                           */}
+      {/* ========================================================================= */}
       {editingFacility && (
         <EditFacilityModal
           facility={editingFacility}
@@ -1979,7 +1889,7 @@ const CreateFacilityModal: React.FC<{
           <form id="create-facility-form" onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Fasilitas</label>
-              <input type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Contoh: Bank Sampah Resik Dago" required />
+              <input type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required placeholder="Contoh: Bank Sampah Berkah RW 03" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis Fasilitas</label>
@@ -1995,36 +1905,36 @@ const CreateFacilityModal: React.FC<{
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">PIC (Penanggung Jawab)</label>
-              <input type="text" value={formData.pic} onChange={e => setFormData({...formData, pic: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Nama PIC warga pengelola" required />
+              <input type="text" value={formData.pic} onChange={e => setFormData({...formData, pic: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required placeholder="Nama lengkap pengelola" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kontak PIC</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kontak PIC (Nomor HP/WA)</label>
               <input type="text" value={formData.kontak} onChange={e => setFormData({...formData, kontak: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="08xxxxxxxxxx" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas (kg)</label>
-              <input type="number" value={formData.kapasitas} onChange={e => setFormData({...formData, kapasitas: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Kapasitas tampung/kelola" />
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas Olah (kg)</label>
+              <input type="number" value={formData.kapasitas} onChange={e => setFormData({...formData, kapasitas: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" placeholder="Contoh: 100" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap</label>
-              <textarea value={formData.alamat} onChange={e => setFormData({...formData, alamat: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" rows={2} placeholder="Alamat jalan, nomor, RT/RW, kelurahan" />
+              <textarea value={formData.alamat} onChange={e => setFormData({...formData, alamat: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" rows={2} placeholder="Jalan, RT/RW, Kelurahan..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Latitude</label>
-                <input type="number" step="any" value={formData.latitude} onChange={e => setFormData({...formData, latitude: parseFloat(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+                <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: Number(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Longitude</label>
-                <input type="number" step="any" value={formData.longitude} onChange={e => setFormData({...formData, longitude: parseFloat(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+                <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: Number(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
               </div>
             </div>
           </form>
         </div>
         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-3">
-          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 cursor-pointer">Batal</button>
-          <button type="submit" form="create-facility-form" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 cursor-pointer">
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Simpan Fasilitas
+          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">Batal</button>
+          <button type="submit" form="create-facility-form" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Tambahkan
           </button>
         </div>
       </div>
@@ -2038,14 +1948,14 @@ const EditFacilityModal: React.FC<{
   onSuccess: () => void;
 }> = ({ facility, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    nama: facility.nama,
-    jenis: facility.jenis,
-    pic: facility.pic,
+    nama: facility.nama || "",
+    jenis: facility.jenis || "bank_sampah",
+    pic: facility.pic || "",
     kontak: facility.kontak || "",
     alamat: facility.alamat || "",
     kapasitas: facility.kapasitas || "",
-    latitude: facility.latitude,
-    longitude: facility.longitude,
+    latitude: facility.latitude || -6.885,
+    longitude: facility.longitude || 107.615,
   });
   const [loading, setLoading] = useState(false);
 
@@ -2054,7 +1964,7 @@ const EditFacilityModal: React.FC<{
     setLoading(true);
     try {
       await api.put(`/facilities/${facility.id}`, formData);
-      showToast.success("Fasilitas berhasil diperbarui");
+      showToast.success("Data fasilitas berhasil diperbarui");
       onSuccess();
     } catch (error: any) {
       showToast.error(error.response?.data?.message || "Gagal memperbarui fasilitas");
@@ -2068,9 +1978,9 @@ const EditFacilityModal: React.FC<{
       <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
           <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Edit2 size={18} className="text-emerald-500" /> Edit Fasilitas
+            <Edit2 size={18} className="text-blue-500" /> Edit Fasilitas
           </h3>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -2111,11 +2021,11 @@ const EditFacilityModal: React.FC<{
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Latitude</label>
-                <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+                <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: Number(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Longitude</label>
-                <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+                <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: Number(e.target.value) || 0})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
               </div>
             </div>
           </form>
