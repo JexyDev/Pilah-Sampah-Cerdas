@@ -37,6 +37,8 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Loader2,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -62,6 +64,7 @@ export const AktivitasMonitoring: React.FC = () => {
   const isLurah = role === "LURAH";
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<string>("bulanan");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
   const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
@@ -114,6 +117,7 @@ export const AktivitasMonitoring: React.FC = () => {
   const fetchMonitoringData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
+      setError(null);
 
       const [kpiRes, transRes] = await Promise.all([
         api.get(`/dashboard/kpi?period=${period}&wilayah=${selectedKelurahan}`),
@@ -135,7 +139,12 @@ export const AktivitasMonitoring: React.FC = () => {
       }
     } catch (e: any) {
       console.error("Gagal memuat statistik monitoring pemilahan:", e);
-      showToast.error("Gagal memuat data monitoring pemilahan");
+      const errorMsg =
+        e.response?.data?.message ||
+        e.message ||
+        "Gagal memuat data monitoring pemilahan dari database.";
+      setError(errorMsg);
+      showToast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -281,8 +290,8 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Organik</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
-              {totalOrganik >= 1000 ? (totalOrganik / 1000).toFixed(2) : totalOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalOrganik >= 1000 ? "Ton" : "kg"}</span>
+              {totalOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
           </div>
         </div>
@@ -295,8 +304,8 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Anorganik</p>
             <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">
-              {totalAnorganik >= 1000 ? (totalAnorganik / 1000).toFixed(2) : totalAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalAnorganik >= 1000 ? "Ton" : "kg"}</span>
+              {totalAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
           </div>
         </div>
@@ -309,8 +318,8 @@ export const AktivitasMonitoring: React.FC = () => {
           <div>
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Residu Non-Terpilah</p>
             <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
-              {totalResidu >= 1000 ? (totalResidu / 1000).toFixed(2) : totalResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalResidu >= 1000 ? "Ton" : "kg"}</span>
+              {totalResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
             </p>
           </div>
         </div>
@@ -437,7 +446,7 @@ export const AktivitasMonitoring: React.FC = () => {
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase">Total</span>
                 <span className="text-base font-black text-slate-900 dark:text-slate-100">
-                  {grandTotalKg >= 1000 ? `${Math.round(grandTotalKg / 1000).toLocaleString("id-ID")} Ton` : `${Math.round(grandTotalKg).toLocaleString("id-ID")} kg`}
+                  {Math.round(grandTotalKg).toLocaleString("id-ID")} kg
                 </span>
               </div>
             )}
@@ -546,7 +555,31 @@ export const AktivitasMonitoring: React.FC = () => {
           </div>
         </div>
 
-        {filteredTransactions.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
+            <Loader2 className="animate-spin text-[#009966] dark:text-emerald-400" size={28} />
+            <p className="text-xs font-bold">Memuat log aktivitas pemilahan...</p>
+          </div>
+        ) : error ? (
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3.5 border border-rose-200 dark:border-rose-800/60 shadow-xs">
+              <AlertTriangle size={28} />
+            </div>
+            <h4 className="text-base font-black text-slate-900 dark:text-slate-100">
+              Gagal Memuat Data Pemantauan
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mt-1 leading-relaxed">
+              {error}
+            </p>
+            <button
+              onClick={() => fetchMonitoringData()}
+              className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+            >
+              <RefreshCw size={14} />
+              <span>Muat Ulang Data</span>
+            </button>
+          </div>
+        ) : filteredTransactions.length === 0 ? (
           <EmptyTableState
             entityName="Log Penyetoran Sampah"
             isSearch={!!searchQuery}
