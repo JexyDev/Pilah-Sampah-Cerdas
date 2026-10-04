@@ -40,13 +40,11 @@ import {
   Calendar,
   Clock,
   User,
-  ZoomIn,
   Eye,
   Building2,
   Users,
   Globe,
   Edit2,
-  LayoutGrid,
   Table2,
   Navigation,
   Database,
@@ -56,7 +54,6 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -277,36 +274,9 @@ export const PemanfaatanSampah: React.FC = () => {
   
   const { user } = useAuthStore();
   const isDeveloper = user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER";
-  const [searchParams, setSearchParams] = useSearchParams();
   const [editingFacility, setEditingFacility] = useState<FacilityItem | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // View Mode: "cards" (Grid Kartu) atau "table" (Tabel Data Lengkap)
-  const [viewMode, setViewMode] = useState<"cards" | "table">(
-    searchParams.get("view") === "table" ? "table" : "cards"
-  );
-
-  useEffect(() => {
-    const v = searchParams.get("view");
-    if (v === "table") {
-      setViewMode("table");
-    } else {
-      setViewMode("cards");
-    }
-  }, [searchParams]);
-
-  const handleViewModeChange = (mode: "cards" | "table") => {
-    setViewMode(mode);
-    setSearchParams((prev: URLSearchParams) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "table") {
-        next.set("view", "table");
-      } else {
-        next.delete("view");
-      }
-      return next;
-    });
-  };
 
   const handleDeleteFacility = async (id: string) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus fasilitas ini?")) return;
@@ -1100,198 +1070,6 @@ export const PemanfaatanSampah: React.FC = () => {
     </div>
   );
 
-  // =========================================================================
-  // RENDER GRID KARTU DIREKTORI FASILITAS (RESPONSIVE MULTI-COLUMN)
-  // =========================================================================
-  const renderCardsGridView = () => {
-    if (loading) {
-      return (
-        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Loader2 size={32} className="text-emerald-600 animate-spin mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-500">Memuat direktori fasilitas...</p>
-        </div>
-      );
-    }
-
-    if (paginatedItems.length === 0) {
-      return (
-        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <Sprout size={36} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-          <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Tidak ada fasilitas ditemukan</p>
-          <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau reset filter wilayah.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {paginatedItems.map((item) => {
-          const picInfo = getDisplayPic(item);
-          const resolvedFoto = resolveImageUrl(item.foto);
-          const TypeIcon = getFacilityTypeIcon(item.jenis);
-          const latNum = Number(item.latitude);
-          const lngNum = Number(item.longitude);
-          const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
-
-          return (
-            <div
-              key={item.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group"
-            >
-              <div className="p-4 space-y-3">
-                {/* Header Card: Thumbnail + Info Pokok */}
-                <div className="flex items-start gap-3.5">
-                  {resolvedFoto ? (
-                    <div
-                      className="relative group/thumb cursor-pointer overflow-hidden rounded-xl shrink-0 w-16 h-16 border border-slate-200 dark:border-slate-700 bg-slate-100"
-                      onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
-                      title="Klik perbesar foto"
-                    >
-                      <img
-                        src={resolvedFoto}
-                        alt={item.nama}
-                        className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-300"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center text-white transition">
-                        <ZoomIn size={15} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
-                      <TypeIcon size={24} className="text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
-                        <TypeIcon size={11} className="shrink-0" />
-                        {formatFacilityTypeLabel(item.jenis)}
-                      </span>
-                      {item.kapasitas && item.kapasitas > 0 ? (
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                          {item.kapasitas} kg
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-snug line-clamp-1 group-hover:text-[#009966] transition-colors">
-                      {item.nama}
-                    </h4>
-
-                    <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      <MapPin size={12} className="text-emerald-600 shrink-0" />
-                      <span className="truncate">
-                        {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
-                        {item.alamat ? ` • ${item.alamat}` : ""}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PIC Info & WhatsApp */}
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <User size={13} className="text-slate-400 shrink-0" />
-                    <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[130px]">
-                      {picInfo.name}
-                    </span>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
-                      picInfo.isWarga
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                        : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
-                    }`}>
-                      {picInfo.roleBadge}
-                    </span>
-                  </div>
-
-                  {picInfo.contact && picInfo.contact !== "-" && (
-                    <a
-                      href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
-                      title="Hubungi via WhatsApp"
-                    >
-                      <Phone size={11} />
-                      <span>{picInfo.contact}</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Card Footer: Koordinat GPS, Fokus Peta & Aksi */}
-              <div className="px-4 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  {hasValidCoords && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-emerald-600 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition shadow-2xs"
-                        title="Salin Koordinat GPS"
-                      >
-                        {copiedCoordId === item.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
-                        <span>{latNum.toFixed(4)}, {lngNum.toFixed(4)}</span>
-                      </button>
-
-                      <a
-                        href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                        title="Buka di Google Maps"
-                      >
-                        <ExternalLink size={13} />
-                      </a>
-                    </>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {hasValidCoords && (
-                    <button
-                      type="button"
-                      onClick={() => handleViewOnMap(latNum, lngNum)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
-                      title="Sorot lokasi titik ini di peta GIS atas"
-                    >
-                      <Navigation size={12} />
-                      <span>Lihat di Peta</span>
-                    </button>
-                  )}
-
-                  {isDeveloper && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setEditingFacility(item)}
-                        className="p-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
-                        title="Edit Fasilitas"
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteFacility(item.id)}
-                        className="p-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition cursor-pointer"
-                        title="Hapus Fasilitas"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
 
   // =========================================================================
   // RENDER TABEL DATA LENGKAP DIREKTORI FASILITAS (HIGH-DENSITY TABULAR)
@@ -1541,38 +1319,8 @@ export const PemanfaatanSampah: React.FC = () => {
           description="Pemetaan spasial interaktif dan direktori inventaris fasilitas fisik daur ulang sampah (Bank Sampah, Buruan Sae, Inovasi Organik Loseda/Bata Terawang/Maggot, dan TPS) di seluruh wilayah binaan."
           icon={Sprout}
           actions={
-            <div className="flex items-center gap-2.5 flex-wrap justify-end">
-              {/* Toggle Switcher Tampilan Direktori */}
-              <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange("cards")}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    viewMode === "cards"
-                      ? "bg-[#009966] text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-[#009966]"
-                  }`}
-                  title="Tampilan kartu direktori fasilitas"
-                >
-                  <LayoutGrid size={14} />
-                  <span>Grid Kartu</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange("table")}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    viewMode === "table"
-                      ? "bg-[#009966] text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-[#009966]"
-                  }`}
-                  title="Tampilan tabel data tabular lengkap"
-                >
-                  <Table2 size={14} />
-                  <span>Tabel Lengkap</span>
-                </button>
-              </div>
-
-              {isDeveloper && (
+            isDeveloper ? (
+              <div className="flex items-center gap-2.5 flex-wrap justify-end">
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(true)}
@@ -1582,8 +1330,8 @@ export const PemanfaatanSampah: React.FC = () => {
                   <Plus size={14} />
                   <span>Tambah Fasilitas</span>
                 </button>
-              )}
-            </div>
+              </div>
+            ) : undefined
           }
         />
 
@@ -1739,9 +1487,86 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </div>
 
-          {/* Konten Direktori: Tampilan Kartu Grid ATAU Tabel Lengkap */}
+          {/* Baris Ringkasan Filter Aktif (Pill Badges) */}
+          {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL" || searchQuery) && (
+            <div className="px-4 py-2.5 sm:px-5 bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/50 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-bold text-emerald-800 dark:text-emerald-300">Filter Aktif:</span>
+
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-slate-700 dark:text-slate-200 font-medium">
+                  Pencarian: &ldquo;{searchQuery}&rdquo;
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(""); setCurrentPage(1); }}
+                    className="hover:text-rose-600 ml-0.5 cursor-pointer"
+                    title="Hapus filter pencarian"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {selectedJenis !== "ALL" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-slate-700 dark:text-slate-200 font-medium">
+                  Jenis: <strong className="font-bold text-emerald-700 dark:text-emerald-300">{formatFacilityTypeLabel(selectedJenis)}</strong>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedJenis("ALL"); setCurrentPage(1); }}
+                    className="hover:text-rose-600 ml-0.5 cursor-pointer"
+                    title="Hapus filter jenis"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {selectedKelurahan !== "ALL" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-slate-700 dark:text-slate-200 font-medium">
+                  Kelurahan: Kel. {formatWilayahName(selectedKelurahan)}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedKelurahan("ALL"); setSelectedRwId("ALL"); setCurrentPage(1); }}
+                    className="hover:text-rose-600 ml-0.5 cursor-pointer"
+                    title="Hapus filter kelurahan"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {selectedRwId !== "ALL" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-slate-700 dark:text-slate-200 font-medium">
+                  {formatRwLabel(selectedRwId)}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedRwId("ALL"); setCurrentPage(1); }}
+                    className="hover:text-rose-600 ml-0.5 cursor-pointer"
+                    title="Hapus filter RW"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {selectedKelompokId !== "ALL" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-slate-700 dark:text-slate-200 font-medium">
+                  Kelompok: {kelompokList.find(k => k.id === selectedKelompokId)?.name || selectedKelompokId}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedKelompokId("ALL"); setCurrentPage(1); }}
+                    className="hover:text-rose-600 ml-0.5 cursor-pointer"
+                    title="Hapus filter kelompok"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Konten Direktori: Langsung Tabel Data Lengkap Tabular */}
           <div className="p-4 sm:p-5">
-            {viewMode === "cards" ? renderCardsGridView() : renderTableView()}
+            {renderTableView()}
           </div>
 
           {/* Paginasi Terpadu */}
