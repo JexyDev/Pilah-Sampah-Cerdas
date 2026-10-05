@@ -49,6 +49,21 @@ export function resolveImageUrl(path?: string | null, convertHeic: boolean = tru
     return trimmed;
   }
 
+  // Normalisasi path upload: jika berformat nama file langsung (misal: '1789533802138-...jpg' atau 'uploads/...'):
+  if (trimmed.startsWith("uploads/")) {
+    trimmed = `/${trimmed}`;
+  } else if (
+    !trimmed.includes("/") &&
+    /\.(jpg|jpeg|png|webp|svg|gif|heic|heif|pdf)$/i.test(trimmed)
+  ) {
+    trimmed = `/uploads/${trimmed}`;
+  } else if (
+    /^\/\d{10,}-[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|svg|gif|heic|heif)$/i.test(trimmed) &&
+    !trimmed.startsWith("/uploads/")
+  ) {
+    trimmed = `/uploads${trimmed}`;
+  }
+
   // Dapatkan base URL backend (hapus suffix /api/v1 atau /api)
   const apiBase = getApiBaseUrl();
   let backendOrigin = apiBase.replace(/\/api(\/v1)?\/?$/, "");
@@ -116,6 +131,77 @@ export function handlePoskoImageError(
 ): void {
   const target = event.currentTarget;
   const fallback = getPoskoFallbackImage(nama);
+  if (target.src !== fallback) {
+    target.src = fallback;
+  }
+}
+
+/**
+ * Menghasilkan SVG Data URI representasi visual Fasilitas Pengelolaan Sampah sebagai fallback
+ * jika foto fasilitas 404 / belum tersedia / jaringan terputus.
+ */
+export function getFacilityFallbackImage(
+  jenis: string = "fasilitas",
+  nama: string = "Fasilitas Pengelolaan Sampah"
+): string {
+  const cleanJenis = (jenis || "").toLowerCase().replace(/_/g, " ");
+  const cleanNama = (nama || "Fasilitas").trim();
+  const safeName = cleanNama.length > 28 ? `${cleanNama.slice(0, 25)}...` : cleanNama;
+
+  let gradStart = "#059669"; // Emerald (Bank Sampah / Default)
+  let gradEnd = "#064e3b";
+  let labelBadge = "BANK SAMPAH";
+
+  if (cleanJenis.includes("maggot")) {
+    gradStart = "#d97706"; // Amber
+    gradEnd = "#78350f";
+    labelBadge = "RUMAH MAGGOT";
+  } else if (cleanJenis.includes("kompos") || cleanJenis.includes("loseda") || cleanJenis.includes("bata")) {
+    gradStart = "#0d9488"; // Teal
+    gradEnd = "#134e4a";
+    labelBadge = "PENGOMPOSAN";
+  } else if (cleanJenis.includes("buruan") || cleanJenis.includes("garden") || cleanJenis.includes("tanaman") || cleanJenis.includes("poc")) {
+    gradStart = "#16a34a"; // Green
+    gradEnd = "#14532d";
+    labelBadge = "BURUAN SAE / ORGANIK";
+  } else if (cleanJenis.includes("tps") || cleanJenis.includes("roda")) {
+    gradStart = "#475569"; // Slate
+    gradEnd = "#1e293b";
+    labelBadge = "TPS / PENGUMPULAN";
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+    <defs>
+      <linearGradient id="facGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${gradStart}"/>
+        <stop offset="100%" stop-color="${gradEnd}"/>
+      </linearGradient>
+      <pattern id="facGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#facGrad)"/>
+    <rect width="100%" height="100%" fill="url(#facGrid)"/>
+    <circle cx="400" cy="170" r="54" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+    <path d="M375 180 L400 145 L425 180 L415 180 L415 200 L385 200 L385 180 Z" fill="#ffffff"/>
+    <text x="400" y="265" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#ffffff" letter-spacing="1">DOKUMENTASI FASILITAS</text>
+    <text x="400" y="297" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e2e8f0">${safeName}</text>
+    <rect x="290" y="320" width="220" height="26" rx="13" fill="rgba(255,255,255,0.2)"/>
+    <text x="400" y="337" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="0.5">${labelBadge}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Event handler onError untuk elemen <img> fasilitas agar otomatis beralih ke SVG fallback
+ */
+export function handleFacilityImageError(
+  event: React.SyntheticEvent<HTMLImageElement, Event>,
+  jenis: string = "fasilitas",
+  nama: string = "Fasilitas Pengelolaan Sampah"
+): void {
+  const target = event.currentTarget;
+  const fallback = getFacilityFallbackImage(jenis, nama);
   if (target.src !== fallback) {
     target.src = fallback;
   }

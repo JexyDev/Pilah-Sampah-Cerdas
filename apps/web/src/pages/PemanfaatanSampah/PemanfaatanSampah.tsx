@@ -66,7 +66,7 @@ import {
   GOOGLE_VECTOR_URL,
 } from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
-import { resolveImageUrl } from "../../utils/imageUrl";
+import { resolveImageUrl, handleFacilityImageError, getFacilityFallbackImage } from "../../utils/imageUrl";
 import { sortChronologicalList } from "../../utils/sortUtils";
 import {
   formatRwLabel,
@@ -850,24 +850,22 @@ export const PemanfaatanSampah: React.FC = () => {
 
                     <h3 className="font-extrabold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
 
-                    {resolvedFoto && (
-                      <div
-                        className="relative group cursor-pointer overflow-hidden rounded-lg mb-2 border border-slate-200"
-                        onClick={() => setPreviewImage({ url: resolvedFoto, title: fac.nama, subtitle: fac.alamat })}
-                      >
-                        <img
-                          src={resolvedFoto}
-                          alt={fac.nama}
-                          className="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition duration-300"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
-                          <Eye size={13} /> Lihat Foto
-                        </div>
+                    <div
+                      className="relative group cursor-pointer overflow-hidden rounded-lg mb-2 border border-slate-200"
+                      onClick={() => setPreviewImage({ url: resolvedFoto || getFacilityFallbackImage(fac.jenis, fac.nama), title: fac.nama, subtitle: fac.alamat })}
+                    >
+                      <img
+                        src={resolvedFoto || getFacilityFallbackImage(fac.jenis, fac.nama)}
+                        alt={fac.nama}
+                        className="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition duration-300"
+                        onError={(e) => {
+                          handleFacilityImageError(e, fac.jenis, fac.nama);
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
+                        <Eye size={13} /> Lihat Foto
                       </div>
-                    )}
+                    </div>
 
                     <div className="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-1.5">
                       <p>
@@ -1266,7 +1264,7 @@ export const PemanfaatanSampah: React.FC = () => {
                           alt={item.nama}
                           className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
                           onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
+                            handleFacilityImageError(e, item.jenis, item.nama);
                           }}
                         />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition">
@@ -1769,6 +1767,9 @@ export const PemanfaatanSampah: React.FC = () => {
                 src={previewImage.url}
                 alt={previewImage.title}
                 className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-md"
+                onError={(e) => {
+                  handleFacilityImageError(e, "fasilitas", previewImage.title);
+                }}
               />
             </div>
 
