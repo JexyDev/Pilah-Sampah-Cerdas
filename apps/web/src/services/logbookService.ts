@@ -169,21 +169,81 @@ export interface LogbookComplianceStats {
 
 export type ComplianceStats = LogbookComplianceStats;
 
+export interface LogbookKpiStats {
+  total: number;
+  pendingKetua: number;
+  pendingDpl: number;
+  approved: number;
+  revisi: number;
+}
+
+export interface GetMahasiswaLogbooksParams {
+  groupId?: string;
+  pekanKe?: number;
+  statusApproval?: string;
+  tipeAktivitas?: string;
+  kategori?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const logbookApiService = {
   /**
-   * Mengambil daftar logbook tabular mahasiswa
+   * Mengambil daftar logbook tabular mahasiswa (Mendukung server-side pagination & backwards-compatible array)
    */
-  getMahasiswaLogbooks: async (params?: {
-    groupId?: string;
-    pekanKe?: number;
-    statusApproval?: string;
-    tipeAktivitas?: string;
-    search?: string;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<LogbookMahasiswaItem[]> => {
+  getMahasiswaLogbooks: async (
+    params?: GetMahasiswaLogbooksParams
+  ): Promise<
+    LogbookMahasiswaItem[] & {
+      items: LogbookMahasiswaItem[];
+      totalCount: number;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }
+  > => {
     const res = await api.get("/logbook/mahasiswa", { params });
-    return res.data?.data || [];
+    const rawItems: LogbookMahasiswaItem[] = res.data?.data || [];
+    const totalCount: number =
+      res.data?.pagination?.total ?? res.data?.total ?? rawItems.length;
+
+    return Object.assign([...rawItems], {
+      items: rawItems,
+      totalCount,
+      pagination: res.data?.pagination,
+    });
+  },
+
+  /**
+   * Mengambil ringkasan statistik KPI logbook mahasiswa (Agregasi server-side cepat)
+   */
+  getMahasiswaLogbookStats: async (groupId?: string): Promise<LogbookKpiStats> => {
+    const res = await api.get("/logbook/mahasiswa/stats", {
+      params: { groupId: groupId && groupId !== "ALL" ? groupId : undefined },
+    });
+    return (
+      res.data?.data || {
+        total: 0,
+        pendingKetua: 0,
+        pendingDpl: 0,
+        approved: 0,
+        revisi: 0,
+      }
+    );
+  },
+
+  /**
+   * Mengambil detail satu logbook aktivitas mahasiswa berdasarkan ID
+   */
+  getMahasiswaLogbookById: async (id: string): Promise<LogbookMahasiswaItem | null> => {
+    const res = await api.get(`/logbook/mahasiswa/${id}`);
+    return res.data?.data || null;
   },
 
   /**

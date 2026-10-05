@@ -41,6 +41,7 @@ import * as XLSX from "xlsx";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
+  type LogbookKpiStats,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
@@ -357,6 +358,53 @@ export const LogbookKknPage: React.FC = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  // Debounced Search Query (300ms)
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset ke halaman 1 saat filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    selectedGroup,
+    selectedStatus,
+    selectedKategori,
+    debouncedSearchQuery,
+    startDateFilter,
+    endDateFilter,
+  ]);
+
+  // KPI Statistics Server-Side
+  const [stats, setStats] = useState<LogbookKpiStats>({
+    total: 0,
+    pendingKetua: 0,
+    pendingDpl: 0,
+    approved: 0,
+    revisi: 0,
+  });
+
+  const fetchStats = async () => {
+    try {
+      const data = await logbookApiService.getMahasiswaLogbookStats(
+        selectedGroup !== "ALL" ? selectedGroup : undefined
+      );
+      setStats(data);
+    } catch (err) {
+      console.error("Gagal memuat stats KPI logbook:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [selectedGroup]);
 
   // Modal Detail & Validasi Mahasiswa State
   const [selectedItemDetail, setSelectedItemDetail] = useState<LogbookMahasiswaItem | null>(null);
@@ -390,17 +438,27 @@ export const LogbookKknPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Ambil daftar kelompok
-      const groupData = await dplService.getGroupSummary().catch(() => []);
-      setGroups(sortKelompokList(groupData, (g) => g.name || ""));
+      // 1. Ambil daftar kelompok jika belum ada
+      if (groups.length === 0) {
+        const groupData = await dplService.getGroupSummary().catch(() => []);
+        setGroups(sortKelompokList(groupData, (g) => g.name || ""));
+      }
 
-      // 2. Ambil logbook mahasiswa
+      // 2. Ambil logbook mahasiswa (Server-Side Paginated)
       const mhsData = await logbookApiService.getMahasiswaLogbooks({
         groupId: selectedGroup !== "ALL" ? selectedGroup : undefined,
         statusApproval: selectedStatus !== "ALL" ? selectedStatus : undefined,
-        search: searchQuery || undefined,
+        kategori: selectedKategori !== "ALL" ? selectedKategori : undefined,
+        search: debouncedSearchQuery.trim() || undefined,
+        startDate: startDateFilter || undefined,
+        endDate: endDateFilter || undefined,
+        page: currentPage,
+        limit: pageSize,
       });
-      setLogbooks(mhsData);
+
+      const items = mhsData.items || mhsData;
+      setLogbooks(items);
+      setTotalRecords(mhsData.totalCount ?? items.length);
 
       // 3. Ambil toleransi config
       const conf = await logbookApiService.getToleranceConfig().catch(() => ({ toleranceDays: 1 }));
@@ -416,7 +474,16 @@ export const LogbookKknPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedGroup, selectedStatus]);
+  }, [
+    selectedGroup,
+    selectedStatus,
+    selectedKategori,
+    debouncedSearchQuery,
+    startDateFilter,
+    endDateFilter,
+    currentPage,
+    pageSize,
+  ]);
 
   // Sync modal catatan when selected item changes
   useEffect(() => {
@@ -427,49 +494,8 @@ export const LogbookKknPage: React.FC = () => {
     }
   }, [selectedItemDetail?.id]);
 
-  // Filtered logbooks by category & search & date range with Chronological Sorting (Newest First)
-  const filteredLogbooks = useMemo(() => {
-    const filtered = logbooks.filter((item) => {
-      if (selectedKategori !== "ALL") {
-        const itemKat = resolveKategori(item);
-        if (itemKat !== selectedKategori) return false;
-      }
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchName = (item.penulisNama || "").toLowerCase().includes(q);
-        const matchPlace = (item.tempat || "").toLowerCase().includes(q);
-        const matchDesc = (item.deskripsi || "").toLowerCase().includes(q);
-        const matchGroup = (item.kelompokNama || "").toLowerCase().includes(q);
-        if (!matchName && !matchPlace && !matchDesc && !matchGroup) return false;
-      }
-      if (startDateFilter) {
-        const start = new Date(startDateFilter);
-        start.setHours(0, 0, 0, 0);
-        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
-        if (itemDate < start) return false;
-      }
-      if (endDateFilter) {
-        const end = new Date(endDateFilter);
-        end.setHours(23, 59, 59, 999);
-        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
-        if (itemDate > end) return false;
-      }
-      return true;
-    });
-
-    return sortChronologicalList(filtered, (item) => item.tanggalKegiatan || item.createdAt, "desc");
-  }, [logbooks, selectedKategori, searchQuery, startDateFilter, endDateFilter]);
-
-  // Statistics KPI
-  const stats = useMemo(() => {
-    const total = logbooks.length;
-    const pendingDpl = logbooks.filter((l) => l.statusApproval === "MENUNGGU_VERIFIKASI_DPL").length;
-    const approved = logbooks.filter((l) => l.statusApproval === "DISETUJUI_DPL").length;
-    const revisi = logbooks.filter(
-      (l) => l.statusApproval === "PERLU_REVISI_DPL" || l.statusApproval === "DITOLAK_KETUA"
-    ).length;
-    return { total, pendingDpl, approved, revisi };
-  }, [logbooks]);
+  // Logbook list untuk baris tabel dan aksi
+  const filteredLogbooks = logbooks;
 
   // Target Validasi Serentak / Batch Approval
   const pendingLogbooks = useMemo(() => {
@@ -487,7 +513,7 @@ export const LogbookKknPage: React.FC = () => {
   }, [filteredLogbooks, selectedIds]);
 
   // Pagination Logic
-  const totalPages = Math.max(1, Math.ceil(filteredLogbooks.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
   const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
 
   // Auto-sync currentPage if totalPages shrinks due to search/filter
@@ -497,10 +523,7 @@ export const LogbookKknPage: React.FC = () => {
     }
   }, [totalPages, currentPage]);
 
-  const paginatedLogbooks = useMemo(() => {
-    const start = (safeCurrentPage - 1) * pageSize;
-    return filteredLogbooks.slice(start, start + pageSize);
-  }, [filteredLogbooks, safeCurrentPage, pageSize]);
+  const paginatedLogbooks = logbooks;
 
   // Pending logbooks on current active page
   const paginatedPendingLogbooks = useMemo(() => {
@@ -543,11 +566,10 @@ export const LogbookKknPage: React.FC = () => {
     return new Date(startDateFilter) > new Date(endDateFilter);
   }, [startDateFilter, endDateFilter]);
 
-
   const isExportReady = useMemo(() => {
     if (!startDateFilter || !endDateFilter || isDateRangeInvalid) return false;
-    return filteredLogbooks.length > 0;
-  }, [startDateFilter, endDateFilter, isDateRangeInvalid, filteredLogbooks.length]);
+    return totalRecords > 0;
+  }, [startDateFilter, endDateFilter, isDateRangeInvalid, totalRecords]);
 
   const exportTooltipMessage = useMemo(() => {
     if (!startDateFilter || !endDateFilter) {
@@ -556,16 +578,26 @@ export const LogbookKknPage: React.FC = () => {
     if (isDateRangeInvalid) {
       return "Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'.";
     }
-    if (filteredLogbooks.length === 0) {
+    if (totalRecords === 0) {
       return "Tidak ada data logbook yang sesuai filter untuk diekspor.";
     }
-    return `Ekspor ${filteredLogbooks.length} baris data logbook terfilter ke XLSX`;
-  }, [startDateFilter, endDateFilter, isDateRangeInvalid, filteredLogbooks.length]);
+    return `Ekspor ${totalRecords} baris data logbook terfilter ke XLSX`;
+  }, [startDateFilter, endDateFilter, isDateRangeInvalid, totalRecords]);
 
   // Open Detail Modal
-  const handleOpenDetailModal = (item: LogbookMahasiswaItem) => {
+  const handleOpenDetailModal = async (item: LogbookMahasiswaItem) => {
     setSelectedItemDetail(item);
     setIsDetailModalOpen(true);
+    if (!item.anggotaKelompok || item.anggotaKelompok.length === 0) {
+      try {
+        const fullDetail = await logbookApiService.getMahasiswaLogbookById(item.id);
+        if (fullDetail) {
+          setSelectedItemDetail(fullDetail);
+        }
+      } catch {
+        // Fallback ke item yang ada
+      }
+    }
   };
 
   // Batch Verification Handler (Validasi Semua / Validasi Terpilih)
@@ -592,7 +624,7 @@ export const LogbookKknPage: React.FC = () => {
       );
       setIsBatchModalOpen(false);
       setSelectedIds([]);
-      await fetchData();
+      await Promise.all([fetchData(), fetchStats()]);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal memproses validasi serentak");
     } finally {
@@ -629,7 +661,7 @@ export const LogbookKknPage: React.FC = () => {
           : "Aktivitas berhasil ditolak resmi oleh DPL."
       );
       setIsDetailModalOpen(false);
-      await fetchData();
+      await Promise.all([fetchData(), fetchStats()]);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal memproses validasi");
     } finally {
@@ -662,7 +694,7 @@ export const LogbookKknPage: React.FC = () => {
         setSelectedItemDetail(null);
       }
       setDeleteTargetItem(null);
-      await fetchData();
+      await Promise.all([fetchData(), fetchStats()]);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal menghapus logbook");
     } finally {
@@ -690,13 +722,32 @@ export const LogbookKknPage: React.FC = () => {
   };
 
   // Export XLSX (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
-  const handleExportXlsx = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
+  const handleExportXlsx = async (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
     const isCustom = Boolean(customItems && customItems.length > 0);
     if (!isCustom && (!startDateFilter || !endDateFilter)) {
       toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
-    const itemsToExport = customItems || filteredLogbooks;
+    let itemsToExport = customItems;
+    if (!itemsToExport || itemsToExport.length === 0) {
+      toast.loading("Mempersiapkan data ekspor dari server...", { id: "export-xlsx" });
+      try {
+        const fullRes = await logbookApiService.getMahasiswaLogbooks({
+          groupId: selectedGroup !== "ALL" ? selectedGroup : undefined,
+          statusApproval: selectedStatus !== "ALL" ? selectedStatus : undefined,
+          kategori: selectedKategori !== "ALL" ? selectedKategori : undefined,
+          startDate: startDateFilter || undefined,
+          endDate: endDateFilter || undefined,
+          search: debouncedSearchQuery.trim() || undefined,
+        });
+        itemsToExport = fullRes.items || fullRes;
+        toast.dismiss("export-xlsx");
+      } catch (err: any) {
+        toast.dismiss("export-xlsx");
+        toast.error("Gagal mengambil data untuk ekspor: " + (err.message || ""));
+        return;
+      }
+    }
     if (itemsToExport.length === 0) {
       toast.error("Tidak ada data logbook untuk diekspor");
       return;
@@ -1254,7 +1305,7 @@ export const LogbookKknPage: React.FC = () => {
                     paginatedLogbooks.map((item) => {
                       const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
                       const kategori = resolveKategori(item);
-                      const memberCount = item.anggotaKelompok?.length || 0;
+                      const memberCount = (item as any).anggotaKelompokCount ?? item.anggotaKelompok?.length ?? 0;
                       const isSelected = selectedIds.includes(item.id);
 
                       return (
@@ -1448,11 +1499,11 @@ export const LogbookKknPage: React.FC = () => {
             </div>
 
             {/* Bottom Pagination Bar */}
-            {filteredLogbooks.length > 0 && (
+            {totalRecords > 0 && (
               <Pagination
-                currentPage={currentPage}
+                currentPage={safeCurrentPage}
                 totalPages={totalPages}
-                totalItems={filteredLogbooks.length}
+                totalItems={totalRecords}
                 itemsPerPage={pageSize}
                 onPageChange={setCurrentPage}
                 onItemsPerPageChange={(newSize) => {
