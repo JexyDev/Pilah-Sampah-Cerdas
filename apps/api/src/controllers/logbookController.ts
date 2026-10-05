@@ -32,6 +32,7 @@ export const logbookController = {
         pekanKe,
         statusApproval,
         tipeAktivitas,
+        kategori,
         search,
         startDate,
         endDate,
@@ -39,22 +40,60 @@ export const logbookController = {
         limit,
       } = req.query;
 
-      const data = await logbookService.getMahasiswaLogbooks(userId, userRole, {
+      const pageNum = page ? parseInt(page as string, 10) : undefined;
+      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+
+      const result = await logbookService.getMahasiswaLogbooks(userId, userRole, {
         groupId: groupId as string,
         pekanKe: pekanKe ? parseInt(pekanKe as string, 10) : undefined,
         statusApproval: statusApproval as string,
         tipeAktivitas: tipeAktivitas as string,
+        kategori: kategori as string,
         search: search as string,
         startDate: startDate as string,
         endDate: endDate as string,
-        page: page ? parseInt(page as string, 10) : undefined,
-        limit: limit ? parseInt(limit as string, 10) : undefined,
+        page: pageNum,
+        limit: limitNum,
       });
 
-      const total = Array.isArray(data) ? data.length : 0;
-      res.status(200).json({ success: true, total, data });
+      const items = Array.isArray(result) ? result : result.items;
+      const total = Array.isArray(result) ? result.length : result.totalCount;
+
+      res.status(200).json({
+        success: true,
+        total,
+        data: items,
+        pagination: {
+          page: pageNum || 1,
+          limit: limitNum || total,
+          total,
+          totalPages: limitNum && limitNum > 0 ? Math.ceil(total / limitNum) : 1,
+        },
+      });
     } catch (error: any) {
       console.error("[logbookController.getMahasiswaLogbooks] error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
+
+  /**
+   * Mengambil agregasi statistik KPI logbook mahasiswa (Cepat & Ringan)
+   */
+  getMahasiswaLogbookStats: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      const { groupId } = req.query;
+
+      const data = await logbookService.getMahasiswaLogbookStats(
+        userId,
+        userRole,
+        groupId as string | undefined
+      );
+
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[logbookController.getMahasiswaLogbookStats] error:", error);
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   },

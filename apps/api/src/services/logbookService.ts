@@ -127,6 +127,7 @@ export class LogbookService {
       pekanKe?: number;
       statusApproval?: string;
       tipeAktivitas?: string;
+      kategori?: string;
       search?: string;
       startDate?: string;
       endDate?: string;
@@ -208,86 +209,110 @@ export class LogbookService {
       ];
     }
 
+    if (filters.kategori && filters.kategori !== "ALL") {
+      const kat = filters.kategori.toLowerCase();
+      const keywordConditions: any[] = [
+        { programKerja: { kategori: { contains: filters.kategori, mode: "insensitive" } } },
+      ];
+      if (kat === "pemilahan") {
+        keywordConditions.push({ deskripsi: { contains: "pilah", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "pemilahan", mode: "insensitive" } });
+      } else if (kat === "pengangkutan") {
+        keywordConditions.push({ deskripsi: { contains: "angkut", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "pengangkutan", mode: "insensitive" } });
+      } else if (kat === "pengolahan") {
+        keywordConditions.push({ deskripsi: { contains: "kompos", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "olah", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "pengolahan", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "maggot", mode: "insensitive" } });
+      } else if (kat === "pemanfaatan") {
+        keywordConditions.push({ deskripsi: { contains: "poc", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "manfaat", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "pemanfaatan", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "kebun", mode: "insensitive" } });
+      } else if (kat === "sosialisasi") {
+        keywordConditions.push({ deskripsi: { contains: "sosialisasi", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "edukasi", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "penyuluhan", mode: "insensitive" } });
+      } else if (kat === "pendataan") {
+        keywordConditions.push({ deskripsi: { contains: "survei", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "data", mode: "insensitive" } });
+        keywordConditions.push({ deskripsi: { contains: "pendataan", mode: "insensitive" } });
+      } else {
+        keywordConditions.push({ deskripsi: { contains: filters.kategori, mode: "insensitive" } });
+      }
+      where.AND = [...(where.AND || []), { OR: keywordConditions }];
+    }
+
     const take = filters.limit && Number(filters.limit) > 0 ? Number(filters.limit) : undefined;
     const skip =
       take && filters.page && Number(filters.page) > 0
         ? (Number(filters.page) - 1) * take
         : undefined;
 
-    const logbooks = await prisma.logbookKkn.findMany({
-      where,
-      take,
-      skip,
-      include: {
-        penulis: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            fotoProfil: true,
-            studentProfile: {
-              select: {
-                id: true,
-                nim: true,
-                jurusan: true,
-                fakultas: true,
-                isKetua: true,
-              },
-            },
-          },
-        },
-        kelompok: {
-          select: {
-            id: true,
-            name: true,
-            kelurahan: true,
-            cakupanRw: true,
-            dpl: { select: { id: true, name: true, phone: true, nip: true } },
-            students: {
-              select: {
-                id: true,
-                userId: true,
-                nim: true,
-                isKetua: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    phone: true,
-                  },
+    const [totalCount, logbooks] = await Promise.all([
+      prisma.logbookKkn.count({ where }),
+      prisma.logbookKkn.findMany({
+        where,
+        take,
+        skip,
+        include: {
+          penulis: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              fotoProfil: true,
+              studentProfile: {
+                select: {
+                  id: true,
+                  nim: true,
+                  jurusan: true,
+                  fakultas: true,
+                  isKetua: true,
                 },
               },
             },
           },
-        },
-        programKerja: {
-          select: {
-            id: true,
-            nomor: true,
-            deskripsi: true,
-            kategori: true,
-            status: true,
-            statusUsulan: true,
-            statusPelaksanaan: true,
-            linkGoogleDrive: true,
-            waktuPelaksanaan: true,
+          kelompok: {
+            select: {
+              id: true,
+              name: true,
+              kelurahan: true,
+              cakupanRw: true,
+              dpl: { select: { id: true, name: true, phone: true, nip: true } },
+              _count: { select: { students: true } },
+            },
           },
-        },
-        fasilitas: {
-          select: {
-            id: true,
-            nama: true,
-            jenis: true,
-            alamat: true,
-            latitude: true,
-            longitude: true,
+          programKerja: {
+            select: {
+              id: true,
+              nomor: true,
+              deskripsi: true,
+              kategori: true,
+              status: true,
+              statusUsulan: true,
+              statusPelaksanaan: true,
+              linkGoogleDrive: true,
+              waktuPelaksanaan: true,
+            },
           },
+          fasilitas: {
+            select: {
+              id: true,
+              nama: true,
+              jenis: true,
+              alamat: true,
+              latitude: true,
+              longitude: true,
+            },
+          },
+          disetujuiKetuaOleh: { select: { id: true, name: true } },
+          diverifikasiDplOleh: { select: { id: true, name: true } },
         },
-        disetujuiKetuaOleh: { select: { id: true, name: true } },
-        diverifikasiDplOleh: { select: { id: true, name: true } },
-      },
-      orderBy: [{ tanggalKegiatan: "desc" }, { createdAt: "desc" }],
-    });
+        orderBy: [{ tanggalKegiatan: "desc" }, { createdAt: "desc" }],
+      }),
+    ]);
 
     // Peta foto bukti per kelompok dan tanggal untuk fallback aktivitas kelompok yang dikerjakan bersama
     const groupPhotoMap = new Map<string, { fotoBuktiUrl: string; attachmentUrls: string[] }>();
@@ -307,7 +332,7 @@ export class LogbookService {
       }
     }
 
-    return logbooks.map((item, index) => {
+    const items = logbooks.map((item, index) => {
       const dateStr = item.tanggalKegiatan
         ? item.tanggalKegiatan.toISOString().split("T")[0]
         : "-";
@@ -326,7 +351,7 @@ export class LogbookService {
           : groupFallback?.attachmentUrls || [];
 
       return {
-        nomor: item.nomor || index + 1,
+        nomor: skip !== undefined ? skip + index + 1 : item.nomor || index + 1,
         id: item.id,
         kelompokId: item.kelompokId,
         kelompokNama: item.kelompok?.name || "Kelompok KKN",
@@ -353,63 +378,133 @@ export class LogbookService {
         tipeAktivitas: item.tipeAktivitas,
         pekanKe: item.pekanKe,
         statusApproval: item.statusApproval,
-      programKerjaId: item.programKerjaId,
-      programKerja: item.programKerja
-        ? {
-            id: item.programKerja.id,
-            nomor: item.programKerja.nomor,
-            deskripsi: item.programKerja.deskripsi,
-            kategori: item.programKerja.kategori,
-            status: item.programKerja.status,
-            statusUsulan: (item.programKerja as any).statusUsulan,
-            statusPelaksanaan: (item.programKerja as any).statusPelaksanaan,
-            linkGoogleDrive: item.programKerja.linkGoogleDrive,
-            waktuPelaksanaan: item.programKerja.waktuPelaksanaan,
-          }
-        : null,
-      programKerjaDeskripsi: item.programKerja?.deskripsi || null,
-      programKerjaKategori: item.programKerja?.kategori || null,
-      fasilitasId: item.fasilitasId,
-      fasilitas: item.fasilitas
-        ? {
-            id: item.fasilitas.id,
-            nama: item.fasilitas.nama,
-            jenis: item.fasilitas.jenis,
-            alamat: item.fasilitas.alamat,
-            latitude: item.fasilitas.latitude ? Number(item.fasilitas.latitude) : null,
-            longitude: item.fasilitas.longitude ? Number(item.fasilitas.longitude) : null,
-          }
-        : null,
-      fasilitasNama: item.fasilitas?.nama || null,
-      dpl: item.kelompok?.dpl
-        ? {
-            id: item.kelompok.dpl.id,
-            name: item.kelompok.dpl.name,
-            phone: item.kelompok.dpl.phone,
-            nip: item.kelompok.dpl.nip,
-          }
-        : null,
-      dplNama: item.kelompok?.dpl?.name || "-",
-      anggotaKelompok:
-        item.kelompok?.students
-          ?.filter((s) => s.user)
-          .map((s) => ({
-            id: s.id,
-            userId: s.userId || s.user?.id,
-            nim: s.nim || "-",
-            name: s.user?.name || "Mahasiswa",
-            isKetua: Boolean(s.isKetua),
-          })) || [],
-      disetujuiKetuaOleh: item.disetujuiKetuaOleh?.name || null,
-      disetujuiKetuaPada: item.disetujuiKetuaPada,
-      catatanKetua: item.catatanKetua,
-      diverifikasiDplOleh: item.diverifikasiDplOleh?.name || null,
-      diverifikasiDplPada: item.diverifikasiDplPada,
-      catatanDpl: item.catatanDpl,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    };
+        programKerjaId: item.programKerjaId,
+        programKerja: item.programKerja
+          ? {
+              id: item.programKerja.id,
+              nomor: item.programKerja.nomor,
+              deskripsi: item.programKerja.deskripsi,
+              kategori: item.programKerja.kategori,
+              status: item.programKerja.status,
+              statusUsulan: (item.programKerja as any).statusUsulan,
+              statusPelaksanaan: (item.programKerja as any).statusPelaksanaan,
+              linkGoogleDrive: item.programKerja.linkGoogleDrive,
+              waktuPelaksanaan: item.programKerja.waktuPelaksanaan,
+            }
+          : null,
+        programKerjaDeskripsi: item.programKerja?.deskripsi || null,
+        programKerjaKategori: item.programKerja?.kategori || null,
+        fasilitasId: item.fasilitasId,
+        fasilitas: item.fasilitas
+          ? {
+              id: item.fasilitas.id,
+              nama: item.fasilitas.nama,
+              jenis: item.fasilitas.jenis,
+              alamat: item.fasilitas.alamat,
+              latitude: item.fasilitas.latitude ? Number(item.fasilitas.latitude) : null,
+              longitude: item.fasilitas.longitude ? Number(item.fasilitas.longitude) : null,
+            }
+          : null,
+        fasilitasNama: item.fasilitas?.nama || null,
+        dpl: item.kelompok?.dpl
+          ? {
+              id: item.kelompok.dpl.id,
+              name: item.kelompok.dpl.name,
+              phone: item.kelompok.dpl.phone,
+              nip: item.kelompok.dpl.nip,
+            }
+          : null,
+        dplNama: item.kelompok?.dpl?.name || "-",
+        anggotaKelompokCount: (item.kelompok as any)?._count?.students || 0,
+        anggotaKelompok: [],
+        disetujuiKetuaOleh: item.disetujuiKetuaOleh?.name || null,
+        disetujuiKetuaPada: item.disetujuiKetuaPada,
+        catatanKetua: item.catatanKetua,
+        diverifikasiDplOleh: item.diverifikasiDplOleh?.name || null,
+        diverifikasiDplPada: item.diverifikasiDplPada,
+        catatanDpl: item.catatanDpl,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      };
     });
+
+    return {
+      items,
+      totalCount,
+    };
+  }
+
+  /**
+   * Mengambil agregasi statistik KPI logbook mahasiswa dengan strict DPL scoping
+   */
+  async getMahasiswaLogbookStats(
+    userId: string,
+    userRole: string,
+    groupId?: string
+  ): Promise<{
+    total: number;
+    pendingKetua: number;
+    pendingDpl: number;
+    approved: number;
+    revisi: number;
+  }> {
+    const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole.toUpperCase());
+    const isMhs = userRole.toUpperCase() === "MAHASISWA_KKN";
+
+    const baseWhere: any = {};
+
+    if (isDpl) {
+      const allowedGroups = await prisma.kelompokKkn.findMany({
+        where: await getKelompokWhere(userId, userRole),
+        select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
+      });
+      const dplGroupIds = allowedGroups
+        .filter((g) => !isTestKelompok(g))
+        .map((g) => g.id);
+
+      if (groupId && groupId !== "ALL" && groupId !== "Semua Kelompok") {
+        baseWhere.kelompokId = groupId;
+      } else if (dplGroupIds.length > 0) {
+        baseWhere.kelompokId = { in: dplGroupIds };
+      }
+    } else if (isMhs) {
+      baseWhere.penulisId = userId;
+    } else if (groupId && groupId !== "ALL" && groupId !== "Semua Kelompok") {
+      baseWhere.kelompokId = groupId;
+    } else {
+      const validGroups = await prisma.kelompokKkn.findMany({
+        select: { id: true, name: true, kelurahan: true, dplNamaMentah: true },
+      });
+      const cleanGroupIds = validGroups
+        .filter((g) => !isTestKelompok(g))
+        .map((g) => g.id);
+      baseWhere.kelompokId = { in: cleanGroupIds };
+    }
+
+    if (!isMhs) {
+      baseWhere.penulis = { isTestAccount: false };
+    }
+
+    const [total, pendingKetua, pendingDpl, approved, revisi] = await Promise.all([
+      prisma.logbookKkn.count({ where: baseWhere }),
+      prisma.logbookKkn.count({
+        where: { ...baseWhere, statusApproval: StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA },
+      }),
+      prisma.logbookKkn.count({
+        where: { ...baseWhere, statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL },
+      }),
+      prisma.logbookKkn.count({
+        where: { ...baseWhere, statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
+      }),
+      prisma.logbookKkn.count({
+        where: {
+          ...baseWhere,
+          statusApproval: { in: [StatusLogbookKkn.PERLU_REVISI_DPL, StatusLogbookKkn.DITOLAK_KETUA] },
+        },
+      }),
+    ]);
+
+    return { total, pendingKetua, pendingDpl, approved, revisi };
   }
 
   /**

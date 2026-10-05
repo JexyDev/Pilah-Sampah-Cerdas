@@ -1791,30 +1791,39 @@ export class BinService {
 
     const updated = await binRepository.updateResetRequestStatus(id, status as any, reviewedById);
 
+    let pointsEarned = 0;
+
     if (status === "APPROVED" || status === "COMPLETED") {
       // Reset Bin volume
       await binRepository.updateVolume(request.binId, 0.0);
 
       if (reviewedById) {
+        // Cek duplikasi reward berbasis ID UNIK pengajuan ([RequestID:id] atau (id)), BUKAN qrCode bin
         const existingReward = await prisma.pointHistory.findFirst({
           where: {
             userId: reviewedById,
-            description: { contains: request.bin?.qrCode || id },
+            OR: [
+              { description: { contains: `[RequestID:${id}]` } },
+              { description: { contains: `(${id})` } },
+            ],
             kategori: "VALIDASI_PENGOSONGAN",
           },
         });
         if (!existingReward) {
-          await prisma.pointHistory
-            .create({
+          try {
+            await prisma.pointHistory.create({
               data: {
                 userId: reviewedById,
                 points: 5,
-                description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
+                description: `Reward validasi pengosongan tempat sampah ${request.bin?.qrCode || ""} [RequestID:${id}]`,
                 kategori: "VALIDASI_PENGOSONGAN",
                 redeemable: false,
               },
-            })
-            .catch(() => {});
+            });
+            pointsEarned = 5;
+          } catch (err) {
+            console.error(`[binService] Gagal mencatat pointHistory untuk petugas ${reviewedById}:`, err);
+          }
         }
       }
 
@@ -1891,7 +1900,10 @@ export class BinService {
       })
       .catch(() => {});
 
-    return updated;
+    return {
+      ...updated,
+      pointsEarned,
+    };
   }
 
   /**

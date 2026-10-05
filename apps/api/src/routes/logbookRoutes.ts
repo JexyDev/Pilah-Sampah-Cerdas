@@ -43,6 +43,25 @@ router.get(
   logbookController.getMahasiswaLogbooks
 );
 
+// Mengambil ringkasan statistik KPI logbook mahasiswa (Agregasi cepat)
+router.get(
+  "/mahasiswa/stats",
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
+  logbookController.getMahasiswaLogbookStats
+);
+
 // Mengambil detail satu logbook aktivitas mahasiswa berdasarkan ID
 router.get(
   "/mahasiswa/:id",
