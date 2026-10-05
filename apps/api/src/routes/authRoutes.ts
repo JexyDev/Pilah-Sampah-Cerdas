@@ -9,7 +9,7 @@ import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { loginRateLimiter, otpRateLimiter, registerRateLimiter } from "../middlewares/rateLimiter.js";
+import { loginRateLimiter, otpRateLimiter, registerRateLimiter, refreshRateLimiter } from "../middlewares/rateLimiter.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
@@ -173,7 +173,7 @@ router.post("/reset-password", otpRateLimiter, authController.resetPassword);
  *       401:
  *         description: Invalid or expired refresh token
  */
-router.post("/refresh", authController.refresh);
+router.post("/refresh", refreshRateLimiter, authController.refresh);
 
 /**
  * @swagger

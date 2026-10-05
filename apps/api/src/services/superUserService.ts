@@ -59,14 +59,23 @@ export class SuperUserService {
         status: "ACTIVE_BOUND",
       },
       include: {
-        user: true,
-        rw: { include: { kelurahan: true } },
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        rw: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: { select: { name: true } },
+          },
+        },
         setoranOtomatis: {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
         binResetRequests: {
           orderBy: { updatedAt: "desc" },
+          take: 5,
         },
       },
     });

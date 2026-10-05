@@ -295,7 +295,6 @@ const checkRouteActive = (
 
     const evaluasiAliases = [
       "/hasil-survei/evaluasi-dan-dampak",
-      "/evaluasi-dampak-kkn",
       "/evaluasi-dampak",
     ];
     if (evaluasiAliases.includes(tPath) && evaluasiAliases.includes(cPath)) return true;
@@ -1763,7 +1762,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/evaluasi-dampak-kkn",
+              to: "/dampak-nilai-ekonomis",
               label: "Dampak & Nilai Ekonomis",
               allowed: [
                 "DEVELOPER",
