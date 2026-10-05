@@ -1390,7 +1390,13 @@ export class BinController {
     try {
       const userId = req.user!.userId;
       const requests = await prisma.binResetRequest.findMany({
-        where: { userId },
+        where: {
+          OR: [
+            { userId },
+            { bin: { userId } },
+            { bin: { binOwnerships: { some: { userId } } } },
+          ],
+        },
         orderBy: { createdAt: "desc" },
         include: { bin: true },
       });
@@ -1400,7 +1406,7 @@ export class BinController {
         data: requests.map((r: any) => ({
           id: r.id,
           binId: r.binId,
-          qrCode: r.bin.qrCode,
+          qrCode: r.bin?.qrCode || "",
           status: r.status,
           evidencePhotoUrl: r.evidencePhotoUrl,
           createdAt: r.createdAt,
@@ -1653,9 +1659,60 @@ export class BinController {
       } else if (error.message === "FORBIDDEN") {
         res.status(403).json({ error: "FORBIDDEN", message: "Anda tidak berhak membatalkan pengajuan ini" });
       } else if (error.message === "ALREADY_PROCESSED") {
-        res.status(400).json({ error: "ALREADY_PROCESSED", message: "Pengajuan sudah diproses atau tidak dalam status PENDING" });
+        res.status(400).json({ error: "ALREADY_PROCESSED", message: "Pengajuan sudah diproses atau tidak dalam status PENDING/ASSIGNED" });
       } else {
         res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal membatalkan pengajuan" });
+      }
+    }
+  }
+
+  /**
+   * Batalkan pengajuan aktif langsung berdasarkan binId (Granular Per-Item)
+   */
+  async cancelResetRequestByBinId(req: Request, res: Response): Promise<void> {
+    try {
+      const { binId } = req.params;
+      const userId = req.user!.userId;
+      const userRole = req.user!.role;
+
+      const result = await binService.cancelResetRequestByBinId(binId, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Pengajuan pengosongan tempat sampah berhasil dibatalkan.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[BinController] cancelResetRequestByBinId error:", error);
+
+      // Validasi ketat: Tempat sampah tanpa pengajuan TIDAK BISA dibatalkan
+      if (
+        error.message === "NO_ACTIVE_RESET_REQUEST" ||
+        error.message === "RESOURCE_NOT_FOUND" ||
+        error.message === "REQUEST_NOT_FOUND"
+      ) {
+        res.status(404).json({
+          success: false,
+          error: "NO_ACTIVE_RESET_REQUEST",
+          message: "Tempat sampah ini tidak memiliki pengajuan pengosongan aktif yang dapat dibatalkan.",
+        });
+      } else if (error.message === "FORBIDDEN") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak berhak membatalkan pengajuan tempat sampah ini.",
+        });
+      } else if (error.message === "ALREADY_PROCESSED") {
+        res.status(400).json({
+          success: false,
+          error: "ALREADY_PROCESSED",
+          message: "Pengajuan sudah selesai diproses oleh petugas sehingga tidak dapat dibatalkan.",
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: "INTERNAL_SERVER_ERROR",
+          message: "Gagal membatalkan pengajuan tempat sampah.",
+        });
       }
     }
   }
