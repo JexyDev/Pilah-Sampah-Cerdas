@@ -526,6 +526,51 @@ router.delete(
   binController.cancelResetRequest
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/{binId}/cancel-reset:
+ *   put:
+ *     summary: Batalkan pengajuan pengosongan aktif berdasarkan ID Tempat Sampah (binId)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: binId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pengajuan tempat sampah berhasil dibatalkan
+ *       404:
+ *         description: Tempat sampah tidak memiliki pengajuan aktif (NO_ACTIVE_RESET_REQUEST)
+ */
+router.put(
+  "/:binId/cancel-reset",
+  authMiddleware,
+  roleMiddleware(["WARGA", "MAHASISWA_KKN", "ADMIN_DLH", "SUPER_USER", "DEVELOPER", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequestByBinId
+);
+router.delete(
+  "/:binId/cancel-reset",
+  authMiddleware,
+  roleMiddleware(["WARGA", "MAHASISWA_KKN", "ADMIN_DLH", "SUPER_USER", "DEVELOPER", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequestByBinId
+);
+router.put(
+  "/reset-request/cancel-by-bin/:binId",
+  authMiddleware,
+  roleMiddleware(["WARGA", "MAHASISWA_KKN", "ADMIN_DLH", "SUPER_USER", "DEVELOPER", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequestByBinId
+);
+router.delete(
+  "/reset-request/cancel-by-bin/:binId",
+  authMiddleware,
+  roleMiddleware(["WARGA", "MAHASISWA_KKN", "ADMIN_DLH", "SUPER_USER", "DEVELOPER", "RW", "PANITIA_TASKFORCE"]),
+  binController.cancelResetRequestByBinId
+);
+
 router.post(
   "/qr-batch",
   authMiddleware,

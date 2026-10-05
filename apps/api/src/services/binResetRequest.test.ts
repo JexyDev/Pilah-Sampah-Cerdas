@@ -9,6 +9,7 @@ vi.mock("../lib/prisma.js", () => {
     prisma: {
       binResetRequest: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         update: vi.fn(),
         create: vi.fn(),
@@ -21,6 +22,10 @@ vi.mock("../lib/prisma.js", () => {
       },
       user: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
+      },
+      binOwnership: {
+        findFirst: vi.fn(),
         findMany: vi.fn(),
       },
     },
@@ -131,7 +136,27 @@ describe("BinResetRequest Service & Scoping", () => {
       ).rejects.toThrow("FORBIDDEN");
     });
 
-    it("should throw ALREADY_PROCESSED if request status is not PENDING", async () => {
+    it("should allow requester (warga) to cancel their ASSIGNED reset request", async () => {
+      const mockRequest = {
+        id: "req-1",
+        binId: "bin-1",
+        userId: "warga-123",
+        status: "ASSIGNED",
+        bin: { qrCode: "TSC-001" },
+        user: { name: "Ibu Winarti" },
+      };
+
+      vi.mocked(prisma.binResetRequest.findUnique).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "CANCELLED",
+      } as any);
+
+      const result = await binService.cancelResetRequest("req-1", "warga-123", "WARGA");
+      expect(result.status).toBe("CANCELLED");
+    });
+
+    it("should throw ALREADY_PROCESSED if request status is not PENDING or ASSIGNED (e.g. COMPLETED)", async () => {
       const mockRequest = {
         id: "req-1",
         binId: "bin-1",
@@ -144,6 +169,93 @@ describe("BinResetRequest Service & Scoping", () => {
       await expect(
         binService.cancelResetRequest("req-1", "warga-123", "WARGA")
       ).rejects.toThrow("ALREADY_PROCESSED");
+    });
+
+    it("should allow cancelling reset request directly by binId for the requester", async () => {
+      const mockRequest = {
+        id: "req-active-1",
+        binId: "bin-123",
+        userId: "warga-123",
+        status: "PENDING",
+        bin: { qrCode: "TSC-123" },
+        user: { name: "Pak Budi" },
+      };
+
+      vi.mocked(prisma.binResetRequest.findFirst).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "CANCELLED",
+      } as any);
+
+      const result = await binService.cancelResetRequestByBinId("bin-123", "warga-123", "WARGA");
+      expect(result.status).toBe("CANCELLED");
+      expect(prisma.binResetRequest.findFirst).toHaveBeenCalledWith({
+        where: {
+          binId: "bin-123",
+          status: { in: ["PENDING", "ASSIGNED"] },
+        },
+        orderBy: { createdAt: "desc" },
+        include: { bin: true, user: true },
+      });
+      expect(prisma.auditTrail.create).toHaveBeenCalledWith({
+        data: {
+          action: "CANCEL_RESET_REQUEST_BY_BIN_ID",
+          userId: "warga-123",
+          oldValue: { status: "PENDING", requestId: "req-active-1" },
+          newValue: { status: "CANCELLED", binId: "bin-123" },
+        },
+      });
+    });
+
+    it("should allow household bin owner to cancel reset request by binId even if requested by family member", async () => {
+      const mockRequest = {
+        id: "req-active-1",
+        binId: "bin-123",
+        userId: "anak-123",
+        status: "ASSIGNED",
+        bin: { qrCode: "TSC-123" },
+        user: { name: "Anak" },
+      };
+
+      vi.mocked(prisma.binResetRequest.findFirst).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binOwnership.findFirst).mockResolvedValue({
+        id: "bo-1",
+        binId: "bin-123",
+        userId: "kepala-keluarga-456",
+      } as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "CANCELLED",
+      } as any);
+
+      const result = await binService.cancelResetRequestByBinId("bin-123", "kepala-keluarga-456", "WARGA");
+      expect(result.status).toBe("CANCELLED");
+    });
+
+    it("should throw FORBIDDEN if user is not requester and not bin owner", async () => {
+      const mockRequest = {
+        id: "req-active-1",
+        binId: "bin-123",
+        userId: "warga-123",
+        status: "PENDING",
+        bin: { qrCode: "TSC-123", userId: "warga-123" },
+        user: { name: "Pak Budi" },
+      };
+
+      vi.mocked(prisma.binResetRequest.findFirst).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binOwnership.findFirst).mockResolvedValue(null);
+
+      await expect(
+        binService.cancelResetRequestByBinId("bin-123", "intruder-999", "WARGA")
+      ).rejects.toThrow("FORBIDDEN");
+    });
+
+    it("should throw NO_ACTIVE_RESET_REQUEST when cancelResetRequestByBinId finds no active request", async () => {
+      vi.mocked(prisma.binResetRequest.findFirst).mockResolvedValue(null);
+
+      await expect(
+        binService.cancelResetRequestByBinId("bin-empty", "warga-123", "WARGA")
+      ).rejects.toThrow("NO_ACTIVE_RESET_REQUEST");
     });
   });
 
