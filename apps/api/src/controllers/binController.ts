@@ -1602,7 +1602,13 @@ export class BinController {
       }
 
       const result = await binService.reviewResetRequest(id, status, reviewedById);
-      res.status(200).json({ success: true, data: result });
+      res.status(200).json({
+        success: true,
+        data: {
+          ...result,
+          pointsEarned: result.pointsEarned ?? (status === "COMPLETED" || status === "APPROVED" ? 5 : 0),
+        },
+      });
     } catch (error: any) {
       console.error("[BinController] reviewResetRequest error:", error);
       if (error.message === "REQUEST_NOT_FOUND") {
@@ -1624,7 +1630,13 @@ export class BinController {
       const { id } = req.params;
 
       const result = await binService.reviewResetRequest(id, "COMPLETED", reviewedById);
-      res.status(200).json({ success: true, data: result });
+      res.status(200).json({
+        success: true,
+        data: {
+          ...result,
+          pointsEarned: result.pointsEarned ?? 5,
+        },
+      });
     } catch (error: any) {
       console.error("[BinController] approveResetRequest error:", error);
       if (error.message === "REQUEST_NOT_FOUND") {
