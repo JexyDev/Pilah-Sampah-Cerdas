@@ -2734,7 +2734,7 @@ const Dashboard: React.FC = () => {
               <thead>
                 <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
                   <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
-                  <th className="py-3 px-4">Wilayah Lokasi</th>
+                  <th className="py-3 px-4">Wilayah &amp; Pemilik</th>
                   <th className="py-3 px-4 w-2/5">Kapasitas Terisi</th>
                   <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
@@ -2794,15 +2794,40 @@ const Dashboard: React.FC = () => {
                         </td>
 
                         <td className="py-3.5 px-4">
-                          <div className="flex flex-col min-w-[140px]">
+                          <div className="flex flex-col min-w-[150px]">
                             <span className="font-bold text-slate-800 dark:text-slate-200 text-[12.5px]">
-                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
-                            </span>
-                            <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">
                               {(() => {
-                                const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
-                                if (!rwStr || rwStr === "-") return "Fasilitas Umum";
-                                return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
+                                const kelName = typeof bin.kelurahan === "string" ? bin.kelurahan : bin.kelurahan?.name || bin.rtRw?.kelurahan?.name || "Wilayah Dampingan";
+                                const rwRaw = typeof bin.rw === "string" ? bin.rw : bin.rw?.name || (typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name);
+                                const rwText = rwRaw && rwRaw !== "-" && rwRaw !== "Belum Terikat" && !rwRaw.startsWith("ID RT/RW:")
+                                  ? (rwRaw.toLowerCase().includes("rw") ? rwRaw : `RW ${rwRaw}`)
+                                  : "";
+                                return rwText ? `${kelName} • ${rwText}` : kelName;
+                              })()}
+                            </span>
+                            <span className="text-[11px] font-medium mt-0.5">
+                              {(() => {
+                                const isKomunal = (bin.tipeKepemilikan || "").toUpperCase() === "KOMUNAL_RW";
+                                const ownerName = bin.wargaName || bin.user?.name;
+                                if (isKomunal) {
+                                  return (
+                                    <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                                      Komunal RW (Fasilitas Umum)
+                                    </span>
+                                  );
+                                }
+                                if (ownerName) {
+                                  return (
+                                    <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate max-w-[200px]" title={`Warga Mandiri: ${ownerName}`}>
+                                      Warga Mandiri ({ownerName})
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="text-slate-400 dark:text-slate-500 italic">
+                                    Warga Mandiri (Belum Terikat)
+                                  </span>
+                                );
                               })()}
                             </span>
                           </div>
@@ -2939,11 +2964,30 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
                   <span className="text-slate-400">Wilayah (Rukun Warga)</span>
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {typeof selectedBinForDetail.rtRw === "string"
-                      ? selectedBinForDetail.rtRw
-                      : selectedBinForDetail.rtRw?.name || "-"}
+                    {(() => {
+                      const rwVal = typeof selectedBinForDetail.rw === "string"
+                        ? selectedBinForDetail.rw
+                        : selectedBinForDetail.rw?.name || (typeof selectedBinForDetail.rtRw === "string" ? selectedBinForDetail.rtRw : selectedBinForDetail.rtRw?.name);
+                      return rwVal && rwVal !== "-" ? rwVal : "-";
+                    })()}
                   </span>
                 </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
+                  <span className="text-slate-400">Tipe Kepemilikan</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {(selectedBinForDetail.tipeKepemilikan || "").toUpperCase() === "KOMUNAL_RW"
+                      ? "Komunal RW (Fasilitas Umum)"
+                      : "Rumah Tangga (Warga Mandiri)"}
+                  </span>
+                </div>
+                {(selectedBinForDetail.wargaName || selectedBinForDetail.user?.name) && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
+                    <span className="text-slate-400">Pemilik (Warga)</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {selectedBinForDetail.wargaName || selectedBinForDetail.user?.name}
+                    </span>
+                  </div>
+                )}
                 {(() => {
                   const maxCapacityLiter = Number(selectedBinForDetail.maxCapacityLiter);
                   const hasCapacityData =

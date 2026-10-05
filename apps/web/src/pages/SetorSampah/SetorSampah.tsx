@@ -306,9 +306,7 @@ export default function SetorSampah() {
   }, [filteredLogs]);
 
   const formatBeratMetric = (val: number) => {
-    return val >= 1000
-      ? `${(val / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`
-      : `${val.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`;
+    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`;
   };
 
   const totalPoin = useMemo(() => {
@@ -448,11 +446,9 @@ export default function SetorSampah() {
               Total Sampah Terpilah
             </div>
             <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-              {totalBerat >= 1000
-                ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+              {totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}{" "}
               <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                {totalBerat >= 1000 ? "Ton" : "kg"}
+                kg
               </span>
             </div>
           </div>
