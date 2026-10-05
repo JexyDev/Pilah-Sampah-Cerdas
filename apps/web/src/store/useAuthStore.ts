@@ -595,7 +595,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user, permissions } = get();
     if (!user) return false;
     const role = user.peran?.toUpperCase();
-    if (role === "DEVELOPER" || role === "SUPER_USER") {
+    if (role === "DEVELOPER") {
+      return true;
+    }
+    const DEVELOPER_EXCLUSIVE_RESOURCES = [
+      "developer_tools",
+      "zona_kkn",
+      "dataset_klasifikasi",
+      "developer_settings",
+      "crud_logbook",
+      "kelola_poin_developer",
+    ];
+    if (role === "SUPER_USER" && DEVELOPER_EXCLUSIVE_RESOURCES.includes(resource)) {
+      return false;
+    }
+    if (role === "SUPER_USER") {
       return true;
     }
     if (!permissions) {

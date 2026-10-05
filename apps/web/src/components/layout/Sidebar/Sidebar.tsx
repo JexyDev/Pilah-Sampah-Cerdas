@@ -952,7 +952,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   ];
 
   const hasAccess = (allowed?: UserRole[], resource?: string) => {
-    if (userRole === "DEVELOPER" || userRole === "SUPER_USER") return true;
+    // DEVELOPER memiliki akses absolut ke seluruh menu sistem
+    if (userRole === "DEVELOPER") return true;
+
+    // SUPER_USER UNIKOM memiliki akses administratif sistem secara luas,
+    // KECUALI jika menu tersebut secara spesifik/eksklusif hanya untuk DEVELOPER
+    if (userRole === "SUPER_USER") {
+      if (allowed && !allowed.includes("SUPER_USER")) {
+        return false;
+      }
+      return true;
+    }
 
     // Modul Internet of Things: dynamic RBAC dari IoTSystemConfig adalah otoritatif mutlak!
     // Jika resource iot_* bernilai false pada permissions dinamis, tidak boleh fallback ke allowed statis.
@@ -967,7 +977,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
     // 2. Fallback static allowed role check
     // PENTING: jika `allowed` tidak didefinisikan, default ke false (deny) untuk keamanan.
-    // Item menu yang tidak mendefinisikan `allowed` hanya terlihat untuk DEVELOPER/SUPER_USER (sudah ditangani di atas).
+    // Item menu yang tidak mendefinisikan `allowed` hanya terlihat untuk DEVELOPER (sudah ditangani di atas).
     if (!allowed) return false;
     if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
       return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");

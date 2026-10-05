@@ -8,32 +8,32 @@
 import { Router } from "express";
 import { datasetKlasifikasiController } from "../controllers/datasetKlasifikasiController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-// VPS & Server Health metrics endpoint (authenticated)
-router.get("/system/vps-health", authMiddleware, datasetKlasifikasiController.getVpsHealth);
+// Semua rute dataset AI dan diagnostik metrik VPS dibatasi ketat khusus role DEVELOPER
+router.use(authMiddleware, roleMiddleware(["DEVELOPER"]));
 
-// Dataset Classification CRUD & Export endpoints (authenticated)
-router.get("/dataset-klasifikasi", authMiddleware, datasetKlasifikasiController.getDatasetList);
+// VPS & Server Health metrics endpoint (restricted to DEVELOPER)
+router.get("/system/vps-health", datasetKlasifikasiController.getVpsHealth);
+
+// Dataset Classification CRUD & Export endpoints (restricted to DEVELOPER)
+router.get("/dataset-klasifikasi", datasetKlasifikasiController.getDatasetList);
 router.get(
   "/dataset-klasifikasi/export",
-  authMiddleware,
   datasetKlasifikasiController.exportDataset
 );
 router.post(
   "/dataset-klasifikasi/retrain-trigger",
-  authMiddleware,
   datasetKlasifikasiController.triggerRetrainJob
 );
 router.put(
   "/dataset-klasifikasi/:id",
-  authMiddleware,
   datasetKlasifikasiController.updateDatasetItem
 );
 router.delete(
   "/dataset-klasifikasi/:id",
-  authMiddleware,
   datasetKlasifikasiController.deleteDatasetItem
 );
 

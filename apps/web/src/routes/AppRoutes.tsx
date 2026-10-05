@@ -156,8 +156,16 @@ const ProtectedRoute: React.FC<{
     return <Navigate to="/login" replace />;
   }
 
-  // Developer & Super User always master bypass
-  if (user.peran === "DEVELOPER" || user.peran === "SUPER_USER") {
+  // Developer always master bypass
+  if (user.peran === "DEVELOPER") {
+    return children;
+  }
+
+  // Super User has broad administrative access, EXCEPT routes exclusively restricted (e.g. DEVELOPER only)
+  if (user.peran === "SUPER_USER") {
+    if (allowedRoles && !allowedRoles.includes("SUPER_USER")) {
+      return <Navigate to="/dasbor" replace />;
+    }
     return children;
   }
 

@@ -72,7 +72,21 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         return next();
       }
 
-      if (userRole === "DEVELOPER" || userRole === "SUPER_USER") {
+      if (userRole === "DEVELOPER") {
+        return next();
+      }
+
+      // Role SUPER_USER (UNIKOM) memiliki akses luas, KECUALI jika rute dibatasi secara eksklusif (misal DEVELOPER saja)
+      if (userRole === "SUPER_USER") {
+        if (!normalizedAllowed.includes("SUPER_USER")) {
+          console.error(
+            `[roleMiddleware 403 SUPER_USER_BLOCKED] URL: ${req.originalUrl} | allowed: ${JSON.stringify(normalizedAllowed)}`
+          );
+          res
+            .status(403)
+            .json({ error: "FORBIDDEN", message: "Akses ini dibatasi khusus internal Developer" });
+          return;
+        }
         return next();
       }
 
