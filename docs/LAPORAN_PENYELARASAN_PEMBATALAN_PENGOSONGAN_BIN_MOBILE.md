@@ -197,4 +197,31 @@ Backend telah melalui rangkaian pengujian komprehensif:
 4. **Audit Trail**: Setiap pembatalan dicatat dengan action `CANCEL_RESET_REQUEST_BY_BIN_ID` mencakup `oldValue` dan `newValue`.
 
 ---
+
+## 5. PENYELESAIAN BUG POIN VALIDASI PETUGAS PEMILAH (+5 PTS)
+
+Menjawab temuan forensik Tim Mobile terkait poin pengosongan yang tidak masuk atau bernilai 0 di aplikasi mobile (`verifikasi_pengosongan_view.dart`):
+
+### 5.1. Solusi 3 Celah Fatal Backend:
+1. **Perbaikan Kueri Duplikasi Berbasis ID Pengajuan (Unique Request ID)**:
+   - Kueri anti-duplikasi `PointHistory` di `binService.ts` kini memeriksa format `[RequestID:${id}]` atau `(${id})`, bukan lagi `request.bin?.qrCode`.
+   - **Hasil**: Petugas mendapatkan +5 poin untuk setiap pengajuan pengosongan yang divalidasi, meskipun tempat sampah yang sama diajukan berulang kali di kemudian hari.
+2. **Pengembalian Properti `pointsEarned` pada Kontrak API**:
+   - Endpoint `PUT /api/v1/bins/reset/:id/approve` dan `reviewResetRequest` kini menyertakan `pointsEarned` pada respon data:
+     ```json
+     {
+       "success": true,
+       "data": {
+         "id": "req-123",
+         "binId": "bin-organik-001",
+         "status": "COMPLETED",
+         "pointsEarned": 5
+       }
+     }
+     ```
+   - **Dampak di Mobile**: Logika `final pointsEarned = (result['pointsEarned'] as num?)?.toInt() ?? 0;` di `verifikasi_pengosongan_view.dart:329` kini langsung membaca nilai `5`, memicu dialog selebrasi `+5 Poin Validasi Diperoleh` dengan sempurna!
+3. **Proteksi Error Logging Transaksional**:
+   - Error penulisan `pointHistory` tidak lagi di-silent swallow, melainkan ditangani dengan blok `try-catch` terstruktur dan log peringatan backend.
+
+---
 *Laporan ini disusun oleh Master Backend BERSEKA untuk memastikan kelancaran rilis fitur mobile.*
