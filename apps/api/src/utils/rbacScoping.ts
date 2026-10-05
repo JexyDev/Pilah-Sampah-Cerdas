@@ -173,7 +173,25 @@ export async function getScopingFilters(user: {
 
   // 2. CAMAT is scoped by Kecamatan
   if (role === "CAMAT") {
-    const kecamatanId = dbUser.rw?.kelurahan?.kecamatanId;
+    let kecamatanId = dbUser.rw?.kelurahan?.kecamatanId;
+    if (!kecamatanId && dbUser.address) {
+      const allKec = await prisma.kecamatan.findMany({ select: { id: true, name: true } });
+      const match = allKec.find((k) =>
+        dbUser.address.toLowerCase().includes(k.name.toLowerCase())
+      );
+      if (match) {
+        kecamatanId = match.id;
+      }
+    }
+    // Fallback: cari kecamatan Coblong jika belum terisi
+    if (!kecamatanId) {
+      const coblongMatch = await prisma.kecamatan.findFirst({
+        where: { name: { contains: "Coblong", mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (coblongMatch) kecamatanId = coblongMatch.id;
+    }
+
     if (!kecamatanId) {
       return {
         userFilter: { id: "none" },
@@ -186,23 +204,62 @@ export async function getScopingFilters(user: {
         studentKknFilter: { userId: "none" },
       };
     }
+
+    const kelurahans = await prisma.kelurahan.findMany({
+      where: { kecamatanId },
+      select: { id: true, name: true },
+    });
+    const kelurahanIds = kelurahans.map((k) => k.id);
+    const kelurahanNames = kelurahans.map((k) => k.name);
+
     return {
-      userFilter: { rw: { kelurahan: { kecamatanId } } },
-      binFilter: {
-        OR: [{ kelurahan: { kecamatanId } }, { rw: { kelurahan: { kecamatanId } } }],
-      },
-      householdFilter: { rw: { kelurahan: { kecamatanId } } },
-      wasteLogFilter: {
+      userFilter: {
         OR: [
-          { bin: { kelurahan: { kecamatanId } } },
-          { bin: { rw: { kelurahan: { kecamatanId } } } },
-          { warga: { rw: { kelurahan: { kecamatanId } } } },
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+          { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+          { studentProfile: { kelompok: { kelurahan: { in: kelurahanNames, mode: "insensitive" } } } },
         ],
       },
-      pemanfaatanFilter: { rw: { kelurahan: { kecamatanId } } },
-      facilityFilter: { rw: { kelurahan: { kecamatanId } } },
-      kelompokKknFilter: { id: "none" }, // Unlikely to be used by Camat directly
-      studentKknFilter: { userId: "none" },
+      binFilter: {
+        OR: [
+          { kelurahanId: { in: kelurahanIds } },
+          { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+          { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      householdFilter: {
+        OR: [
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+          { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahanId: { in: kelurahanIds } } },
+          { bin: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+          { bin: { rw: { kelurahanId: { in: kelurahanIds } } } },
+          { bin: { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } } },
+          { warga: { rw: { kelurahanId: { in: kelurahanIds } } } },
+          { warga: { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } } },
+        ],
+      },
+      pemanfaatanFilter: {
+        OR: [
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+          { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      facilityFilter: {
+        OR: [
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+          { rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      kelompokKknFilter: { OR: [{ kelurahan: { in: kelurahanNames, mode: "insensitive" } }] },
+      studentKknFilter: {
+        kelompok: { OR: [{ kelurahan: { in: kelurahanNames, mode: "insensitive" } }] },
+      },
     };
   }
 
@@ -212,11 +269,10 @@ export async function getScopingFilters(user: {
     let kelurahanName = dbUser.rw?.kelurahan?.name;
 
     if (!kelurahanId && dbUser.address) {
-      const match = await prisma.kelurahan.findFirst({
-        where: {
-          name: { contains: dbUser.address, mode: "insensitive" },
-        },
-      });
+      const allKel = await prisma.kelurahan.findMany({ select: { id: true, name: true } });
+      const match = allKel.find((k) =>
+        dbUser.address.toLowerCase().includes(k.name.toLowerCase())
+      );
       if (match) {
         kelurahanId = match.id;
         kelurahanName = match.name;
@@ -246,7 +302,10 @@ export async function getScopingFilters(user: {
     ];
 
     if (kelurahanName) {
-      userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      userOr.push(
+        { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        { studentProfile: { kelompok: { kelurahan: { equals: kelurahanName, mode: "insensitive" } } } }
+      );
       binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
       binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
       householdOr.push({

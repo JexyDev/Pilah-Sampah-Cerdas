@@ -138,14 +138,25 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
-  const canReassign = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(
-    String(user?.peran || user?.role || "").toUpperCase()
-  );
+  const userRoleStr = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isReadOnly = [
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "PEMIMPIN",
+    "PIMPINAN",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+    "WARGA",
+  ].includes(userRoleStr);
+  const canReassign = ["DEVELOPER", "SUPER_USER"].includes(userRoleStr);
   const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
-    const peran = user?.peran || "";
+    const raw = String(user?.peran || (user as any)?.role || "").toUpperCase();
+    const peran = ["PEMIMPIN", "PIMPINAN"].includes(raw) ? "PIMPINAN" : raw;
     if (peran === "DEVELOPER") {
       return [
         "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MPL",
@@ -158,7 +169,7 @@ const ManajemenPengguna: React.FC = () => {
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
-    if (peran === "PEMIMPIN" || peran === "PIMPINAN") {
+    if (peran === "PIMPINAN") {
       return [
         "PEMIMPIN",
         "PANITIA_TASKFORCE",
@@ -172,11 +183,26 @@ const ManajemenPengguna: React.FC = () => {
     if (peran === "PANITIA_TASKFORCE") {
       return ["PANITIA_TASKFORCE", "DPL", "MPL", "MAHASISWA_KKN"];
     }
+    if (peran === "CAMAT" || peran === "LURAH") {
+      return [
+        "ADMIN_DLH",
+        "PEMIMPIN",
+        "PANITIA_TASKFORCE",
+        "DPL",
+        "MPL",
+        "MAHASISWA_KKN",
+        "WARGA",
+        "PETUGAS_RESIDU",
+      ];
+    }
+    if (peran === "ADMIN_DLH") {
+      return ["ADMIN_DLH", "PETUGAS_RESIDU", "WARGA"];
+    }
     if (peran === "RW") {
       return ["WARGA", "PETUGAS_RESIDU"];
     }
     return ["WARGA"];
-  }, [user?.peran]);
+  }, [user?.peran, (user as any)?.role]);
 
   const rawRoleParam = searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type");
   const roleFromUrl = rawRoleParam ? normalizeRoleFromUrl(rawRoleParam) : (allowedRoleTabs[0] || "SUPER_USER");
