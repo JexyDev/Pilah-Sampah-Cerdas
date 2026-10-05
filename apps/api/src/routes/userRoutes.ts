@@ -96,7 +96,7 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"]),
   taskforceRoleGuard,
   userController.createUser
 );
@@ -119,7 +119,7 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"]),
   userController.deleteUser
 );
 
@@ -141,7 +141,7 @@ router.delete(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"]),
   taskforceRoleGuard,
   userController.updateUser
 );
