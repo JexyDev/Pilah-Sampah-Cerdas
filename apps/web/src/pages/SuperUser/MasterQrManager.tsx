@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import axios from "axios";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
@@ -131,21 +132,56 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
-  const fetchQrData = async () => {
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Debounce search query changes (350ms) to prevent socket buffer exhaustion
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchQrData = async (query = debouncedSearchQuery, filter = statusFilter) => {
+    // Abort previous in-flight request if user types or changes filters rapidly
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const [qrsRes, inactiveRes, pendingPetugasRes] = await Promise.all([
+      setLoading(true);
+      const [qrsRes, inactiveRes, pendingPetugasRes] = await Promise.allSettled([
         api.get("/super-user/bins/qr-master", {
-          params: { search: searchQuery || undefined, status: statusFilter || undefined },
+          params: { search: query || undefined, status: filter || undefined },
+          signal: controller.signal,
         }),
-        api.get("/super-user/bins/inactive"),
-        api.get("/super-user/approvals/petugas"),
+        api.get("/super-user/bins/inactive", { signal: controller.signal }),
+        api.get("/super-user/approvals/petugas", { signal: controller.signal }),
       ]);
-      if (qrsRes.data?.success) setQrs(sortChronologicalList(qrsRes.data.data || [], (q: any) => q.createdAt, "desc"));
-      if (inactiveRes.data?.success) setInactiveBins(sortChronologicalList(inactiveRes.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
-      if (pendingPetugasRes.data?.success) setPendingPetugas(sortChronologicalList(pendingPetugasRes.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
-    } catch (e) {
-      console.error("Gagal mengambil data QR & Persetujuan:", e);
-      toast.error("Gagal memuat database QR");
+
+      if (qrsRes.status === "fulfilled" && qrsRes.value.data?.success) {
+        setQrs(sortChronologicalList(qrsRes.value.data.data || [], (q: any) => q.createdAt, "desc"));
+      } else if (qrsRes.status === "rejected" && !axios.isCancel(qrsRes.reason)) {
+        console.error("Gagal mengambil master QR:", qrsRes.reason);
+        toast.error("Gagal memuat database QR");
+      }
+
+      if (inactiveRes.status === "fulfilled" && inactiveRes.value.data?.success) {
+        setInactiveBins(sortChronologicalList(inactiveRes.value.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
+      } else if (inactiveRes.status === "rejected" && !axios.isCancel(inactiveRes.reason)) {
+        console.warn("Gagal mengambil data bin inactive (non-blocking):", inactiveRes.reason);
+      }
+
+      if (pendingPetugasRes.status === "fulfilled" && pendingPetugasRes.value.data?.success) {
+        setPendingPetugas(sortChronologicalList(pendingPetugasRes.value.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
+      }
+    } catch (e: any) {
+      if (!axios.isCancel(e)) {
+        console.error("Gagal mengambil data QR & Persetujuan:", e);
+      }
     } finally {
       setLoading(false);
     }
@@ -153,22 +189,32 @@ export const MasterQrManager: React.FC = () => {
 
   const fetchFormMetadata = async () => {
     try {
-      const [catRes, locRes] = await Promise.all([
+      const [catRes, locRes] = await Promise.allSettled([
         api.get("/categories"),
         api.get("/areas/rt-rw"),
       ]);
-      if (catRes.data?.success) setCategories(catRes.data.data || []);
-      if (locRes.data?.success) setRtRwAreas(locRes.data.data || []);
+      if (catRes.status === "fulfilled" && catRes.value.data?.success) setCategories(catRes.value.data.data || []);
+      if (locRes.status === "fulfilled" && locRes.value.data?.success) setRtRwAreas(locRes.value.data.data || []);
     } catch (e) {
       console.error("Gagal memuat metadata lokasi/kategori:", e);
     }
   };
 
+  // Fetch form metadata only once on component mount
+  useEffect(() => {
+    fetchFormMetadata();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Fetch data only when debounced query or status filter changes
   useEffect(() => {
     setCurrentPage(1);
-    fetchQrData();
-    fetchFormMetadata();
-  }, [searchQuery, statusFilter]);
+    fetchQrData(debouncedSearchQuery, statusFilter);
+  }, [debouncedSearchQuery, statusFilter]);
 
   const totalPages = Math.ceil(qrs.length / itemsPerPage) || 1;
   const paginatedQrs = useMemo(() => {

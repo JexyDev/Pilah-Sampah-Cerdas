@@ -53,6 +53,7 @@ import {
   Minimize2,
   ChevronUp,
   ChevronDown,
+  Droplets,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -203,10 +204,13 @@ export const getFacilityBadgeClass = (jenis: string): string => {
     case "bank_sampah":
       return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800";
     case "loseda":
+      return "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800";
     case "bata_terawang":
+      return "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
     case "rumah_maggot":
+      return "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800";
     case "poc":
-      return "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800";
+      return "bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800";
     case "tps":
       return "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
     default:
@@ -226,10 +230,13 @@ export const getFacilityTypeIcon = (jenis: string) => {
     case "bank_sampah":
       return Coins;
     case "rumah_maggot":
-    case "loseda":
-    case "bata_terawang":
-    case "poc":
       return Recycle;
+    case "loseda":
+      return Sprout;
+    case "bata_terawang":
+      return Boxes;
+    case "poc":
+      return Droplets;
     case "tps":
       return Trash2;
     default:
@@ -371,16 +378,31 @@ export const PemanfaatanSampah: React.FC = () => {
     });
   }, [kelompokList, selectedKelurahan, selectedRwId]);
 
-  // Metrik Penghitungan Fasilitas Persampahan
+  // Metrik Penghitungan Fasilitas Persampahan Mandiri & Lengkap
   const metrics = useMemo(() => {
     const total = items.length;
     const bankSampah = items.filter((i) => i.jenis === "bank_sampah").length;
-    const organik = items.filter((i) => ["loseda", "bata_terawang", "rumah_maggot", "poc"].includes(i.jenis)).length;
     const buruanSae = items.filter((i) => i.jenis === "buruan_sae").length;
+    const loseda = items.filter((i) => i.jenis === "loseda").length;
+    const bataTerawang = items.filter((i) => i.jenis === "bata_terawang").length;
+    const rumahMaggot = items.filter((i) => i.jenis === "rumah_maggot").length;
+    const poc = items.filter((i) => i.jenis === "poc").length;
     const tps = items.filter((i) => i.jenis === "tps").length;
+    const poskoKkn = items.filter((i) => i.jenis === "posko_kkn" || i.jenis === "posko").length;
     const totalKapasitas = items.reduce((acc, curr) => acc + (Number(curr.kapasitas) || 0), 0);
 
-    return { total, bankSampah, organik, buruanSae, tps, totalKapasitas };
+    return {
+      total,
+      bankSampah,
+      buruanSae,
+      loseda,
+      bataTerawang,
+      rumahMaggot,
+      poc,
+      tps,
+      poskoKkn,
+      totalKapasitas,
+    };
   }, [items]);
 
   // Handler toggle filter jenis saat card metrik diklik
@@ -413,6 +435,8 @@ export const PemanfaatanSampah: React.FC = () => {
         matchJenis = true;
       } else if (selectedJenis === "organik_group") {
         matchJenis = ["loseda", "bata_terawang", "rumah_maggot", "poc"].includes(item.jenis);
+      } else if (selectedJenis === "posko_kkn") {
+        matchJenis = item.jenis === "posko_kkn" || item.jenis === "posko";
       } else {
         matchJenis = item.jenis === selectedJenis;
       }
@@ -709,12 +733,12 @@ export const PemanfaatanSampah: React.FC = () => {
                 </span>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px]">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#65a30d] shrink-0" />
-                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Buruan Sae</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#2563eb] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#65a30d] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Buruan Sae</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#0d9488] shrink-0" />
@@ -729,8 +753,16 @@ export const PemanfaatanSampah: React.FC = () => {
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
                   </div>
                   <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">POC</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#4f46e5] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Posko KKN</span>
                   </div>
                 </div>
               </div>
@@ -899,37 +931,37 @@ export const PemanfaatanSampah: React.FC = () => {
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Ringkasan Inventaris &amp; Filter Kategori
+          Ringkasan Inventaris &amp; Filter Kategori Fasilitas
         </span>
         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
           Klik kartu untuk memfilter titik peta &amp; direktori
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-3.5">
         {/* Card 1: Semua Data */}
         <button
           type="button"
           onClick={() => handleCardFilterClick("ALL")}
-          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
             selectedJenis === "ALL"
               ? "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-md ring-2 ring-emerald-500/30"
               : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
               Semua Titik
             </span>
-            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "ALL" ? "bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"}`}>
-              <Layers size={17} />
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "ALL" ? "bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"}`}>
+              <Layers size={16} />
             </div>
           </div>
           <div>
-            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
               {metrics.total}
             </div>
-            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "ALL" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "ALL" ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500 dark:text-slate-400"}`}>
               Seluruh Wilayah
             </p>
           </div>
@@ -939,129 +971,241 @@ export const PemanfaatanSampah: React.FC = () => {
         <button
           type="button"
           onClick={() => handleCardFilterClick("bank_sampah")}
-          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
             selectedJenis === "bank_sampah"
               ? "bg-blue-50/90 dark:bg-blue-950/60 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/30"
               : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
               Bank Sampah
             </span>
-            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
-              <Coins size={17} />
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
+              <Coins size={16} />
             </div>
           </div>
           <div>
-            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
               {metrics.bankSampah}
             </div>
-            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Unit Tabungan
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Unit Tabungan Warga
             </p>
           </div>
         </button>
 
-        {/* Card 3: Inovasi Organik */}
-        <button
-          type="button"
-          onClick={() => handleCardFilterClick("organik_group")}
-          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
-            selectedJenis === "organik_group"
-              ? "bg-teal-50/90 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/30"
-              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
-          }`}
-        >
-          <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Inovasi Organik
-            </span>
-            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
-              <Recycle size={17} />
-            </div>
-          </div>
-          <div>
-            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-              {metrics.organik}
-            </div>
-            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Loseda / Maggot
-            </p>
-          </div>
-        </button>
-
-        {/* Card 4: Buruan Sae */}
+        {/* Card 3: Buruan Sae */}
         <button
           type="button"
           onClick={() => handleCardFilterClick("buruan_sae")}
-          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
             selectedJenis === "buruan_sae"
               ? "bg-lime-50/90 dark:bg-lime-950/60 border-lime-500 text-lime-950 dark:text-lime-50 shadow-md ring-2 ring-lime-500/30"
               : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-lime-400 hover:shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-800 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "buruan_sae" ? "text-lime-800 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
               Buruan Sae
             </span>
-            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "buruan_sae" ? "bg-lime-200/60 dark:bg-lime-800/60 text-lime-900 dark:text-lime-200" : "bg-lime-50 dark:bg-lime-950/60 text-lime-600 dark:text-lime-400"}`}>
-              <Leaf size={17} />
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "buruan_sae" ? "bg-lime-200/60 dark:bg-lime-800/60 text-lime-900 dark:text-lime-200" : "bg-lime-50 dark:bg-lime-950/60 text-lime-600 dark:text-lime-400"}`}>
+              <Leaf size={16} />
             </div>
           </div>
           <div>
-            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "buruan_sae" ? "text-lime-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "buruan_sae" ? "text-lime-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
               {metrics.buruanSae}
             </div>
-            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "buruan_sae" ? "text-lime-700 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Kebun Urban Warga
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "buruan_sae" ? "text-lime-700 dark:text-lime-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Kebun Urban Pangan
             </p>
           </div>
         </button>
 
-        {/* Card 5: TPS */}
+        {/* Card 4: Loseda */}
         <button
           type="button"
-          onClick={() => handleCardFilterClick("tps")}
-          className={`relative p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
-            selectedJenis === "tps"
+          onClick={() => handleCardFilterClick("loseda")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "loseda"
+              ? "bg-teal-50/90 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "loseda" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Loseda
+            </span>
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "loseda" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
+              <Sprout size={16} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "loseda" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.loseda}
+            </div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "loseda" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Lodong Sesa Dapur
+            </p>
+          </div>
+        </button>
+
+        {/* Card 5: Bata Terawang */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("bata_terawang")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "bata_terawang"
               ? "bg-amber-50/90 dark:bg-amber-950/60 border-amber-500 text-amber-950 dark:text-amber-50 shadow-md ring-2 ring-amber-500/30"
               : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-amber-400 hover:shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10.5px] font-extrabold uppercase tracking-wider ${selectedJenis === "tps" ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-              TPS
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "bata_terawang" ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Bata Terawang
             </span>
-            <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "tps" ? "bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"}`}>
-              <Trash2 size={17} />
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "bata_terawang" ? "bg-amber-200/60 dark:bg-amber-800/60 text-amber-900 dark:text-amber-200" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"}`}>
+              <Boxes size={16} />
             </div>
           </div>
           <div>
-            <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "tps" ? "text-amber-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "bata_terawang" ? "text-amber-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.bataTerawang}
+            </div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "bata_terawang" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Komposter Bata
+            </p>
+          </div>
+        </button>
+
+        {/* Card 6: Rumah Maggot */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("rumah_maggot")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "rumah_maggot"
+              ? "bg-purple-50/90 dark:bg-purple-950/60 border-purple-500 text-purple-950 dark:text-purple-50 shadow-md ring-2 ring-purple-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-purple-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "rumah_maggot" ? "text-purple-800 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Rumah Maggot
+            </span>
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "rumah_maggot" ? "bg-purple-200/60 dark:bg-purple-800/60 text-purple-900 dark:text-purple-200" : "bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400"}`}>
+              <Recycle size={16} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "rumah_maggot" ? "text-purple-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.rumahMaggot}
+            </div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "rumah_maggot" ? "text-purple-700 dark:text-purple-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Budidaya Larva BSF
+            </p>
+          </div>
+        </button>
+
+        {/* Card 7: POC (Pupuk Organik Cair) */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("poc")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "poc"
+              ? "bg-cyan-50/90 dark:bg-cyan-950/60 border-cyan-500 text-cyan-950 dark:text-cyan-50 shadow-md ring-2 ring-cyan-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-cyan-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "poc" ? "text-cyan-800 dark:text-cyan-300" : "text-slate-500 dark:text-slate-400"}`}>
+              POC
+            </span>
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "poc" ? "bg-cyan-200/60 dark:bg-cyan-800/60 text-cyan-900 dark:text-cyan-200" : "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400"}`}>
+              <Droplets size={16} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "poc" ? "text-cyan-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.poc}
+            </div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "poc" ? "text-cyan-700 dark:text-cyan-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Pupuk Organik Cair
+            </p>
+          </div>
+        </button>
+
+        {/* Card 8: TPS */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("tps")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "tps"
+              ? "bg-slate-100/90 dark:bg-slate-800/80 border-slate-500 text-slate-900 dark:text-slate-50 shadow-md ring-2 ring-slate-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-400 hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "tps" ? "text-slate-800 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>
+              TPS
+            </span>
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "tps" ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"}`}>
+              <Trash2 size={16} />
+            </div>
+          </div>
+          <div>
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "tps" ? "text-slate-900 dark:text-white" : "text-slate-900 dark:text-white"}`}>
               {metrics.tps}
             </div>
-            <p className={`text-[11.5px] font-semibold mt-0.5 truncate ${selectedJenis === "tps" ? "text-amber-700 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "tps" ? "text-slate-700 dark:text-slate-300" : "text-slate-500 dark:text-slate-400"}`}>
               Penampungan
             </p>
           </div>
         </button>
 
-        {/* Card 6: Kapasitas Olah Total */}
-        <div className="relative p-4 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs">
+        {/* Card 9: Posko KKN */}
+        <button
+          type="button"
+          onClick={() => handleCardFilterClick("posko_kkn")}
+          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
+            selectedJenis === "posko_kkn"
+              ? "bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-500 text-indigo-950 dark:text-indigo-50 shadow-md ring-2 ring-indigo-500/30"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:shadow-xs"
+          }`}
+        >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Kapasitas Olah
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "posko_kkn" ? "text-indigo-800 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Posko KKN
             </span>
-            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-              <Boxes size={17} />
+            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "posko_kkn" ? "bg-indigo-200/60 dark:bg-indigo-800/60 text-indigo-900 dark:text-indigo-200" : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"}`}>
+              <GraduationCap size={16} />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 dark:text-white">
+            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "posko_kkn" ? "text-indigo-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+              {metrics.poskoKkn}
+            </div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "posko_kkn" ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
+              Posko Mahasiswa
+            </p>
+          </div>
+        </button>
+
+        {/* Card 10: Kapasitas Olah Total */}
+        <div className="relative p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs">
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Kapasitas Olah
+            </span>
+            <div className="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+              <Database size={16} />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
             </div>
-            <p className="text-[11.5px] font-semibold mt-0.5 truncate text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] font-semibold mt-0.5 truncate text-slate-500 dark:text-slate-400">
               Total Kapasitas Terdata
             </p>
           </div>
@@ -1397,14 +1541,15 @@ export const PemanfaatanSampah: React.FC = () => {
                     onChange={(e) => { setSelectedJenis(e.target.value); setCurrentPage(1); }}
                     className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
                   >
-                    <option value="ALL">Semua Jenis</option>
-                    <option value="bank_sampah">Bank Sampah</option>
-                    <option value="organik_group">Inovasi Organik</option>
-                    <option value="buruan_sae">Buruan Sae</option>
-                    <option value="loseda">Loseda</option>
-                    <option value="bata_terawang">Bata Terawang</option>
-                    <option value="rumah_maggot">Rumah Maggot</option>
-                    <option value="tps">TPS</option>
+                    <option value="ALL">Semua Jenis ({metrics.total})</option>
+                    <option value="bank_sampah">Bank Sampah ({metrics.bankSampah})</option>
+                    <option value="buruan_sae">Buruan Sae ({metrics.buruanSae})</option>
+                    <option value="loseda">Loseda ({metrics.loseda})</option>
+                    <option value="bata_terawang">Bata Terawang ({metrics.bataTerawang})</option>
+                    <option value="rumah_maggot">Rumah Maggot ({metrics.rumahMaggot})</option>
+                    <option value="poc">POC - Pupuk Organik Cair ({metrics.poc})</option>
+                    <option value="tps">TPS ({metrics.tps})</option>
+                    <option value="posko_kkn">Posko KKN ({metrics.poskoKkn})</option>
                   </select>
                 </div>
 
@@ -1724,6 +1869,7 @@ const CreateFacilityModal: React.FC<{
                 <option value="loseda">Loseda</option>
                 <option value="rumah_maggot">Rumah Maggot</option>
                 <option value="bata_terawang">Bata Terawang</option>
+                <option value="poc">POC (Pupuk Organik Cair)</option>
                 <option value="tps">TPS</option>
                 <option value="posko_kkn">Posko KKN</option>
               </select>
@@ -1823,6 +1969,7 @@ const EditFacilityModal: React.FC<{
                 <option value="loseda">Loseda</option>
                 <option value="rumah_maggot">Rumah Maggot</option>
                 <option value="bata_terawang">Bata Terawang</option>
+                <option value="poc">POC (Pupuk Organik Cair)</option>
                 <option value="tps">TPS</option>
                 <option value="posko_kkn">Posko KKN</option>
               </select>
