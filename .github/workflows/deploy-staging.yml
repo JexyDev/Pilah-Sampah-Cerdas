@@ -217,7 +217,7 @@ jobs:
             echo "Waiting for backend initialization..."
             HEALTHY=false
             for attempt in {1..15}; do
-              if curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/dashboard/stats >/dev/null 2>&1; then
+              if curl -fsS http://127.0.0.1:3000/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1; then
                 echo "Backend healthy on attempt $attempt"
                 HEALTHY=true
                 break

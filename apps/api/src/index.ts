@@ -231,6 +231,11 @@ app.use("/image", express.static(path.resolve(__dirname, "../../../apps/web/publ
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
 app.get("/api/app-version", (req, res) => systemController.getAppVersion(req, res));
 
+// Health check publik (supports /health, /api/health, /api/v1/health) - dievaluasi sebelum router bisnis
+app.get(["/health", "/api/health", "/api/v1/health"], (_req, res) => {
+  res.status(200).json({ status: "OK", timestamp: new Date() });
+});
+
 // Main APIs
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
