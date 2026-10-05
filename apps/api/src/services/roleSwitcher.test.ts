@@ -39,6 +39,7 @@ vi.mock("./pointService.js", () => ({
 describe("RoleSwitcher & Multi-Role Governance (Pimpinan to DPL)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.JWT_ACCESS_SECRET = "test-jwt-access-secret-32-characters-minimum";
   });
 
   it("should throw USER_NOT_FOUND if user does not exist", async () => {
@@ -82,6 +83,24 @@ describe("RoleSwitcher & Multi-Role Governance (Pimpinan to DPL)", () => {
     expect(result.accessToken).toBeDefined();
     expect(result.user.role).toBe("DPL");
     // CRITICAL: Ensure database user was NOT mutated!
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("should allow switching to PIMPINAN alias when primary role in database is PEMIMPIN", async () => {
+    const mockUser: any = {
+      id: "umi-pimpinan-id",
+      name: "Prof. Dr. Hj. Umi Narimawati",
+      role: { id: 7, name: "PEMIMPIN" },
+      roleId: 7,
+      userRoles: [{ role: { id: 9, name: "DPL" } }],
+    };
+    vi.mocked(authRepository.findUserById).mockResolvedValue(mockUser);
+    vi.mocked(prisma.role.findFirst).mockResolvedValue({ id: 7, name: "PEMIMPIN" } as any);
+
+    const result = await authService.switchRole("umi-pimpinan-id", "PIMPINAN");
+
+    expect(result.currentRole).toBe("PEMIMPIN");
+    expect(result.accessToken).toBeDefined();
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
 

@@ -1357,13 +1357,20 @@ export class AuthService {
     const currentPrimaryRole = user.role?.name;
     const cleanTargetRole = String(targetRoleName || "").trim().toUpperCase();
 
-    // 1. Temukan target peran di database
+    // 1. Temukan target peran di database dengan toleransi alias (PIMPINAN <-> PEMIMPIN, DPL <-> DOSEN_PEMBIMBING)
+    const targetRoleSearchNames = [cleanTargetRole, targetRoleName];
+    if (["PIMPINAN", "PEMIMPIN"].includes(cleanTargetRole)) {
+      targetRoleSearchNames.push("PEMIMPIN", "PIMPINAN");
+    }
+    if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(cleanTargetRole)) {
+      targetRoleSearchNames.push("DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING");
+    }
+
     const targetRole = await prisma.role.findFirst({
       where: {
-        OR: [
-          { name: { equals: cleanTargetRole, mode: "insensitive" } },
-          { name: { equals: targetRoleName, mode: "insensitive" } },
-        ],
+        OR: Array.from(new Set(targetRoleSearchNames)).map((n) => ({
+          name: { equals: n, mode: "insensitive" as const },
+        })),
       },
     });
 
@@ -1386,10 +1393,17 @@ export class AuthService {
       String(ur.role?.name || "").toUpperCase()
     );
 
-    // Boleh jika: peran utama sama, atau ada di secondary roles
+    // Boleh jika: peran utama sama (memperhitungkan alias), atau ada di secondary roles
+    const normalizeRole = (r: string) => {
+      const u = r.toUpperCase();
+      if (["PIMPINAN", "PEMIMPIN"].includes(u)) return "PIMPINAN";
+      if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(u)) return "DPL";
+      return u;
+    };
+
     const isAllowed =
-      currentPrimaryRole?.toUpperCase() === cleanTargetRole ||
-      userSecondaryRoleNames.includes(cleanTargetRole);
+      normalizeRole(currentPrimaryRole || "") === normalizeRole(cleanTargetRole) ||
+      userSecondaryRoleNames.some((r: string) => normalizeRole(r) === normalizeRole(cleanTargetRole));
 
     if (!isAllowed) {
       throw new Error("ROLE_NOT_PERMITTED");
