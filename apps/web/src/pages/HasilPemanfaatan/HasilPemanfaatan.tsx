@@ -101,6 +101,8 @@ export const HasilPemanfaatan: React.FC = () => {
 
     if (urlKat) {
       setFilterKategori(urlKat.toUpperCase());
+    } else {
+      setFilterKategori("ALL");
     }
     if (urlJenis && urlJenis.toLowerCase().includes("bank")) {
       setFilterLuaran("Bank Sampah");
@@ -238,14 +240,89 @@ export const HasilPemanfaatan: React.FC = () => {
     return filteredPrograms.reduce((acc, curr) => acc + (curr.jumlahBahanMasukKg || 0), 0);
   }, [filteredPrograms]);
 
+  const initialUrlKategori = useMemo(
+    () => searchParams.get("kategori")?.toUpperCase() || "ALL",
+    [searchParams]
+  );
+
+  const isFilterActive = useMemo(() => {
+    return Boolean(
+      searchQuery.trim() ||
+      filterKelurahan !== "ALL" ||
+      filterRw !== "ALL" ||
+      filterLuaran !== "ALL" ||
+      filterKategori !== initialUrlKategori
+    );
+  }, [searchQuery, filterKelurahan, filterRw, filterLuaran, filterKategori, initialUrlKategori]);
+
   const resetAllFilters = () => {
     setSearchQuery("");
     setFilterKelurahan("ALL");
     setFilterRw("ALL");
     setFilterLuaran("ALL");
-    setFilterKategori("ALL");
-    setSearchParams({});
+    setFilterKategori(initialUrlKategori);
+    if (initialUrlKategori !== "ALL") {
+      setSearchParams({ kategori: initialUrlKategori });
+    } else {
+      setSearchParams({});
+    }
+    setCurrentPage(1);
   };
+
+  // Dynamic header, title, category & descriptions aligned with sidebar submenu
+  const headerInfo = useMemo(() => {
+    const kat = (filterKategori || "").toUpperCase();
+    if (kat === "ORGANIK" || kat === "ORGANIC") {
+      return {
+        title: "Pengolahan Sampah Organik",
+        category: "Tata Kelola Sampah • Pengolahan Organik",
+        description:
+          "Pusat pemantauan konversi sampah organik terpilah menjadi produk bernilai guna (Kompos, Pupuk Organik Cair/POC, Biokonversi Maggot BSF, Loseda, dan Bata Terawang) berbasis Master Luaran.",
+        kpiHasilLabel: "Hasil Panen Olahan",
+        kpiBahanLabel: "Bahan Organik Terolah",
+        tableHasilHeader: "Hasil Panen",
+        emptyEntity: "Produk Pengolahan Sampah Organik",
+        loadingText: "Memuat data pengolahan sampah organik...",
+      };
+    }
+    if (kat === "ANORGANIK" || kat === "NON_ORGANIC") {
+      return {
+        title: "Pemanfaatan Sampah Anorganik",
+        category: "Tata Kelola Sampah • Pemanfaatan Anorganik",
+        description:
+          "Pusat pemantauan pemanfaatan dan daur ulang sampah anorganik (Bank Sampah, kreasi daur ulang, ecobrick, pemilahan plastik, kertas, dan logam) bernilai ekonomis berbasis Master Luaran.",
+        kpiHasilLabel: "Hasil Pilah & Daur Ulang",
+        kpiBahanLabel: "Bahan Anorganik Terolah",
+        tableHasilHeader: "Hasil Olahan / Pilah",
+        emptyEntity: "Produk Pemanfaatan Sampah Anorganik",
+        loadingText: "Memuat data pemanfaatan sampah anorganik...",
+      };
+    }
+    if (kat === "RESIDU") {
+      return {
+        title: "Pengelolaan Sampah Residu",
+        category: "Tata Kelola Sampah • Sampah Residu",
+        description:
+          "Pusat pemantauan pengolahan dan pencatatan sampah residu yang tidak dapat didaur ulang menuju pemrosesan akhir berbasis Master Luaran.",
+        kpiHasilLabel: "Residu Terkelola",
+        kpiBahanLabel: "Total Residu Terangkut",
+        tableHasilHeader: "Volume Residu",
+        emptyEntity: "Data Pengelolaan Sampah Residu",
+        loadingText: "Memuat data pengelolaan sampah residu...",
+      };
+    }
+    return {
+      title: "Monitoring Pengolahan & Pemanfaatan",
+      category: "Tata Kelola Sampah • Pemanfaatan",
+      description:
+        "Pusat pemantauan konversi pengolahan sampah terpilah menjadi produk bernilai guna (Kompos, Maggot BSF, Pupuk Organik Cair, dan Bank Sampah) berbasis Master Luaran.",
+      kpiHasilLabel: "Hasil Panen Olahan",
+      kpiBahanLabel: "Bahan Terolah",
+      tableHasilHeader: "Hasil Panen",
+      emptyEntity: "Produk Hasil Pemanfaatan",
+      loadingText: "Memuat data monitoring pemanfaatan...",
+    };
+  }, [filterKategori]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -328,7 +405,7 @@ export const HasilPemanfaatan: React.FC = () => {
       {/* Page Header */}
       <PageHeader
         icon={Sparkles}
-        category="Tata Kelola Sampah • Pemanfaatan"
+        category={headerInfo.category}
         scope={
           user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
             ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -338,8 +415,8 @@ export const HasilPemanfaatan: React.FC = () => {
             ? `Kelurahan ${user?.kelurahan || ""}`
             : "Kecamatan Coblong"
         }
-        title="Monitoring Pemanfaatan & Dampak"
-        description="Pusat pemantauan konversi pengolahan sampah terpilah menjadi produk bernilai guna (Kompos, Maggot BSF, Pupuk Organik Cair, dan Bank Sampah) berbasis Master Luaran."
+        title={headerInfo.title}
+        description={headerInfo.description}
       />
 
       {/* KPI Metric Summary Cards */}
@@ -350,11 +427,11 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
-              Hasil Panen Olahan
+              {headerInfo.kpiHasilLabel}
             </p>
             <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
               {totalPanenKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-semibold text-slate-400">kg / L</span>
+              <span className="text-xs font-semibold text-slate-400">kg</span>
             </p>
           </div>
         </div>
@@ -379,7 +456,7 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
-              Bahan Terolah
+              {headerInfo.kpiBahanLabel}
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
               {totalBahanMasukKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
@@ -420,7 +497,7 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
 
           {/* Reset Filters */}
-          {(searchQuery || filterKelurahan !== "ALL" || filterRw !== "ALL" || filterLuaran !== "ALL" || filterKategori !== "ALL") && (
+          {isFilterActive && (
             <button
               onClick={resetAllFilters}
               className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
@@ -474,6 +551,7 @@ export const HasilPemanfaatan: React.FC = () => {
               onChange={(e) => {
                 const val = e.target.value;
                 setFilterKategori(val);
+                setCurrentPage(1);
                 if (val !== "ALL") {
                   setSearchParams({ kategori: val });
                 } else {
@@ -530,7 +608,7 @@ export const HasilPemanfaatan: React.FC = () => {
                 <th className="px-4 py-3.5">Jenis Olahan (Master)</th>
                 <th className="px-4 py-3.5">Wilayah RW &amp; Kelurahan</th>
                 <th className="px-4 py-3.5 text-center">Bahan Masuk</th>
-                <th className="px-4 py-3.5 text-center">Hasil Panen</th>
+                <th className="px-4 py-3.5 text-center">{headerInfo.tableHasilHeader}</th>
                 <th className="px-4 py-3.5 text-center">Nilai Ekonomi</th>
                 <th className="px-4 py-3.5">Penerima Manfaat</th>
                 <th className="px-4 py-3.5 text-center">Status</th>
@@ -545,7 +623,7 @@ export const HasilPemanfaatan: React.FC = () => {
                         <Loader2 className="animate-spin text-[#009966]" size={24} />
                       </div>
                       <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                        Memuat data monitoring pemanfaatan...
+                        {headerInfo.loadingText}
                       </p>
                     </div>
                   </td>
@@ -598,7 +676,7 @@ export const HasilPemanfaatan: React.FC = () => {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}{" "}
-                      {p.unitHasil || "kg"}
+                      kg
                     </td>
                     <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
                       {p.nilaiEkonomiRp ? `Rp ${Number(p.nilaiEkonomiRp).toLocaleString("id-ID")}` : "-"}
@@ -614,8 +692,8 @@ export const HasilPemanfaatan: React.FC = () => {
               ) : (
                 <EmptyTableState
                   colSpan={9}
-                  entityName="Produk Hasil Pemanfaatan"
-                  isSearch={Boolean(searchQuery || filterKelurahan !== "ALL" || filterRw !== "ALL" || filterLuaran !== "ALL")}
+                  entityName={headerInfo.emptyEntity}
+                  isSearch={isFilterActive}
                 />
               )}
             </tbody>

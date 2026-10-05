@@ -1333,19 +1333,23 @@ export class BinService {
       },
     });
 
-    const pendingRequests = await prisma.binResetRequest.findMany({
+    const activeRequests = await prisma.binResetRequest.findMany({
       where: {
         binId: { in: binIds },
-        status: "PENDING",
+        status: { in: ["PENDING", "ASSIGNED"] },
       },
       select: {
+        id: true,
         binId: true,
         status: true,
       },
+      orderBy: { createdAt: "desc" },
     });
-    const pendingMap = new Map();
-    pendingRequests.forEach((req) => {
-      pendingMap.set(req.binId, req.status);
+    const activeReqMap = new Map<string, { id: string; status: string }>();
+    activeRequests.forEach((req) => {
+      if (!activeReqMap.has(req.binId)) {
+        activeReqMap.set(req.binId, { id: req.id, status: req.status });
+      }
     });
 
     const lastLogMap = new Map();
@@ -1373,7 +1377,8 @@ export class BinService {
         }
       }
 
-      const resetRequestStatus = pendingMap.get(bin.id) || null;
+      const activeReq = activeReqMap.get(bin.id);
+      const resetRequestStatus = activeReq?.status || null;
 
       return {
         id: bin.id,
@@ -1387,7 +1392,7 @@ export class BinService {
         status:
           realStatus === "TIDAK_AKTIF"
             ? "TIDAK AKTIF"
-            : resetRequestStatus === "PENDING"
+            : resetRequestStatus === "PENDING" || resetRequestStatus === "ASSIGNED"
               ? "Pending Pengosongan"
               : kapasitas >= 80
                 ? "Penuh"
@@ -1397,7 +1402,8 @@ export class BinService {
         householdName,
         realStatus,
         resetRequestStatus,
-        isPendingReset: resetRequestStatus === "PENDING",
+        activeResetRequestId: activeReq?.id || null,
+        isPendingReset: resetRequestStatus === "PENDING" || resetRequestStatus === "ASSIGNED",
         isActive: realStatus === "ACTIVE_BOUND",
         latitude: bin.latitude ? Number(bin.latitude) : null,
         longitude: bin.longitude ? Number(bin.longitude) : null,
@@ -1914,8 +1920,9 @@ export class BinService {
       throw new Error("FORBIDDEN");
     }
 
-    // Guard: Hanya boleh dibatalkan jika status masih PENDING
-    if (request.status !== "PENDING") {
+    // Guard: Warga atau admin berhak membatalkan jika status masih PENDING atau ASSIGNED
+    const cancellableStatuses = ["PENDING", "ASSIGNED"];
+    if (!cancellableStatuses.includes(request.status)) {
       throw new Error("ALREADY_PROCESSED");
     }
 
@@ -1950,6 +1957,82 @@ export class BinService {
           userId,
           oldValue: { status: request.status, request: requestId },
           newValue: { status: "CANCELLED", binId: request.binId },
+        },
+      })
+      .catch(() => {});
+
+    return updated;
+  }
+
+  /**
+   * Batalkan pengajuan aktif tempat sampah langsung via binId
+   * HANYA membatalkan tempat sampah bersangkutan, tidak menyentuh tempat sampah lain!
+   */
+  async cancelResetRequestByBinId(binId: string, userId: string, userRole?: string) {
+    // 1. Cari pengajuan aktif HANYA untuk binId ini yang berstatus PENDING atau ASSIGNED
+    const activeRequest = await prisma.binResetRequest.findFirst({
+      where: {
+        binId,
+        status: { in: ["PENDING", "ASSIGNED"] },
+      },
+      orderBy: { createdAt: "desc" },
+      include: { bin: true, user: true },
+    });
+
+    // 2. Jika tempat sampah TIDAK ADA pengajuan aktif, TOLAK DENGAN TEGAS!
+    if (!activeRequest) {
+      throw new Error("NO_ACTIVE_RESET_REQUEST");
+    }
+
+    const isStaffOrAdmin = [
+      "DEVELOPER",
+      "SUPER_USER",
+      "ADMIN_DLH",
+      "RW",
+      "PANITIA_TASKFORCE",
+    ].includes(userRole || "");
+
+    // 3. Verifikasi kepemilikan (Pemohon langsung, pemilik bin, atau Anggota Keluarga dalam Rumah Tangga)
+    if (activeRequest.userId !== userId && !isStaffOrAdmin) {
+      const isOwner = await prisma.binOwnership.findFirst({
+        where: {
+          binId,
+          userId,
+        },
+      });
+      const isBinUser = activeRequest.bin?.userId === userId;
+      if (!isOwner && !isBinUser) {
+        throw new Error("FORBIDDEN");
+      }
+    }
+
+    // 4. Update status HANYA untuk record pengajuan ini menjadi CANCELLED
+    const updated = await prisma.binResetRequest.update({
+      where: { id: activeRequest.id },
+      data: { status: "CANCELLED" },
+      include: { bin: true, user: true },
+    });
+
+    // Kirim notifikasi konfirmasi pembatalan ke pemohon
+    const binQr = activeRequest.bin?.qrCode || "Tempat Sampah";
+    await prisma.notification
+      .create({
+        data: {
+          userId: activeRequest.userId,
+          title: "Pengajuan Dibatalkan",
+          message: `Pengajuan pengosongan tempat sampah ${binQr} telah berhasil dibatalkan.`,
+        },
+      })
+      .catch(() => {});
+
+    // 5. Catat Audit Trail
+    await prisma.auditTrail
+      .create({
+        data: {
+          action: "CANCEL_RESET_REQUEST_BY_BIN_ID",
+          userId,
+          oldValue: { status: activeRequest.status, requestId: activeRequest.id },
+          newValue: { status: "CANCELLED", binId },
         },
       })
       .catch(() => {});

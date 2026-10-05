@@ -264,8 +264,20 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/posko":
         return ["Pelaksanaan", "Posko"];
       case "/monitoring-pemanfaatan":
-      case "/hasil-pemanfaatan":
-        return ["Monitoring Pemanfaatan"];
+      case "/hasil-pemanfaatan": {
+        const params = new URLSearchParams(search);
+        const kat = params.get("kategori")?.toUpperCase();
+        if (kat === "ORGANIK" || kat === "ORGANIC") {
+          return ["Pengolahan & Pemanfaatan", "Pengolahan Sampah Organik"];
+        }
+        if (kat === "ANORGANIK" || kat === "NON_ORGANIC") {
+          return ["Pengolahan & Pemanfaatan", "Pemanfaatan Sampah Anorganik"];
+        }
+        if (kat === "RESIDU") {
+          return ["Pengolahan & Pemanfaatan", "Pengelolaan Sampah Residu"];
+        }
+        return ["Pengolahan & Pemanfaatan", "Monitoring Pemanfaatan"];
+      }
       case "/monitoring-pemilahan/penyetoran-sampah":
       case "/penyetoran-sampah":
       case "/setor-sampah":
