@@ -1643,6 +1643,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
+            {
+              to: "/monitoring-pengelolaan/tempat-sampah",
+              label: "Kelola Tempat Sampah & QR",
+              resource: "manajemen_tempat_sampah",
+              allowed: ["DEVELOPER"] as UserRole[],
+            },
           ],
         },
         {

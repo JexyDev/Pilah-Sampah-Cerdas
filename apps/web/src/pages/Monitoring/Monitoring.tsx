@@ -20,9 +20,12 @@ import {
   CARTO_VOYAGER_URL,
   OSM_LIGHT_URL,
 } from "../../components/common/ThemeTileLayer";
+import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore } from "../../store/useMonitoringStore";
+import MasterQrManager from "../SuperUser/MasterQrManager";
+import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
 import { 
   Map, 
   Search, 
@@ -41,7 +44,9 @@ import {
   AlertTriangle,
   Lock,
   RefreshCw,
-  Table as TableIcon
+  Table as TableIcon,
+  MapPin,
+  Trash2
 } from "lucide-react";
 
 import {
@@ -119,11 +124,35 @@ const Monitoring: React.FC = () => {
 
   // Role Scoping Flags
   const userRole = (user?.role || user?.peran || "").toUpperCase();
+  const isDeveloper = userRole === "DEVELOPER";
   const isLurah = userRole === "LURAH" || userRole === "ADMIN_KELURAH";
   const isCamat = userRole === "CAMAT" || userRole === "ADMIN_KECAMATAN";
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
   const isRw = userRole === "RW" || userRole === "RT";
   const isMahasiswa = userRole === "MAHASISWA_KKN";
+
+  // Tab State Khusus Role DEVELOPER
+  type MonitoringTab = "gis" | "teraktivasi" | "batch_qr";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const getTabFromUrl = (): MonitoringTab => {
+    const tab = searchParams.get("tab");
+    if (tab === "teraktivasi" || tab === "aktif" || tab === "bins" || tab === "warga") return "teraktivasi";
+    if (tab === "batch_qr" || tab === "batch-qr" || tab === "qr" || tab === "crud" || tab === "reset") return "batch_qr";
+    return "gis";
+  };
+  const [activeTab, setActiveTab] = useState<MonitoringTab>(getTabFromUrl());
+
+  useEffect(() => {
+    const currentTab = getTabFromUrl();
+    if (currentTab !== activeTab) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: MonitoringTab) => {
+    setActiveTab(tab);
+    setSearchParams(tab === "gis" ? {} : { tab });
+  };
 
   const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
   const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
@@ -586,7 +615,7 @@ const Monitoring: React.FC = () => {
     return "Seluruh Wilayah (Developer / Admin DLH)";
   };
 
-  if (loading && bins.length === 0) {
+  if (loading && bins.length === 0 && (!isDeveloper || activeTab === "gis")) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
         <Loader2 className="animate-spin text-[#009966]" size={32} />
@@ -626,6 +655,48 @@ const Monitoring: React.FC = () => {
           </div>
         </div>
 
+        {/* Tier 1.5: Developer Specialized Tabs (Khusus Role DEVELOPER) */}
+        {isDeveloper && (
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleTabChange("gis")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "gis"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <MapPin size={15} />
+              <span>Peta Sebaran GIS</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("teraktivasi")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "teraktivasi"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Trash2 size={15} />
+              <span>Tempat Sampah Teraktivasi (Warga)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("batch_qr")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "batch_qr"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <QrCode size={15} />
+              <span>Master QR Code &amp; Reset (CRUD)</span>
+            </button>
+          </div>
+        )}
+
         {/* Tier 2: Metadata & Role Scope Information */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
           <div className="flex items-center gap-2">
@@ -644,8 +715,14 @@ const Monitoring: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Monitoring Container */}
-      <div className="space-y-6">
+      {/* 2. Sub-Tab Content or GIS Monitoring Container */}
+      {isDeveloper && activeTab === "teraktivasi" ? (
+        <TempatSampahAktifPage />
+      ) : isDeveloper && activeTab === "batch_qr" ? (
+        <MasterQrManager />
+      ) : (
+        <>
+          <div className="space-y-6">
 
         {/* Summary KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -1809,6 +1886,8 @@ const Monitoring: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
