@@ -701,7 +701,6 @@ export const KelolaLogbookPage: React.FC = () => {
               <option value="ALL">Semua Status</option>
               <option value="DISETUJUI_DPL">Disetujui DPL</option>
               <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu DPL</option>
-              <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Ketua</option>
               <option value="PERLU_REVISI_DPL">Perlu Revisi DPL</option>
               <option value="DITOLAK_DPL">Ditolak DPL</option>
               <option value="DITOLAK_KETUA">Ditolak Ketua</option>

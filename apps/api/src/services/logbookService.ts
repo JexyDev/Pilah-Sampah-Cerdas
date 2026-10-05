@@ -190,7 +190,18 @@ export class LogbookService {
 
       // Whitelist runtime check terhadap enum resmi Prisma
       const validStatusList = Object.values(StatusLogbookKkn) as string[];
-      if (validStatusList.includes(requestedStatus)) {
+      if (
+        requestedStatus === StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL ||
+        requestedStatus === StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA
+      ) {
+        // 🛡️ Satukan antrean: sertakan entri legacy MENUNGGU_PERSETUJUAN_KETUA ke verifikasi DPL
+        where.statusApproval = {
+          in: [
+            StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+            StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA,
+          ],
+        };
+      } else if (validStatusList.includes(requestedStatus)) {
         where.statusApproval = requestedStatus as StatusLogbookKkn;
       } else {
         console.warn(
@@ -400,7 +411,10 @@ export class LogbookService {
         platformOs: item.platformOs || "ANDROID",
         tipeAktivitas: item.tipeAktivitas,
         pekanKe: item.pekanKe,
-        statusApproval: item.statusApproval,
+        statusApproval:
+          item.statusApproval === StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA
+            ? StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL
+            : item.statusApproval,
         programKerjaId: item.programKerjaId,
         programKerja: item.programKerja
           ? {
@@ -508,13 +522,18 @@ export class LogbookService {
       baseWhere.penulis = { isTestAccount: false };
     }
 
-    const [total, pendingKetua, pendingDpl, approved, revisi] = await Promise.all([
+    const [total, pendingDpl, approved, revisi] = await Promise.all([
       prisma.logbookKkn.count({ where: baseWhere }),
       prisma.logbookKkn.count({
-        where: { ...baseWhere, statusApproval: StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA },
-      }),
-      prisma.logbookKkn.count({
-        where: { ...baseWhere, statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL },
+        where: {
+          ...baseWhere,
+          statusApproval: {
+            in: [
+              StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL,
+              StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA,
+            ],
+          },
+        },
       }),
       prisma.logbookKkn.count({
         where: { ...baseWhere, statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
@@ -527,6 +546,7 @@ export class LogbookService {
       }),
     ]);
 
+    const pendingKetua = 0; // 🛡️ Persetujuan ketua ditiadakan, dialihkan langsung ke DPL
     return { total, pendingKetua, pendingDpl, approved, revisi };
   }
 
@@ -683,7 +703,10 @@ export class LogbookService {
       platformOs: item.platformOs || "ANDROID",
       tipeAktivitas: item.tipeAktivitas,
       pekanKe: item.pekanKe,
-      statusApproval: item.statusApproval,
+      statusApproval:
+        item.statusApproval === StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA
+          ? StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL
+          : item.statusApproval,
       programKerjaId: item.programKerjaId,
       programKerja: item.programKerja
         ? {
@@ -1124,6 +1147,7 @@ export class LogbookService {
     if (!isDeveloper && !isAssignedDpl && !payload.statusApproval) {
       if (
         existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA ||
+        existing.statusApproval === StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA ||
         existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL ||
         wasDisetujuiDpl
       ) {
