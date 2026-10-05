@@ -28,6 +28,13 @@ vi.mock("../lib/prisma.js", () => {
         findFirst: vi.fn(),
         findMany: vi.fn(),
       },
+      bin: {
+        update: vi.fn().mockResolvedValue({}),
+      },
+      pointHistory: {
+        findFirst: vi.fn(),
+        create: vi.fn().mockResolvedValue({}),
+      },
     },
   };
 });
@@ -322,6 +329,128 @@ describe("BinResetRequest Service & Scoping", () => {
         rw: { kelurahanId: "kel-sadang-serang" },
       });
       expect(filters.binFilter).not.toEqual({ id: "none" });
+    });
+  });
+
+  describe("reviewResetRequest Petugas Pemilahan point rewards", () => {
+    it("should grant 5 points and return pointsEarned: 5 on validation", async () => {
+      const mockRequest = {
+        id: "req-first-1",
+        binId: "bin-100",
+        userId: "warga-1",
+        status: "PENDING",
+        bin: { id: "bin-100", qrCode: "BSK-ORG-001" },
+        user: { id: "warga-1", name: "Warga Satu", fcmToken: null },
+      };
+
+      vi.mocked(prisma.binResetRequest.findUnique).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "COMPLETED",
+        reviewedById: "petugas-pemilah-1",
+      } as any);
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
+      const result = await binService.reviewResetRequest("req-first-1", "COMPLETED", "petugas-pemilah-1");
+
+      expect(result.status).toBe("COMPLETED");
+      expect(result.pointsEarned).toBe(5);
+      expect(prisma.pointHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: "petugas-pemilah-1",
+          points: 5,
+          description: expect.stringContaining("[RequestID:req-first-1]"),
+          kategori: "VALIDASI_PENGOSONGAN",
+        }),
+      });
+    });
+
+    it("should grant 5 points for a subsequent request on the SAME bin without being blocked by old qrCode reward", async () => {
+      const mockRequest2 = {
+        id: "req-second-2",
+        binId: "bin-100", // Same bin!
+        userId: "warga-1",
+        status: "PENDING",
+        bin: { id: "bin-100", qrCode: "BSK-ORG-001" }, // Same qrCode!
+        user: { id: "warga-1", name: "Warga Satu", fcmToken: null },
+      };
+
+      vi.mocked(prisma.binResetRequest.findUnique).mockResolvedValue(mockRequest2 as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest2,
+        status: "COMPLETED",
+        reviewedById: "petugas-pemilah-1",
+      } as any);
+
+      // Simulation: Query checks for [RequestID:req-second-2], which returns null even though previous bin QR was rewarded
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
+      const result = await binService.reviewResetRequest("req-second-2", "COMPLETED", "petugas-pemilah-1");
+
+      expect(result.status).toBe("COMPLETED");
+      expect(result.pointsEarned).toBe(5);
+      expect(prisma.pointHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: "petugas-pemilah-1",
+          points: 5,
+          description: expect.stringContaining("[RequestID:req-second-2]"),
+          kategori: "VALIDASI_PENGOSONGAN",
+        }),
+      });
+    });
+
+    it("should return pointsEarned: 0 if this exact requestId was already rewarded", async () => {
+      const mockRequest = {
+        id: "req-duplicate",
+        binId: "bin-100",
+        userId: "warga-1",
+        status: "PENDING",
+        bin: { id: "bin-100", qrCode: "BSK-ORG-001" },
+        user: { id: "warga-1", name: "Warga Satu", fcmToken: null },
+      };
+
+      vi.mocked(prisma.binResetRequest.findUnique).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "COMPLETED",
+        reviewedById: "petugas-pemilah-1",
+      } as any);
+
+      // Existing reward found for this request
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({
+        id: "existing-ph-1",
+        points: 5,
+      } as any);
+
+      const result = await binService.reviewResetRequest("req-duplicate", "COMPLETED", "petugas-pemilah-1");
+
+      expect(result.status).toBe("COMPLETED");
+      expect(result.pointsEarned).toBe(0);
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+    });
+
+    it("should return pointsEarned: 0 when request is REJECTED", async () => {
+      const mockRequest = {
+        id: "req-rejected",
+        binId: "bin-100",
+        userId: "warga-1",
+        status: "PENDING",
+        bin: { id: "bin-100", qrCode: "BSK-ORG-001" },
+        user: { id: "warga-1", name: "Warga Satu", fcmToken: null },
+      };
+
+      vi.mocked(prisma.binResetRequest.findUnique).mockResolvedValue(mockRequest as any);
+      vi.mocked(prisma.binResetRequest.update).mockResolvedValue({
+        ...mockRequest,
+        status: "REJECTED",
+        reviewedById: "petugas-pemilah-1",
+      } as any);
+
+      const result = await binService.reviewResetRequest("req-rejected", "REJECTED", "petugas-pemilah-1");
+
+      expect(result.status).toBe("REJECTED");
+      expect(result.pointsEarned).toBe(0);
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
     });
   });
 });

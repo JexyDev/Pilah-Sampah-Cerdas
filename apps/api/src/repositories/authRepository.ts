@@ -485,6 +485,8 @@ export class AuthRepository {
         "Mahasiswa KKN": "MAHASISWA_KKN",
         Warga: "WARGA",
         Pimpinan: "PEMIMPIN",
+        PIMPINAN: "PEMIMPIN",
+        pimpinan: "PEMIMPIN",
         "Task Force": "PANITIA_TASKFORCE",
       };
 
