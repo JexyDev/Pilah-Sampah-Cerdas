@@ -294,30 +294,33 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
 
     try {
       // 1. Mahasiswa 1 strictly sees log1 (not log2)
-      const user1Logbooks = await logbookService.getMahasiswaLogbooks(
+      const user1Res = await logbookService.getMahasiswaLogbooks(
         studentUser1.id,
         "MAHASISWA_KKN",
         {}
       );
-      const user1Ids = user1Logbooks.map((l: any) => l.id);
+      const user1Items = Array.isArray(user1Res) ? user1Res : user1Res.items;
+      const user1Ids = user1Items.map((l: any) => l.id);
       expect(user1Ids).toContain(log1.id);
       expect(user1Ids).not.toContain(log2.id);
 
       // 2. Mahasiswa 2 strictly sees log2 (not log1)
-      const user2Logbooks = await logbookService.getMahasiswaLogbooks(
+      const user2Res = await logbookService.getMahasiswaLogbooks(
         studentUser2.id,
         "MAHASISWA_KKN",
         {}
       );
-      const user2Ids = user2Logbooks.map((l: any) => l.id);
+      const user2Items = Array.isArray(user2Res) ? user2Res : user2Res.items;
+      const user2Ids = user2Items.map((l: any) => l.id);
       expect(user2Ids).toContain(log2.id);
       expect(user2Ids).not.toContain(log1.id);
 
       // 3. Super User / Admin sees all logbooks in the group
-      const allLogbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "SUPER_USER", {
+      const allRes = await logbookService.getMahasiswaLogbooks(studentUser1.id, "SUPER_USER", {
         groupId: testKelompok.id,
       });
-      const allIds = allLogbooks.map((l: any) => l.id);
+      const allItems = Array.isArray(allRes) ? allRes : allRes.items;
+      const allIds = allItems.map((l: any) => l.id);
       expect(allIds).toContain(log1.id);
       expect(allIds).toContain(log2.id);
     } finally {
