@@ -2076,7 +2076,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               to: "/developer/inspeksi-zona",
               icon: Radio,
               label: "Inspeksi Zona KKN",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
+              allowed: ["DEVELOPER"] as UserRole[],
             },
             {
               to: "/developer-settings",

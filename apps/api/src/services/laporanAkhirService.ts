@@ -13,7 +13,7 @@ export class LaporanAkhirService {
   /**
    * Mengunggah / Memperbarui Laporan Akhir Individu oleh Mahasiswa
    */
-  async submitLaporanAkhirIndividu(userId: string, payload: any, file?: Express.Multer.File) {
+  async submitLaporanAkhirIndividu(userId: string, payload: any, file?: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
