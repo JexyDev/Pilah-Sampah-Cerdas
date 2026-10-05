@@ -181,11 +181,34 @@ export class LogbookService {
     }
 
     if (filters.statusApproval && filters.statusApproval !== "ALL") {
-      where.statusApproval = filters.statusApproval as StatusLogbookKkn;
+      let requestedStatus = String(filters.statusApproval).trim().toUpperCase();
+
+      // Backward compatibility: petakan variasi penamaan mobile/legacy
+      if (requestedStatus === "MENUNGGU_VERIFIKASI_KETUA") {
+        requestedStatus = StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA;
+      }
+
+      // Whitelist runtime check terhadap enum resmi Prisma
+      const validStatusList = Object.values(StatusLogbookKkn) as string[];
+      if (validStatusList.includes(requestedStatus)) {
+        where.statusApproval = requestedStatus as StatusLogbookKkn;
+      } else {
+        console.warn(
+          `[logbookService] Ignored invalid statusApproval filter: "${filters.statusApproval}"`
+        );
+      }
     }
 
     if (filters.tipeAktivitas && filters.tipeAktivitas !== "ALL") {
-      where.tipeAktivitas = filters.tipeAktivitas as TipeAktivitasKkn;
+      const requestedTipe = String(filters.tipeAktivitas).trim().toUpperCase();
+      const validTipeList = Object.values(TipeAktivitasKkn) as string[];
+      if (validTipeList.includes(requestedTipe)) {
+        where.tipeAktivitas = requestedTipe as TipeAktivitasKkn;
+      } else {
+        console.warn(
+          `[logbookService] Ignored invalid tipeAktivitas filter: "${filters.tipeAktivitas}"`
+        );
+      }
     }
 
     if (filters.startDate || filters.endDate) {

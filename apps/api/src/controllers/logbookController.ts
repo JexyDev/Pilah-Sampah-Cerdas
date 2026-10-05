@@ -72,7 +72,16 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.getMahasiswaLogbooks] error:", error);
-      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+      const isPrismaValidation =
+        error.name === "PrismaClientValidationError" ||
+        error.message?.includes("Invalid value for argument `statusApproval`") ||
+        error.message?.includes("Argument `statusApproval`");
+      res.status(isPrismaValidation ? 400 : 500).json({
+        success: false,
+        message: isPrismaValidation
+          ? "Parameter filter status approval tidak valid."
+          : (error.message || "Internal server error"),
+      });
     }
   },
 
