@@ -99,6 +99,7 @@ const IotMonitoringPage = React.lazy(() => import("../pages/IoT/IotMonitoringPag
 const IotDataSensorPage = React.lazy(() => import("../pages/IoT/IotDataSensorPage"));
 const IotPerangkatPage = React.lazy(() => import("../pages/IoT/IotPerangkatPage"));
 const IotKonfigurasiPage = React.lazy(() => import("../pages/IoT/IotKonfigurasiPage"));
+const DampakNilaiEkonomis = React.lazy(() => import("../pages/DampakNilaiEkonomis/DampakNilaiEkonomis"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
@@ -792,6 +793,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MPL", "PIMPINAN", "PANITIA_TASKFORCE"]}>
               <DplDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dampak-nilai-ekonomis"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
+              <DampakNilaiEkonomis />
             </ProtectedRoute>
           }
         />

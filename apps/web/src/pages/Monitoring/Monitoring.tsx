@@ -1660,22 +1660,24 @@ const Monitoring: React.FC = () => {
 
                         {/* 9. AKSI */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-2">
                             <button
                               type="button"
                               onClick={() => handleFlyToBin(bin)}
-                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
-                              title="Lihat di Peta"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200/80 dark:border-sky-800/60 hover:bg-sky-600 hover:text-white dark:hover:bg-sky-600 dark:hover:text-white shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                              title="Lihat Lokasi di Peta"
+                              aria-label="Lihat Lokasi di Peta"
                             >
-                              <Navigation size={14} />
+                              <Navigation size={16} strokeWidth={2.2} />
                             </button>
                             <button
                               type="button"
                               onClick={() => setSelectedBinDetail(bin)}
-                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
-                              title="Buka Detail"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] dark:hover:text-white shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                              title="Buka Detail Tempat Sampah"
+                              aria-label="Buka Detail Tempat Sampah"
                             >
-                              <Eye size={14} />
+                              <Eye size={16} strokeWidth={2.2} />
                             </button>
                           </div>
                         </td>

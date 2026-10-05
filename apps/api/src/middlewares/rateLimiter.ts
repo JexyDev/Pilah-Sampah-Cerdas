@@ -162,3 +162,47 @@ export const registerRateLimiter = (req: Request, res: Response, next: NextFunct
   record.count += 1;
   next();
 };
+
+/**
+ * Rate limiter khusus endpoint refresh token (/auth/refresh).
+ * Mencegah badai koneksi / retry loop dari klien yang kehilangan sesi (maks 30 request per menit per IP).
+ */
+export const refreshRateLimiter = (req: Request, res: Response, next: NextFunction): void => {
+  const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
+
+  // In development, bypass
+  if (
+    process.env.NODE_ENV !== "production" ||
+    ip === "127.0.0.1" ||
+    ip === "::1" ||
+    ip === "::ffff:127.0.0.1" ||
+    ip === "localhost"
+  ) {
+    return next();
+  }
+
+  const key = `refresh:${ip}`;
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 menit
+  const maxAttempts = 30; // Maks 30 refresh per menit
+
+  const record = attempts.get(key);
+
+  if (!record || now > record.resetTime) {
+    attempts.set(key, { count: 1, resetTime: now + windowMs });
+    return next();
+  }
+
+  if (record.count >= maxAttempts) {
+    const remainingSeconds = Math.max(1, Math.ceil((record.resetTime - now) / 1000));
+    res.status(429).json({
+      success: false,
+      code: "TOO_MANY_REFRESH_REQUESTS",
+      message: `Terlalu banyak permintaan pembaruan sesi. Silakan coba lagi dalam ${remainingSeconds} detik.`,
+    });
+    return;
+  }
+
+  record.count += 1;
+  next();
+};
