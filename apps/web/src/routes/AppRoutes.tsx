@@ -1209,7 +1209,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/dataset/hasil-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }
@@ -1217,7 +1217,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-dataset-klasifikasi"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <MasterDatasetKlasifikasi />
             </ProtectedRoute>
           }
@@ -1265,19 +1265,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/developer/inspeksi-zona"
           element={
-            <ProtectedRoute
-              allowedRoles={[
-                "DEVELOPER",
-                "SUPER_USER",
-                "PANITIA_TASKFORCE",
-                "DPL",
-                "DOSEN_PEMBIMBING",
-                "ADMIN_DLH",
-                "PIMPINAN",
-                "CAMAT",
-                "LURAH",
-              ]}
-            >
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <ZonaInspectorPage />
             </ProtectedRoute>
           }
