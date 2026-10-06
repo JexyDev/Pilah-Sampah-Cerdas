@@ -743,32 +743,44 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/berseka-ai"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
-              <BersekaAiPage />
-            </ProtectedRoute>
+            isStaging ? (
+              <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+                <BersekaAiPage />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/dasbor" replace />
+            )
           }
         />
         <Route
           path="/analisis-sistem/kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
-              <AnalisisKknPage />
-            </ProtectedRoute>
+            isStaging ? (
+              <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+                <AnalisisKknPage />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/dashboard-kkn" replace />
+            )
           }
         />
         <Route
           path="/analisis-sistem/tata-kelola-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE"]}>
-              <AnalisisTataKelolaPage />
-            </ProtectedRoute>
+            isStaging ? (
+              <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+                <AnalisisTataKelolaPage />
+              </ProtectedRoute>
+            ) : (
+              <Navigate to="/dasbor?tab=tata-kelola-sampah" replace />
+            )
           }
         />
-        <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
-        <Route path="/analisis-sistem" element={<Navigate to="/analisis-sistem/kkn" replace />} />
-        <Route path="/analisis-projek" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
-        <Route path="/analisis-proyek" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
-        <Route path="/tata-kelola-sampah" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
+        <Route path="/analisis-sistem/tata-kelola" element={<Navigate to={isStaging ? "/analisis-sistem/tata-kelola-sampah" : "/dasbor?tab=tata-kelola-sampah"} replace />} />
+        <Route path="/analisis-sistem" element={<Navigate to={isStaging ? "/analisis-sistem/kkn" : "/dashboard-kkn"} replace />} />
+        <Route path="/analisis-projek" element={<Navigate to={isStaging ? "/analisis-sistem/tata-kelola-sampah" : "/dasbor?tab=tata-kelola-sampah"} replace />} />
+        <Route path="/analisis-proyek" element={<Navigate to={isStaging ? "/analisis-sistem/tata-kelola-sampah" : "/dasbor?tab=tata-kelola-sampah"} replace />} />
+        <Route path="/tata-kelola-sampah" element={<Navigate to={isStaging ? "/analisis-sistem/tata-kelola-sampah" : "/dasbor?tab=tata-kelola-sampah"} replace />} />
         <Route
           path="/laporan/tata-kelola-sampah"
           element={

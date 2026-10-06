@@ -667,6 +667,82 @@ export class BinController {
   }
 
   /**
+   * Registrasi Tong Komunal TPS (Khusus Petugas Residu)
+   * Endpoint: POST /api/v1/bins/komunal
+   */
+  async registerKomunalBin(req: Request, res: Response): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Token otentikasi tidak valid." });
+        return;
+      }
+
+      const roleUpper = String(user.role || "").toUpperCase();
+      if (roleUpper !== "PETUGAS_RESIDU" && roleUpper !== "PETUGAS") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Akses ditolak. Registrasi Tong Komunal TPS hanya dapat dilakukan oleh Petugas Pemilahan / Petugas Residu.",
+        });
+        return;
+      }
+
+      const data = req.body;
+      const result = await binService.registerKomunalBin(user.userId, data);
+      res.status(201).json({
+        success: true,
+        message: "Tong Komunal TPS berhasil diaktivasi.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[BinController] registerKomunalBin error:", error);
+
+      if (error.message === "QR_CODES_REQUIRED") {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "QR Code tempat sampah wajib disertakan.",
+        });
+        return;
+      }
+
+      if (error.message === "FORBIDDEN_NOT_PETUGAS") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Registrasi Tong Komunal TPS hanya diizinkan untuk akun Petugas.",
+        });
+        return;
+      }
+
+      if (error.message === "BIN_NOT_FOUND" || error.message.startsWith("BIN_NOT_FOUND:")) {
+        res.status(404).json({
+          success: false,
+          error: "BIN_NOT_FOUND",
+          message: "QR Code tidak terdaftar di sistem. Pastikan QR Code yang Anda scan benar.",
+        });
+        return;
+      }
+
+      if (error.message.startsWith("BIN_ALREADY_USED:")) {
+        res.status(400).json({
+          success: false,
+          error: "BIN_ALREADY_USED",
+          message: "QR Code Tempat Sampah sudah aktif dan terikat dengan akun lain.",
+        });
+        return;
+      }
+
+      res.status(400).json({
+        success: false,
+        error: "BAD_REQUEST",
+        message: error.message || "Gagal mengaktivasi Tong Komunal TPS.",
+      });
+    }
+  }
+
+  /**
    * Get Bin Status
    */
   async getStatus(req: Request, res: Response): Promise<void> {

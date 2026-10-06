@@ -56,6 +56,41 @@ vi.mock("../lib/prisma.js", () => {
       wasteCategory: {
         findFirst: vi.fn().mockResolvedValue({ id: "cat-1", name: "ORGANIC" }),
       },
+      user: {
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
+      bin: {
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
+      binOwnership: {
+        create: vi.fn(),
+      },
+      auditTrail: {
+        create: vi.fn(),
+      },
+      systemConfig: {
+        findUnique: vi.fn(),
+      },
+      $transaction: vi.fn((callback) =>
+        callback({
+          bin: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
+          },
+          binOwnership: {
+            create: vi.fn(),
+          },
+          auditTrail: {
+            create: vi.fn(),
+          },
+          user: {
+            update: vi.fn(),
+          },
+        })
+      ),
     },
   };
 });
@@ -172,6 +207,101 @@ describe("BinService", () => {
         status: "PRINTED",
       });
       expect(result).toEqual(mockCreatedBin);
+    });
+  });
+
+  describe("registerKomunalBin", () => {
+    it("should reject if user is not PETUGAS_RESIDU", async () => {
+      const { prisma } = await import("../lib/prisma.js");
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "user-warga-1",
+        role: { name: "WARGA" },
+      } as any);
+
+      await expect(
+        binService.registerKomunalBin("user-warga-1", { qrCode: "QR-KOMUNAL-1" })
+      ).rejects.toThrow("FORBIDDEN_NOT_PETUGAS");
+    });
+
+    it("should successfully register single communal bin with isCommunal: true and type KOMUNAL", async () => {
+      const { prisma } = await import("../lib/prisma.js");
+      const mockPetugas = {
+        id: "petugas-1",
+        role: { name: "PETUGAS_RESIDU" },
+        petugasProfile: { latitude: -6.89, longitude: 107.61 },
+      };
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockPetugas as any);
+
+      const mockPrintedBin = {
+        id: "bin-kom-1",
+        qrCode: "QR-KOMUNAL-1",
+        status: "PRINTED",
+        category: { id: "cat-1", name: "ORGANIC" },
+      };
+
+      const mockUpdatedBin = {
+        id: "bin-kom-1",
+        qrCode: "QR-KOMUNAL-1",
+        status: "ACTIVE_BOUND",
+        isCommunal: true,
+        tipeKepemilikan: "KOMUNAL",
+        latitude: -6.89,
+        longitude: 107.61,
+      };
+
+      const txBinFindUnique = vi.fn().mockResolvedValue(mockPrintedBin);
+      const txBinUpdate = vi.fn().mockResolvedValue(mockUpdatedBin);
+      const txBinOwnershipCreate = vi.fn().mockResolvedValue({});
+      const txAuditCreate = vi.fn().mockResolvedValue({});
+
+      vi.mocked(prisma.$transaction).mockImplementationOnce(async (callback: any) => {
+        return callback({
+          bin: {
+            findUnique: txBinFindUnique,
+            update: txBinUpdate,
+          },
+          binOwnership: {
+            create: txBinOwnershipCreate,
+          },
+          auditTrail: {
+            create: txAuditCreate,
+          },
+        });
+      });
+
+      const result = await binService.registerKomunalBin("petugas-1", {
+        qrCode: "QR-KOMUNAL-1",
+        deskripsiLokasi: "TPS RW 16 Sekeloa",
+      });
+
+      expect(txBinFindUnique).toHaveBeenCalledWith({
+        where: { qrCode: "QR-KOMUNAL-1" },
+        include: { category: true, qrBatch: true },
+      });
+
+      expect(txBinUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "bin-kom-1" },
+          data: expect.objectContaining({
+            status: "ACTIVE_BOUND",
+            userId: "petugas-1",
+            isCommunal: true,
+            tipeKepemilikan: "KOMUNAL",
+            deskripsiLokasi: "TPS RW 16 Sekeloa",
+          }),
+        })
+      );
+
+      expect(txBinOwnershipCreate).toHaveBeenCalledWith({
+        data: {
+          binId: "bin-kom-1",
+          userId: "petugas-1",
+          type: "KOMUNAL",
+        },
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].isCommunal).toBe(true);
     });
   });
 });
