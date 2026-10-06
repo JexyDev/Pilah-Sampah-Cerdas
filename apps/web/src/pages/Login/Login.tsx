@@ -232,17 +232,19 @@ const Login: React.FC = () => {
           
           {/* Header Bar: Logo & Link Beranda */}
           <div className="flex items-center justify-between gap-4">
-            <Link to="/" aria-label="BERSEKA.ID beranda" className="inline-flex items-center gap-2 text-[#0f2142] no-underline group">
-              <svg viewBox="0 0 42 56" fill="none" className="w-8 h-10 sm:w-10 sm:h-12 shrink-0 transition-transform group-hover:scale-105" aria-hidden="true">
-                <path d="M13 6C17 2.5 31 1.5 32 11c.7 6.5-5 9.5-8.5 10.6C31 22 37 26.5 36 35c-1.2 10-13 15-22.5 12.5" stroke="#0f2142" strokeWidth="3.6" strokeLinecap="round"/>
-                <path d="M13 6c-3 4-1.5 9 .5 14 2.8 7.2.8 19-5 32" stroke="#0f2142" strokeWidth="3.6" strokeLinecap="round"/>
-                <path d="M14.5 44.5C13 34 18.5 26 30 24.5 31.5 35 25.5 43 14.5 44.5Z" fill="#2fa65a"/>
-                <path d="M15.5 43.5C19 37 23 31.5 28 27" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
-                <path d="M14 21c1.5-5 6-8 12-8.5-.6 5.5-5 8.6-12 8.5Z" fill="#7cc95b"/>
-              </svg>
-              <span className="text-xl sm:text-2xl font-extrabold tracking-[0.04em] text-[#0f2142]">
-                BERSEKA<span className="text-[#16894f]">.ID</span>
-              </span>
+            <Link to="/" aria-label="BERSEKA.ID beranda" className="inline-flex items-center text-[#0f2142] no-underline group">
+              <picture>
+                <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
+                <img
+                  src="/logos/berseka/berseka-logo-full.png"
+                  alt="BERSEKA.ID"
+                  className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                  width={150}
+                  height={38}
+                  loading="eager"
+                  decoding="async"
+                />
+              </picture>
             </Link>
 
             <Link to="/" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#16894f] hover:underline hover:underline-offset-4 transition-all">
