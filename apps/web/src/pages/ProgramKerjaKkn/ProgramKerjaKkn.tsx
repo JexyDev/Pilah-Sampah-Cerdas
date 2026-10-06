@@ -1700,24 +1700,32 @@ export const ProgramKerjaKkn: React.FC = () => {
                     </th>
                     <th
                       onClick={() => handleSort("createdAt")}
-                      className={`py-3.5 px-3 w-40 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      className={`py-3.5 px-3 w-36 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
                         sortField === "createdAt"
-                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 font-black"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 font-bold"
                           : ""
                       }`}
-                      title="Urutkan berdasarkan waktu pembuatan (Terbaru/Terlama)"
+                      title={
+                        sortField === "createdAt"
+                          ? sortOrder === "desc"
+                            ? "Urutan: Waktu Terbaru ke Terlama (Klik untuk beralih)"
+                            : "Urutan: Waktu Terlama ke Terbaru (Klik untuk beralih)"
+                          : "Urutkan berdasarkan waktu"
+                      }
                     >
                       <div className="inline-flex items-center justify-center gap-1.5">
-                        <span>Waktu Dibuat</span>
+                        <span>Waktu</span>
                         {sortField === "createdAt" ? (
                           sortOrder === "desc" ? (
-                            <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1 py-0.5 rounded">
-                              <ArrowDown size={11} /> Baru
-                            </span>
+                            <ArrowDown
+                              size={12}
+                              className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                            />
                           ) : (
-                            <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1 py-0.5 rounded">
-                              <ArrowUp size={11} /> Lama
-                            </span>
+                            <ArrowUp
+                              size={12}
+                              className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                            />
                           )
                         ) : (
                           <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
