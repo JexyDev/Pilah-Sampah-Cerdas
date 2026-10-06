@@ -73,9 +73,20 @@ router.delete(
 );
 
 // Konfigurasi sistem IoT & MQTT & Gemini & RBAC Grup IoT
-router.get("/config", authMiddleware, iotRbacMiddleware("iot_konfigurasi"), (req, res) =>
-  iotController.getSystemConfig(req, res)
-);
+// GET /config diizinkan bagi pengguna dengan hak iot_konfigurasi atau iot_monitoring (misal Pimpinan) untuk membaca threshold batas normal/bahaya
+router.get("/config", authMiddleware, (req, res, next) => {
+  iotRbacMiddleware("iot_konfigurasi")(req, res, (err) => {
+    if (!err) return iotController.getSystemConfig(req, res);
+    // Fallback: periksa izin iot_monitoring jika belum memiliki izin iot_konfigurasi
+    iotRbacMiddleware("iot_monitoring")(req, res, (err2) => {
+      if (!err2) return iotController.getSystemConfig(req, res);
+      return res.status(403).json({
+        error: "FORBIDDEN",
+        message: `Peran ${String(req.user?.role || "").toUpperCase()} tidak memiliki izin akses untuk membaca konfigurasi IoT.`,
+      });
+    });
+  });
+});
 router.put(
   "/config",
   authMiddleware,
