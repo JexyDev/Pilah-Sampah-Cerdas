@@ -338,7 +338,9 @@ export class BinService {
     }
 
     // 2. Validate ownership (if bin is private to a user)
-    if (bin.binOwnerships && bin.binOwnerships.length > 0) {
+    // WORK ORDER KOMUNAL: Jika bin.isCommunal === true, bypass validasi kepemilikan agar semua warga bisa membuang/menyetor
+    const isCommunalBin = bin.isCommunal === true || bin.tipeKepemilikan === "KOMUNAL";
+    if (!isCommunalBin && bin.binOwnerships && bin.binOwnerships.length > 0) {
       const isOwner = bin.binOwnerships.some((o: any) => o.userId === userId);
       if (!isOwner) {
         throw new Error("BIN_NOT_OWNED");
@@ -404,6 +406,11 @@ export class BinService {
         category: true,
       },
     });
+
+    // Jika tempat sampah yang discan adalah tong komunal, masukkan bin ke kandidat userBins
+    if (isCommunalBin && !userBins.some((b) => b.id === bin.id)) {
+      userBins.push(bin);
+    }
 
     if (userBins.length === 0) {
       throw new Error("NO_ACTIVE_BINS");
@@ -986,6 +993,112 @@ export class BinService {
         where: { id: user.id },
         data: { lifecycleState: "FULLY_ACTIVE" },
       });
+
+      return updatedBins;
+    });
+
+    return result;
+  }
+
+  /**
+   * Registrasi Tong Komunal TPS (Khusus Petugas Residu)
+   * - Menerima 1 QR Code (biasanya kategori Organik)
+   * - Tidak membuat record Household baru (mencegah polusi data)
+   * - Menyimpan isCommunal = true pada Bin dan tipe kepemilikan KOMUNAL pada BinOwnership
+   * - Bind koordinat latitude dan longitude permanen ke Bin
+   */
+  async registerKomunalBin(
+    petugasUserId: string,
+    data: {
+      qrCode?: string;
+      qrCodes?: string[];
+      latitude?: number;
+      longitude?: number;
+      deskripsiLokasi?: string;
+    }
+  ) {
+    const user = await prisma.user.findUnique({
+      where: { id: petugasUserId },
+      include: { role: true, petugasProfile: true },
+    });
+    if (!user) throw new Error("USER_NOT_FOUND");
+
+    const roleName = user.role?.name?.toUpperCase() || "";
+    if (roleName !== "PETUGAS_RESIDU" && roleName !== "PETUGAS") {
+      throw new Error("FORBIDDEN_NOT_PETUGAS");
+    }
+
+    const codes = data.qrCodes || (data.qrCode ? [data.qrCode] : []);
+    if (codes.length === 0) throw new Error("QR_CODES_REQUIRED");
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedBins = [];
+
+      for (const qrCode of codes) {
+        const bin = await tx.bin.findUnique({
+          where: { qrCode },
+          include: { category: true, qrBatch: true },
+        });
+        if (!bin) {
+          throw new Error(`BIN_NOT_FOUND: ${qrCode}`);
+        }
+        if (bin.status !== "PRINTED") {
+          throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
+        }
+
+        const lat =
+          data.latitude != null && data.latitude !== 0
+            ? data.latitude
+            : user.petugasProfile?.latitude != null
+              ? Number(user.petugasProfile.latitude)
+              : 0;
+
+        const lng =
+          data.longitude != null && data.longitude !== 0
+            ? data.longitude
+            : user.petugasProfile?.longitude != null
+              ? Number(user.petugasProfile.longitude)
+              : 0;
+
+        const updatedBin = await tx.bin.update({
+          where: { id: bin.id },
+          data: {
+            status: "ACTIVE_BOUND",
+            userId: user.id,
+            rwId: user.rwId ?? bin.rwId ?? null,
+            latitude: lat,
+            longitude: lng,
+            isCommunal: true,
+            tipeKepemilikan: "KOMUNAL",
+            deskripsiLokasi: data.deskripsiLokasi ?? bin.deskripsiLokasi ?? "Tong Komunal TPS",
+          },
+          include: { category: true },
+        });
+
+        await tx.binOwnership.create({
+          data: {
+            binId: bin.id,
+            userId: user.id,
+            type: "KOMUNAL",
+          },
+        });
+
+        await tx.auditTrail.create({
+          data: {
+            action: "PETUGAS_REGISTER_KOMUNAL_BIN",
+            userId: user.id,
+            oldValue: { qrCode: bin.qrCode, status: bin.status } as any,
+            newValue: {
+              qrCode: bin.qrCode,
+              status: "ACTIVE_BOUND",
+              isCommunal: true,
+              type: "KOMUNAL",
+            } as any,
+          },
+        });
+
+        updatedBins.push(updatedBin);
+      }
 
       return updatedBins;
     });

@@ -74,6 +74,9 @@ vi.mock("../utils/hashUtils.js", () => {
 describe("AuthService - registerWarga security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.JWT_ACCESS_SECRET = "test_access_secret_12345678901234567890";
+    process.env.JWT_REFRESH_SECRET = "test_refresh_secret_12345678901234567890";
+    process.env.JWT_SECRET = "test_access_secret_12345678901234567890";
     vi.mocked(authRepository.findUserByPhone).mockResolvedValue(null);
 
     vi.mocked(authRepository.findRoleByName).mockResolvedValue({ id: 1, name: "WARGA" } as any);
