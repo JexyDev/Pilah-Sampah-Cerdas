@@ -128,6 +128,21 @@ jobs:
           yes | $SDK_MANAGER --licenses || true
           $SDK_MANAGER "cmake;3.22.1"
 
+      - name: Inject google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          mkdir -p android/app
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+            echo "✅ google-services.json injected from GitHub Secret."
+          else
+            echo "❌ FATAL: Secret GOOGLE_SERVICES_JSON_BASE64 is not set!"
+            echo "Go to: Repository → Settings → Secrets → Actions → New repository secret"
+            echo "Name: GOOGLE_SERVICES_JSON_BASE64"
+            exit 1
+          fi
+
       - name: Setup CI Release Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
