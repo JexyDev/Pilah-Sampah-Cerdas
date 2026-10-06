@@ -1909,8 +1909,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
     });
 
-    it("should reject checkout when current time is more than 30 minutes before schedule end time", async () => {
-      // System time is 11:00 WIB (from beforeEach)
+    it("should allow checkout 30 minutes after check-in even if long before schedule end time", async () => {
+      // System time is 11:00 WIB, schedule ends at 16:00 WIB
+      // Student checked in at 08:00 WIB (3 hours ago, > 30 mins)
       vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
         id: scheduleId,
         title: "Kegiatan Harian KKN",
@@ -1927,21 +1928,26 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         checkOutAt: null,
       } as any);
 
-      await expect(
-        service.checkOutAttendance({
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-early-1",
           studentId,
           scheduleId,
-        })
-      ).rejects.toMatchObject({
-        code: "EARLY_CHECKOUT_RESTRICTED",
-        statusCode: 422,
-        details: expect.objectContaining({
-          earliestCheckoutTimeString: "15:30 WIB",
-          jamPulangJadwal: "16:00 WIB",
-          currentTimeString: "11:00 WIB",
-          minutesRemaining: 270,
-        }),
+          status: data.status,
+          attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Harian KKN" },
+          student: { id: studentId, name: "Mahasiswa", studentProfile: { nim: "10120001" } },
+        } as any;
       });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.status).toBeDefined();
     });
 
     it("should allow checkout before schedule end time if target duration is met (>= 240 mins)", async () => {
