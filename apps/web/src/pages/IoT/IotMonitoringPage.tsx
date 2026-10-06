@@ -301,8 +301,29 @@ export const IotMonitoringPage: React.FC = () => {
         title="Monitoring"
         description="Pemantauan data sensor dan kondisi konsentrasi gas metana pada seluruh wilayah operasional"
         icon={Radio}
+        badgeText="Dalam Pengembangan"
         actions={headerActions}
       />
+
+      {/* Notice Banner: Tahap Pengembangan & Pengujian Lapangan */}
+      <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-emerald-50/60 border border-amber-200/90 rounded-2xl p-4 sm:p-4.5 flex items-start sm:items-center gap-3.5 shadow-2xs">
+        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-2xs">
+          <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-bold text-amber-950 tracking-tight">
+              Modul IoT Dalam Tahap Pengembangan & Pengujian Lapangan
+            </h3>
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 tracking-wider">
+              Pilot Project
+            </span>
+          </div>
+          <p className="text-xs text-amber-800/95 mt-0.5 leading-relaxed">
+            Sistem pemantauan sensor gas metana (CH₄) dan telemetri perangkat ini sedang dalam tahap pengembangan aktif dengan data simulator prototipe wilayah Coblong.
+          </p>
+        </div>
+      </div>
 
       {/* 4 KPI SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
