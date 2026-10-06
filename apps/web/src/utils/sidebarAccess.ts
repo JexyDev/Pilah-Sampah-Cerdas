@@ -247,8 +247,6 @@ export function canAccessSidebarRoute(
       "CAMAT",
       "LURAH",
       "PANITIA_TASKFORCE",
-      "DPL",
-      "DOSEN_PEMBIMBING",
       "MPL",
     ];
     return allowedLaporan.includes(role);

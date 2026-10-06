@@ -90,4 +90,10 @@ describe("sidebarAccess utility", () => {
     expect(canAccessSidebarRoute("/peringkat", dev)).toBe(true);
     expect(canAccessSidebarRoute("/monitoring-pengelolaan/tempat-sampah", dev)).toBe(true);
   });
+
+  it("blocks DPL from accessing executive Laporan routes", () => {
+    const dpl = createMockUser("DPL");
+    expect(canAccessSidebarRoute("/laporan/kkn", dpl)).toBe(false);
+    expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", dpl)).toBe(false);
+  });
 });
