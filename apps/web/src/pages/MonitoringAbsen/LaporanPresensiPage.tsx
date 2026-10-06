@@ -120,9 +120,13 @@ export interface StudentAggregate {
     dplName: string;
   } | null;
   totalSessions: number;
+  totalHariHadir?: number;
   totalMinutes: number;
   totalHours: number;
   totalFormatted: string;
+  allTimeMinutes?: number;
+  allTimeHours?: number;
+  allTimeFormatted?: string;
   avgMinutesPerDay: number;
   avgFormatted: string;
   hadirMemenuhi: number;
@@ -1266,10 +1270,15 @@ export const LaporanPresensiPage: React.FC = () => {
           </div>
 
           {/* Info Banner Target Periode */}
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-emerald-50/80 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/80">
-            <Target size={14} className="text-emerald-600 dark:text-emerald-400" />
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-emerald-50/80 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/80">
+            <Target size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Target Kumulatif Periode ({periodLabel}):</span>
             <span className="font-black text-emerald-800 dark:text-emerald-300">{periodTargetHours} Jam</span>
+            {(datePreset !== "ALL" || Boolean(startDate || endDate)) && (
+              <span className="text-[11px] font-normal text-emerald-700 dark:text-emerald-400 ml-1 border-l border-emerald-300 pl-2">
+                (Klik preset <button type="button" onClick={() => handleDatePreset("ALL")} className="font-bold underline hover:text-emerald-900 cursor-pointer">Semua Waktu</button> untuk total akumulasi penuh KKN 200 Jam)
+              </span>
+            )}
           </div>
         </div>
 
@@ -1626,9 +1635,13 @@ export const LaporanPresensiPage: React.FC = () => {
                         {/* Total Hari/Sesi */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="font-black text-slate-800 dark:text-slate-100 text-sm">
-                            {student.totalSessions}
+                            {(student.totalHariHadir !== undefined ? student.totalHariHadir : (student.hadirMemenuhi + student.hadirKurang))} Hari
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium">Hari Hadir</span>
+                          <span className="text-[10px] text-slate-400 font-medium block">
+                            {student.totalSessions > (student.totalHariHadir ?? (student.hadirMemenuhi + student.hadirKurang))
+                              ? `dari ${student.totalSessions} jadwal`
+                              : "Hari Hadir"}
+                          </span>
                         </td>
 
                         {/* Total Akumulasi Aktual */}
@@ -1636,9 +1649,17 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-sm">
                             {student.totalFormatted}
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            ({student.totalHours} Jam Total)
+                          <span className="text-[10px] text-slate-400 font-medium block">
+                            ({student.totalHours} Jam {datePreset !== "ALL" ? "Periode" : "Total"})
                           </span>
+                          {datePreset !== "ALL" && student.allTimeFormatted && student.allTimeFormatted !== student.totalFormatted && (
+                            <span
+                              className="inline-block mt-1 px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded text-[9px] font-bold"
+                              title="Total jam akumulasi seluruh periode KKN dari awal kegiatan"
+                            >
+                              Total KKN: {student.allTimeFormatted}
+                            </span>
+                          )}
                         </td>
 
                         {/* Target & Capaian Periode */}
@@ -1669,7 +1690,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div className="font-mono font-bold text-slate-800 dark:text-slate-200">
                             {student.avgFormatted}
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium">per sesi hadir</span>
+                          <span className="text-[10px] text-slate-400 font-medium">per hari hadir</span>
                         </td>
 
                         {/* Status Akumulasi */}

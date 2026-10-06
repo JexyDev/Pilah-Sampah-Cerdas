@@ -5921,6 +5921,49 @@ export class KknAttendanceService {
       else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
     }
 
+    const isDateFiltered = Boolean(params.startDate || params.endDate);
+    const allTimeMap = new Map<string, number>();
+
+    if (isDateFiltered && studentAggMap.size > 0) {
+      try {
+        const studentUserIds = Array.from(studentAggMap.keys());
+        const allTimeRecords = await prisma.activityAttendance.findMany({
+          where: {
+            studentId: { in: studentUserIds },
+            status: {
+              in: [
+                "HADIR_MEMENUHI",
+                "HADIR_TIDAK_MEMENUHI",
+                "HADIR",
+                "SELESAI",
+                "SELESAI_TELAT",
+                "BERLANGSUNG",
+                "TERJEDA",
+              ],
+            },
+          },
+          select: {
+            studentId: true,
+            status: true,
+            actualInZoneMinutes: true,
+            attendedAt: true,
+            checkOutAt: true,
+          },
+        });
+
+        for (const r of allTimeRecords) {
+          let m = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+          if (m === 0 && r.attendedAt && r.checkOutAt) {
+            const diff = Math.floor((r.checkOutAt.getTime() - r.attendedAt.getTime()) / 60000);
+            m = Math.min(480, Math.max(0, diff));
+          }
+          allTimeMap.set(r.studentId, (allTimeMap.get(r.studentId) || 0) + m);
+        }
+      } catch (err) {
+        console.error("[kknAttendanceService] Gagal menghitung all-time attendance:", err);
+      }
+    }
+
     const studentAggregates = Array.from(studentAggMap.values())
       .map((agg) => {
         const hours = Math.floor(agg.totalMinutes / 60);
@@ -5931,7 +5974,11 @@ export class KknAttendanceService {
             : mins === 0
               ? `${hours} Jam`
               : `${hours} Jam ${mins} Menit`;
-        const avgMins = Math.round(agg.totalMinutes / (agg.totalSessions || 1));
+
+        // Total hari hadir fisik (memisahkan sesi terjadwal ALPA_AUTO)
+        const totalHariHadir = agg.hadirMemenuhi + agg.hadirKurang;
+        const divisor = totalHariHadir > 0 ? totalHariHadir : (agg.totalSessions || 1);
+        const avgMins = Math.round(agg.totalMinutes / divisor);
         const avgHours = Math.floor(avgMins / 60);
         const avgRemainderMins = avgMins % 60;
         const avgFormatted =
@@ -5941,10 +5988,27 @@ export class KknAttendanceService {
               ? `${avgHours} Jam`
               : `${avgHours} Jam ${avgRemainderMins} Menit`;
 
+        // Total jam seluruh periode KKN (All-Time dari awal KKN)
+        const allTimeMins = isDateFiltered
+          ? (allTimeMap.get(agg.studentId) ?? agg.totalMinutes)
+          : agg.totalMinutes;
+        const allTimeHours = Math.floor(allTimeMins / 60);
+        const allTimeRemMins = allTimeMins % 60;
+        const allTimeFormatted =
+          allTimeHours === 0
+            ? `${allTimeRemMins} Menit`
+            : allTimeRemMins === 0
+              ? `${allTimeHours} Jam`
+              : `${allTimeHours} Jam ${allTimeRemMins} Menit`;
+
         return {
           ...agg,
+          totalHariHadir,
           totalHours: Math.round((agg.totalMinutes / 60) * 10) / 10,
           totalFormatted,
+          allTimeMinutes: allTimeMins,
+          allTimeHours: Math.round((allTimeMins / 60) * 10) / 10,
+          allTimeFormatted,
           avgMinutesPerDay: avgMins,
           avgFormatted,
         };
