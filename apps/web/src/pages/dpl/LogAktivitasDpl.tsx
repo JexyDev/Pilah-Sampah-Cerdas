@@ -170,6 +170,24 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
+  // Helper Format Tanggal + Jam Menit — untuk kolom "Tgl Diinput" (createdAt)
+  const formatDateTime = (dateStr?: string | null): { date: string; time: string } => {
+    if (!dateStr) return { date: "-", time: "" };
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return { date: String(dateStr), time: "" };
+      const date = d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return { date, time: `${hours}.${minutes}` };
+    } catch {
+      return { date: String(dateStr), time: "" };
+    }
+  };
 
   // Kalkulasi Durasi Dinamis Real-Time dengan Satuan "Jam"
   const calculatedDuration = useMemo(() => {
@@ -671,6 +689,7 @@ export const LogAktivitasDpl: React.FC = () => {
             <thead>
               <tr className="bg-slate-50/90 text-slate-600 font-semibold border-b border-slate-200">
                 <th className="py-3 px-3.5 whitespace-nowrap">Tanggal & Waktu</th>
+                <th className="py-3 px-3.5 whitespace-nowrap">Tgl Diinput</th>
                 <th className="py-3 px-3.5 whitespace-nowrap">Kelompok Dampingan</th>
                 <th className="py-3 px-3.5 whitespace-nowrap text-center">Pekan</th>
                 <th className="py-3 px-3.5 whitespace-nowrap">Kategori</th>
@@ -684,7 +703,7 @@ export const LogAktivitasDpl: React.FC = () => {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
                       <span>{isMpl ? "Memuat riwayat pendampingan lapangan..." : "Memuat riwayat aktivitas DPL..."}</span>
@@ -693,7 +712,7 @@ export const LogAktivitasDpl: React.FC = () => {
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-7 h-7 text-slate-300" />
                       <span className="font-semibold text-slate-600 text-sm">
@@ -714,6 +733,16 @@ export const LogAktivitasDpl: React.FC = () => {
                     <td className="py-3 px-3.5 whitespace-nowrap">
                       <div className="font-bold text-slate-800">{item.tanggalFormatted}</div>
                       <div className="text-[11px] text-slate-400">{item.waktuLengkap}</div>
+                    </td>
+
+                    {/* 1b. Tgl Diinput — createdAt server timestamp */}
+                    <td className="py-3 px-3.5 whitespace-nowrap">
+                      <div className="font-medium text-slate-700 text-[11px]">
+                        {formatDateTime(item.createdAt).date}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {formatDateTime(item.createdAt).time} WIB
+                      </div>
                     </td>
 
                     {/* 2. Kelompok Dampingan */}
@@ -1534,15 +1563,25 @@ export const LogAktivitasDpl: React.FC = () => {
               );
             })()}
 
-            {/* Timestamp Diperbarui */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 pt-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span>
-                Terakhir diperbarui:{" "}
-                {formatFullDateTime(
-                  selectedDetailLog.updatedAt || selectedDetailLog.createdAt || selectedDetailLog.tanggal
-                )}
-              </span>
+            {/* Timestamp Audit Trail */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 pt-1">
+              {selectedDetailLog.createdAt && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>
+                    Waktu diinput: {formatFullDateTime(selectedDetailLog.createdAt)}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>
+                  Terakhir diperbarui:{" "}
+                  {formatFullDateTime(
+                    selectedDetailLog.updatedAt || selectedDetailLog.createdAt || selectedDetailLog.tanggal
+                  )}
+                </span>
+              </div>
             </div>
 
             {/* Footer Actions */}
