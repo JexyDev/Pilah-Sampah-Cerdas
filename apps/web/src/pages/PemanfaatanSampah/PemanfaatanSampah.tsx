@@ -760,10 +760,6 @@ export const PemanfaatanSampah: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
                     <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#4f46e5] shrink-0" />
-                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Posko KKN</span>
-                  </div>
                 </div>
               </div>
 
@@ -938,7 +934,7 @@ export const PemanfaatanSampah: React.FC = () => {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
         {/* Card 1: Semua Data */}
         <button
           type="button"
@@ -1163,36 +1159,8 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </button>
 
-        {/* Card 9: Posko KKN */}
-        <button
-          type="button"
-          onClick={() => handleCardFilterClick("posko_kkn")}
-          className={`relative p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group shadow-2xs ${
-            selectedJenis === "posko_kkn"
-              ? "bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-500 text-indigo-950 dark:text-indigo-50 shadow-md ring-2 ring-indigo-500/30"
-              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:shadow-xs"
-          }`}
-        >
-          <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "posko_kkn" ? "text-indigo-800 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Posko KKN
-            </span>
-            <div className={`p-1.5 rounded-xl transition-colors ${selectedJenis === "posko_kkn" ? "bg-indigo-200/60 dark:bg-indigo-800/60 text-indigo-900 dark:text-indigo-200" : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"}`}>
-              <GraduationCap size={16} />
-            </div>
-          </div>
-          <div>
-            <div className={`text-xl sm:text-2xl font-black tracking-tight ${selectedJenis === "posko_kkn" ? "text-indigo-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-              {metrics.poskoKkn}
-            </div>
-            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "posko_kkn" ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
-              Posko Mahasiswa
-            </p>
-          </div>
-        </button>
-
-        {/* Card 10: Kapasitas Olah Total */}
-        <div className="relative p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs">
+        {/* Card 9: Kapasitas Olah Total */}
+        <div className="relative p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs col-span-2 sm:col-span-1 lg:col-span-2">
           <div className="flex items-center justify-between w-full mb-2">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Kapasitas Olah
@@ -1549,7 +1517,6 @@ export const PemanfaatanSampah: React.FC = () => {
                     <option value="rumah_maggot">Rumah Maggot ({metrics.rumahMaggot})</option>
                     <option value="poc">POC - Pupuk Organik Cair ({metrics.poc})</option>
                     <option value="tps">TPS ({metrics.tps})</option>
-                    <option value="posko_kkn">Posko KKN ({metrics.poskoKkn})</option>
                   </select>
                 </div>
 
@@ -1871,7 +1838,6 @@ const CreateFacilityModal: React.FC<{
                 <option value="bata_terawang">Bata Terawang</option>
                 <option value="poc">POC (Pupuk Organik Cair)</option>
                 <option value="tps">TPS</option>
-                <option value="posko_kkn">Posko KKN</option>
               </select>
             </div>
             <div>
@@ -1971,7 +1937,6 @@ const EditFacilityModal: React.FC<{
                 <option value="bata_terawang">Bata Terawang</option>
                 <option value="poc">POC (Pupuk Organik Cair)</option>
                 <option value="tps">TPS</option>
-                <option value="posko_kkn">Posko KKN</option>
               </select>
             </div>
             <div>
