@@ -1,5 +1,8 @@
 import { prisma } from "../lib/prisma.js";
-import { ensureDplKelompokRelation } from "./dplService.js";
+import { ensureDplKelompokRelation, calculateDplPoints, calculateGroupPoints } from "./dplService.js";
+
+// Cache ringkas in-memory untuk daftar DPL beserta kalkulasi metrik (TTL 15 detik)
+let cachedDplList: { key: string; timestamp: number; data: any[] } | null = null;
 import { getScopingFilters } from "../utils/rbacScoping.js";
 import { isTestKelompok, isTestStudent } from "../utils/filterTestingUtils.js";
 
@@ -254,11 +257,87 @@ export const kelompokService = {
       }
     }
 
-    return prisma.user.findMany({
+    const cacheKey = user ? (user.id || user.userId || "scoped") : "all";
+    const now = Date.now();
+    if (cachedDplList && cachedDplList.key === cacheKey && now - cachedDplList.timestamp < 15000) {
+      return cachedDplList.data;
+    }
+
+    const dplUsers = await prisma.user.findMany({
       where: whereClause,
       select: { id: true, name: true, phone: true, nip: true, email: true, programStudi: true },
       orderBy: { name: "asc" },
     });
+
+    // Ambil seluruh kelompok KKN untuk pemetaan relasi DPL
+    const allGroups = await prisma.kelompokKkn.findMany({
+      select: {
+        id: true,
+        name: true,
+        kelurahan: true,
+        dplId: true,
+        dplNamaMentah: true,
+        _count: { select: { students: true } },
+      },
+    });
+
+    const results = await Promise.all(
+      dplUsers.map(async (dpl) => {
+        const groups = allGroups.filter(
+          (g) => g.dplId === dpl.id || (g.dplNamaMentah && g.dplNamaMentah.trim().toLowerCase() === dpl.name.trim().toLowerCase())
+        );
+
+        const totalGroups = groups.length;
+        const totalStudents = groups.reduce((acc, curr) => acc + (curr._count?.students || 0), 0);
+        const kelompokNames = groups.map((g) => g.name).filter(Boolean);
+        const kelurahans = Array.from(new Set(groups.map((g) => g.kelurahan).filter(Boolean)));
+
+        // Hitung skor kelompok dampingan dan logbook supervisi DPL secara dinamis
+        let totalGroupPointsAccum = 0;
+        const kelompokDetails: any[] = [];
+
+        for (const grp of groups) {
+          const grpRes = await calculateGroupPoints(grp.id);
+          totalGroupPointsAccum += grpRes.totalGroupPoints;
+          kelompokDetails.push({
+            id: grp.id,
+            name: grp.name,
+            kelurahan: grp.kelurahan,
+            studentsCount: grp._count?.students || 0,
+            totalGroupPoints: grpRes.totalGroupPoints,
+            poinProker: grpRes.poinProker,
+            rataRataPoinAnggota: grpRes.rataRataPoinAnggota,
+            prokerApprovedCount: grpRes.prokerApprovedCount,
+          });
+        }
+
+        const avgGroupPoints = totalGroups > 0 ? Math.round((totalGroupPointsAccum / totalGroups) * 100) / 100 : 0;
+        const firstGroupId = groups.length > 0 ? groups[0].id : undefined;
+        const dplPointsData = await calculateDplPoints(dpl.id, firstGroupId, avgGroupPoints);
+
+        return {
+          ...dpl,
+          totalGroups,
+          totalStudents,
+          kelompokName: kelompokNames.join(", ") || "-",
+          kelurahan: kelurahans.join(", ") || "-",
+          poinDpl: dplPointsData.poinDpl,
+          points: dplPointsData.poinDpl,
+          poinLogbookDpl: dplPointsData.poinLogbookDpl,
+          poinKelompok: avgGroupPoints,
+          countLapangan: dplPointsData.countLapangan || 0,
+          countKampus: dplPointsData.countKampus || 0,
+          poinAktivitasLapangan: dplPointsData.poinAktivitasLapangan || 0,
+          poinAktivitasKampus: dplPointsData.poinAktivitasKampus || 0,
+          hasLogbookDpl: dplPointsData.hasLogbookDpl,
+          logbookCount: dplPointsData.logbookCount || 0,
+          kelompokDetails,
+        };
+      })
+    );
+
+    cachedDplList = { key: cacheKey, timestamp: now, data: results };
+    return results;
   },
 
   /**
@@ -267,6 +346,7 @@ export const kelompokService = {
    * @param dplId ID user DPL. Null untuk melepas DPL.
    */
   assignDpl: async (kelompokId: string, dplId: string | null) => {
+    cachedDplList = null;
     let dplNamaMentah: string | null = null;
     if (dplId) {
       const dplUser = await prisma.user.findFirst({

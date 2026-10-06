@@ -24,7 +24,12 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  Award
+  Award,
+  BarChart2,
+  Info,
+  TrendingUp,
+  Sparkles,
+  Building2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -201,6 +206,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [isDplModalOpen, setIsDplModalOpen] = useState(false);
   const [dplForm, setDplForm] = useState({ name: "", email: "", phone: "", password: "", nip: "" });
   const [submittingDpl, setSubmittingDpl] = useState(false);
+  const [selectedDplPointDetail, setSelectedDplPointDetail] = useState<any | null>(null);
+  const [isDplPointModalOpen, setIsDplPointModalOpen] = useState(false);
 
   // Universitas State
   const [uniList, setUniList] = useState<any[]>([]);
@@ -393,7 +400,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         (dp.name || "").toLowerCase().includes(s) ||
         (dp.email || "").toLowerCase().includes(s) ||
         (dp.phone || "").toLowerCase().includes(s) ||
-        (dp.nip || "").toLowerCase().includes(s)
+        (dp.nip || "").toLowerCase().includes(s) ||
+        (dp.kelompokName || "").toLowerCase().includes(s) ||
+        (dp.kelurahan || "").toLowerCase().includes(s)
       );
     });
   }, [effectiveDplList, searchDpl]);
@@ -1162,10 +1171,68 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         </div>
                         {dp.nip && <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">NIP: {dp.nip}</p>}
                         <p className="text-xs text-slate-500 font-mono mt-1">{dp.phone || "No HP tidak tersedia"}</p>
+                        
+                        {/* Info Kelompok Bimbingan & Wilayah */}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-slate-800 font-medium">
+                            <Users size={12} className="text-slate-400" />
+                            {dp.kelompokName && dp.kelompokName !== "-" ? dp.kelompokName : "Belum ada kelompok"}
+                          </span>
+                          {dp.kelurahan && dp.kelurahan !== "-" && (
+                            <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200/80 dark:border-slate-800 text-[11px]">
+                              <MapPin size={11} className="text-slate-400" />
+                              {dp.kelurahan}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Highlight Box Metrik: Poin DPL & Rerata Kelompok */}
+                        <div className="mt-3.5 grid grid-cols-2 gap-2 bg-white dark:bg-slate-900/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                              <Award size={11} className="text-emerald-500" />
+                              Poin DPL
+                            </span>
+                            <div className="flex items-baseline gap-1 mt-0.5">
+                              <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+                                {Number(dp.poinDpl || dp.points || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">PTS</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col border-l border-slate-100 dark:border-slate-800 pl-2.5">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                              <TrendingUp size={11} className="text-blue-500" />
+                              Rerata Kel.
+                            </span>
+                            <div className="flex items-baseline gap-1 mt-0.5">
+                              <span className="text-base font-extrabold text-blue-600 dark:text-blue-400">
+                                {Number(dp.poinKelompok || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">PTS</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        <span>Universitas Mitra</span>
-                        <span className="font-bold text-slate-800 dark:text-slate-100">UNIKOM</span>
+
+                      {/* Footer Card DPL: Mitra Kampus & Action Detail Poin */}
+                      <div className="mt-3.5 pt-2.5 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+                          <span>Universitas Mitra</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">UNIKOM</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDplPointDetail(dp);
+                            setIsDplPointModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer"
+                          title="Lihat rincian kalkulasi poin DPL dan rerata kelompok dampingan"
+                        >
+                          <BarChart2 size={12} />
+                          <span>Detail Poin</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1921,6 +1988,221 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   Tutup
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Poin DPL & Rerata Kelompok Dampingan */}
+      {isDplPointModalOpen && selectedDplPointDetail && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
+          onClick={() => setIsDplPointModalOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-xs font-bold border border-emerald-300 dark:border-emerald-700">
+                    Dosen Pembimbing Lapangan
+                  </span>
+                  {selectedDplPointDetail.nip && (
+                    <span className="text-xs text-slate-500 font-mono">
+                      NIP: {selectedDplPointDetail.nip}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  {selectedDplPointDetail.name}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kelompok Dampingan: <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedDplPointDetail.kelompokName || "-"}</span> ({selectedDplPointDetail.kelurahan || "-"})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDplPointModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 text-left">
+              {/* Ringkasan Skor Utama */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Total Poin DPL */}
+                <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award size={14} className="text-emerald-600" />
+                      Poin Akhir Supervisi DPL
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className="text-3xl font-black text-emerald-700 dark:text-emerald-400">
+                        {Number(selectedDplPointDetail.poinDpl || selectedDplPointDetail.points || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-500">PTS</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-2">
+                    Formula KKN: (50% Supervisi Logbook DPL) + (50% Rerata Kelompok Dampingan)
+                  </p>
+                </div>
+
+                {/* Rerata Poin Kelompok Dampingan */}
+                <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 flex flex-col justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <TrendingUp size={14} className="text-blue-600" />
+                      Rerata Skor Kelompok
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className="text-3xl font-black text-blue-700 dark:text-blue-400">
+                        {Number(selectedDplPointDetail.poinKelompok || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-sm font-bold text-blue-600 dark:text-blue-500">PTS</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-blue-700/80 dark:text-blue-400/80 mt-2">
+                    Total Mahasiswa: {selectedDplPointDetail.totalStudents || 0} orang di {selectedDplPointDetail.totalGroups || 0} kelompok
+                  </p>
+                </div>
+              </div>
+
+              {/* Rincian Komponen Supervisi Logbook DPL */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                  <BookOpen size={14} className="text-emerald-600" />
+                  Rincian Aktivitas Supervisi DPL
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-500 block">Kunjungan Lapangan</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                        {selectedDplPointDetail.countLapangan || 0}x
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-semibold">
+                        ({selectedDplPointDetail.poinAktivitasLapangan || 0} PTS)
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">5 PTS / kegiatan</span>
+                  </div>
+
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-500 block">Koordinasi Kampus</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                        {selectedDplPointDetail.countKampus || 0}x
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-semibold">
+                        ({selectedDplPointDetail.poinAktivitasKampus || 0} PTS)
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">2 PTS / kegiatan</span>
+                  </div>
+
+                  <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/80 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-500 block">Total Poin Supervisi</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {selectedDplPointDetail.poinLogbookDpl || 0}
+                      </span>
+                      <span className="text-xs font-bold text-slate-400">PTS</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">Kontribusi 50% = {((selectedDplPointDetail.poinLogbookDpl || 0) * 0.5):.2f} PTS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabel Rincian Kelompok Dampingan */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between mb-3">
+                  <span className="flex items-center gap-1.5">
+                    <Users size={14} className="text-blue-600" />
+                    Detail Rerata Kelompok Dampingan
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-400 lowercase">
+                    {len(selectedDplPointDetail.kelompokDetails or [])} kelompok terdata
+                  </span>
+                </h4>
+
+                {(!selectedDplPointDetail.kelompokDetails || selectedDplPointDetail.kelompokDetails.length === 0) ? (
+                  <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50">
+                    Belum ada kelompok dampingan yang terhubung dengan DPL ini.
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
+                        <tr>
+                          <th className="py-2.5 px-3 text-left">Nama Kelompok & Wilayah</th>
+                          <th className="py-2.5 px-3 text-center">Anggota</th>
+                          <th className="py-2.5 px-3 text-right">Poin Proker (60%)</th>
+                          <th className="py-2.5 px-3 text-right">Rerata Mahasiswa (40%)</th>
+                          <th className="py-2.5 px-3 text-right">Skor Kelompok</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {selectedDplPointDetail.kelompokDetails.map((kd: any) => (
+                          <tr key={kd.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 block">{kd.name}</span>
+                              <span className="text-[10px] text-slate-400 font-medium">Kel. {kd.kelurahan || "-"}</span>
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-medium text-slate-700 dark:text-slate-300">
+                              {kd.studentsCount || 0} org
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                {Number(kd.poinProker || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                              </span>
+                              <span className="text-[10px] text-slate-400 ml-1">PTS</span>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                {Number(kd.rataRataPoinAnggota || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                              </span>
+                              <span className="text-[10px] text-slate-400 ml-1">PTS</span>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <span className="font-extrabold text-blue-600 dark:text-blue-400 text-sm">
+                                {Number(kd.totalGroupPoints || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 ml-1">PTS</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Catatan Transparansi Rumus */}
+              <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-300">
+                <Info size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                <p>
+                  Perhitungan seluruh poin bersumber dinamis dari data aktivitas riil di database tanpa manipulasi dummy: Poin Kelompok = (60% Proker Disetujui) + (40% Rerata Saldo Anggota). Poin DPL = (50% Supervisi Logbook DPL) + (50% Rerata Poin Kelompok).
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsDplPointModalOpen(false)}
+                className="px-5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Tutup Rincian
+              </button>
             </div>
           </div>
         </div>
