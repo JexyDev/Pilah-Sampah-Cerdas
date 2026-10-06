@@ -2302,8 +2302,8 @@ export const DplDashboardPage: React.FC = () => {
                         </span>
                         <span className="text-[10px] text-slate-400">pts</span>
                       </div>
-                      <div className="text-[9px] text-slate-400 truncate" title={`Poin DPL = (Poin Aktivitas Supervisi DPL × 50%) + (Poin Kelompok × 50%) = (${g.poinLogbookDpl || 0} × 50%) + (${g.totalGroupPoints || 0} × 50%) = ${g.poinDpl !== undefined ? g.poinDpl : 0} pts`}>
-                        (Aktivitas [{g.poinLogbookDpl || 0}] × 50%) + (Kelompok × 50%)
+                      <div className="text-[9px] text-slate-400 truncate" title={`Poin DPL = (Poin Aktivitas Supervisi DPL × 60%) + (Poin Kelompok × 40%) = (${g.poinLogbookDpl || 0} × 60%) + (${g.totalGroupPoints || 0} × 40%) = ${g.poinDpl !== undefined ? g.poinDpl : 0} pts`}>
+                        (Aktivitas [{g.poinLogbookDpl || 0}] × 60%) + (Kelompok × 40%)
                       </div>
                     </div>
                   </div>
