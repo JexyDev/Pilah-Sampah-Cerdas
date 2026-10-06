@@ -665,7 +665,7 @@ class _PetugasPemilahanProfilViewState
                       children: [
                         _infoTile(
                           Icons.phone_iphone_rounded,
-                          'No. Telepon (Akun Login)',
+                          'No. Telepon',
                           user != null &&
                                   user.phone.toString() != 'null' &&
                                   user.phone.toString().isNotEmpty
@@ -673,17 +673,6 @@ class _PetugasPemilahanProfilViewState
                               : '-',
                           bold: true,
                         ),
-                        if (user != null &&
-                            user.noWa.isNotEmpty &&
-                            user.noWa.toString() != 'null' &&
-                            user.noWa.trim() != user.phone.trim()) ...[
-                          const Divider(height: 1, indent: 56),
-                          _infoTile(
-                            Icons.chat_bubble_outline_rounded,
-                            'No. WhatsApp Lapangan',
-                            user.noWa,
-                          ),
-                        ],
                         const Divider(height: 1, indent: 56),
                         _infoTile(
                           Icons.location_city_rounded,
