@@ -374,7 +374,7 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(res.totalCumulativeMemberPointsWithNormalization).toBe(20);
     });
 
-    it("should calculate Poin DPL using 5 pts Field + 2 pts Campus and 50% Activities + 50% Kelompok", async () => {
+    it("should calculate Poin DPL using 5 pts Field + 2 pts Campus and 60% Activities + 40% Kelompok", async () => {
       // Skenario A: 1 Giat Lapangan (5 pts) + 1 Giat Kampus (2 pts) = 7 pts
       vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([
         { id: "lb-1", kategori: "Kunjungan Lapangan", tempat: "Posko RW 21" } as any,
@@ -387,8 +387,8 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(resWithLogbook.countLapangan).toBe(1);
       expect(resWithLogbook.countKampus).toBe(1);
       expect(resWithLogbook.poinKelompok).toBe(16);
-      // Rumus: (7 * 0.5) + (16 * 0.5) = 3.5 + 8 = 11.5
-      expect(resWithLogbook.poinDpl).toBe(11.5);
+      // Rumus: (7 * 0.6) + (16 * 0.4) = 4.2 + 6.4 = 10.6
+      expect(resWithLogbook.poinDpl).toBe(10.6);
 
       // Skenario B: Simulasi Dr. Agus Mulyana (3 Lapangan [15 pts] + 5 Kampus [10 pts] = 25 pts, Kelompok 90.43)
       vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([
@@ -405,8 +405,8 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(resAgus.poinLogbookDpl).toBe(25);
       expect(resAgus.countLapangan).toBe(3);
       expect(resAgus.countKampus).toBe(5);
-      // Rumus: (25 * 0.5) + (90.43 * 0.5) = 12.5 + 45.215 = 57.72
-      expect(resAgus.poinDpl).toBe(57.72);
+      // Rumus: (25 * 0.6) + (90.43 * 0.4) = 15.0 + 36.172 = 51.17
+      expect(resAgus.poinDpl).toBe(51.17);
 
       // Skenario C: Logbook DPL tidak tersedia (count = 0) -> 0 poin
       vi.mocked(prisma.logbookDpl.findMany).mockResolvedValue([]);
@@ -416,8 +416,8 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(resWithoutLogbook.hasLogbookDpl).toBe(false);
       expect(resWithoutLogbook.poinLogbookDpl).toBe(0);
       expect(resWithoutLogbook.poinKelompok).toBe(16);
-      // Rumus: (0 * 0.5) + (16 * 0.5) = 0 + 8 = 8
-      expect(resWithoutLogbook.poinDpl).toBe(8);
+      // Rumus: (0 * 0.6) + (16 * 0.4) = 0 + 6.4 = 6.4
+      expect(resWithoutLogbook.poinDpl).toBe(6.4);
     });
   });
 
