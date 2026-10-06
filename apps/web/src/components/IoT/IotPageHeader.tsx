@@ -13,7 +13,7 @@ export const IotPageHeader: React.FC<IotPageHeaderProps> = ({
   title,
   description,
   icon: Icon,
-  badgeText = "Internet of Things",
+  badgeText = "Dalam Pengembangan",
   actions,
 }) => {
   return (
@@ -25,9 +25,17 @@ export const IotPageHeader: React.FC<IotPageHeaderProps> = ({
             <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              {title}
-            </h1>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                {title}
+              </h1>
+              {badgeText && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300/80 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  {badgeText}
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed font-normal">
               {description}
             </p>
