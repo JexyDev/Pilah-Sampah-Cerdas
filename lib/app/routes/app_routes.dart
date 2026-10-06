@@ -31,12 +31,14 @@ class AppRoutes {
   static const String aktivasiWarga = '/aktivasi-warga';
   static const String aspirasiWarga = '/warga/aspirasi';
   static const String wargaGantiPassword = '/warga/ganti-password';
+  static const String editProfilWarga = '/warga/edit-profil';
 
   static const String riwayatPetugasPemilahan = '/riwayat-petugas-pemilahan';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';
   static const String petugasPemilahan = '/petugas-pemilahan';
   static const String petugasPemilahanGantiPassword =
       '/petugas-pemilahan/ganti-password';
+  static const String editProfilPetugas = '/petugas-pemilahan/edit-profil';
   static const String editProfilMahasiswa = '/mahasiswa/edit-profil';
   static const String pengajuanIzin = '/mahasiswa/pengajuan-izin';
   static const String mahasiswaNotifikasi = '/mahasiswa/notifikasi';

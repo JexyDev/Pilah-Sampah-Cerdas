@@ -51,6 +51,8 @@ abstract class AuthRepository {
     String? rw,
     String? jenjangPendidikan,
     int? familySize,
+    String? namaPersonil,
+    String? noWa,
   });
 
   /// Mendaftar komunitas untuk menggenerate komunitas_id unik.

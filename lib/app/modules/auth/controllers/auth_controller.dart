@@ -667,7 +667,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Update data profil editable pengguna (Nama, HP, Alamat, Wilayah)
+  /// Update data profil editable pengguna (Nama, HP, Alamat, Wilayah, Personil Petugas)
   Future<bool> updateProfile({
     required String name,
     required String phone,
@@ -677,6 +677,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? rw,
     String? jenjangPendidikan,
     int? familySize,
+    String? namaPersonil,
+    String? noWa,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -689,6 +691,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         rw: rw,
         jenjangPendidikan: jenjangPendidikan,
         familySize: familySize,
+        namaPersonil: namaPersonil,
+        noWa: noWa,
       );
       if (success && state.user != null) {
         final updatedUser = state.user!.copyWith(
@@ -700,6 +704,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           rw: rw ?? state.user!.rw,
           jenjangPendidikan: jenjangPendidikan ?? state.user!.jenjangPendidikan,
           familySize: familySize ?? state.user!.familySize,
+          namaPersonil: namaPersonil ?? state.user!.namaPersonil,
+          noWa: noWa ?? state.user!.noWa,
         );
         state = state.copyWith(user: updatedUser, isLoading: false);
       } else {

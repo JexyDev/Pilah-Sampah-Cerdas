@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../../core/values/app_dimensions.dart';
 import '../../core/values/app_colors.dart';
 import '../../routes/app_routes.dart';
 import '../auth/controllers/auth_controller.dart';
@@ -29,14 +31,28 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
   Map<String, dynamic>? _householdData;
+  String _version = 'Versi 1.0.0 • Warga';
 
   @override
   void initState() {
     super.initState();
+    _initPackageInfo();
     Future.microtask(() {
       ref.read(authProvider.notifier).fetchProfile();
       _loadHouseholdData();
     });
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      final user = ref.read(authProvider).user;
+      final roleSuffix =
+          user?.role == UserRole.mahasiswaKkn ? 'Mahasiswa KKN' : 'Warga';
+      setState(() {
+        _version = 'Versi ${info.version} • $roleSuffix';
+      });
+    }
   }
 
   Future<void> _loadHouseholdData() async {
@@ -422,6 +438,32 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       appBar: AppBar(
         title: const Text('Profil'),
         automaticallyImplyLeading: false,
+        actions: [
+          if (user?.role == UserRole.warga)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit Profil Warga',
+              onPressed: () async {
+                final res = await Navigator.pushNamed(
+                  context,
+                  AppRoutes.editProfilWarga,
+                );
+                if (res == true) {
+                  ref.read(authProvider.notifier).fetchProfile();
+                }
+              },
+            )
+          else if (user?.role == UserRole.mahasiswaKkn)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit Profil Mahasiswa',
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.editProfilMahasiswa,
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -776,7 +818,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     const SizedBox(height: 28),
                   ],
 
-                  // ─── Menu Actions ───────────────────────────────────
+                  // ─── Menu Pengaturan & Keamanan ────────────────────────
+                  _sectionLabel('PENGATURAN & KEAMANAN'),
+                  const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -784,7 +828,26 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                     child: Column(
                       children: [
-                        if (user?.role == UserRole.mahasiswaKkn) ...[
+                        // 1. Edit Profil (Khusus Warga)
+                        if (user?.role == UserRole.warga) ...[
+                          _MenuTile(
+                            icon: Icons.manage_accounts_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Edit Profil Warga',
+                            onTap: () async {
+                              final res = await Navigator.of(
+                                context,
+                              ).pushNamed(AppRoutes.editProfilWarga);
+                              if (res == true) {
+                                ref.read(authProvider.notifier).fetchProfile();
+                              }
+                            },
+                          ),
+                          const Divider(height: 1, indent: 56),
+                        ] else if (user?.role == UserRole.mahasiswaKkn) ...[
                           _MenuTile(
                             icon: Icons.manage_accounts_rounded,
                             iconColor: AppColors.primaryGreen,
@@ -798,8 +861,25 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           const Divider(height: 1, indent: 56),
                         ],
+
+                        // 2. Ganti Kata Sandi (Khusus Warga)
+                        if (user?.role == UserRole.warga) ...[
+                          _MenuTile(
+                            icon: Icons.lock_reset_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Ganti Kata Sandi',
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.wargaGantiPassword),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                        ],
+
+                        // Form Evaluasi & Masukan Pengguna (Khusus Mahasiswa KKN)
                         if (user?.role == UserRole.mahasiswaKkn) ...[
-                          // Form Evaluasi & Masukan Pengguna (Google Form)
                           _MenuTile(
                             icon: Icons.rate_review_outlined,
                             iconColor: AppColors.primaryGreen,
@@ -832,7 +912,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           const Divider(height: 1, indent: 56),
                         ],
 
-                        // Tentang Aplikasi
+                        // 3. Tentang Aplikasi
                         _MenuTile(
                           icon: Icons.info_outline_rounded,
                           iconColor: AppColors.primaryGreen,
@@ -844,22 +924,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             context,
                           ).pushNamed(AppRoutes.tentang),
                         ),
+                        const Divider(height: 1, indent: 56),
 
-                        // Ganti Kata Sandi (Khusus Warga)
-                        if (user?.role == UserRole.warga) ...[
-                          _MenuTile(
-                            icon: Icons.lock_reset_rounded,
-                            iconColor: AppColors.primaryGreen,
-                            iconBgColor: AppColors.primaryGreen.withValues(
-                              alpha: 0.1,
-                            ),
-                            label: 'Ganti Kata Sandi',
-                            onTap: () => Navigator.of(
-                              context,
-                            ).pushNamed(AppRoutes.wargaGantiPassword),
-                          ),
-                        ],
-                        // Keluar
+                        // 4. Keluar
                         _MenuTile(
                           icon: Icons.logout_rounded,
                           iconColor: AppColors.dangerRed,
@@ -873,7 +940,28 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.xl),
+
+                  Center(
+                    child: Column(
+                      children: [
+                        const Text(
+                          '© 2026 Universitas Komputer Indonesia',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _version,
+                          style: const TextStyle(fontSize: 10, color: AppColors.textHint),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 80),
                 ],
               ),

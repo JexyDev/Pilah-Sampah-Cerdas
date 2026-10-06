@@ -32,6 +32,10 @@ class UserEntity extends Equatable {
     this.dplName = '',
     this.familySize = 1,
     this.isKetua = false,
+    this.namaPersonil = '',
+    this.noWa = '',
+    this.namaDisplay = '',
+    this.assignedZone = '',
   });
 
   final String id;
@@ -62,6 +66,10 @@ class UserEntity extends Equatable {
   final String dplName;
   final int familySize;
   final bool isKetua;
+  final String namaPersonil; // Nama Asli Personil Lapangan (Petugas Pemilahan)
+  final String noWa; // No. Telepon 2 / WhatsApp Personil (Petugas Pemilahan)
+  final String namaDisplay;
+  final String assignedZone;
 
   UserEntity copyWith({
     String? id,
@@ -92,6 +100,10 @@ class UserEntity extends Equatable {
     String? dplName,
     int? familySize,
     bool? isKetua,
+    String? namaPersonil,
+    String? noWa,
+    String? namaDisplay,
+    String? assignedZone,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -122,6 +134,80 @@ class UserEntity extends Equatable {
       dplName: dplName ?? this.dplName,
       familySize: familySize ?? this.familySize,
       isKetua: isKetua ?? this.isKetua,
+      namaPersonil: namaPersonil ?? this.namaPersonil,
+      noWa: noWa ?? this.noWa,
+      namaDisplay: namaDisplay ?? this.namaDisplay,
+      assignedZone: assignedZone ?? this.assignedZone,
+    );
+  }
+
+  /// Factory constructor untuk mem-parse JSON response dari backend (/auth/me, /auth/login, dll).
+  factory UserEntity.fromJson(Map<String, dynamic> json) {
+    final roleRaw = json['role'];
+    final roleStr = roleRaw is Map
+        ? (roleRaw['name']?.toString() ?? '')
+        : (roleRaw?.toString() ?? '');
+
+    final pp = json['petugasProfile'] is Map
+        ? (json['petugasProfile'] as Map<String, dynamic>)
+        : null;
+    final sp = json['studentProfile'] is Map
+        ? (json['studentProfile'] as Map<String, dynamic>)
+        : null;
+
+    final namaPersonil = pp?['nama']?.toString() ??
+        json['namaPersonil']?.toString() ??
+        json['namaAsli']?.toString() ??
+        '';
+    final noWa = pp?['noWa']?.toString() ??
+        pp?['no_wa']?.toString() ??
+        json['noWa']?.toString() ??
+        '';
+    final namaDisplay = pp?['namaDisplay']?.toString() ??
+        pp?['nama_display']?.toString() ??
+        '';
+    final assignedZone = pp?['assignedZone']?.toString() ??
+        pp?['zona_ditugaskan']?.toString() ??
+        json['assignedZone']?.toString() ??
+        '';
+
+    return UserEntity(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      role: UserRoleExtension.fromApi(roleStr),
+      lifecycleState: WargaLifecycleExtension.fromApi(
+        json['lifecycleState']?.toString(),
+      ),
+      kecamatan: json['kecamatan']?.toString() ?? '',
+      provinsi: json['provinsi']?.toString() ?? '',
+      kota: json['kota']?.toString() ?? json['kabupaten']?.toString() ?? '',
+      kelurahan: json['kelurahan']?.toString() ?? '',
+      rw: json['rw']?.toString() ?? '',
+      rwId: json['rwId'] != null ? int.tryParse(json['rwId'].toString()) : null,
+      householdId: json['householdId']?.toString(),
+      komunitasId: (json['komunitas_id'] ?? json['komunitasId'])?.toString(),
+      fotoProfil: json['fotoProfil']?.toString(),
+      email: json['email']?.toString(),
+      nim: sp?['nim']?.toString() ?? json['nim']?.toString() ?? '',
+      jurusan: sp?['jurusan']?.toString() ?? json['jurusan']?.toString() ?? '',
+      prodi: sp?['prodi']?.toString() ?? json['prodi']?.toString() ?? '',
+      fakultas: sp?['fakultas']?.toString() ?? json['fakultas']?.toString() ?? '',
+      universitas: json['universitas']?.toString() ?? '',
+      jenjangPendidikan: json['jenjangPendidikan']?.toString() ?? 'S1',
+      pendampingName: json['pendampingName']?.toString(),
+      kelompokName: json['kelompokName']?.toString() ??
+          (json['kelompok'] is Map ? (json['kelompok'] as Map)['name']?.toString() ?? '' : ''),
+      dplName: json['dplName']?.toString() ?? '',
+      familySize: int.tryParse(json['familySize']?.toString() ?? '') ??
+          int.tryParse(json['jumlahAnggotaKeluarga']?.toString() ?? '') ??
+          1,
+      isKetua: json['isKetua'] == true || sp?['isKetua'] == true,
+      namaPersonil: namaPersonil,
+      noWa: noWa,
+      namaDisplay: namaDisplay,
+      assignedZone: assignedZone,
     );
   }
 
@@ -160,6 +246,10 @@ class UserEntity extends Equatable {
     kelompokName,
     dplName,
     isKetua,
+    namaPersonil,
+    noWa,
+    namaDisplay,
+    assignedZone,
   ];
 }
 

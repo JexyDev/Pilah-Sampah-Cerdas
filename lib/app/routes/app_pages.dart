@@ -32,6 +32,7 @@ import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/warga/views/warga_aspirasi_view.dart';
 import '../modules/profil/ganti_password_warga_view.dart';
+import '../modules/profil/edit_profil_warga_view.dart';
 import '../modules/mahasiswa/views/register_posko_view.dart';
 import '../modules/mahasiswa/views/register_fasilitas_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
@@ -43,6 +44,7 @@ import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
 import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../modules/petugas_pemilahan/views/ganti_password_petugas_view.dart';
+import '../modules/petugas_pemilahan/views/edit_profil_petugas_view.dart';
 import 'app_routes.dart';
 
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
@@ -164,6 +166,8 @@ class AppPages {
         return _buildRoute(const WargaAspirasiView(), settings);
       case AppRoutes.wargaGantiPassword:
         return _buildRoute(const GantiPasswordWargaView(), settings);
+      case AppRoutes.editProfilWarga:
+        return _buildRoute(const EditProfilWargaView(), settings);
       case AppRoutes.pemanfaatanSampah:
         return _buildRoute(const PemanfaatanSampahView(), settings);
       case AppRoutes.editProfilMahasiswa:
@@ -183,6 +187,8 @@ class AppPages {
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
+      case AppRoutes.editProfilPetugas:
+        return _buildRoute(const EditProfilPetugasView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:

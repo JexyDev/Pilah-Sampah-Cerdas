@@ -438,11 +438,14 @@ class _PetugasPemilahanProfilViewState
   }
 
   @override
-  
-  @override
   void initState() {
     super.initState();
     _initPackageInfo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(authProvider.notifier).fetchProfile();
+      }
+    });
   }
 
   Future<void> _initPackageInfo() async {
@@ -472,6 +475,22 @@ class _PetugasPemilahanProfilViewState
       appBar: AppBar(
         title: const Text('Profil'),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Profil Petugas',
+            onPressed: () async {
+              final res = await Navigator.pushNamed(
+                context,
+                AppRoutes.editProfilPetugas,
+              );
+              if (res == true) {
+                ref.read(authProvider.notifier).fetchProfile();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -559,6 +578,38 @@ class _PetugasPemilahanProfilViewState
                       ),
                     ),
                   ),
+                  if (user != null &&
+                      user.namaPersonil.isNotEmpty &&
+                      user.namaPersonil.trim() != user.name.trim()) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.badge_outlined,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Personil: ${user.namaPersonil}',
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -603,7 +654,7 @@ class _PetugasPemilahanProfilViewState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Data Petugas Pemilahan ──────────────────────────────
-                  _sectionLabel('DATA PETUGAS PEMILAHAN'),
+                  _sectionLabel('DATA OPERASIONAL & WILAYAH'),
                   const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
@@ -613,29 +664,55 @@ class _PetugasPemilahanProfilViewState
                     child: Column(
                       children: [
                         _infoTile(
-                          Icons.person_outline_rounded,
-                          'Nama Lengkap',
-                          user?.name ?? '-',
-                          bold: true,
-                        ),
-                        const Divider(height: 1, indent: 56),
-                        _infoTile(
                           Icons.phone_iphone_rounded,
-                          'No. Telepon',
+                          'No. Telepon (Akun Login)',
                           user != null &&
                                   user.phone.toString() != 'null' &&
                                   user.phone.toString().isNotEmpty
                               ? user.phone
                               : '-',
+                          bold: true,
+                        ),
+                        if (user != null &&
+                            user.noWa.isNotEmpty &&
+                            user.noWa.toString() != 'null' &&
+                            user.noWa.trim() != user.phone.trim()) ...[
+                          const Divider(height: 1, indent: 56),
+                          _infoTile(
+                            Icons.chat_bubble_outline_rounded,
+                            'No. WhatsApp Lapangan',
+                            user.noWa,
+                          ),
+                        ],
+                        const Divider(height: 1, indent: 56),
+                        _infoTile(
+                          Icons.location_city_rounded,
+                          'RW Penugasan',
+                          user != null &&
+                                  user.rw.toString() != 'null' &&
+                                  user.rw.toString().isNotEmpty
+                              ? (user.rw.startsWith('RW') ? user.rw : 'RW ${user.rw}')
+                              : '-',
+                          bold: true,
+                        ),
+                        const Divider(height: 1, indent: 56),
+                        _infoTile(
+                          Icons.map_outlined,
+                          'Kelurahan',
+                          user != null &&
+                                  user.kelurahan.toString() != 'null' &&
+                                  user.kelurahan.toString().isNotEmpty
+                              ? user.kelurahan
+                              : '-',
                         ),
                         const Divider(height: 1, indent: 56),
                         _infoTile(
                           Icons.map_rounded,
-                          'Provinsi',
+                          'Kecamatan',
                           user != null &&
-                                  user.provinsi.toString() != 'null' &&
-                                  user.provinsi.toString().isNotEmpty
-                              ? user.provinsi
+                                  user.kecamatan.toString() != 'null' &&
+                                  user.kecamatan.toString().isNotEmpty
+                              ? user.kecamatan
                               : '-',
                         ),
                         const Divider(height: 1, indent: 56),
@@ -651,44 +728,23 @@ class _PetugasPemilahanProfilViewState
                         const Divider(height: 1, indent: 56),
                         _infoTile(
                           Icons.map_rounded,
-                          'Kecamatan',
+                          'Provinsi',
                           user != null &&
-                                  user.kecamatan.toString() != 'null' &&
-                                  user.kecamatan.toString().isNotEmpty
-                              ? user.kecamatan
+                                  user.provinsi.toString() != 'null' &&
+                                  user.provinsi.toString().isNotEmpty
+                              ? user.provinsi
                               : '-',
                         ),
-                        const Divider(height: 1, indent: 56),
-                        _infoTile(
-                          Icons.map_outlined,
-                          'Kelurahan',
-                          user != null &&
-                                  user.kelurahan.toString() != 'null' &&
-                                  user.kelurahan.toString().isNotEmpty
-                              ? user.kelurahan
-                              : '-',
-                        ),
-                        const Divider(height: 1, indent: 56),
-                        _infoTile(
-                          Icons.location_city_rounded,
-                          'RW Penugasan',
-                          user != null &&
-                                  user.rw.toString() != 'null' &&
-                                  user.rw.toString().isNotEmpty
-                              ? user.rw
-                              : '-',
-                          bold: true,
-                        ),
-                        const Divider(height: 1, indent: 56),
-                        _infoTile(
-                          Icons.home_outlined,
-                          'Alamat Lengkap',
-                          user != null &&
-                                  user.address.toString() != 'null' &&
-                                  user.address.toString().isNotEmpty
-                              ? user.address
-                              : '-',
-                        ),
+                        if (user?.address != null &&
+                            user!.address.toString() != 'null' &&
+                            user.address.trim().isNotEmpty) ...[
+                          const Divider(height: 1, indent: 56),
+                          _infoTile(
+                            Icons.home_outlined,
+                            'Alamat Operasional',
+                            user.address,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -704,6 +760,50 @@ class _PetugasPemilahanProfilViewState
                     ),
                     child: Column(
                       children: [
+                        // Edit Profil khusus Petugas Pemilahan
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.manage_accounts_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 20,
+                            ),
+                          ),
+                          title: const Text(
+                            'Edit Profil Petugas',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Ubah data personil lapangan & alamat operasional',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.textHint,
+                          ),
+                          onTap: () async {
+                            final res = await Navigator.pushNamed(
+                              context,
+                              AppRoutes.editProfilPetugas,
+                            );
+                            if (res == true) {
+                              ref.read(authProvider.notifier).fetchProfile();
+                            }
+                          },
+                        ),
+                        const Divider(height: 1, indent: 56),
+
                         // Ganti Password khusus Petugas Pemilahan
                         ListTile(
                           leading: Container(
@@ -748,12 +848,12 @@ class _PetugasPemilahanProfilViewState
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
                               Icons.info_outline_rounded,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryGreen,
                               size: 20,
                             ),
                           ),
@@ -778,21 +878,21 @@ class _PetugasPemilahanProfilViewState
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.maroonRed.withValues(alpha: 0.1),
+                              color: AppColors.dangerRed.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
                               Icons.logout_rounded,
-                              color: AppColors.maroonRed,
+                              color: AppColors.dangerRed,
                               size: 20,
                             ),
                           ),
                           title: const Text(
-                            'Keluar Akun',
+                            'Keluar',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: AppColors.maroonRed,
+                              color: AppColors.dangerRed,
                             ),
                           ),
                           onTap: _confirmLogout,

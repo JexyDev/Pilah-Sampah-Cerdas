@@ -802,6 +802,8 @@ class ApiAuthRepository implements AuthRepository {
     String? rw,
     String? jenjangPendidikan,
     int? familySize,
+    String? namaPersonil,
+    String? noWa,
   }) async {
     try {
       final response = await apiClient.dio.put(
@@ -815,12 +817,18 @@ class ApiAuthRepository implements AuthRepository {
           if (rw != null) 'rw': rw,
           if (jenjangPendidikan != null) 'jenjangPendidikan': jenjangPendidikan,
           if (familySize != null) 'familySize': familySize,
+          if (namaPersonil != null) 'namaAsli': namaPersonil,
+          if (namaPersonil != null) 'namaPersonil': namaPersonil,
+          if (noWa != null) 'noWa': PhoneFormatter.prepareLoginPhoneInput(noWa),
         },
       );
       if (response.statusCode == 200) {
         // Data berhasil diupdate di server, update local storage cache:
-        final updatedData = response.data['data']['user'];
-        if (updatedData != null) {
+        final responseData = response.data['data'];
+        final updatedData = responseData is Map<String, dynamic>
+            ? (responseData['user'] ?? responseData)
+            : null;
+        if (updatedData != null && updatedData is Map<String, dynamic>) {
           final currentUserStr = await secureStorage.read(
             key: AppConfig.userDataKey,
           );
@@ -831,6 +839,19 @@ class ApiAuthRepository implements AuthRepository {
             currentUserMap['phone'] = updatedData['phone'] ?? phone;
             if (updatedData['address'] != null) {
               currentUserMap['address'] = updatedData['address'];
+            }
+            if (namaPersonil != null) {
+              currentUserMap['namaAsli'] = namaPersonil;
+              currentUserMap['namaPersonil'] = namaPersonil;
+              if (currentUserMap['petugasProfile'] is Map) {
+                (currentUserMap['petugasProfile'] as Map)['nama'] = namaPersonil;
+              }
+            }
+            if (noWa != null) {
+              currentUserMap['noWa'] = noWa;
+              if (currentUserMap['petugasProfile'] is Map) {
+                (currentUserMap['petugasProfile'] as Map)['noWa'] = noWa;
+              }
             }
             await secureStorage.write(
               key: AppConfig.userDataKey,
@@ -1259,6 +1280,26 @@ class ApiAuthRepository implements AuthRepository {
       fullAddress = filteredParts.join(', ');
     }
 
+    // 11. Ekstrak data profil Petugas Residu/Pemilahan jika ada
+    final pp = userMap['petugasProfile'] is Map
+        ? (userMap['petugasProfile'] as Map<String, dynamic>)
+        : null;
+    final namaPersonil = pp?['nama']?.toString() ??
+        userMap['namaAsli']?.toString() ??
+        userMap['namaPersonil']?.toString() ??
+        '';
+    final noWa = pp?['noWa']?.toString() ??
+        pp?['no_wa']?.toString() ??
+        userMap['noWa']?.toString() ??
+        '';
+    final namaDisplay = pp?['namaDisplay']?.toString() ??
+        pp?['nama_display']?.toString() ??
+        '';
+    final assignedZone = pp?['assignedZone']?.toString() ??
+        pp?['zona_ditugaskan']?.toString() ??
+        userMap['assignedZone']?.toString() ??
+        '';
+
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
       name: userMap['name']?.toString() ?? '',
@@ -1307,6 +1348,10 @@ class ApiAuthRepository implements AuthRepository {
           (userMap['is_ketua'] == true) ||
           (userMap['role']?.toString().toUpperCase() == 'KETUA') ||
           (sp?['isLeader'] == true),
+      namaPersonil: namaPersonil,
+      noWa: noWa,
+      namaDisplay: namaDisplay,
+      assignedZone: assignedZone,
     );
   }
 
@@ -1379,6 +1424,16 @@ class ApiAuthRepository implements AuthRepository {
                 ? fetched.dplName
                 : user.dplName,
             isKetua: fetched.isKetua || user.isKetua,
+            namaPersonil: fetched.namaPersonil.isNotEmpty
+                ? fetched.namaPersonil
+                : user.namaPersonil,
+            noWa: fetched.noWa.isNotEmpty ? fetched.noWa : user.noWa,
+            namaDisplay: fetched.namaDisplay.isNotEmpty
+                ? fetched.namaDisplay
+                : user.namaDisplay,
+            assignedZone: fetched.assignedZone.isNotEmpty
+                ? fetched.assignedZone
+                : user.assignedZone,
           );
         }
       }
