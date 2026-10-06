@@ -278,9 +278,9 @@ export const HasilPemanfaatan: React.FC = () => {
         category: "Tata Kelola Sampah • Pengolahan Organik",
         description:
           "Pusat pemantauan konversi sampah organik terpilah menjadi produk bernilai guna (Kompos, Pupuk Organik Cair/POC, Biokonversi Maggot BSF, Loseda, dan Bata Terawang) berbasis Master Luaran.",
-        kpiHasilLabel: "Hasil Panen Olahan",
-        kpiBahanLabel: "Bahan Organik Terolah",
-        tableHasilHeader: "Hasil Panen",
+        kpiHasilLabel: "Luaran yang Dihasilkan",
+        kpiBahanLabel: "Sampah yang Diolah",
+        tableHasilHeader: "Luaran yang Dihasilkan",
         emptyEntity: "Produk Pengolahan Sampah Organik",
         loadingText: "Memuat data pengolahan sampah organik...",
       };
@@ -291,9 +291,9 @@ export const HasilPemanfaatan: React.FC = () => {
         category: "Tata Kelola Sampah • Pemanfaatan Anorganik",
         description:
           "Pusat pemantauan pemanfaatan dan daur ulang sampah anorganik (Bank Sampah, kreasi daur ulang, ecobrick, pemilahan plastik, kertas, dan logam) bernilai ekonomis berbasis Master Luaran.",
-        kpiHasilLabel: "Hasil Pilah & Daur Ulang",
-        kpiBahanLabel: "Bahan Anorganik Terolah",
-        tableHasilHeader: "Hasil Olahan / Pilah",
+        kpiHasilLabel: "Luaran yang Dihasilkan",
+        kpiBahanLabel: "Sampah yang Diolah",
+        tableHasilHeader: "Luaran yang Dihasilkan",
         emptyEntity: "Produk Pemanfaatan Sampah Anorganik",
         loadingText: "Memuat data pemanfaatan sampah anorganik...",
       };
@@ -304,9 +304,9 @@ export const HasilPemanfaatan: React.FC = () => {
         category: "Tata Kelola Sampah • Sampah Residu",
         description:
           "Pusat pemantauan pengolahan dan pencatatan sampah residu yang tidak dapat didaur ulang menuju pemrosesan akhir berbasis Master Luaran.",
-        kpiHasilLabel: "Residu Terkelola",
-        kpiBahanLabel: "Total Residu Terangkut",
-        tableHasilHeader: "Volume Residu",
+        kpiHasilLabel: "Luaran yang Dihasilkan",
+        kpiBahanLabel: "Sampah yang Diolah",
+        tableHasilHeader: "Luaran yang Dihasilkan",
         emptyEntity: "Data Pengelolaan Sampah Residu",
         loadingText: "Memuat data pengelolaan sampah residu...",
       };
@@ -316,9 +316,9 @@ export const HasilPemanfaatan: React.FC = () => {
       category: "Tata Kelola Sampah • Pemanfaatan",
       description:
         "Pusat pemantauan konversi pengolahan sampah terpilah menjadi produk bernilai guna (Kompos, Maggot BSF, Pupuk Organik Cair, dan Bank Sampah) berbasis Master Luaran.",
-      kpiHasilLabel: "Hasil Panen Olahan",
-      kpiBahanLabel: "Bahan Terolah",
-      tableHasilHeader: "Hasil Panen",
+      kpiHasilLabel: "Luaran yang Dihasilkan",
+      kpiBahanLabel: "Sampah yang Diolah",
+      tableHasilHeader: "Luaran yang Dihasilkan",
       emptyEntity: "Produk Hasil Pemanfaatan",
       loadingText: "Memuat data monitoring pemanfaatan...",
     };
@@ -421,35 +421,7 @@ export const HasilPemanfaatan: React.FC = () => {
 
       {/* KPI Metric Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-            <Leaf className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
-              {headerInfo.kpiHasilLabel}
-            </p>
-            <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
-              {totalPanenKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-semibold text-slate-400">kg</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
-            <TrendingUp className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
-              Nilai Ekonomi Daur
-            </p>
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
-              Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
-            </p>
-          </div>
-        </div>
-
+        {/* 1. Sampah yang Diolah */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
           <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
             <Boxes className="w-5 h-5" />
@@ -465,13 +437,45 @@ export const HasilPemanfaatan: React.FC = () => {
           </div>
         </div>
 
+        {/* 2. Luaran yang Dihasilkan */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
+            <Leaf className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              {headerInfo.kpiHasilLabel}
+            </p>
+            <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
+              {totalPanenKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-semibold text-slate-400">kg</span>
+            </p>
+          </div>
+        </div>
+
+        {/* 3. Nilai Ekonomi */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              Nilai Ekonomi
+            </p>
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
+              Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
+            </p>
+          </div>
+        </div>
+
+        {/* 4. Jumlah Program */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
           <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
             <Building2 className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
-              Titik Program &amp; Fasilitas
+              Jumlah Program
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
               {filteredPrograms.length}{" "}
@@ -508,7 +512,7 @@ export const HasilPemanfaatan: React.FC = () => {
         </div>
 
         {/* Tiered Select Filters Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-slate-100 dark:border-slate-800">
           {/* 1. Filter Wilayah (Kelurahan) */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
             <MapPin size={14} className="text-[#009966] shrink-0" />
@@ -543,31 +547,7 @@ export const HasilPemanfaatan: React.FC = () => {
             </select>
           </div>
 
-          {/* 3. Filter Kategori Sampah / Bahan */}
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <Tag size={14} className="text-[#009966] shrink-0" />
-            <select
-              value={filterKategori}
-              onChange={(e) => {
-                const val = e.target.value;
-                setFilterKategori(val);
-                setCurrentPage(1);
-                if (val !== "ALL") {
-                  setSearchParams({ kategori: val });
-                } else {
-                  setSearchParams({});
-                }
-              }}
-              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
-            >
-              <option value="ALL">Semua Aliran Sampah</option>
-              <option value="ORGANIK">Organik</option>
-              <option value="ANORGANIK">Anorganik</option>
-              <option value="RESIDU">Residu</option>
-            </select>
-          </div>
-
-          {/* 4. Filter Produk Luaran (Master Data Luaran Lookup) */}
+          {/* 3. Filter Jenis Olahan */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
             <Filter size={14} className="text-[#009966] shrink-0" />
             <select
@@ -575,11 +555,11 @@ export const HasilPemanfaatan: React.FC = () => {
               onChange={(e) => setFilterLuaran(e.target.value)}
               className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
             >
-              <option value="ALL">Semua Produk Luaran (Master)</option>
+              <option value="ALL">Semua Jenis Olahan</option>
               {masterLuaranList.length > 0 ? (
                 masterLuaranList.map((m) => (
                   <option key={m.id} value={m.nama}>
-                    {m.nama} ({m.kategori})
+                    {m.nama}
                   </option>
                 ))
               ) : (
@@ -605,9 +585,9 @@ export const HasilPemanfaatan: React.FC = () => {
               <tr>
                 <th className="px-4 py-3.5 text-center w-12">No</th>
                 <th className="px-4 py-3.5">Nama Program &amp; Fasilitas</th>
-                <th className="px-4 py-3.5">Jenis Olahan (Master)</th>
+                <th className="px-4 py-3.5">Jenis Olahan</th>
                 <th className="px-4 py-3.5">Wilayah RW &amp; Kelurahan</th>
-                <th className="px-4 py-3.5 text-center">Bahan Masuk</th>
+                <th className="px-4 py-3.5 text-center">Sampah yang Diolah</th>
                 <th className="px-4 py-3.5 text-center">{headerInfo.tableHasilHeader}</th>
                 <th className="px-4 py-3.5 text-center">Nilai Ekonomi</th>
                 <th className="px-4 py-3.5">Penerima Manfaat</th>

@@ -218,13 +218,18 @@ export function canAccessSidebarRoute(
 
   // 7. Rute Dasbor & Analisis Sistem & BERSEKA AI & Monitoring Wilayah & Manajemen IoT (Terbuka untuk PIMPINAN)
   if (
-    cleanPath === "/dasbor" ||
     cleanPath === "/berseka-ai" ||
     cleanPath === "/analisis-sistem/tata-kelola-sampah" ||
     cleanPath === "/analisis-sistem/kkn" ||
     cleanPath === "/analisis-sistem" ||
     cleanPath === "/analisis-projek" ||
-    cleanPath === "/analisis-proyek" ||
+    cleanPath === "/analisis-proyek"
+  ) {
+    return isStagingEnv();
+  }
+
+  if (
+    cleanPath === "/dasbor" ||
     cleanPath === "/monitoring-wilayah" ||
     cleanPath === "/manajemen-iot" ||
     cleanPath === "/iot"
