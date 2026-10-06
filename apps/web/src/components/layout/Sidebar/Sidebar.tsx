@@ -577,7 +577,8 @@ const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
   label: string;
   items: any[];
-}> = ({ icon: Icon, label, items }) => {
+  badge?: number | string;
+}> = ({ icon: Icon, label, items, badge }) => {
   const location = useLocation();
   const [isHovered, setIsHovered] = React.useState(false);
   const [isClickedOpen, setIsClickedOpen] = React.useState(false);
@@ -676,8 +677,13 @@ const NavGroupCollapsed: React.FC<{
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
             className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[220px] max-h-[85vh] overflow-y-auto z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
           >
-            <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">
-              {label}
+            <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+              <span>{label}</span>
+              {badge !== undefined && (
+                <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                  {badge}
+                </span>
+              )}
             </div>
             {items.map((sub, idx) => {
               if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
@@ -709,7 +715,12 @@ const NavGroupCollapsed: React.FC<{
                                 : "bg-slate-300 dark:bg-slate-600"
                             }`}
                           />
-                          <span className="truncate">{child.label}</span>
+                          <span className="truncate flex-1">{child.label}</span>
+                          {child.badge !== undefined && (
+                            <span className="ml-auto bg-[#58A621] dark:bg-emerald-600 text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                              {child.badge}
+                            </span>
+                          )}
                         </Link>
                       );
                     })}
@@ -736,7 +747,12 @@ const NavGroupCollapsed: React.FC<{
                         : "bg-slate-300 dark:bg-slate-600"
                     }`}
                   />
-                  <span className="truncate">{sub.label}</span>
+                  <span className="truncate flex-1">{sub.label}</span>
+                  {sub.badge !== undefined && (
+                    <span className="ml-auto bg-[#58A621] dark:bg-emerald-600 text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                      {sub.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -751,8 +767,9 @@ const NavGroup: React.FC<{
   icon: LucideIcon;
   label: string;
   items: any[];
+  badge?: number | string;
   onItemClick?: () => void;
-}> = ({ icon: Icon, label, items, onItemClick }) => {
+}> = ({ icon: Icon, label, items, badge, onItemClick }) => {
   const location = useLocation();
 
   const isSubActive = (subTo: string, index: number) => {
@@ -799,6 +816,11 @@ const NavGroup: React.FC<{
         >
           {label}
         </span>
+        {badge !== undefined && (
+          <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform mr-1">
+            {badge}
+          </span>
+        )}
         <ChevronDown
           size={14}
           className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400" : "text-slate-400"}`}
@@ -853,7 +875,12 @@ const NavGroup: React.FC<{
                                 : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
                             }`}
                           />
-                          <span className="truncate">{child.label}</span>
+                          <span className="truncate flex-1">{child.label}</span>
+                          {child.badge !== undefined && (
+                            <span className="ml-auto bg-[#58A621] dark:bg-emerald-600 text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                              {child.badge}
+                            </span>
+                          )}
                         </NavLink>
                       );
                     })}
@@ -882,7 +909,12 @@ const NavGroup: React.FC<{
                       : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
                   }`}
                 />
-                <span className="truncate">{sub.label}</span>
+                <span className="truncate flex-1">{sub.label}</span>
+                {sub.badge !== undefined && (
+                  <span className="ml-auto bg-[#58A621] dark:bg-emerald-600 text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs">
+                    {sub.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}
@@ -1845,6 +1877,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           label: "Internet of Things",
           icon: Radio,
           resource: "internet_of_things",
+          badge: "Pengembangan",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1858,6 +1891,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/iot/monitoring",
               label: "Monitoring",
+              badge: "Pengembangan",
               resource: "iot_monitoring",
               allowed: [
                 "DEVELOPER",
@@ -2219,6 +2253,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                           key={item.label}
                           icon={item.icon}
                           label={item.label}
+                          badge={item.badge}
                           items={getFilteredGroupChildren(item.label, item.children)}
                         />
                       ) : (
@@ -2303,6 +2338,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                               to={childrenToRender[0].to}
                               icon={item.icon}
                               label={childrenToRender[0].label}
+                              badge={childrenToRender[0].badge || item.badge}
                               onClick={handleMobileItemClick}
                             />
                           );
@@ -2312,6 +2348,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                             key={item.label}
                             icon={item.icon}
                             label={item.label}
+                            badge={item.badge}
                             items={childrenToRender}
                             onItemClick={handleMobileItemClick}
                           />
