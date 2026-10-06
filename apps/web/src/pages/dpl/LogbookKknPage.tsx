@@ -1065,7 +1065,6 @@ export const LogbookKknPage: React.FC = () => {
                   className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">Semua Status</option>
-                  <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Persetujuan Ketua</option>
                   <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
                   <option value="DISETUJUI_DPL">Tervalidasi</option>
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
