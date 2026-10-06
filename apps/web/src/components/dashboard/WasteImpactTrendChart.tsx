@@ -279,7 +279,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
-                    tickFormatter={(val) => `${val} kg`}
+                    tickFormatter={(val) => `${val} kg/hari`}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "rgba(241, 245, 249, 0.6)" }}
@@ -295,13 +295,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                               <div className="flex justify-between text-slate-300">
                                 <span>Baseline Berat Sampah:</span>
                                 <span className="font-bold text-white">
-                                  {item.baselineKg.toLocaleString("id-ID")} kg
+                                  {item.baselineKg.toLocaleString("id-ID")} kg/hari
                                 </span>
                               </div>
                               <div className="flex justify-between text-blue-300">
                                 <span>Hasil Giat KKN:</span>
                                 <span className="font-bold text-blue-400">
-                                  {item.actualKg.toLocaleString("id-ID")} kg
+                                  {item.actualKg.toLocaleString("id-ID")} kg/hari
                                 </span>
                               </div>
                               <div className="flex justify-between border-t border-slate-800 pt-1 text-[11px]">
@@ -320,8 +320,8 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                   }`}
                                 >
                                   {selectedSource === "WARGA_APP"
-                                    ? `${item.baselineKg > 0 ? ((item.actualKg / item.baselineKg) * 100).toFixed(1) : 0}% (${item.actualKg.toLocaleString("id-ID")} kg)`
-                                    : `${(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} kg (${item.deltaPct ?? 0}%)`}
+                                    ? `${item.baselineKg > 0 ? ((item.actualKg / item.baselineKg) * 100).toFixed(1) : 0}% (${item.actualKg.toLocaleString("id-ID")} kg/hari)`
+                                    : `${(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} kg/hari (${item.deltaPct ?? 0}%)`}
                                 </span>
                               </div>
                             </div>
@@ -337,14 +337,14 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   />
                   <Bar
                     dataKey="baselineKg"
-                    name="Baseline Berat Sampah (kg)"
+                    name="Baseline Berat Sampah (kg/hari)"
                     fill="#94a3b8"
                     radius={[6, 6, 0, 0]}
                     barSize={viewMode === "BOTH" ? 18 : 26}
                   />
                   <Bar
                     dataKey="actualKg"
-                    name={`Hasil Giat KKN (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (kg)`}
+                    name={`Hasil Giat KKN (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (kg/hari)`}
                     fill="#3b82f6"
                     radius={[6, 6, 0, 0]}
                     barSize={viewMode === "BOTH" ? 18 : 26}
@@ -361,13 +361,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase">Total Baseline</span>
                 <span className="font-black text-slate-700 dark:text-slate-200">
-                  {volumeSummary.totalBaselineKg.toLocaleString("id-ID")} kg
+                  {volumeSummary.totalBaselineKg.toLocaleString("id-ID")} kg/hari
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
                 <span className="block text-[10px] text-blue-500 font-bold uppercase">Hasil Giat KKN</span>
                 <span className="font-black text-blue-600 dark:text-blue-400">
-                  {volumeSummary.totalActualKg.toLocaleString("id-ID")} kg
+                  {volumeSummary.totalActualKg.toLocaleString("id-ID")} kg/hari
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
@@ -377,7 +377,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                 <span className="font-black text-emerald-600 dark:text-emerald-400">
                   {selectedSource === "WARGA_APP"
                     ? `${volumeSummary.totalBaselineKg > 0 ? ((volumeSummary.totalActualKg / volumeSummary.totalBaselineKg) * 100).toFixed(1) : 0}%`
-                    : `${formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false })} (${volumeSummary.totalDeltaPct}%)`}
+                    : `${formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false, unit: "kg/hari" })} (${volumeSummary.totalDeltaPct}%)`}
                 </span>
               </div>
             </div>

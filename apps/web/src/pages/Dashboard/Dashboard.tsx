@@ -60,6 +60,15 @@ export interface KelurahanBaselineData {
   isFallbackBaselineRate?: boolean;
   isFallbackBaselineKg?: boolean;
   isFallback?: boolean;
+  // Field pendukung standarisasi kg/hari dan audit akumulasi KKN
+  totalKgPerHari?: number;
+  wargaKgPerHari?: number;
+  petugasKgPerHari?: number;
+  totalKgAccumulated?: number;
+  wargaKgAccumulated?: number;
+  petugasKgAccumulated?: number;
+  durasiHariKkn?: number;
+  durationDays?: number;
 }
 
 /**
@@ -2123,6 +2132,14 @@ const Dashboard: React.FC = () => {
         actualKg: Number(item.totalKg || 0),
         wargaKg: Number(item.wargaKg || 0),
         petugasKg: Number(item.petugasKg || 0),
+        totalKgPerHari: item.totalKgPerHari ?? Number(item.totalKg || 0),
+        wargaKgPerHari: item.wargaKgPerHari ?? Number(item.wargaKg || 0),
+        petugasKgPerHari: item.petugasKgPerHari ?? Number(item.petugasKg || 0),
+        totalKgAccumulated: item.totalKgAccumulated,
+        wargaKgAccumulated: item.wargaKgAccumulated,
+        petugasKgAccumulated: item.petugasKgAccumulated,
+        durasiHariKkn: item.durasiHariKkn ?? item.durationDays,
+        durationDays: item.durationDays ?? item.durasiHariKkn,
         baselineCompliance: rawBaselineComp,
         actualCompliance:
           item.actualCompliance !== undefined && item.actualCompliance !== null

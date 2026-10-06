@@ -131,9 +131,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       "No",
       "Kelurahan",
       "Sumber Data",
-      isWargaApp ? "Baseline Timbulan (kg)" : "Baseline Berat Sampah (kg)",
-      isWargaApp ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)",
-      isWargaApp ? "Sampah Terpilah Mandiri (kg)" : "Reduksi Berat ke TPA (kg)",
+      isWargaApp ? "Baseline Timbulan (kg/hari)" : "Baseline Berat Sampah (kg/hari)",
+      isWargaApp ? "Aktual Terpilah Warga (kg/hari)" : "Aktual Saat Ini (kg/hari)",
+      "Total Akumulasi KKN (kg)",
+      isWargaApp ? "Sampah Terpilah Mandiri (kg/hari)" : "Reduksi Berat ke TPA (kg/hari)",
       isWargaApp ? "Tingkat Partisipasi Berat Terpilah (%)" : "Reduksi Berat ke TPA (%)",
       "Baseline Kepatuhan (%)",
       "Aktual Kepatuhan (%)",
@@ -160,6 +161,9 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           : "Semua Sumber (Warga + Petugas)",
         item.baselineKg ? Number(item.baselineKg.toFixed(2)) : 0,
         item.actualKg ? Number(item.actualKg.toFixed(2)) : 0,
+        item.totalKgAccumulated !== undefined && item.totalKgAccumulated !== null
+          ? Number(item.totalKgAccumulated.toFixed(2))
+          : (item.actualKg ? Number(item.actualKg.toFixed(2)) : 0),
         isWargaApp
           ? (item.actualKg ? Number(item.actualKg.toFixed(2)) : 0)
           : (deltaKg !== null ? deltaKg : "-"),
@@ -189,6 +193,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       `Filter: ${selectedSource}`,
       aggregation.totalBaselineKg,
       aggregation.totalActualKg,
+      aggregation.totalKgAccumulated ?? "-",
       isWargaApp ? aggregation.totalActualKg : aggregation.totalDeltaKg,
       isWargaApp
         ? `${totalAdopsiPct}%`
@@ -369,14 +374,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Baseline Timbulan (kg)" : "Baseline (kg)"}
+                {selectedSource === "WARGA_APP" ? "Baseline Timbulan (kg/hari)" : "Baseline (kg/hari)"}
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)"}
+                {selectedSource === "WARGA_APP" ? "Aktual Terpilah Warga (kg/hari)" : "Aktual Saat Ini (kg/hari)"}
               </th>
               {/* Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
-                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Delta (kg)"}
+                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri (kg/hari)" : "Delta (kg/hari)"}
               </th>
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[105px]">
                 {selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Berat Terpilah" : "Delta (%)"}
@@ -579,21 +584,37 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
               {/* Total Baseline Berat */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+                <div className="flex flex-col items-center">
+                  <span>{aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari</span>
+                </div>
               </td>
 
               {/* Total Aktual Berat */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+                <div className="flex flex-col items-center">
+                  <span>{aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari</span>
+                  {aggregation.totalKgAccumulated !== undefined && aggregation.totalKgAccumulated > 0 && (
+                    <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 block">
+                      (Akumulasi: {aggregation.totalKgAccumulated.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg)
+                    </span>
+                  )}
+                </div>
               </td>
 
-              {/* Total Penurunan Berat (kg) / Total Sampah Terpilah Mandiri */}
+              {/* Total Penurunan Berat (kg/hari) / Total Sampah Terpilah Mandiri */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
                 {selectedSource === "WARGA_APP" ? (
-                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
-                    <CheckCircle2 size={13} className="text-emerald-600" />
-                    <span>{aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
-                  </span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
+                      <CheckCircle2 size={13} className="text-emerald-600" />
+                      <span>{aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari</span>
+                    </span>
+                    {aggregation.totalKgAccumulated !== undefined && aggregation.totalKgAccumulated > 0 && (
+                      <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500">
+                        (Akumulasi: {aggregation.totalKgAccumulated.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg)
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <span
                     className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
@@ -613,8 +634,8 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                     <span>
                       {aggregation.totalDeltaKg < 0
-                        ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
-                        : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false })}
+                        ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari`
+                        : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false, unit: "kg/hari" })}
                     </span>
                   </span>
                 )}
@@ -710,24 +731,25 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
             {selectedSource === "WARGA_APP" ? (
               <>
-                <p><strong>Sampah Terpilah Mandiri (kg)</strong> = Berat Aktual Setoran Warga via App</p>
-                <p><strong>Tingkat Partisipasi Berat Terpilah (%)</strong> = [Aktual Warga (kg) ÷ Baseline Timbulan (kg)] × 100%</p>
+                <p><strong>Aktual Laju Terpilah (kg/hari)</strong> = Akumulasi Berat Warga (kg) ÷ Durasi Giat KKN (Hari)</p>
+                <p><strong>Tingkat Partisipasi Terpilah (%)</strong> = [Aktual Warga (kg/hari) ÷ Baseline Timbulan (kg/hari)] × 100%</p>
               </>
             ) : (
               <>
-                <p><strong>Δ Berat (kg)</strong> = Berat_Baseline − Berat_Aktual_Petugas</p>
-                <p><strong>Δ Persen (%)</strong> = [(Berat_Baseline − Berat_Aktual_Petugas) ÷ Berat_Baseline] × 100%</p>
+                <p><strong>Aktual Timbulan (kg/hari)</strong> = Akumulasi Berat Petugas (kg) ÷ Durasi Giat KKN (Hari)</p>
+                <p><strong>Δ Berat (kg/hari)</strong> = Baseline (kg/hari) − Aktual (kg/hari)</p>
+                <p><strong>Δ Persen (%)</strong> = [(Baseline − Aktual) ÷ Baseline] × 100%</p>
               </>
             )}
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
             {selectedSource === "WARGA_APP" ? (
               <>
-                <strong>Prinsip Anti-Misleading Data:</strong> Pada tab Aktivitas Warga, baseline timbulan (1.670,5 kg/hari) mengacu pada <strong>24 RW Wilayah Binaan KKN</strong>. Angka aktual mencerminkan sampah terpilah mandiri rumah tangga melalui pemindaian QR &amp; BERSEKA Vision AI (menunjukkan tingkat adopsi mandiri dan reduksi sampah langsung di sumbernya).
+                <strong>Prinsip Penyelarasan Satuan (kg/hari):</strong> Baseline timbulan (1.670,5 kg/hari) adalah estimasi per hari di 24 RW. Sesuai arahan Direksi, pembanding aktual dikonversi menjadi laju timbulan per hari (kg/hari) selama giat KKN berlangsung, bukan akumulasi total, sehingga menghasilkan komparasi apel-ke-apel yang presisi dan proporsional.
               </>
             ) : (
               <>
-                <strong>Penurunan Sampah ke TPA / Residu:</strong> Dihitung berdasarkan penimbangan timbulan residu TPS/TPS3R oleh petugas terhadap estimasi timbulan baseline awal.
+                <strong>Penurunan Sampah ke TPA / Residu (kg/hari):</strong> Dihitung berdasarkan laju harian penimbangan residu oleh petugas terhadap baseline harian awal. Formula ini menjamin delta mencerminkan efektivitas reduksi harian tanpa bias penumpukan durasi hari KKN.
               </>
             )}
           </div>

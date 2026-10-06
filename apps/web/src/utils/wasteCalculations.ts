@@ -32,6 +32,15 @@ export interface WasteImpactItem {
   akurasiPilah?: number | null;
   wargaAktif?: number | null;
   totalWarga?: number | null;
+  // Field pendukung standarisasi kg/hari dan audit akumulasi KKN
+  durasiHariKkn?: number | null;
+  durationDays?: number | null;
+  totalKgAccumulated?: number | null;
+  wargaKgAccumulated?: number | null;
+  petugasKgAccumulated?: number | null;
+  totalKgPerHari?: number | null;
+  wargaKgPerHari?: number | null;
+  petugasKgPerHari?: number | null;
 }
 
 export interface WasteImpactAggregation {
@@ -46,6 +55,8 @@ export interface WasteImpactAggregation {
   totalWargaKg: number;
   totalPetugasKg: number;
   kelurahanCount: number;
+  totalKgAccumulated?: number;
+  durasiHariKkn?: number;
 }
 
 /**
