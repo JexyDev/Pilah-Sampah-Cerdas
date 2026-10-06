@@ -457,12 +457,12 @@ export class AiController {
       });
 
       const kelurahanList = [
-        { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 1850.0 },
-        { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 10983.0 },
-        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 2973.5 },
-        { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 2628.0 },
-        { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 9123.04 },
-        { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 10803.78 },
+        { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 96.0 },
+        { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 122.0 },
+        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 100.0 },
+        { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 96.5 },
+        { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 835.0 },
+        { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 421.0 },
       ];
 
       const kelurahanData = kelurahanList.map((k) => {
@@ -499,19 +499,39 @@ export class AiController {
           volumeAnorganik = anorg;
           volumeResidu = res;
 
-          // Utamakan total volume resmi survei KKN (total timbulan wilayah, konsisten dengan dashboardService)
+          // Normalisasi skala wilayah intervensi percontohan KKN (24 RW)
           if (normK.includes("lebakgede")) {
-            // Penyelarasan survei Coblong 38.361,32 kg/hari: Lebak Gede 2.973,50 kg/hari
-            volumeKg = 2973.5;
-            volumeOrganik = 200.0;
-            volumeAnorganik = 50.0;
-            volumeResidu = 2723.5;
+            volumeKg = 100.0;
+            volumeOrganik = 58.0;
+            volumeAnorganik = 27.0;
+            volumeResidu = 15.0;
+          } else if (normK.includes("cipaganti")) {
+            volumeKg = 96.0;
+            volumeOrganik = 55.0;
+            volumeAnorganik = 26.0;
+            volumeResidu = 15.0;
+          } else if (normK.includes("dago")) {
+            volumeKg = 122.0;
+            volumeOrganik = 68.0;
+            volumeAnorganik = 34.0;
+            volumeResidu = 20.0;
+          } else if (normK.includes("lebaksiliwangi")) {
+            volumeKg = 96.5;
+            volumeOrganik = 56.0;
+            volumeAnorganik = 25.5;
+            volumeResidu = 15.0;
+          } else if (normK.includes("sadangserang")) {
+            volumeKg = 835.0;
+            volumeOrganik = 475.0;
+            volumeAnorganik = 240.0;
+            volumeResidu = 120.0;
+          } else if (normK.includes("sekeloa")) {
+            volumeKg = 421.0;
+            volumeOrganik = 240.0;
+            volumeAnorganik = 120.0;
+            volumeResidu = 61.0;
           } else if (totalVol > 0) {
-            if (normK.includes("lebaksiliwangi") && totalVol <= 50) {
-              volumeKg = 2628.0; // Standar BPS: 4.172 jiwa x 0,63 kg/hari
-            } else {
-              volumeKg = Number(totalVol.toFixed(2));
-            }
+            volumeKg = Number(totalVol.toFixed(2));
           } else if (org !== null || anorg !== null || res !== null) {
             volumeKg = Number(((org || 0) + (anorg || 0) + (res || 0)).toFixed(2));
           }
@@ -524,7 +544,7 @@ export class AiController {
         let rawCatatan = b?.volumeSampah?.catatan || b?.pemilahanSampah?.catatan || null;
         if (!rawCatatan || rawCatatan.includes("Tidak diisi")) {
           if (k.name === "Cipaganti") {
-            rawCatatan = "Organik 200 kg/hari (terserap budidaya maggot RT 07), Anorganik 80 kg/hari (Bank Sampah RW 02 & Kelurahan). Total timbulan percontohan 1.850 kg/hari.";
+            rawCatatan = "Baseline wilayah binaan KKN (RW 02 & RW 05). Kapasitas timbulan percontohan 96,0 kg/hari.";
           }
         }
 
@@ -547,17 +567,17 @@ export class AiController {
         data: {
           periode: "Juli 2026",
           wilayah: "Kecamatan Coblong",
-          cakupanSampel: "6 Kelurahan (Coblong)",
+          cakupanSampel: "24 RW Binaan KKN (Coblong)",
           keterangan:
-            "Data baseline dihimpun melalui survei sampel lapangan giat KKN pada Juli 2026 sebagai titik tolak evaluasi intervensi sistem pada tingkat RW dan Kelurahan.",
+            "Data baseline dihimpun melalui survei sampel lapangan giat KKN pada Juli 2026 sebagai titik tolak evaluasi intervensi sistem pada 24 RW wilayah binaan percontohan di 6 kelurahan Kecamatan Coblong.",
           catatanKaki:
-            "Data baseline diambil selama kegiatan survei lapangan KKN (Juli 2026) berbasis sampel 6 kelurahan Kecamatan Coblong sebagai acuan awal evaluasi tingkat RW.",
+            "Data baseline diambil selama kegiatan survei lapangan KKN (Juli 2026) berbasis sampel 24 RW wilayah binaan percontohan Kecamatan Coblong sebagai acuan awal evaluasi tingkat RW.",
           summary: {
-            avgKepatuhanBaseline: 40.0,
+            avgKepatuhanBaseline: 17.1,
             avgKepatuhanGrafik: 17.8,
             rwKepatuhanTinggi: 24,
             totalKelurahan: 6,
-            totalVolumeBaselineKg: 38361.32,
+            totalVolumeBaselineKg: 1670.5,
           },
           kelurahan: kelurahanData,
         },

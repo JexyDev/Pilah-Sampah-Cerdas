@@ -76,21 +76,21 @@ export const SURVEY_BASELINE_RATES: Record<string, number> = {
 };
 
 export const SURVEY_BASELINE_KG: Record<string, number> = {
-  cipaganti: 1850.0,
-  dago: 10983.0,
-  lebakgede: 2973.5,
-  lebaksiliwangi: 2628.0,
-  sadangserang: 9123.04,
-  sekeloa: 10803.78,
+  cipaganti: 96.0,
+  dago: 122.0,
+  lebakgede: 100.0,
+  lebaksiliwangi: 96.5,
+  sadangserang: 835.0,
+  sekeloa: 421.0,
 };
 
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 1850.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.0, baselineKg: 10983.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 2973.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.0, baselineKg: 2628.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.8, baselineKg: 9123.04, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
-  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.8, baselineKg: 10803.78, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 96.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.0, baselineKg: 122.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.6, baselineKg: 100.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.0, baselineKg: 96.5, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.8, baselineKg: 835.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.8, baselineKg: 421.0, endlineRate: 0, totalKg: 0, status: "Terverifikasi Real" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
