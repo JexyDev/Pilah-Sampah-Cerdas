@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../main.dart' show navigatorKey;
+import '../../../routes/app_routes.dart';
 import '../../../data/models/user_entity.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/notification_repository.dart';
@@ -459,6 +461,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } finally {
       // Dijamin SELALU tereksekusi, logout instan dalam kondisi sinyal apapun
       state = const AuthState();
+
+      // Navigasi paksa ke halaman login via global navigatorKey
+      try {
+        final nav = navigatorKey.currentState;
+        if (nav != null) {
+          bool isAlreadyLogin = false;
+          nav.popUntil((route) {
+            if (route.settings.name == AppRoutes.login) {
+              isAlreadyLogin = true;
+            }
+            return true;
+          });
+          if (!isAlreadyLogin) {
+            nav.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+          }
+        }
+      } catch (_) {}
     }
   }
 

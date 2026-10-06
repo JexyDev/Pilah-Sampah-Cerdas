@@ -31,7 +31,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _qrOrganik = '';
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
-  bool _localLoading = false;
+  final bool _localLoading = false;
+  double? _lat;
+  double? _lng;
 
   bool _argsLoaded = false;
   bool _hasOrganic = false;
@@ -111,6 +113,31 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     }
 
     return true;
+  }
+
+  Future<void> _fetchGpsInBg() async {
+    if (_lat != null && _lng != null) return;
+    if (!PlatformUtils.isMobile) return;
+    
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _lat = position.latitude;
+          _lng = position.longitude;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar(
+            'Gagal mengunci GPS. Harap berpindah ke area luar ruangan lalu ulangi scan.');
+      }
+    }
   }
 
   String? _validateBinQr(String qr, int step) {
@@ -245,6 +272,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       }
     });
 
+    // Mulai ambil GPS di background jika belum ada koordinat
+    _fetchGpsInBg();
+
     if (!_bothBinsDetected) {
       Future.delayed(const Duration(milliseconds: 700), () {
         if (mounted && !_bothBinsDetected) {
@@ -283,9 +313,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final hasPermission = await _checkAndRequestLocation(showDialogs: true);
     if (!hasPermission) return;
 
-    double? lat;
-    double? lng;
-
     final user = ref.read(authProvider).user;
     if (!mounted) return;
 
@@ -304,27 +331,15 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final double? anorgLength = args?['anorgLength'];
     final double? anorgWidth = args?['anorgWidth'];
 
-    if (PlatformUtils.isMobile) {
-      setState(() => _localLoading = true);
-      try {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 10),
-          ),
-        );
-        lat = position.latitude;
-        lng = position.longitude;
-      } catch (e) {
-        debugPrint(
-          '[AktivasiBinScreen] Gagal mengambil lokasi GPS: $e. Menggunakan fallback.',
-        );
-      } finally {
-        if (mounted) {
-          setState(() => _localLoading = false);
-        }
-      }
-    } // End if (PlatformUtils.isMobile)
+    // Menggunakan GPS yang diambil di background saat scan QR
+    final lat = _lat;
+    final lng = _lng;
+
+    if (PlatformUtils.isMobile && lat == null && lng == null) {
+      _showErrorSnackBar(
+          'Sinyal GPS belum terkunci. Mohon tunggu atau pindah ke luar ruangan lalu ulangi proses.');
+      return;
+    }
 
     if (_qrOrganik.isEmpty && _qrAnorganik.isEmpty) {
       _showErrorSnackBar('Tidak ada QR Code yang di-scan.');

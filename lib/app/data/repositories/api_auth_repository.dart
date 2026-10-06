@@ -1280,6 +1280,7 @@ class ApiAuthRepository implements AuthRepository {
       fullAddress = filteredParts.join(', ');
     }
 
+<<<<<<< Updated upstream
     // 11. Ekstrak data profil Petugas Residu/Pemilahan jika ada
     final pp = userMap['petugasProfile'] is Map
         ? (userMap['petugasProfile'] as Map<String, dynamic>)
@@ -1299,6 +1300,29 @@ class ApiAuthRepository implements AuthRepository {
         pp?['zona_ditugaskan']?.toString() ??
         userMap['assignedZone']?.toString() ??
         '';
+=======
+    // Ekstraksi pendamping secara aman dan konsisten dengan Web & Backend baru
+    String? resolvedPendampingName;
+    if (userMap['pendampingName'] != null &&
+        userMap['pendampingName'].toString().trim().isNotEmpty) {
+      resolvedPendampingName = userMap['pendampingName'].toString().trim();
+    } else if (userMap['pendamping'] is Map &&
+        (userMap['pendamping'] as Map)['name'] != null) {
+      resolvedPendampingName =
+          (userMap['pendamping'] as Map)['name'].toString().trim();
+    } else if (userMap['pendampingKkn'] is Map &&
+        (userMap['pendampingKkn'] as Map)['name'] != null) {
+      resolvedPendampingName =
+          (userMap['pendampingKkn'] as Map)['name'].toString().trim();
+    }
+
+    // Jika null/kosong/string "null", set null murni
+    if (resolvedPendampingName == null ||
+        resolvedPendampingName.isEmpty ||
+        resolvedPendampingName.toLowerCase() == 'null') {
+      resolvedPendampingName = null;
+    }
+>>>>>>> Stashed changes
 
     return UserEntity(
       id: userMap['id']?.toString() ?? '',
@@ -1325,9 +1349,7 @@ class ApiAuthRepository implements AuthRepository {
       universitas: universitas,
       jenjangPendidikan: jenjang,
       lifecycleState: WargaLifecycleExtension.fromApi(userMap['lifecycleState']?.toString()),
-      pendampingName:
-          userMap['pendampingName']?.toString() ??
-          userMap['mahasiswaPendamping']?.toString(),
+      pendampingName: resolvedPendampingName,
       kelompokName:
           userMap['kelompokName']?.toString() ??
           userMap['kelompok']?['name']?.toString() ??

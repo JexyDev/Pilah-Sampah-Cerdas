@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/models/kkn_timeline_models.dart';
+import '../../../data/models/user_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -61,6 +62,14 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
   /// Fetch dashboard + warga dampingan secara paralel.
   Future<void> fetchAll() async {
+    final user = _ref.read(authProvider).user;
+    if (user != null && user.role != UserRole.mahasiswaKkn) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
+      return;
+    }
+
     final repo = _ref.read(kknRepositoryProvider);
 
     // Sinkronisasi data user (misal perubahan status role Ketua) saat refresh

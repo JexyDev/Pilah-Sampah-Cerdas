@@ -428,6 +428,19 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
   Widget build(BuildContext context) {
     final userAsync = ref.watch(authProvider);
     final user = userAsync.user;
+
+    // Jika user sedang logout / null, jangan render UI profil default warga dengan placeholder '-'
+    if (user == null && !userAsync.isAuthenticated) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundCanvas,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    }
+
     final binsAsync = ref.watch(binsProvider);
     final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
         user?.lifecycleState == WargaLifecycle.registered &&
@@ -665,7 +678,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                         _divider(),
                         // Alamat hanya tampil jika sudah bergabung komunitas
                         if (user?.role != UserRole.warga ||
-                            user?.lifecycleState != WargaLifecycle.registered) ...[
+                            user?.lifecycleState != WargaLifecycle.registered ||
+                            (user?.householdId ?? '').isNotEmpty) ...[
                           _InfoTile(
                             Icons.map_rounded,
                             'Provinsi',

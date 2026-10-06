@@ -546,7 +546,11 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                         ),
                       ),
                     ],
-                    if (warga.pendampingName.isEmpty &&
+                    if ((warga.pendampingName.trim().isEmpty ||
+                            warga.pendampingName.trim().toLowerCase() ==
+                                'null') &&
+                        (warga.pendampingKkn == null ||
+                            warga.pendampingKkn!.name.trim().isEmpty) &&
                         warga.mahasiswaId.isEmpty) ...[
                       const SizedBox(width: 8),
                       InkWell(
@@ -634,7 +638,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                               Text(
                                 hasPendamping
                                     ? 'Pendamping: $pendamping'
-                                    : 'Belum Ada Pendamping (Mandiri)',
+                                    : 'Belum Ada Pendamping',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,

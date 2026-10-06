@@ -55,4 +55,12 @@ abstract class PetugasPemilahanRepository {
     double? latitude,
     double? longitude,
   });
+
+  /// Mendaftarkan Tong Komunal (Khusus Petugas)
+  Future<Map<String, dynamic>> registerKomunalBin({
+    required List<String> qrCodes,
+    required double latitude,
+    required double longitude,
+    String? address,
+  });
 }

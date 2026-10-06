@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../../core/utils/input_sanitizer.dart';
-import '../../../data/providers/repository_providers.dart';
+import '../../../data/models/user_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../views/riwayat_kkn_view.dart'; // Import models from view
 
 class RiwayatKknState {
@@ -42,6 +44,14 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
   final Ref ref;
 
   Future<void> fetchHistory() async {
+    final user = ref.read(authProvider).user;
+    if (user != null && user.role != UserRole.mahasiswaKkn) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false, logs: const []);
+      }
+      return;
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
@@ -438,12 +448,15 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         summaryData = await kknRepo.getTimesheetSummary(studentId: currentUserId);
       } catch (_) {}
 
+      if (!mounted) return;
+
       state = state.copyWith(
         isLoading: false,
         logs: uniqueLogs,
         timesheetSummary: summaryData,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Gagal memuat riwayat: $e',

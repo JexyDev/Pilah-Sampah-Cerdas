@@ -430,4 +430,59 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       throw Exception(e.toString());
     }
   }
+
+  /// Mendaftarkan Tong Komunal (Khusus Petugas)
+  @override
+  Future<Map<String, dynamic>> registerKomunalBin({
+    required List<String> qrCodes,
+    required double latitude,
+    required double longitude,
+    String? address,
+  }) async {
+    try {
+      final payload = {
+        'qrCodes': qrCodes,
+        'latitude': latitude,
+        'longitude': longitude,
+        if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
+      };
+
+      final response = await apiClient.dio.post(
+        '/bins/komunal', // As per backend documentation
+        data: payload,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data as Map<String, dynamic>;
+        }
+        return {'success': true};
+      }
+      throw Exception('Gagal mendaftarkan tong komunal.');
+    } on DioException catch (e) {
+      debugPrint('=========================================');
+      debugPrint('[ApiPetugasPemilahanRepository] ERROR registerKomunalBin');
+      debugPrint('Type       : DioException');
+      debugPrint('StatusCode : ${e.response?.statusCode}');
+      debugPrint('StatusMsg  : ${e.response?.statusMessage}');
+      debugPrint('URL        : ${e.requestOptions.path}');
+      debugPrint('Data       : ${e.response?.data}');
+      debugPrint('=========================================');
+
+      String message = e.message ?? 'Server error';
+      if (e.response?.data is Map<String, dynamic>) {
+        message = e.response?.data?['message'] ?? message;
+      } else if (e.response?.data is String) {
+        message = e.response!.data.toString();
+      }
+      throw Exception(message);
+    } catch (e, stackTrace) {
+      debugPrint('=========================================');
+      debugPrint('[ApiPetugasPemilahanRepository] ERROR registerKomunalBin (Unknown)');
+      debugPrint('Error      : $e');
+      debugPrint('StackTrace : $stackTrace');
+      debugPrint('=========================================');
+      throw Exception(e.toString());
+    }
+  }
 }

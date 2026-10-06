@@ -296,20 +296,58 @@ class _DashboardViewState extends ConsumerState<DashboardView>
               : null,
           child: role == UserRole.petugasPemilahan
               ? const Icon(Icons.scale_rounded, color: Colors.white, size: 26)
-              : Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: SvgPicture.asset(
-                    'assets/logo_aisah/SVG/AISAH-logo-white.svg',
-                    width: 32,
-                    height: 32,
-                  ),
-                ),
+              : (role == UserRole.mahasiswaKkn
+                  ? const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: SvgPicture.asset(
+                        'assets/logo_aisah/SVG/AISAH-logo-white.svg',
+                        width: 32,
+                        height: 32,
+                      ),
+                    )),
         ),
       ),
     );
 
     if (role == UserRole.petugasPemilahan) {
       return fabWidget;
+    }
+
+    if (role == UserRole.mahasiswaKkn) {
+      return SizedBox(
+        width: 68,
+        height: 68,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            fabWidget,
+            const Positioned(
+              bottom: -20,
+              left: -20,
+              right: -20,
+              child: Text(
+                'Aktivasi',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  shadows: [
+                    Shadow(color: Colors.white, blurRadius: 4),
+                    Shadow(color: Colors.white, blurRadius: 8),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return SizedBox(

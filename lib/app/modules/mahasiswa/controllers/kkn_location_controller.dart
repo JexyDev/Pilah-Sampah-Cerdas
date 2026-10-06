@@ -10,7 +10,6 @@ import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
 import 'location_ping_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
@@ -195,14 +194,7 @@ class KknLocationState {
 class KknLocationNotifier extends StateNotifier<KknLocationState> {
   static const String kStatusTidakAdaKegiatan = 'TIDAK_ADA_KEGIATAN';
 
-  KknLocationNotifier(this.ref) : super(KknLocationState()) {
-    ref.listen(authProvider, (previous, next) {
-      final user = next.user;
-      if (user == null || user.role != UserRole.mahasiswaKkn) {
-        stopTracking();
-      }
-    });
-  }
+  KknLocationNotifier(this.ref) : super(KknLocationState());
 
   final Ref ref;
   Timer? _trackingTimer;

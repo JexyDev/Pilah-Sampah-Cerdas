@@ -469,7 +469,7 @@ class _WargaListItem extends StatelessWidget {
                                   child: Text(
                                     hasPendamping
                                         ? 'Pendamping: $pendamping'
-                                        : 'Belum Ada Pendamping (Mandiri)',
+                                        : 'Belum Ada Pendamping',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,

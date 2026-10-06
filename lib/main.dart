@@ -533,12 +533,21 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.invalidate(totalSetoranProvider);
       }
 
-      // Otomatis navigasi ke Login saat user logout (sesi berakhir)
-      if (previous?.user != null && next.user == null) {
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          AppRoutes.login,
-          (route) => false,
-        );
+      // Navigasi instan ke halaman Login saat user logout (unauthenticated)
+      if (previous?.isAuthenticated == true && !next.isAuthenticated && next.user == null) {
+        final nav = navigatorKey.currentState;
+        if (nav != null) {
+          bool isAlreadyLogin = false;
+          nav.popUntil((route) {
+            if (route.settings.name == AppRoutes.login) {
+              isAlreadyLogin = true;
+            }
+            return true;
+          });
+          if (!isAlreadyLogin) {
+            nav.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+          }
+        }
       }
     });
 
