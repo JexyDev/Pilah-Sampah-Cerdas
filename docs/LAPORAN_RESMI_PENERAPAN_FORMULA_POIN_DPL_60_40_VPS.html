@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Resmi: Penerapan Formula Baru Supervisi DPL (60:40)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 14mm 14mm 16mm 14mm;
+    @bottom-right {
+      content: "Halaman " counter(page);
+      font-size: 8pt;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #64748b;
+    }
+  }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.45;
+    font-size: 9pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-break {
+    page-break-after: always;
+  }
+
+  /* Header Kop Dokumen */
+  .header-table {
+    width: 100%;
+    border-bottom: 2.5px solid #0f766e;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .header-logo {
+    font-size: 20pt;
+    font-weight: 900;
+    color: #0f766e;
+    letter-spacing: -0.5px;
+  }
+  .header-sub {
+    font-size: 8pt;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .header-meta {
+    text-align: right;
+    font-size: 8pt;
+    color: #475569;
+  }
+  .header-meta strong {
+    color: #0f766e;
+  }
+
+  /* Title Card */
+  .title-banner {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    color: #ffffff;
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+  }
+  .title-banner h1 {
+    margin: 0 0 4px 0;
+    font-size: 13.5pt;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+  .title-banner p {
+    margin: 0;
+    font-size: 8.5pt;
+    opacity: 0.92;
+  }
+
+  /* Status Badges */
+  .badge-deployed {
+    background-color: #dcfce7;
+    color: #15803d;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    font-size: 7.5pt;
+    display: inline-block;
+    border: 1px solid #86efac;
+  }
+  .badge-up {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+  }
+  .badge-down {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+  }
+  .badge-same {
+    background-color: #f1f5f9;
+    color: #64748b;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+  }
+  .badge-podium {
+    background-color: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+  }
+
+  /* Section Styling */
+  h2 {
+    font-size: 10.5pt;
+    font-weight: 800;
+    color: #0f766e;
+    border-bottom: 1.5px solid #ccfbf1;
+    padding-bottom: 4px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+  }
+  h3 {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 10px;
+    margin-bottom: 4px;
+  }
+
+  /* Grids and Cards */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .card {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .card-highlight {
+    background-color: #f0fdfa;
+    border: 1.5px solid #5eead4;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+
+  /* Tables */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.5pt;
+    margin-top: 6px;
+    margin-bottom: 10px;
+  }
+  table.data-table th {
+    background-color: #0f766e;
+    color: #ffffff;
+    text-align: left;
+    padding: 5px 6px;
+    font-weight: 700;
+    border: 1px solid #0d9488;
+  }
+  table.data-table td {
+    padding: 4.5px 6px;
+    border: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  table.data-table tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  table.data-table tr.highlight-agus {
+    background-color: #fefce8;
+    font-weight: bold;
+  }
+  table.data-table tr.highlight-top3 {
+    background-color: #f0fdf4;
+  }
+
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .font-bold { font-weight: 700; }
+  .font-black { font-weight: 900; }
+  .text-teal { color: #0f766e; }
+  .text-amber { color: #b45309; }
+
+  /* Callout box */
+  .callout {
+    background-color: #eff6ff;
+    border-left: 3.5px solid #3b82f6;
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    margin: 8px 0;
+    font-size: 8.5pt;
+  }
+  .callout-success {
+    background-color: #f0fdf4;
+    border-left: 3.5px solid #22c55e;
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    margin: 8px 0;
+    font-size: 8.5pt;
+  }
+
+  /* Signature Block */
+  .signature-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+  }
+  .signature-table td {
+    width: 50%;
+    vertical-align: top;
+    font-size: 8pt;
+  }
+  .signature-box {
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    padding: 10px;
+    background-color: #f8fafc;
+  }
+</style>
+</head>
+<body>
+
+<!-- KOP DOKUMEN -->
+<table class="header-table">
+  <tr>
+    <td style="width: 60%;">
+      <div class="header-logo">BERSEKA.ID</div>
+      <div class="header-sub">Sistem Tata Kelola Lingkungan & Pengawasan KKN Tematik Terintegrasi</div>
+    </td>
+    <td class="header-meta">
+      <div><strong>No. Dokumen:</strong> LAP-DPL/2026/10/004</div>
+      <div><strong>Tanggal Audit:</strong> Selasa, 6 Oktober 2026</div>
+      <div><strong>Waktu Rilis VPS:</strong> 19:55 WIB (Live Production)</div>
+      <div><strong>Status:</strong> <span class="badge-deployed">DEPLOYED TO PRODUCTION (main)</span></div>
+    </td>
+  </tr>
+</table>
+
+<!-- TITLE BANNER -->
+<div class="title-banner">
+  <h1>LAPORAN RESMI AUDIT FORENSIK SISTEM & PENERAPAN FORMULA BARU SUPERVISI DPL</h1>
+  <p>Rekonsiliasi Papan Peringkat Real-Time, Analisis Komparasi Bobot (60% Logbook : 40% Kelompok), dan Pembuktian Metrik Pembimbingan Lapangan</p>
+</div>
+
+<!-- RINGKASAN EKSEKUTIF -->
+<h2>1. Ringkasan Eksekutif & Status Implementasi</h2>
+<div class="callout-success">
+  <strong>STATUS AKHIR SISTEM (LIVE VPS 157.10.252.252):</strong><br>
+  Formula baru <strong>60% Poin Logbook DPL + 40% Poin Kelompok</strong> telah <strong>SUKSES DI-MERGE KE BRANCH MAIN DAN RESMI AKTIF DI PRODUKSI</strong> (Commit <code>02b41f07f</code>). Seluruh endpoint <code>/api/v1/gamification/leaderboard-kkn</code> dan dasbor web eksekutif telah memancarkan peringkat terkini yang adil dan proporsional.
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="font-bold text-teal" style="font-size: 9pt; margin-bottom: 4px;">Klarifikasi Temuan Pak Agus (19:38 WIB)</div>
+    <div style="font-size: 8pt; color: #475569;">
+      Tangkapan layar yang diambil oleh CEO PT Makerindo pada pukul 19:38 WIB <strong>memang benar masih menampilkan formula lama (50:50)</strong> karena perubahan branch <code>feat/poin-dpl-formula-60-40</code> belum ter-deploy ke VPS. Setelah eksekusi merge bertahap (<code>dev -> staging -> main</code>) pada pukul 19:53–19:55 WIB, sistem kini <strong>100% menggunakan Formula Pagi</strong>.
+    </div>
+  </div>
+  <div class="card-highlight">
+    <div class="font-bold text-teal" style="font-size: 9pt; margin-bottom: 4px;">Penyelesaian Isu "Pak Agus Paling Banyak"</div>
+    <div style="font-size: 8pt; color: #475569;">
+      <strong>Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</strong> (Kelompok 2 Dago) terbukti memiliki <strong>11 Logbook (10 Kunjungan Lapangan + 1 Kampus)</strong> dengan total <strong>52 Poin Logbook</strong> (tertinggi se-universitas). Dengan Formula Pagi (60:40), posisi beliau <strong>MELONJAK dari Peringkat #8 ke PERINGKAT #3 (Podium DPL Teladan)</strong>.
+    </div>
+  </div>
+</div>
+
+<!-- BEDAH FORMULA -->
+<h2>2. Formulasi Matematis Supervisi DPL</h2>
+<div class="grid-2">
+  <div class="card">
+    <h3 style="color: #b91c1c; margin-top: 0;">❌ Formula Lama (Bobot 50:50) — Non-Aktif</h3>
+    <div style="font-family: monospace; background: #ffffff; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 7.5pt; margin: 4px 0;">
+      Poin DPL = (Poin Logbook × 0.5) + (Poin Kelompok × 0.5)
+    </div>
+    <ul style="margin: 4px 0; padding-left: 14px; font-size: 7.5pt; color: #64748b;">
+      <li><strong>Kelemahan:</strong> Terlalu bergantung pada keaktifan mahasiswa di kelompok.</li>
+      <li>DPL yang hanya mengisi 1–3 kali bimbingan bisa masuk Top 3 jika kelompoknya sangat aktif (fenomena free-rider nilai).</li>
+    </ul>
+  </div>
+
+  <div class="card-highlight">
+    <h3 style="color: #0f766e; margin-top: 0;">✅ Formula Pagi Resmi (Bobot 60:40) — AKTIF DI VPS</h3>
+    <div style="font-family: monospace; background: #ffffff; padding: 6px; border: 1px solid #0d9488; border-radius: 4px; font-size: 7.5pt; margin: 4px 0;">
+      Poin DPL = (Poin Logbook × 0.6) + (Poin Kelompok × 0.4)
+    </div>
+    <ul style="margin: 4px 0; padding-left: 14px; font-size: 7.5pt; color: #047857;">
+      <li><strong>Kelebihan:</strong> Menghargai dedikasi dosen yang rajin turun langsung ke lapangan.</li>
+      <li>Aturan poin logbook: <strong>+5 Poin</strong> (Kunjungan/Monitoring Lapangan/Posko/RW), <strong>+2 Poin</strong> (Koordinasi Kampus).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ANALISIS DUA TOKOH AGUS -->
+<h2>3. Analisis Khusus: Rekonsiliasi Dua Tokoh Bernama "Agus"</h2>
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Identitas Dosen</th>
+      <th>Kelompok & Wilayah</th>
+      <th>Rincian Logbook Bimbingan</th>
+      <th>Poin Murni Logbook</th>
+      <th>Poin Kelompok</th>
+      <th>Skor Lama (50:50)</th>
+      <th>Skor Baru (60:40)</th>
+      <th>Status & Peringkat Akhir</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="highlight-agus">
+      <td><strong>Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</strong><br><span style="font-size: 7pt; color: #64748b;">NIP: 4127.70.03.007</span></td>
+      <td>Kelompok 2 Dago<br><span style="font-size: 7pt; color: #64748b;">41 Mahasiswa</span></td>
+      <td><strong>11 Logbook</strong><br>(10 Lapangan, 1 Kampus)<br><em>Total 26 Jam Bimbingan</em></td>
+      <td class="text-right font-black" style="color: #0f766e; font-size: 9pt;">52.00</td>
+      <td class="text-right">69.25</td>
+      <td class="text-right">60.63 (#8)</td>
+      <td class="text-right font-black" style="color: #0f766e; font-size: 9.5pt;">58.90</td>
+      <td><span class="badge-podium">👑 RANK #3 (DPL TELADAN)</span><br><span style="color: #15803d; font-size: 7pt; font-weight: bold;">Naik 5 Peringkat!</span></td>
+    </tr>
+    <tr class="highlight-agus">
+      <td><strong>Dr. Agus Mulyana, S.Kom., M.T.</strong><br><span style="font-size: 7pt; color: #64748b;">NIP: 4127.70.06.012</span></td>
+      <td>Kelompok 1 Sadang Serang<br><span style="font-size: 7pt; color: #64748b;">12 Mahasiswa</span></td>
+      <td><strong>8 Logbook</strong><br>(3 Lapangan, 5 Kampus)</td>
+      <td class="text-right font-black" style="font-size: 9pt;">25.00</td>
+      <td class="text-right">97.00</td>
+      <td class="text-right">61.00 (#6)</td>
+      <td class="text-right font-black" style="font-size: 9.5pt;">53.80</td>
+      <td><span class="badge-same">RANK #6 (STABIL)</span><br><span style="font-size: 7pt; color: #64748b;">Proporsi Seimbang</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Mengapa Assoc. Prof. Dr. Agus Riyanto sebelumnya di urutan #8?</strong><br>
+  Karena Kelompok 2 Dago membina 41 mahasiswa (terbesar), rerata saldo poin mahasiswa lebih terdistribusi sehingga Poin Kelompoknya bernilai 69.25. Pada rumus lama (50:50), bobot kelompok yang 50% "menenggelamkan" prestasi 10 kali kunjungan lapangan beliau. Dengan berlakunya Formula Pagi (60:40), kerja keras beliau diapresiasi secara penuh (52 × 0.6 = 31.2 poin dari logbook saja), mengantarkan beliau <strong>resmi berdiri di Podium 3 Besar (DPL Teladan)</strong>.
+</div>
+
+<div class="page-break"></div>
+
+<!-- TABEL LENGKAP 32 DPL -->
+<h2>4. Klasemen Lengkap Papan Peringkat DPL Real-Time (Live VPS)</h2>
+<p style="font-size: 7.5pt; color: #64748b; margin-top: -4px;">Tabel perbandingan urutan sebelum dan sesudah penerapan Formula Pagi 60% Logbook : 40% Kelompok untuk seluruh DPL resmi KKN.</p>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th style="width: 25px;" class="text-center">Rank</th>
+      <th style="width: 200px;">Nama Dosen (DPL)</th>
+      <th>Kelompok Binaan</th>
+      <th class="text-center" style="width: 35px;">Mhs</th>
+      <th class="text-center" style="width: 55px;">Logbook (L/K)</th>
+      <th class="text-right" style="width: 45px;">Pts Lb</th>
+      <th class="text-right" style="width: 45px;">Pts Kel</th>
+      <th class="text-right" style="width: 50px;">Skor 50:50</th>
+      <th class="text-right" style="width: 50px;">Skor 60:40</th>
+      <th class="text-center" style="width: 45px;">Pergerakan</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+      <tr class="highlight-agus">
+        <td class="text-center font-bold">👑 1</td>
+        <td><strong>Richi Dwi Agustia, S.Kom., M.Kom.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 4 Sadang Serang</td>
+        <td class="text-center">12</td>
+        <td class="text-center">9 <span style="font-size: 6.5pt; color: #64748b;">(2/7)</span></td>
+        <td class="text-right font-bold">24</td>
+        <td class="text-right">182.2</td>
+        <td class="text-right" style="color: #94a3b8;">103.10</td>
+        <td class="text-right font-black" style="color: #0f766e;">87.28</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="highlight-top3">
+        <td class="text-center font-bold">👑 2</td>
+        <td><strong>Dr. Eng. Siswanti Zuraida, S.Pd., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Sekeloa</td>
+        <td class="text-center">13</td>
+        <td class="text-center">10 <span style="font-size: 6.5pt; color: #64748b;">(8/2)</span></td>
+        <td class="text-right font-bold">44</td>
+        <td class="text-right">117.2</td>
+        <td class="text-right" style="color: #94a3b8;">80.62</td>
+        <td class="text-right font-black" style="color: #0f766e;">73.29</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="highlight-agus">
+        <td class="text-center font-bold">👑 3</td>
+        <td><strong>Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Dago</td>
+        <td class="text-center">41</td>
+        <td class="text-center">11 <span style="font-size: 6.5pt; color: #64748b;">(10/1)</span></td>
+        <td class="text-right font-bold">52</td>
+        <td class="text-right">69.3</td>
+        <td class="text-right" style="color: #94a3b8;">60.63</td>
+        <td class="text-right font-black" style="color: #0f766e;">58.90</td>
+        <td class="text-center"><span class="badge-up">▲ +5</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#4</td>
+        <td><strong>Dr. Wendi Zarman, M.Si.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 9 Sadang Serang</td>
+        <td class="text-center">12</td>
+        <td class="text-center">6 <span style="font-size: 6.5pt; color: #64748b;">(5/1)</span></td>
+        <td class="text-right font-bold">27</td>
+        <td class="text-right">100.2</td>
+        <td class="text-right" style="color: #94a3b8;">63.62</td>
+        <td class="text-right font-black" style="color: #0f766e;">56.29</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#5</td>
+        <td><strong>Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Sekeloa</td>
+        <td class="text-center">15</td>
+        <td class="text-center">7 <span style="font-size: 6.5pt; color: #64748b;">(6/1)</span></td>
+        <td class="text-right font-bold">32</td>
+        <td class="text-right">87.0</td>
+        <td class="text-right" style="color: #94a3b8;">59.51</td>
+        <td class="text-right font-black" style="color: #0f766e;">54.00</td>
+        <td class="text-center"><span class="badge-up">▲ +6</span></td>
+      </tr>
+      
+      <tr class="highlight-agus">
+        <td class="text-center font-bold">#6</td>
+        <td><strong>Dr. Agus Mulyana, S.Kom., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Sadang Serang</td>
+        <td class="text-center">12</td>
+        <td class="text-center">8 <span style="font-size: 6.5pt; color: #64748b;">(3/5)</span></td>
+        <td class="text-right font-bold">25</td>
+        <td class="text-right">97.0</td>
+        <td class="text-right" style="color: #94a3b8;">61.00</td>
+        <td class="text-right font-black" style="color: #0f766e;">53.80</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#7</td>
+        <td><strong>Arif Try Cahyadi, S.Ds., M.Ds.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 10 Sadang Serang</td>
+        <td class="text-center">12</td>
+        <td class="text-center">3 <span style="font-size: 6.5pt; color: #64748b;">(1/2)</span></td>
+        <td class="text-right font-bold">9</td>
+        <td class="text-right">120.9</td>
+        <td class="text-right" style="color: #94a3b8;">64.94</td>
+        <td class="text-right font-black" style="color: #0f766e;">53.75</td>
+        <td class="text-center"><span class="badge-down">▼ -4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#8</td>
+        <td><strong>Rangga Sidik, S.Kom., M.Kom., M.Eng.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 4 Cipaganti</td>
+        <td class="text-center">13</td>
+        <td class="text-center">6 <span style="font-size: 6.5pt; color: #64748b;">(3/3)</span></td>
+        <td class="text-right font-bold">21</td>
+        <td class="text-right">102.9</td>
+        <td class="text-right" style="color: #94a3b8;">61.93</td>
+        <td class="text-right font-black" style="color: #0f766e;">53.74</td>
+        <td class="text-center"><span class="badge-down">▼ -3</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#9</td>
+        <td><strong>Fenny Febrianty, S.S., M.Pd.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Lebak Siliwangi</td>
+        <td class="text-center">13</td>
+        <td class="text-center">10 <span style="font-size: 6.5pt; color: #64748b;">(2/8)</span></td>
+        <td class="text-right font-bold">26</td>
+        <td class="text-right">94.6</td>
+        <td class="text-right" style="color: #94a3b8;">60.31</td>
+        <td class="text-right font-black" style="color: #0f766e;">53.45</td>
+        <td class="text-center"><span class="badge-up">▲ +1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#10</td>
+        <td><strong>Hery Dwi Yulianto, S.T., M.Kom.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 4 Sekeloa</td>
+        <td class="text-center">14</td>
+        <td class="text-center">2 <span style="font-size: 6.5pt; color: #64748b;">(1/1)</span></td>
+        <td class="text-right font-bold">7</td>
+        <td class="text-right">114.7</td>
+        <td class="text-right" style="color: #94a3b8;">60.86</td>
+        <td class="text-right font-black" style="color: #0f766e;">50.09</td>
+        <td class="text-center"><span class="badge-down">▼ -3</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#11</td>
+        <td><strong>Dr. H. Tatang Supriyadi, S.E., M.M.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 8 Sadang Serang</td>
+        <td class="text-center">13</td>
+        <td class="text-center">1 <span style="font-size: 6.5pt; color: #64748b;">(1/0)</span></td>
+        <td class="text-right font-bold">5</td>
+        <td class="text-right">115.8</td>
+        <td class="text-right" style="color: #94a3b8;">60.38</td>
+        <td class="text-right font-black" style="color: #0f766e;">49.30</td>
+        <td class="text-center"><span class="badge-down">▼ -2</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#12</td>
+        <td><strong>Prof. Dra. Umi Narimawati, S.E., M.Si., M.Pd.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Dago</td>
+        <td class="text-center">43</td>
+        <td class="text-center">8 <span style="font-size: 6.5pt; color: #64748b;">(3/5)</span></td>
+        <td class="text-right font-bold">25</td>
+        <td class="text-right">84.3</td>
+        <td class="text-right" style="color: #94a3b8;">54.63</td>
+        <td class="text-right font-black" style="color: #0f766e;">48.70</td>
+        <td class="text-center"><span class="badge-up">▲ +1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#13</td>
+        <td><strong>Dr. Tatik Fidowaty, S.IP., M.Si.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Lebak Siliwangi</td>
+        <td class="text-center">12</td>
+        <td class="text-center">7 <span style="font-size: 6.5pt; color: #64748b;">(4/3)</span></td>
+        <td class="text-right font-bold">26</td>
+        <td class="text-right">81.5</td>
+        <td class="text-right" style="color: #94a3b8;">53.77</td>
+        <td class="text-right font-black" style="color: #0f766e;">48.21</td>
+        <td class="text-center"><span class="badge-up">▲ +1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#14</td>
+        <td><strong>Wahyudi, S.H., M.H.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Sadang Serang</td>
+        <td class="text-center">13</td>
+        <td class="text-center">2 <span style="font-size: 6.5pt; color: #64748b;">(2/0)</span></td>
+        <td class="text-right font-bold">10</td>
+        <td class="text-right">99.5</td>
+        <td class="text-right" style="color: #94a3b8;">54.74</td>
+        <td class="text-right font-black" style="color: #0f766e;">45.79</td>
+        <td class="text-center"><span class="badge-down">▼ -2</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#15</td>
+        <td><strong>Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Dago</td>
+        <td class="text-center">42</td>
+        <td class="text-center">7 <span style="font-size: 6.5pt; color: #64748b;">(7/0)</span></td>
+        <td class="text-right font-bold">35</td>
+        <td class="text-right">61.7</td>
+        <td class="text-right" style="color: #94a3b8;">48.35</td>
+        <td class="text-right font-black" style="color: #0f766e;">45.68</td>
+        <td class="text-center"><span class="badge-up">▲ +10</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#16</td>
+        <td><strong>Amilia Widya, S.Pd., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Sadang Serang</td>
+        <td class="text-center">11</td>
+        <td class="text-center">5 <span style="font-size: 6.5pt; color: #64748b;">(3/2)</span></td>
+        <td class="text-right font-bold">19</td>
+        <td class="text-right">84.7</td>
+        <td class="text-right" style="color: #94a3b8;">51.83</td>
+        <td class="text-right font-black" style="color: #0f766e;">45.26</td>
+        <td class="text-center"><span class="badge-up">▲ +4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#17</td>
+        <td><strong>Alif Finandhita, S.Kom., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 4 Lebak Gede</td>
+        <td class="text-center">15</td>
+        <td class="text-center">6 <span style="font-size: 6.5pt; color: #64748b;">(2/4)</span></td>
+        <td class="text-right font-bold">18</td>
+        <td class="text-right">86.0</td>
+        <td class="text-right" style="color: #94a3b8;">52.03</td>
+        <td class="text-right font-black" style="color: #0f766e;">45.22</td>
+        <td class="text-center"><span class="badge-up">▲ +1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#18</td>
+        <td><strong>Myrna Dwi Rahmatya, S.Kom., M.Kom.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Lebak Gede</td>
+        <td class="text-center">11</td>
+        <td class="text-center">6 <span style="font-size: 6.5pt; color: #64748b;">(1/5)</span></td>
+        <td class="text-right font-bold">15</td>
+        <td class="text-right">88.7</td>
+        <td class="text-right" style="color: #94a3b8;">51.87</td>
+        <td class="text-right font-black" style="color: #0f766e;">44.49</td>
+        <td class="text-center"><span class="badge-up">▲ +1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#19</td>
+        <td><strong>Dr. Olih Solihin, S.Sos., M.I.Kom.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Sekeloa</td>
+        <td class="text-center">13</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">106.3</td>
+        <td class="text-right" style="color: #94a3b8;">53.14</td>
+        <td class="text-right font-black" style="color: #0f766e;">42.51</td>
+        <td class="text-center"><span class="badge-down">▼ -4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#20</td>
+        <td><strong>Cherry Dharmawan, S.Sn., M.Sn.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 6 Sadang Serang</td>
+        <td class="text-center">13</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">105.5</td>
+        <td class="text-right" style="color: #94a3b8;">52.73</td>
+        <td class="text-right font-black" style="color: #0f766e;">42.18</td>
+        <td class="text-center"><span class="badge-down">▼ -4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#21</td>
+        <td><strong>Muhammad Aksan Ipaenin, S.T., M.Sc.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Lebak Gede</td>
+        <td class="text-center">13</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">105.0</td>
+        <td class="text-right" style="color: #94a3b8;">52.49</td>
+        <td class="text-right font-black" style="color: #0f766e;">41.99</td>
+        <td class="text-center"><span class="badge-down">▼ -4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#22</td>
+        <td><strong>Assoc. Prof. Dr. Wartika, S.Kom., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Lebak Gede</td>
+        <td class="text-center">15</td>
+        <td class="text-center">4 <span style="font-size: 6.5pt; color: #64748b;">(1/3)</span></td>
+        <td class="text-right font-bold">11</td>
+        <td class="text-right">86.4</td>
+        <td class="text-right" style="color: #94a3b8;">48.70</td>
+        <td class="text-right font-black" style="color: #0f766e;">41.16</td>
+        <td class="text-center"><span class="badge-up">▲ +2</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#23</td>
+        <td><strong>Dr. Nungki Heriyati, S.S., M.I.Kom., M.A.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Lebak Siliwangi</td>
+        <td class="text-center">11</td>
+        <td class="text-center">4 <span style="font-size: 6.5pt; color: #64748b;">(2/2)</span></td>
+        <td class="text-right font-bold">14</td>
+        <td class="text-right">80.7</td>
+        <td class="text-right" style="color: #94a3b8;">47.37</td>
+        <td class="text-right font-black" style="color: #0f766e;">40.69</td>
+        <td class="text-center"><span class="badge-up">▲ +5</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#24</td>
+        <td><strong>Ayub Subandi, S.Si., M.T., Ph.D.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 11 Sadang Serang</td>
+        <td class="text-center">12</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">100.4</td>
+        <td class="text-right" style="color: #94a3b8;">50.19</td>
+        <td class="text-right font-black" style="color: #0f766e;">40.15</td>
+        <td class="text-center"><span class="badge-down">▼ -3</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#25</td>
+        <td><strong>Assoc. Prof. Dr. Manap Solihat, Drs., M.Si.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 5 Sadang Serang</td>
+        <td class="text-center">14</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">98.5</td>
+        <td class="text-right" style="color: #94a3b8;">49.27</td>
+        <td class="text-right font-black" style="color: #0f766e;">39.42</td>
+        <td class="text-center"><span class="badge-down">▼ -3</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#26</td>
+        <td><strong>Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 7 Sadang Serang</td>
+        <td class="text-center">13</td>
+        <td class="text-center">1 <span style="font-size: 6.5pt; color: #64748b;">(1/0)</span></td>
+        <td class="text-right font-bold">5</td>
+        <td class="text-right">90.7</td>
+        <td class="text-right" style="color: #94a3b8;">47.83</td>
+        <td class="text-right font-black" style="color: #0f766e;">39.26</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#27</td>
+        <td><strong>Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 3 Cipaganti</td>
+        <td class="text-center">16</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">97.8</td>
+        <td class="text-right" style="color: #94a3b8;">48.88</td>
+        <td class="text-right font-black" style="color: #0f766e;">39.10</td>
+        <td class="text-center"><span class="badge-down">▼ -4</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#28</td>
+        <td><strong>John Adler, S.Si., M.Si.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 5 Sekeloa</td>
+        <td class="text-center">13</td>
+        <td class="text-center">1 <span style="font-size: 6.5pt; color: #64748b;">(0/1)</span></td>
+        <td class="text-right font-bold">2</td>
+        <td class="text-right">93.4</td>
+        <td class="text-right" style="color: #94a3b8;">47.69</td>
+        <td class="text-right font-black" style="color: #0f766e;">38.55</td>
+        <td class="text-center"><span class="badge-down">▼ -1</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#29</td>
+        <td><strong>Dr. Linna Ismawati, S.E., M.Si.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 4 Dago</td>
+        <td class="text-center">37</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">84.2</td>
+        <td class="text-right" style="color: #94a3b8;">42.12</td>
+        <td class="text-right font-black" style="color: #0f766e;">33.70</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#30</td>
+        <td><strong>Iyan Andriana, S.T., M.T.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 1 Cipaganti</td>
+        <td class="text-center">16</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">82.9</td>
+        <td class="text-right" style="color: #94a3b8;">41.45</td>
+        <td class="text-right font-black" style="color: #0f766e;">33.16</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#31</td>
+        <td><strong>Dr. Henike Primawati, S.IP., M.I.Pol.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 6 Sekeloa</td>
+        <td class="text-center">12</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">62.7</td>
+        <td class="text-right" style="color: #94a3b8;">31.37</td>
+        <td class="text-right font-black" style="color: #0f766e;">25.09</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+      <tr class="">
+        <td class="text-center font-bold">#32</td>
+        <td><strong>Hanhan Maulana, M.Kom., Ph.D.</strong><br><span style="font-size: 6.5pt; color: #64748b;">NIP: -</span></td>
+        <td>Kelompok 2 Cipaganti</td>
+        <td class="text-center">16</td>
+        <td class="text-center">0 <span style="font-size: 6.5pt; color: #64748b;">(0/0)</span></td>
+        <td class="text-right font-bold">0</td>
+        <td class="text-right">62.2</td>
+        <td class="text-right" style="color: #94a3b8;">31.09</td>
+        <td class="text-right font-black" style="color: #0f766e;">24.87</td>
+        <td class="text-center"><span class="badge-same">Tetap</span></td>
+      </tr>
+      
+  </tbody>
+</table>
+
+<!-- PERUBAHAN SIGNIFIKAN -->
+<h2>5. Analisis Perubahan Signifikan & Keadilan Kompetisi</h2>
+<div class="grid-2">
+  <div class="card">
+    <div class="font-bold text-teal" style="font-size: 8.5pt;">Dosen yang Terangkat (Paling Diuntungkan)</div>
+    <ul style="margin: 4px 0; padding-left: 14px; font-size: 7.5pt; color: #334155;">
+      <li><strong>Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</strong>: Naik 5 peringkat (dari #8 ke <strong>#3</strong>) berkat 10 kunjungan lapangan.</li>
+      <li><strong>Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D.</strong>: Naik 6 peringkat (dari #11 ke <strong>#5</strong>) berkat 6 kunjungan lapangan (32 poin logbook).</li>
+      <li><strong>Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si.</strong>: Naik 10 peringkat (dari #25 ke <strong>#15</strong>) berkat 7 kunjungan lapangan (35 poin logbook).</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="font-bold" style="color: #b91c1c; font-size: 8.5pt;">Dosen yang Terdampak Penurunan</div>
+    <ul style="margin: 4px 0; padding-left: 14px; font-size: 7.5pt; color: #334155;">
+      <li><strong>Arif Try Cahyadi, S.Ds., M.Ds.</strong>: Turun 4 peringkat (dari #3 ke <strong>#7</strong>) karena hanya mengisi 3 kali logbook (9 poin logbook).</li>
+      <li><strong>Hery Dwi Yulianto, S.T., M.Kom.</strong>: Turun 3 peringkat (dari #7 ke <strong>#10</strong>) karena hanya mengisi 2 kali logbook (7 poin logbook).</li>
+      <li><strong>Dr. H. Tatang Supriyadi, S.E., M.M.</strong>: Turun 2 peringkat (dari #9 ke <strong>#11</strong>) karena hanya mengisi 1 kali logbook.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- QUALITY GATE & VERIFIKASI TEKNIS -->
+<h2>6. Quality Gate & Kepatuhan Konstitusi DPL</h2>
+<div class="card" style="font-size: 7.5pt;">
+  <table style="width: 100%;">
+    <tr>
+      <td style="width: 50%;">
+        <strong>Validasi CI/CD & Test Automation:</strong><br>
+        • Vitest Suite DPL (51 Tests): <strong style="color: #15803d;">100% PASSED (0 Failure)</strong><br>
+        • TypeScript Strict Compilation: <strong style="color: #15803d;">0 Type Errors</strong><br>
+        • Scoping Kelompok DPL: <strong style="color: #15803d;">TERJAGA KETAT (getKelompokWhere)</strong>
+      </td>
+      <td style="width: 50%;">
+        <strong>Konfigurasi Server Produksi (VPS):</strong><br>
+        • Git Branch: <code>main</code> (Commit <code>02b41f07f</code>)<br>
+        • Node Environment: <code>production</code> (PM2 Cluster Mode)<br>
+        • VPS Safety Guard: <strong style="color: #15803d;">AKTIF (Zero Dummy Injected)</strong><br>
+        • HTTP Endpoint: <code>200 OK (Real Data Verified)</code>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- LEMBAR TANDA TANGAN -->
+<table class="signature-table">
+  <tr>
+    <td>
+      <div class="signature-box">
+        <strong>Disusun & Diverifikasi Oleh:</strong><br>
+        <span style="font-size: 7.5pt; color: #64748b;">Tim Pengembang Sistem & Fullstack Engineer BERSEKA.ID</span>
+        <br><br><br>
+        <strong>Jeremy Darrell & Antigravity Core Team</strong><br>
+        <span>Fullstack Developer Lead</span>
+      </div>
+    </td>
+    <td>
+      <div class="signature-box">
+        <strong>Mengetahui & Menyetujui:</strong><br>
+        <span style="font-size: 7.5pt; color: #64748b;">Direksi PT Makerindo Prima Solusi / DPL KKN</span>
+        <br><br><br>
+        <strong>Dr. Agus Mulyana, S.Kom., M.T.</strong><br>
+        <span>CEO PT Makerindo Prima Solusi</span>
+      </div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -2116,7 +2116,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       </span>
                       <span className="text-xs font-bold text-slate-400">PTS</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block">Kontribusi 50% = {((selectedDplPointDetail.poinLogbookDpl || 0) * 0.5):.2f} PTS</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">Kontribusi 60% = {(((selectedDplPointDetail.poinLogbookDpl || 0) * 0.6)).toFixed(2)} PTS</span>
                   </div>
                 </div>
               </div>
@@ -2129,7 +2129,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     Detail Rerata Kelompok Dampingan
                   </span>
                   <span className="text-[11px] font-semibold text-slate-400 lowercase">
-                    {len(selectedDplPointDetail.kelompokDetails or [])} kelompok terdata
+                    {(selectedDplPointDetail.kelompokDetails || []).length} kelompok terdata
                   </span>
                 </h4>
 
@@ -2189,7 +2189,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-300">
                 <Info size={15} className="text-amber-600 shrink-0 mt-0.5" />
                 <p>
-                  Perhitungan seluruh poin bersumber dinamis dari data aktivitas riil di database tanpa manipulasi dummy: Poin Kelompok = (60% Proker Disetujui) + (40% Rerata Saldo Anggota). Poin DPL = (50% Supervisi Logbook DPL) + (50% Rerata Poin Kelompok).
+                  Perhitungan seluruh poin bersumber dinamis dari data aktivitas riil di database tanpa manipulasi dummy: Poin Kelompok = (60% Proker Disetujui) + (40% Rerata Saldo Anggota). Poin DPL = (60% Supervisi Logbook DPL) + (40% Rerata Poin Kelompok).
                 </p>
               </div>
             </div>
