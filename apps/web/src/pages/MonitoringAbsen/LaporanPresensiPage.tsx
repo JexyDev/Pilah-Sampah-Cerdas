@@ -98,6 +98,11 @@ export interface LaporanItem {
   fotoUrl: string | null;
   latitude: number | null;
   longitude: number | null;
+  phone?: string | null;
+  noWa?: string | null;
+  isTestAccount?: boolean;
+  kelompokName?: string | null;
+  dplName?: string | null;
   isPoskoUnikom?: boolean;
   poskoName?: string;
   method: string;
@@ -109,6 +114,9 @@ export interface StudentAggregate {
   namaMahasiswa: string;
   nim: string;
   jurusan: string;
+  phone?: string | null;
+  noWa?: string | null;
+  isTestAccount?: boolean;
   isKetua: boolean;
   fotoProfil: string | null;
   assignedRw?: string | null;
@@ -119,6 +127,8 @@ export interface StudentAggregate {
     cakupanRw?: any;
     dplName: string;
   } | null;
+  kelompokName?: string | null;
+  dplName?: string | null;
   totalSessions: number;
   totalMinutes: number;
   totalHours: number;
@@ -668,22 +678,53 @@ export const LaporanPresensiPage: React.FC = () => {
         const rawAggs = data.studentAggregates || [];
         const cleanItems = allowTest
           ? rawItems
-          : rawItems.filter(
-              (it: any) =>
-                !isTestStudent({ nim: it.nim, nama: it.namaMahasiswa, name: it.namaMahasiswa, phone: it.noWa }) &&
-                !isTestKelompok({ name: it.kelompokName, dplNamaMentah: it.dplName })
-            );
+          : rawItems.filter((it: any) => {
+              const kknGrp = it.kelompok || (it.kelompokName && it.kelompokName !== "-" ? { name: it.kelompokName, dplNamaMentah: it.dplName } : null);
+              if (!kknGrp || isTestKelompok(kknGrp)) return false;
+              if (
+                it.isTestAccount ||
+                isTestStudent({
+                  id: it.studentId,
+                  nim: it.nim,
+                  nama: it.namaMahasiswa,
+                  name: it.namaMahasiswa,
+                  phone: it.phone || it.noWa,
+                  noWa: it.noWa,
+                  kelompok: kknGrp,
+                })
+              ) {
+                return false;
+              }
+              return true;
+            });
         const cleanAggs = allowTest
           ? rawAggs
-          : rawAggs.filter(
-              (ag: any) =>
-                !isTestStudent({ nim: ag.nim, nama: ag.namaMahasiswa, name: ag.namaMahasiswa, phone: ag.phone }) &&
-                !isTestKelompok({ name: ag.kelompokName, dplNamaMentah: ag.dplName })
-            );
+          : rawAggs.filter((ag: any) => {
+              const kknGrp = ag.kelompok || (ag.kelompokName && ag.kelompokName !== "-" ? { name: ag.kelompokName, dplNamaMentah: ag.dplName } : null);
+              if (!kknGrp || isTestKelompok(kknGrp)) return false;
+              if (
+                ag.isTestAccount ||
+                isTestStudent({
+                  id: ag.studentId,
+                  nim: ag.nim,
+                  nama: ag.namaMahasiswa,
+                  name: ag.namaMahasiswa,
+                  phone: ag.phone || ag.noWa,
+                  noWa: ag.noWa,
+                  kelompok: kknGrp,
+                })
+              ) {
+                return false;
+              }
+              return true;
+            });
         setItems(cleanItems);
         setStudentAggregates(cleanAggs);
         if (data.summary) {
-          setSummary(data.summary);
+          setSummary({
+            ...data.summary,
+            totalMahasiswa: cleanAggs.length,
+          });
         }
         if (data.pagination) {
           setTotalPages(data.pagination.totalPages || 1);
