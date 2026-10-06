@@ -1073,42 +1073,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
-        ...(isStaging
-          ? [
-              {
-                to: "/analisis-sistem/kkn",
-                icon: Activity,
-                label: "Analisis Sistem (QC)",
-                badge: "QC",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                  "PEMIMPIN",
-                  "DPL",
-                  "DOSEN_PEMBIMBING",
-                ] as UserRole[],
-              },
-              {
-                to: "/berseka-ai?tab=kkn",
-                icon: Sparkles,
-                label: "BERSEKA AI (QC)",
-                badge: "QC",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                  "PEMIMPIN",
-                  "DPL",
-                  "DOSEN_PEMBIMBING",
-                ] as UserRole[],
-              },
-            ]
-          : []),
+        {
+          to: "/analisis-sistem/kkn",
+          icon: Activity,
+          label: "Analisis Sistem",
+          badge: "Pengembangan",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+          ] as UserRole[],
+        },
+        {
+          to: "/berseka-ai?tab=kkn",
+          icon: Sparkles,
+          label: "BERSEKA AI",
+          badge: "Pengembangan",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+          ] as UserRole[],
+        },
         {
           type: "group",
           label: "Pelaksanaan",
@@ -1541,44 +1537,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
-        ...(isStaging
-          ? [
-              {
-                to: "/analisis-sistem/tata-kelola-sampah",
-                icon: BarChart3,
-                label: "Analisis Sistem (QC)",
-                badge: "QC",
-                resource: "monitoring_sampah",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "CAMAT",
-                  "LURAH",
-                  "RW",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                ] as UserRole[],
-              },
-              {
-                to: "/berseka-ai?tab=tata-kelola",
-                icon: Sparkles,
-                label: "BERSEKA AI (QC)",
-                badge: "QC",
-                resource: "monitoring_sampah",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "CAMAT",
-                  "LURAH",
-                  "RW",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                ] as UserRole[],
-              },
-            ]
-          : []),
+        {
+          to: "/analisis-sistem/tata-kelola-sampah",
+          icon: BarChart3,
+          label: "Analisis Sistem",
+          badge: "Pengembangan",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+          ] as UserRole[],
+        },
+        {
+          to: "/berseka-ai?tab=tata-kelola",
+          icon: Sparkles,
+          label: "BERSEKA AI",
+          badge: "Pengembangan",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+          ] as UserRole[],
+        },
         {
           type: "group",
           label: "Peta Sebaran",
