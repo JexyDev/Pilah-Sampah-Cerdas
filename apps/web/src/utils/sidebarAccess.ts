@@ -222,13 +222,13 @@ export function canAccessSidebarRoute(
     cleanPath === "/berseka-ai" ||
     cleanPath === "/analisis-sistem/tata-kelola-sampah" ||
     cleanPath === "/analisis-sistem/kkn" ||
+    cleanPath === "/analisis-sistem" ||
+    cleanPath === "/analisis-projek" ||
+    cleanPath === "/analisis-proyek" ||
     cleanPath === "/monitoring-wilayah" ||
     cleanPath === "/manajemen-iot" ||
     cleanPath === "/iot"
   ) {
-    if (cleanPath === "/berseka-ai" || cleanPath.startsWith("/analisis-sistem")) {
-      return isStagingEnv();
-    }
     return true;
   }
 
