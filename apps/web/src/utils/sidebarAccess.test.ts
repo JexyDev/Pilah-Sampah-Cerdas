@@ -91,9 +91,19 @@ describe("sidebarAccess utility", () => {
     expect(canAccessSidebarRoute("/monitoring-pengelolaan/tempat-sampah", dev)).toBe(true);
   });
 
-  it("blocks DPL from accessing executive Laporan routes", () => {
+  it("blocks DPL from accessing executive Laporan routes and Leaderboard", () => {
     const dpl = createMockUser("DPL");
     expect(canAccessSidebarRoute("/laporan/kkn", dpl)).toBe(false);
     expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", dpl)).toBe(false);
+    expect(canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga", dpl)).toBe(false);
+    expect(
+      canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=students", dpl)
+    ).toBe(false);
+    expect(
+      canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=groups", dpl)
+    ).toBe(false);
+    expect(
+      canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=dpl", dpl)
+    ).toBe(false);
   });
 });
