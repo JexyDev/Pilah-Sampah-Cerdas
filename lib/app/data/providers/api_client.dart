@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../core/utils/safe_storage.dart';
 import '../../core/values/app_config.dart';
 import '../../routes/app_routes.dart';
+import '../../core/utils/app_cache_manager.dart';
+import '../../core/utils/hidden_history_service.dart';
 import 'offline_cache_interceptor.dart';
 import '../../../main.dart' show navigatorKey;
 
@@ -259,6 +261,11 @@ class ApiClient {
       secureStorage.delete(key: AppConfig.userDataKey),
       secureStorage.delete(key: AppConfig.householdIdKey),
     ]);
+
+    try {
+      await HiddenHistoryService.resetSession();
+      await AppCacheManager.clearAllApiCache();
+    } catch (_) {}
 
     // Navigate ke Login dan hapus semua rute sebelumnya
     final navState = navigatorKey.currentState;

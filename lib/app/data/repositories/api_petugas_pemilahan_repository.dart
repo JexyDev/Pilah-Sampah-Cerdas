@@ -292,7 +292,14 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> rawList = [];
         if (response.data is Map<String, dynamic>) {
-          rawList = response.data['data'] as List<dynamic>? ?? [];
+          final dataField = response.data['data'];
+          if (dataField is List) {
+            rawList = dataField;
+          } else if (dataField is Map<String, dynamic> && dataField['items'] is List) {
+            rawList = dataField['items'] as List<dynamic>;
+          } else if (response.data['items'] is List) {
+            rawList = response.data['items'] as List<dynamic>;
+          }
         } else if (response.data is List) {
           rawList = response.data as List<dynamic>;
         }
@@ -304,6 +311,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
             final category = bin['category'] as Map<String, dynamic>? ?? {};
             final rtRw = bin['rw'] as Map<String, dynamic>? ?? user['rtRw'] as Map<String, dynamic>? ?? {};
             final kelurahan = bin['kelurahan'] as Map<String, dynamic>? ?? user['kelurahan'] as Map<String, dynamic>? ?? {};
+            final petugas = e['petugas'] as Map<String, dynamic>? ?? {};
             final categoryName = category['name']?.toString() ?? e['jenisSampah']?.toString() ?? bin['binType']?.toString() ?? 'Organik';
 
             final String binQr = (bin['qrCode'] ??
@@ -322,6 +330,11 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
             return {
               'id': e['id']?.toString() ?? '',
               'binId': binId,
+              'petugasId': e['petugasId']?.toString() ??
+                  petugas['id']?.toString() ??
+                  '',
+              'petugasName': petugas['name']?.toString() ?? '',
+              'petugasPhone': petugas['phone']?.toString() ?? '',
               'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? '',
               'binCode': binQr.isNotEmpty ? binQr : binId,
               'qrCode': binQr,
@@ -331,12 +344,12 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
               'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
               'kelurahan': kelurahan['name']?.toString() ?? e['kelurahan']?.toString() ?? '',
               'createdAt': e['createdAt']?.toString() ?? '',
-              'status': e['status']?.toString() ?? 'PENDING',
+              'status': (e['status']?.toString() ?? 'PENDING').toUpperCase(),
               'evidencePhotoUrl': e['evidencePhotoUrl']?.toString() ?? e['photoUrl']?.toString() ?? '',
             };
           }
           return <String, dynamic>{};
-        }).where((m) => m.isNotEmpty && m['status'] == 'PENDING').toList();
+        }).where((m) => m.isNotEmpty && (m['status'] == 'PENDING' || m['status'] == 'ASSIGNED')).toList();
       }
       return [];
     } on DioException catch (e) {

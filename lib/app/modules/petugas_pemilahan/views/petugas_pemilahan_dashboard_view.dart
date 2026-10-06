@@ -80,6 +80,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
+        memCacheWidth: 150,
+        memCacheHeight: 150,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
       );
@@ -88,11 +90,18 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 150,
+          cacheHeight: 150,
+        );
       }
     }
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
+      memCacheWidth: 150,
+      memCacheHeight: 150,
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
     );
@@ -751,9 +760,13 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  _buildHeader(context, ref, user, unreadCount),
+                  RepaintBoundary(
+                    child: _buildHeader(context, ref, user, unreadCount),
+                  ),
                   const SizedBox(height: 12),
-                  _buildInfoCard(context, ref, user),
+                  RepaintBoundary(
+                    child: _buildInfoCard(context, ref, user),
+                  ),
                 ],
               ),
             ),
@@ -762,7 +775,9 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // Poin Insentif Petugas
-                  _buildPointsCard(context, dashboard?.totalPoints ?? 0, user?.name),
+                  RepaintBoundary(
+                    child: _buildPointsCard(context, dashboard?.totalPoints ?? 0, user?.name),
+                  ),
                   const SizedBox(height: 18),
 
                   // ── 📊 Berat Sampah Terkumpul ──────────────────────────────

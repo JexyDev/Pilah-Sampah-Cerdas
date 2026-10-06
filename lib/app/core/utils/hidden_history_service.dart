@@ -33,15 +33,34 @@ class HiddenHistoryService {
   static SharedPreferences? _prefs;
   static const SafeStorage _storage = SafeStorage();
 
+  // Active user ID for strict multi-user isolation
+  static String? _activeUserId;
+
   // Fast in-memory cache for 60fps zero-allocation scroll performance
   static final Map<String, int?> _memClearTimes = {};
   static final Map<String, Set<String>> _memHiddenIds = {};
 
-  /// Memastikan instance SharedPreferences telah dimuat ke memori dan tersinkronisasi dari SafeStorage.
-  static Future<SharedPreferences> ensureInitialized() async {
-    _prefs = await SharedPreferences.getInstance();
+  static String _scopedKey(String prefix, String scope, [String? userId]) {
+    final uid = userId ?? _activeUserId;
+    if (uid != null && uid.isNotEmpty) {
+      return '$prefix${uid}_$scope';
+    }
+    return '$prefix$scope';
+  }
 
-    // Auto-restore dari SafeStorage jika SharedPreferences sempat ter-wipe saat logout
+  /// Set user ID yang sedang aktif untuk mengisolasi riwayat per akun secara ketat.
+  static void setActiveUser(String? userId) {
+    if (_activeUserId != userId) {
+      _activeUserId = userId;
+      _memClearTimes.clear();
+      _memHiddenIds.clear();
+      if (_prefs != null && userId != null && userId.isNotEmpty) {
+        _loadUserCache(userId);
+      }
+    }
+  }
+
+  static void _loadUserCache(String userId) {
     const scopes = [
       scopeWargaWaste,
       scopeWargaPoints,
@@ -51,26 +70,39 @@ class HiddenHistoryService {
       scopePetugasPoints,
     ];
     for (final s in scopes) {
-      final keyTime = '$_prefixClearTime$s';
-      final keyIds = '$_prefixHiddenIds$s';
-      if (_prefs!.getInt(keyTime) == null) {
-        final backupTime = await _storage.read(key: 'backup_$keyTime');
-        if (backupTime != null) {
-          final t = int.tryParse(backupTime);
-          if (t != null) await _prefs!.setInt(keyTime, t);
-        }
-      }
-      if (_prefs!.getStringList(keyIds) == null) {
-        final backupIds = await _storage.read(key: 'backup_$keyIds');
-        if (backupIds != null && backupIds.isNotEmpty) {
-          await _prefs!.setStringList(keyIds, backupIds.split(','));
-        }
-      }
-
-      // Inisialisasi memory cache agar render list 100% bebas dari lag SharedPreferences
-      _memClearTimes[s] = _prefs!.getInt(keyTime);
-      final savedIds = _prefs!.getStringList(keyIds);
+      final keyTime = _scopedKey(_prefixClearTime, s, userId);
+      final keyIds = _scopedKey(_prefixHiddenIds, s, userId);
+      _memClearTimes[s] = _prefs?.getInt(keyTime);
+      final savedIds = _prefs?.getStringList(keyIds);
       _memHiddenIds[s] = savedIds != null ? Set<String>.from(savedIds) : <String>{};
+    }
+  }
+
+  /// Memastikan instance SharedPreferences telah dimuat ke memori dan tersinkronisasi dari SafeStorage.
+  static Future<SharedPreferences> ensureInitialized() async {
+    _prefs = await SharedPreferences.getInstance();
+
+    const scopes = [
+      scopeWargaWaste,
+      scopeWargaPoints,
+      scopeMahasiswaKkn,
+      scopeMahasiswaPoints,
+      scopePetugasTasks,
+      scopePetugasPoints,
+    ];
+
+    // Bersihkan legacy un-scoped keys yang bocor lintas akun pada versi lama
+    for (final s in scopes) {
+      final oldKeyTime = '$_prefixClearTime$s';
+      final oldKeyIds = '$_prefixHiddenIds$s';
+      if (_prefs!.containsKey(oldKeyTime)) await _prefs!.remove(oldKeyTime);
+      if (_prefs!.containsKey(oldKeyIds)) await _prefs!.remove(oldKeyIds);
+      await _storage.delete(key: 'backup_$oldKeyTime');
+      await _storage.delete(key: 'backup_$oldKeyIds');
+    }
+
+    if (_activeUserId != null && _activeUserId!.isNotEmpty) {
+      _loadUserCache(_activeUserId!);
     }
 
     return _prefs!;
@@ -157,6 +189,9 @@ class HiddenHistoryService {
   /// Menyembunyikan seluruh tampilan riwayat saat ini untuk scope tertentu.
   /// Menyimpan seluruh ID aktif dan timestamp toleran agar data lama tidak bocor kembali,
   /// serta mensinkronisasikan cutoff ke backend VPS jika ApiClient tersedia.
+  /// Menyembunyikan seluruh tampilan riwayat saat ini untuk scope tertentu.
+  /// Menyimpan seluruh ID aktif dan timestamp toleran agar data lama tidak bocor kembali,
+  /// serta mensinkronisasikan cutoff ke backend VPS jika ApiClient tersedia.
   static Future<void> clearDisplay(
     String scope, {
     List<String>? currentItemIds,
@@ -167,19 +202,20 @@ class HiddenHistoryService {
       final nowLocal = DateTime.now().millisecondsSinceEpoch;
       final nowUtc = DateTime.now().toUtc().millisecondsSinceEpoch;
       final safeNow = nowLocal > nowUtc ? nowLocal : nowUtc;
-      await p.setInt('$_prefixClearTime$scope', safeNow);
-      await _storage.write(key: 'backup_$_prefixClearTime$scope', value: '$safeNow');
+      final keyTime = _scopedKey(_prefixClearTime, scope);
+      await p.setInt(keyTime, safeNow);
+      await _storage.write(key: 'backup_$keyTime', value: '$safeNow');
 
-      final key = '$_prefixHiddenIds$scope';
-      final list = p.getStringList(key) ?? [];
+      final keyIds = _scopedKey(_prefixHiddenIds, scope);
+      final list = p.getStringList(keyIds) ?? [];
       if (currentItemIds != null && currentItemIds.isNotEmpty) {
         for (final id in currentItemIds) {
           if (id.isNotEmpty && !list.contains(id)) {
             list.add(id);
           }
         }
-        await p.setStringList(key, list);
-        await _storage.write(key: 'backup_$key', value: list.join(','));
+        await p.setStringList(keyIds, list);
+        await _storage.write(key: 'backup_$keyIds', value: list.join(','));
       }
 
       // Update memory cache seketika (O(1))
@@ -187,7 +223,7 @@ class HiddenHistoryService {
       _memHiddenIds[scope] = Set<String>.from(list);
 
       debugPrint(
-        '[HiddenHistoryService] Display cleared for scope: $scope with ${currentItemIds?.length ?? 0} ids at $safeNow',
+        '[HiddenHistoryService] Display cleared for scope: $scope with ${currentItemIds?.length ?? 0} ids at $safeNow (key: $keyTime)',
       );
 
       // Sinkronisasikan server-side cutoff di background (non-blocking)
@@ -203,13 +239,15 @@ class HiddenHistoryService {
   static Future<void> restoreDisplay(String scope) async {
     try {
       final p = await ensureInitialized();
-      await p.remove('$_prefixClearTime$scope');
-      await p.remove('$_prefixHiddenIds$scope');
-      await _storage.delete(key: 'backup_$_prefixClearTime$scope');
-      await _storage.delete(key: 'backup_$_prefixHiddenIds$scope');
+      final keyTime = _scopedKey(_prefixClearTime, scope);
+      final keyIds = _scopedKey(_prefixHiddenIds, scope);
+      await p.remove(keyTime);
+      await p.remove(keyIds);
+      await _storage.delete(key: 'backup_$keyTime');
+      await _storage.delete(key: 'backup_$keyIds');
       _memClearTimes.remove(scope);
       _memHiddenIds[scope] = <String>{};
-      debugPrint('[HiddenHistoryService] Display restored for scope: $scope');
+      debugPrint('[HiddenHistoryService] Display restored for scope: $scope (key: $keyTime)');
     } catch (e) {
       debugPrint('[HiddenHistoryService] Error restoring display: $e');
     }
@@ -219,7 +257,7 @@ class HiddenHistoryService {
   static Future<void> hideItem(String scope, String id, {ApiClient? apiClient}) async {
     try {
       final p = await ensureInitialized();
-      final key = '$_prefixHiddenIds$scope';
+      final key = _scopedKey(_prefixHiddenIds, scope);
       final list = p.getStringList(key) ?? [];
       if (!list.contains(id)) {
         list.add(id);
@@ -244,7 +282,7 @@ class HiddenHistoryService {
   }) async {
     try {
       final p = await ensureInitialized();
-      final key = '$_prefixHiddenIds$scope';
+      final key = _scopedKey(_prefixHiddenIds, scope);
       final list = p.getStringList(key) ?? [];
       final newIds = <String>[];
       for (final id in ids) {
@@ -278,7 +316,7 @@ class HiddenHistoryService {
     if (hiddenSet != null && hiddenSet.contains(id)) return false;
 
     // 2. Cek apakah item dibuat sebelum timestamp pembersihan (O(1) integer comparison)
-    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt('$_prefixClearTime$scope');
+    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt(_scopedKey(_prefixClearTime, scope));
     if (clearTime != null && createdAt != null) {
       if (createdAt.millisecondsSinceEpoch <= clearTime) {
         return false;
@@ -292,6 +330,7 @@ class HiddenHistoryService {
   static Future<void> resetSession() async {
     _memClearTimes.clear();
     _memHiddenIds.clear();
+    _activeUserId = null;
     try {
       _prefs = await SharedPreferences.getInstance();
       final keys = _prefs!.getKeys().where((k) => k.startsWith(_prefixClearTime) || k.startsWith(_prefixHiddenIds)).toList();
@@ -313,7 +352,7 @@ class HiddenHistoryService {
 
   /// Memeriksa apakah scope saat ini memiliki riwayat yang sedang disembunyikan.
   static bool hasHiddenItemsSync(String scope) {
-    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt('$_prefixClearTime$scope');
+    final clearTime = _memClearTimes[scope] ?? _prefs?.getInt(_scopedKey(_prefixClearTime, scope));
     if (clearTime != null && clearTime > 0) return true;
     final hiddenSet = _memHiddenIds[scope];
     return hiddenSet != null && hiddenSet.isNotEmpty;
@@ -427,6 +466,116 @@ class HiddenHistoryActionMenu extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Widget wrapper untuk mendukung Swipe-to-Delete (Hapus 1-1 dinamis berbasis itemId).
+class DismissibleHistoryItem extends ConsumerWidget {
+  final String scope;
+  final String itemId;
+  final Widget child;
+  final VoidCallback? onDismissed;
+  final String confirmTitle;
+  final String confirmMessage;
+
+  const DismissibleHistoryItem({
+    super.key,
+    required this.scope,
+    required this.itemId,
+    required this.child,
+    this.onDismissed,
+    this.confirmTitle = 'Hapus Item Riwayat?',
+    this.confirmMessage =
+        'Item riwayat ini akan dihapus dari akun Anda agar aplikasi tetap ringan. Saldo poin Anda tetap aman 100%.',
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (itemId.isEmpty) return child;
+
+    return Dismissible(
+      key: ValueKey('dismiss_${scope}_$itemId'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: AppColors.dangerRed,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+            SizedBox(width: 6),
+            Text(
+              'Hapus',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    confirmTitle,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              confirmMessage,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, false),
+                child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.dangerRed,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(dialogCtx, true),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+        ) ?? false;
+      },
+      onDismissed: (direction) async {
+        final client = ref.read(apiClientProvider);
+        await HiddenHistoryService.hideItem(scope, itemId, apiClient: client);
+        ref.read(hiddenHistoryVersionProvider.notifier).state++;
+        onDismissed?.call();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Item riwayat berhasil dihapus'),
+              backgroundColor: AppColors.primaryGreen,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      child: child,
     );
   }
 }

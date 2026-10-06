@@ -140,7 +140,11 @@ class OfflineCacheInterceptor extends Interceptor {
   }
 
   String _getCacheKey(RequestOptions options) {
-    return 'cache_${options.uri.toString()}';
+    final auth = options.headers['Authorization']?.toString();
+    final authPrefix = (auth != null && auth.isNotEmpty)
+        ? 'auth_${auth.hashCode.abs()}_'
+        : 'pub_';
+    return 'cache_$authPrefix${options.uri.toString()}';
   }
 
   /// Menghapus cache yang berkaitan dengan endpoint yang baru saja dimutasi secara lintas domain

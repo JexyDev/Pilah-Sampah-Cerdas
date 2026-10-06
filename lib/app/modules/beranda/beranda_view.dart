@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -105,14 +106,14 @@ class _BerandaViewState extends ConsumerState<BerandaView>
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
-    final totalPointsAsync = ref.watch(totalPointsProvider);
-    final wasteLogsAsync = ref.watch(wasteLogsProvider);
-    final bool isOnline = ref.watch(isOnlineProvider);
-    final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
-    final hasActiveBin =
-        ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
     try {
+      final user = ref.watch(authProvider).user;
+      final totalPointsAsync = ref.watch(totalPointsProvider);
+      final wasteLogsAsync = ref.watch(wasteLogsProvider);
+      final bool isOnline = ref.watch(isOnlineProvider);
+      final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
+      final hasActiveBin =
+          ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
       return Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
         body: RefreshIndicator(
@@ -559,36 +560,120 @@ class _BerandaViewState extends ConsumerState<BerandaView>
         backgroundColor: AppColors.backgroundCanvas,
         body: SafeArea(
           child: Center(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    color: AppColors.dangerRed,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Gagal Memuat Beranda',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$e',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                  border: Border.all(
+                    color: AppColors.border.withValues(alpha: 0.6),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => setState(() {}),
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Gagal Memuat Beranda',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Terjadi kendala saat menyinkronkan data Beranda. Silakan ketuk tombol di bawah untuk menyegarkan kembali.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (kDebugMode) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$e',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                            color: AppColors.dangerRed,
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(binsProvider);
+                          ref.invalidate(totalPointsProvider);
+                          ref.invalidate(dailyPointsProvider);
+                          ref.invalidate(pointHistoryProvider);
+                          ref.invalidate(wasteLogsProvider);
+                          ref.invalidate(notificationsProvider);
+                          ref.invalidate(wargaNotificationsProvider);
+                          ref.invalidate(wargaUnreadNotificationCountProvider);
+                          ref.invalidate(beritaListProvider);
+                          ref.read(authProvider.notifier).fetchProfile();
+                          ref.read(userLocationProvider.notifier).refreshLocation();
+                          setState(() {});
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text(
+                          'Segarkan Beranda',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1571,17 +1656,17 @@ class _PengosonganButtonState extends State<_PengosonganButton> {
         duration: const Duration(milliseconds: 200),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withValues(alpha: 0.10),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.primaryGreen.withValues(alpha: 0.35),
+              color: AppColors.border,
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -1593,8 +1678,8 @@ class _PengosonganButtonState extends State<_PengosonganButton> {
               onTapUp: (_) => setState(() => _isPressed = false),
               onTapCancel: () => setState(() => _isPressed = false),
               borderRadius: BorderRadius.circular(16),
-              splashColor: AppColors.primaryGreen.withValues(alpha: 0.15),
-              highlightColor: AppColors.primaryGreen.withValues(alpha: 0.08),
+              splashColor: Colors.black.withValues(alpha: 0.05),
+              highlightColor: Colors.black.withValues(alpha: 0.03),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
@@ -1605,7 +1690,7 @@ class _PengosonganButtonState extends State<_PengosonganButton> {
                   children: [
                     Image.asset(
                       'assets/icons/waste.png',
-                      color: AppColors.primaryGreen,
+                      color: const Color(0xFF334155),
                       width: 18,
                       height: 18,
                     ),
@@ -1617,9 +1702,10 @@ class _PengosonganButtonState extends State<_PengosonganButton> {
                           'Pengosongan',
                           maxLines: 1,
                           style: TextStyle(
-                            color: AppColors.primaryGreen,
+                            color: AppColors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ),
@@ -1889,6 +1975,11 @@ class _BerandaBinCardState extends State<_BerandaBinCard> {
     final Color color = isOrganic
         ? AppColors.organicColor
         : AppColors.nonOrganicColor;
+    final double rawCapacity = bin.capacityPercent;
+    final double safeCapacity =
+        (rawCapacity.isNaN || rawCapacity.isInfinite)
+            ? 0.0
+            : rawCapacity.clamp(0.0, 1.0);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1977,7 +2068,7 @@ class _BerandaBinCardState extends State<_BerandaBinCard> {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: bin.isActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
+              value: bin.isActive ? safeCapacity : 0.0,
               minHeight: 6,
               backgroundColor: bin.isActive
                   ? AppColors.border
@@ -1991,7 +2082,7 @@ class _BerandaBinCardState extends State<_BerandaBinCard> {
           Text(
             bin.isResetPending
                 ? 'Menunggu diproses'
-                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi',
+                : '${(safeCapacity * 100).toStringAsFixed(0)}% terisi',
             style: const TextStyle(fontSize: 10, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 8),

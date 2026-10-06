@@ -9,7 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'app/core/theme/app_theme.dart';
+import 'app/core/values/app_colors.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/app_pages.dart';
 import 'app/core/values/app_strings.dart';
@@ -125,21 +127,15 @@ void main() async {
   FlutterForegroundTask.initCommunicationPort();
   initKknForegroundTask();
 
-  // Mencegah "Red Screen of Death" tampil ke pengguna dan menggunakan Snackbar
+  // Global Error Handler & Fallback Widget yang proper, elegan, dan dapat pulih (recoverable)
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Container(
-      color: Colors.transparent,
-      child: const Center(
-        child: Icon(Icons.error_outline, color: Colors.red, size: 24),
-      ),
-    );
+    debugPrint('[Global ErrorWidget] Unhandled widget error: ${details.exception}\n${details.stack}');
+    return _GlobalErrorFallback(details: details);
   };
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    // Kita hapus Snackbar di sini karena error layout/tampilan yang tidak fatal
-    // akan langsung ditangani oleh ErrorWidget.builder secara diam-diam.
-    // Menampilkan Snackbar untuk error layout hanya akan mengganggu kenyamanan pengguna.
+    debugPrint('[FlutterError.onError] Caught framework error: ${details.exception}\n${details.stack}');
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -536,6 +532,14 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.invalidate(wargaAspirasiProvider);
         ref.invalidate(totalSetoranProvider);
       }
+
+      // Otomatis navigasi ke Login saat user logout (sesi berakhir)
+      if (previous?.user != null && next.user == null) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.login,
+          (route) => false,
+        );
+      }
     });
 
     return MaterialApp(
@@ -573,6 +577,179 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       // Routing terpusat
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppPages.generateRoute,
+    );
+  }
+}
+
+/// Fallback Error Widget global yang proper, user-friendly, dan mendukung self-recovery.
+class _GlobalErrorFallback extends StatelessWidget {
+  const _GlobalErrorFallback({required this.details});
+
+  final FlutterErrorDetails details;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Jika konteks adalah widget berukuran kecil / inline (misal chip, list tile, dll)
+        final isCompact = constraints.maxHeight < 140 || constraints.maxWidth < 180;
+
+        if (isCompact) {
+          return Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.dangerRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.dangerRed.withValues(alpha: 0.2),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.dangerRed,
+                  size: 16,
+                ),
+                SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'Kendala tampilan',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.dangerRed,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Tampilan penuh / layar utama yang user-friendly & proper
+        return Material(
+          color: AppColors.backgroundCanvas,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.refresh_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 34,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Pembaruan Tampilan Dibutuhkan',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Komponen ini memerlukan sinkronisasi ulang data. Silakan ketuk tombol di bawah untuk menyegarkan tampilan.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          height: 1.45,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            details.exceptionAsString(),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                              color: AppColors.dangerRed,
+                            ),
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (navigatorKey.currentState != null) {
+                              navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                                AppRoutes.main,
+                                (route) => false,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text(
+                            'Segarkan Tampilan',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

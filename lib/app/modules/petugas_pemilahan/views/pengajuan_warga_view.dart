@@ -137,6 +137,10 @@ class PengajuanWargaView extends ConsumerWidget {
 
     final alamat = pengajuan['address'] ?? pengajuan['alamat'] ?? '';
     final rtRw = pengajuan['rtRw']?.toString() ?? '';
+    final statusStr = (pengajuan['status']?.toString() ?? 'PENDING').toUpperCase();
+    final bool isAssigned = statusStr == 'ASSIGNED';
+    final String petugasName = pengajuan['petugasName']?.toString() ?? '';
+    final String petugasPhone = pengajuan['petugasPhone']?.toString() ?? '';
     
     String createdAt = pengajuan['createdAt']?.toString() ?? '';
     try {
@@ -167,17 +171,17 @@ class PengajuanWargaView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.warningOrange.withValues(alpha: 0.07),
+              color: (isAssigned ? AppColors.primaryBlue : AppColors.warningOrange).withValues(alpha: 0.07),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
             ),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 20,
-                  backgroundColor: AppColors.warningOrange,
-                  child: Icon(
+                  backgroundColor: isAssigned ? AppColors.primaryBlue : AppColors.warningOrange,
+                  child: const Icon(
                     Icons.person_rounded,
                     color: Colors.white,
                     size: 22,
@@ -215,12 +219,12 @@ class PengajuanWargaView extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.warningOrange,
+                    color: isAssigned ? AppColors.primaryBlue : AppColors.warningOrange,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'MENUNGGU',
-                    style: TextStyle(
+                  child: Text(
+                    isAssigned ? 'DITUGASKAN' : 'MENUNGGU',
+                    style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -243,6 +247,14 @@ class PengajuanWargaView extends ConsumerWidget {
                 if (rtRw.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildDetailRow(Icons.location_on_outlined, 'Wilayah', rtRw),
+                ],
+                if (petugasName.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildDetailRow(
+                    Icons.badge_outlined,
+                    'Petugas',
+                    petugasPhone.isNotEmpty ? '$petugasName ($petugasPhone)' : petugasName,
+                  ),
                 ],
                 const SizedBox(height: 8),
                 _buildDetailRow(Icons.notes_rounded, 'Keterangan', alasan.isNotEmpty ? alasan : 'Pengosongan Tempat Sampah'),

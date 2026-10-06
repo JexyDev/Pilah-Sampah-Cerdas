@@ -59,10 +59,18 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
 
       // Panggil callback
       final success = await widget.onQrDetected(code);
-      if (mounted && !success) {
+      if (!mounted) return;
+
+      if (!success) {
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
-          _isProcessing = false;
+          resetScanner();
+        }
+      } else {
+        // Tampilkan konfirmasi "QR Terdeteksi!" selama 700ms agar user melihat feedback positif,
+        // lalu otomatis reset scanner jika widget masih aktif di layar (misal proses multi-step scan sepasang wadah).
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (mounted) {
           resetScanner();
         }
       }
@@ -198,27 +206,30 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
             ),
           ),
           if (_scanned)
-            Container(
-              color: Colors.black87,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 56,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'QR Terdeteksi!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: resetScanner,
+              child: Container(
+                color: Colors.black87,
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 56,
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 8),
+                      Text(
+                        'QR Terdeteksi!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -231,20 +242,21 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
         final double maxW = constraints.maxWidth;
         final double maxH =
             constraints.maxHeight.isFinite ? constraints.maxHeight : maxW;
-        final double side = math.min(maxW, maxH);
 
         return Center(
           child: SizedBox(
-            width: side,
-            height: side,
+            width: maxW,
+            height: maxH,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Stack(
+                fit: StackFit.expand,
                 children: [
                   // MobileScanner selalu ada di widget tree agar stream tidak putus
                   MobileScanner(
                     controller: _controller!,
                     onDetect: _onDetect,
+                    fit: BoxFit.cover,
                     errorBuilder: (ctx, error, child) {
                       if (error.errorCode ==
                           MobileScannerErrorCode.permissionDenied) {
@@ -321,27 +333,30 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
                   ),
                   // Konfirmasi QR terdeteksi ditaruh di paling atas
                   if (_scanned)
-                    Container(
-                      color: Colors.black87,
-                      child: const Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.primaryGreen,
-                              size: 56,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'QR Terdeteksi!',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                    GestureDetector(
+                      onTap: resetScanner,
+                      child: Container(
+                        color: Colors.black87,
+                        child: const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.primaryGreen,
+                                size: 56,
                               ),
-                            ),
-                          ],
+                              SizedBox(height: 8),
+                              Text(
+                                'QR Terdeteksi!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -584,7 +599,7 @@ class _ScanOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    const cLen = 32.0;
+    const cLen = 36.0;
     const sw = 3.5;
 
     Rect scanRect;
@@ -596,14 +611,17 @@ class _ScanOverlayPainter extends CustomPainter {
           70; // Shifted up to give generous breathing room above label & bottom card
       scanRect = Rect.fromLTWH(left, top, boxSize, boxSize);
     } else {
-      final double m = (w * 0.16).clamp(16.0, 48.0);
-      scanRect = Rect.fromLTWH(m, m, w - m * 2, h - m * 2);
+      final double shortest = math.min(w, h);
+      final double boxSize = (shortest * 0.76).clamp(180.0, 260.0);
+      final double left = (w - boxSize) / 2;
+      final double top = ((h - boxSize) / 2 - 12).clamp(10.0, h - boxSize);
+      scanRect = Rect.fromLTWH(left, top, boxSize, boxSize);
     }
 
     // Overlay gelap dengan hole transparan di tengah
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, w, h))
-      ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(12)))
+      ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(16)))
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(
       path,
@@ -612,7 +630,7 @@ class _ScanOverlayPainter extends CustomPainter {
 
     // Border scan area
     canvas.drawRRect(
-      RRect.fromRectAndRadius(scanRect, const Radius.circular(12)),
+      RRect.fromRectAndRadius(scanRect, const Radius.circular(16)),
       Paint()
         ..color = color.withValues(alpha: 0.6)
         ..strokeWidth = 1.5

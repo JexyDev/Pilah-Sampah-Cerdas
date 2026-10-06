@@ -36,6 +36,8 @@ class ApiEndpoints {
   static const String binsMeasure = '/bins/measure';
   static const String binsReset = '/bins/reset';
   static const String binsResetRequests = '/bins/reset-requests';
+  static String binsResetCancel(String id) => '/bins/reset-request/$id/cancel';
+  static String binsCancelByBinId(String binId) => '/bins/$binId/cancel-reset';
   static String binsApproveReset(String id) => '/bins/reset/$id/approve';
   static const String binsResetPetugasStatus = '/bins/reset/petugas-status';
   static const String binsResetPetugasWilayah = '/bins/reset/petugas-wilayah';
@@ -91,7 +93,15 @@ class ApiEndpoints {
   static const String kknPengajuanIzin = '/kkn/pengajuan-izin';
   static const String kknPoskoRegister = '/kkn/posko/register';
   static const String logbookMahasiswa = '/logbook/mahasiswa';
+  static const String logbookMahasiswaStats = '/logbook/mahasiswa/stats';
   static const String kknPoskoMe = '/kkn/posko/me';
+
+  // Domain Mandiri Laporan Akhir KKN (Per-Individu)
+  static const String kknLaporanAkhir = '/kkn/laporan-akhir';
+  static const String kknLaporanAkhirMe = '/kkn/laporan-akhir/me';
+  static const String kknLaporanAkhirHistory = '/kkn/laporan-akhir/history';
+  static String kknLaporanAkhirDplMatrix(String kelompokId) =>
+      '/kkn/laporan-akhir/dpl/kelompok/$kelompokId';
 
   // Smart Multi-Zone Geofence
   static const String poskoMeAllZones = '/posko-kkn/me/all-zones';

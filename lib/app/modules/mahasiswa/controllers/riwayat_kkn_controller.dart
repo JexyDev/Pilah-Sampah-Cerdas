@@ -218,7 +218,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
 
       // 5. Ambil data Logbook Harian (Agar logbook muncul di tab Riwayat Non-Poin terlepas dari limit poin)
       try {
-        final logbookList = await kknRepo.getLogbookList();
+        final logbookList = await kknRepo.getLogbookList(page: 1, limit: 30);
         for (final lb in logbookList) {
           const title = 'Logbook Harian';
           final desc =
@@ -434,7 +434,8 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       // 6. Ambil data Timesheet Summary
       Map<String, dynamic>? summaryData;
       try {
-        summaryData = await kknRepo.getTimesheetSummary();
+        final currentUserId = ref.read(authProvider).user?.id;
+        summaryData = await kknRepo.getTimesheetSummary(studentId: currentUserId);
       } catch (_) {}
 
       state = state.copyWith(

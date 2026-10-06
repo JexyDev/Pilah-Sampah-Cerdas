@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_strings.dart';
 import '../../../core/values/app_dimensions.dart';
@@ -69,6 +70,71 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
   }
 
+  void _showCancelPendingDialog(BinEntity bin, String userId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: AppColors.warningYellow),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Batalkan Pengajuan?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Tempat Sampah ${bin.binType.displayName} sedang dalam antrean pengosongan.\n\n'
+          'Jika tempat sampah belum penuh atau Anda tidak sengaja mengajukan, Anda dapat membatalkan pengajuan ini agar dapat digunakan kembali untuk scan.',
+          style: const TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Kembali', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.dangerRed,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await ref.read(resetBinProvider.notifier).cancelReset(userId, binId: bin.id);
+              ref.invalidate(binsProvider);
+              ref.invalidate(notificationsProvider);
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Pengajuan Tempat Sampah ${bin.binType.displayName} berhasil dibatalkan.'),
+                      backgroundColor: AppColors.primaryGreen,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  final err = ref.read(resetBinProvider).errorMessage ?? 'Gagal membatalkan pengajuan tempat sampah.';
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(err),
+                      backgroundColor: AppColors.dangerRed,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showImageSourcePicker() {
     showModalBottomSheet(
       context: context,
@@ -121,14 +187,84 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _saveTempFormState() async {
+    try {
+      final user = ref.read(authProvider).user;
+      final uid = user?.id ?? 'guest';
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('temp_reset_bin_ids_$uid', _selectedBinIds.toList());
+      if (_selectedPetugasId != null) {
+        await prefs.setString('temp_reset_petugas_id_$uid', _selectedPetugasId!);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _restoreTempFormState() async {
+    try {
+      final user = ref.read(authProvider).user;
+      final uid = user?.id ?? 'guest';
+      final prefs = await SharedPreferences.getInstance();
+      final savedIds = prefs.getStringList('temp_reset_bin_ids_$uid');
+      final savedPetugas = prefs.getString('temp_reset_petugas_id_$uid');
+      if (mounted) {
+        setState(() {
+          if (savedIds != null && savedIds.isNotEmpty) {
+            _selectedBinIds.addAll(savedIds);
+          }
+          if (savedPetugas != null && savedPetugas.isNotEmpty) {
+            _selectedPetugasId = savedPetugas;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _clearTempFormState() async {
+    try {
+      final user = ref.read(authProvider).user;
+      final uid = user?.id ?? 'guest';
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('temp_reset_bin_ids_$uid');
+      await prefs.remove('temp_reset_petugas_id_$uid');
+    } catch (_) {}
+  }
+
+  /// [RECOVERY] Menangani Android Process Death ketika kamera dibuka pada HP dengan RAM terbatas.
+  /// Saat aplikasi di-relaunch setelah user menjepret foto di kamera, LostDataResponse akan memulihkan file foto tersebut.
+  Future<void> _retrieveLostData() async {
     try {
       final picker = ImagePicker();
+      final LostDataResponse response = await picker.retrieveLostData();
+      if (response.isEmpty) return;
+      if (response.file != null) {
+        final file = response.file!;
+        final size = (await file.length()) / 1024;
+        if (mounted) {
+          setState(() {
+            _evidencePhotoPath = file.path;
+            _compressedKB = size;
+          });
+        }
+      } else if (response.exception != null) {
+        debugPrint('[ResetBinView] LostData exception: ${response.exception}');
+      }
+    } catch (e) {
+      debugPrint('[ResetBinView] Failed to retrieve lost image: $e');
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    // Simpan pilihan tempat sampah ke cache lokal agar tidak hilang jika terjadi Process Death
+    await _saveTempFormState();
+
+    try {
+      final picker = ImagePicker();
+      // Gunakan resolusi 1280x720 (HD) dan quality 80 agar hemat memori RAM pada HP warga
       final file = await picker.pickImage(
         source: source,
-        imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1080,
+        imageQuality: 80,
+        maxWidth: 1280,
+        maxHeight: 720,
       );
       if (file != null) {
         final size = (await file.length()) / 1024;
@@ -150,6 +286,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   @override
   void initState() {
     super.initState();
+    _restoreTempFormState();
+    _retrieveLostData();
     Future.microtask(() {
       final user = ref.read(authProvider).user;
       if (user != null) {
@@ -177,11 +315,14 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ref.read(resetBinProvider.notifier).reset();
       }
       // AUTO-REFRESH: setelah pengajuan berhasil, refresh data tempat sampah & notifikasi
-      if (previous?.isSuccess != true && next.isSuccess && !next.isLoading) {
+      if (previous?.isSuccess != true && next.isSuccess && next.isJustSubmitted && !next.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
+            _clearTempFormState();
             setState(() {
               _selectedBinIds.clear();
+              _evidencePhotoPath = null;
+              _compressedKB = 0;
             });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
@@ -204,6 +345,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
+          _clearTempFormState();
           ref.invalidate(binsProvider);
           ref.invalidate(notificationsProvider);
           ref.read(resetBinProvider.notifier).reset();
@@ -245,13 +387,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       return const AppLoading(message: 'Mengirim pengajuan...');
     }
 
-    if (resetState.isSuccess && resetState.result != null) {
+    if (resetState.isSuccess && resetState.result != null && resetState.isJustSubmitted) {
       return _buildSuccess(context, ref, resetState.result!);
     }
 
-    final bool hasPendingRequest =
-        resetState.result != null &&
-        resetState.result!.status == BinResetStatus.pending;
     return binsAsync.when(
       skipLoadingOnReload: true,
       data: (bins) {
@@ -260,7 +399,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           userId,
           user,
           petugasState,
-          isPending: hasPendingRequest,
         );
       },
       loading: () => const AppLoading(),
@@ -477,9 +615,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     List<BinEntity> bins,
     String userId,
     UserEntity? user,
-    PetugasPengosonganState petugasState, {
-    bool isPending = false,
-  }) {
+    PetugasPengosonganState petugasState,
+  ) {
     if (bins.isEmpty) {
       return Center(
         child: Column(
@@ -500,6 +637,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ),
       );
     }
+
+    final bool allBinsPending = bins.isNotEmpty && bins.every((b) => b.isResetPending);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,9 +743,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                   }
 
                   if (isPendingBin) {
-                    _showThrottledSnackBar(
-                      'Tempat sampah ini sedang dalam proses pengajuan (PENDING).',
-                    );
+                    _showCancelPendingDialog(bin, userId);
                     return;
                   }
 
@@ -719,6 +856,46 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                         ),
                                       ),
                                     ),
+                                    const SizedBox(width: 6),
+                                    InkWell(
+                                      onTap: () => _showCancelPendingDialog(bin, userId),
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.dangerRed
+                                              .withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: AppColors.dangerRed
+                                                .withValues(alpha: 0.5),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.cancel_outlined,
+                                              size: 11,
+                                              color: AppColors.dangerRed,
+                                            ),
+                                            SizedBox(width: 3),
+                                            Text(
+                                              'Batal',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.dangerRed,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ] else if (bin.currentVolumeL <= 0.0) ...[
                                     const SizedBox(width: 8),
                                     Container(
@@ -825,10 +1002,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
         const SizedBox(height: AppDimensions.md),
 
-        if (!isPending) ...[const SizedBox(height: AppDimensions.md)],
+        if (!allBinsPending) ...[const SizedBox(height: AppDimensions.md)],
 
         // Upload Bukti
-        if (!isPending) ...[
+        if (!allBinsPending) ...[
           if (_evidencePhotoPath != null)
             Container(
               padding: const EdgeInsets.all(12),
@@ -948,10 +1125,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           return SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isPending
+              onPressed: allBinsPending
                   ? () {
                       _showThrottledSnackBar(
-                        'Sedang mengajukan pengosongan tempat sampah. Silakan tunggu hingga dikosongkan oleh petugas.',
+                        'Seluruh tempat sampah Anda sedang dalam proses penjemputan oleh petugas.',
                         backgroundColor: AppColors.warningYellow,
                       );
                     }
@@ -986,7 +1163,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: isPending
+                backgroundColor: allBinsPending
                     ? AppColors.warningYellow
                     : (canSubmit
                           ? AppColors.primaryGreen
@@ -996,15 +1173,15 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 ),
               ),
               child: Text(
-                isPending
-                    ? 'Sedang Mengajukan (PENDING)'
+                allBinsPending
+                    ? 'Semua Tempat Sampah Sedang Diproses'
                     : (_selectedBinIds.isEmpty
                           ? 'Pilih Tempat Sampah'
                           : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isPending || canSubmit
+                  color: allBinsPending || canSubmit
                       ? Colors.white
                       : Colors.grey.shade600,
                 ),
@@ -1024,31 +1201,81 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     BinResetEntity result,
   ) {
     final bool isPending = result.status == BinResetStatus.pending;
+    final bool isAssigned = result.status == BinResetStatus.assigned;
+    final bool isCancelled = result.status == BinResetStatus.cancelled;
+    final bool isRejected = result.status == BinResetStatus.rejected;
+    final bool isActionable = isPending || isAssigned;
+
+    final IconData iconData = isAssigned
+        ? Icons.local_shipping_rounded
+        : isPending
+            ? Icons.hourglass_top_rounded
+            : isCancelled
+                ? Icons.cancel_outlined
+                : isRejected
+                    ? Icons.highlight_off_rounded
+                    : Icons.task_alt_rounded;
+
+    final Color statusColor = isAssigned
+        ? AppColors.primaryBlue
+        : isPending
+            ? AppColors.warningYellow
+            : isCancelled
+                ? Colors.grey
+                : isRejected
+                    ? AppColors.dangerRed
+                    : AppColors.primaryGreen;
+
+    final String titleText = isAssigned
+        ? 'Petugas Menuju Lokasi'
+        : isPending
+            ? 'Pengajuan Terkirim!'
+            : isCancelled
+                ? 'Pengajuan Dibatalkan'
+                : isRejected
+                    ? 'Pengajuan Ditolak'
+                    : AppStrings.resetSuccess;
+
+    final String descText = isAssigned
+        ? 'Pengajuan Anda telah diterima dan petugas sedang dalam perjalanan menuju lokasi Anda.'
+        : isPending
+            ? 'Foto bukti tempat sampah penuh berhasil dikirimkan ke Petugas Pemilah. Mohon tunggu verifikasi oleh Petugas Pemilah.'
+            : isCancelled
+                ? 'Pengajuan pengosongan tempat sampah telah berhasil dibatalkan.'
+                : isRejected
+                    ? (result.rejectReason ?? 'Pengajuan pengosongan tempat sampah ditolak oleh petugas.')
+                    : 'Tempat sampah berhasil dikosongkan dan siap digunakan kembali.';
+
+    final String statusLabel = isAssigned
+        ? 'Status: PETUGAS SEDANG MENUJU LOKASI (ASSIGNED)'
+        : isPending
+            ? 'Status: MENUNGGU VERIFIKASI (PENDING)'
+            : isCancelled
+                ? 'Status: DIBATALKAN'
+                : isRejected
+                    ? 'Status: DITOLAK'
+                    : 'Status: SELESAI';
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isPending ? Icons.hourglass_top_rounded : Icons.task_alt_rounded,
+            iconData,
             size: AppDimensions.iconXxl,
-            color: isPending ? AppColors.warningYellow : AppColors.primaryGreen,
+            color: statusColor,
           ),
           const SizedBox(height: AppDimensions.md),
           Text(
-            isPending ? 'Pengajuan Terkirim!' : AppStrings.resetSuccess,
+            titleText,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: isPending
-                  ? AppColors.warningYellow
-                  : AppColors.primaryGreen,
+              color: statusColor,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppDimensions.sm),
           Text(
-            isPending
-                ? 'Foto bukti tempat sampah penuh berhasil dikirimkan ke Petugas Pemilah. Mohon tunggu verifikasi oleh Petugas Pemilah.'
-                : 'Tempat sampah berhasil dikosongkan dan siap digunakan kembali.',
+            descText,
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -1056,32 +1283,22 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           Container(
             padding: const EdgeInsets.all(AppDimensions.md),
             decoration: BoxDecoration(
-              color:
-                  (isPending ? AppColors.warningYellow : AppColors.primaryGreen)
-                      .withValues(alpha: 0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isPending
-                      ? Icons.access_time_rounded
-                      : Icons.check_circle_rounded,
-                  color: isPending
-                      ? AppColors.warningYellow
-                      : AppColors.primaryGreen,
+                  iconData,
+                  color: statusColor,
                   size: 18,
                 ),
                 const SizedBox(width: AppDimensions.sm),
                 Text(
-                  isPending
-                      ? 'Status: MENUNGGU VERIFIKASI (PENDING)'
-                      : 'Status: SELESAI',
+                  statusLabel,
                   style: TextStyle(
-                    color: isPending
-                        ? AppColors.warningYellow
-                        : AppColors.primaryGreen,
+                    color: statusColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -1099,6 +1316,49 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             },
             child: const Text('Kembali'),
           ),
+          if (isActionable) ...[
+            const SizedBox(height: AppDimensions.sm),
+            TextButton.icon(
+              onPressed: () async {
+                final uid = ref.read(authProvider).user?.id;
+                if (uid != null) {
+                  final success = await ref.read(resetBinProvider.notifier).cancelReset(
+                    uid,
+                    requestId: result.id,
+                    binId: result.binId,
+                  );
+                  ref.invalidate(binsProvider);
+                  ref.invalidate(notificationsProvider);
+                  if (context.mounted) {
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pengajuan pengosongan tempat sampah berhasil dibatalkan.'),
+                          backgroundColor: AppColors.primaryGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.maybePop(context);
+                    } else {
+                      final err = ref.read(resetBinProvider).errorMessage ?? 'Gagal membatalkan pengajuan tempat sampah.';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(err),
+                          backgroundColor: AppColors.dangerRed,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
+              icon: const Icon(Icons.cancel_outlined, size: 16, color: AppColors.dangerRed),
+              label: const Text(
+                'Batalkan Pengajuan Ini',
+                style: TextStyle(color: AppColors.dangerRed, fontSize: 13),
+              ),
+            ),
+          ],
         ],
       ),
     );

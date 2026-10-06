@@ -136,12 +136,14 @@ class _DashboardViewState extends ConsumerState<DashboardView>
 
   List<Widget>? _cachedScreens;
   UserRole? _cachedRole;
+  String? _cachedUserId;
 
-  List<Widget> _getScreens(UserRole role) {
-    if (_cachedScreens != null && _cachedRole == role) {
+  List<Widget> _getScreens(UserRole role, [String? userId]) {
+    if (_cachedScreens != null && _cachedRole == role && _cachedUserId == userId) {
       return _cachedScreens!;
     }
     _cachedRole = role;
+    _cachedUserId = userId;
     _cachedScreens = [
       role == UserRole.mahasiswaKkn
           ? const MahasiswaView()
@@ -169,6 +171,12 @@ class _DashboardViewState extends ConsumerState<DashboardView>
   void _onTabTap(int index) {
     if (index == 2) {
       ScanGuard.handleScanNavigation(context, ref);
+      return;
+    }
+    if (_selectedIndex == index) {
+      final user = ref.read(authProvider).user;
+      final role = user?.role ?? UserRole.warga;
+      _syncActiveData(role, index);
       return;
     }
     setState(() {
@@ -213,14 +221,14 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     final role = _currentRole;
 
     return ResponsiveLayout(
-      mobile: _buildMobileShell(isOnline, role),
-      tablet: _buildTabletShell(isOnline, role),
+      mobile: _buildMobileShell(isOnline, role, user?.id),
+      tablet: _buildTabletShell(isOnline, role, user?.id),
     );
   }
 
-  Widget _buildMobileShell(bool isOnline, UserRole role) {
+  Widget _buildMobileShell(bool isOnline, UserRole role, String? userId) {
     _activatedIndices.add(_selectedIndex);
-    final screens = _getScreens(role);
+    final screens = _getScreens(role, userId);
     final bool showFab =
         role == UserRole.warga ||
         role == UserRole.petugasPemilahan ||
@@ -470,9 +478,9 @@ class _DashboardViewState extends ConsumerState<DashboardView>
   }
 
   // â”€â”€â”€ Tablet (NavigationRail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Widget _buildTabletShell(bool isOnline, UserRole role) {
+  Widget _buildTabletShell(bool isOnline, UserRole role, String? userId) {
     _activatedIndices.add(_selectedIndex);
-    final screens = _getScreens(role);
+    final screens = _getScreens(role, userId);
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,

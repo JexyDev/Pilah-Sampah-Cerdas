@@ -221,17 +221,20 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       final item = visibleHistories[idx];
                       final isPositive = item.points >= 0;
 
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 1,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isPositive
-                                ? AppColors.warningYellow.withValues(alpha: 0.15)
-                                : const Color(0xFFFEE2E2),
+                      return DismissibleHistoryItem(
+                        scope: HiddenHistoryService.scopePetugasPoints,
+                        itemId: item.id,
+                        child: Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 1,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isPositive
+                                  ? AppColors.warningYellow.withValues(alpha: 0.15)
+                                  : const Color(0xFFFEE2E2),
                             child: Icon(
                               isPositive
                                   ? Icons.monetization_on_rounded
@@ -266,8 +269,9 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
                   );
                 },
                 loading: () => const Center(
@@ -322,33 +326,38 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
       itemBuilder: (ctx, idx) {
         final item = pointItems[idx];
         final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+        final id = item['id']?.toString() ?? '${idx}_$points';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 1,
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.warningYellow.withValues(alpha: 0.15),
-              child: const Icon(
-                Icons.monetization_on_rounded,
-                color: AppColors.warningYellow,
+        return DismissibleHistoryItem(
+          scope: HiddenHistoryService.scopePetugasPoints,
+          itemId: id,
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 1,
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppColors.warningYellow.withValues(alpha: 0.15),
+                child: const Icon(
+                  Icons.monetization_on_rounded,
+                  color: AppColors.warningYellow,
+                ),
               ),
-            ),
-            title: Text(
-              _sanitizeTitle(item['title']?.toString()),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            subtitle: Text(
-              _formatDateTime(item['timestamp']?.toString()),
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-            ),
-            trailing: Text(
-              '+$points Pts',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: AppColors.primaryGreen,
+              title: Text(
+                _sanitizeTitle(item['title']?.toString()),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              subtitle: Text(
+                _formatDateTime(item['timestamp']?.toString()),
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+              trailing: Text(
+                '+$points Pts',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: AppColors.primaryGreen,
+                ),
               ),
             ),
           ),

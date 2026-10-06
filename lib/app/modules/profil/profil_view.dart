@@ -14,6 +14,7 @@ import '../mahasiswa/controllers/mahasiswa_controller.dart';
 import '../../core/widgets/profile_photo_cropper_view.dart';
 
 import '../../data/models/user_entity.dart';
+import '../../../main.dart' show navigatorKey;
 
 /// Halaman profil — sesuai desain:
 /// Header biru, avatar rumah dalam lingkaran, nama+RW, Data RT, Tempat Sampah Saya, Keluar.
@@ -1117,22 +1118,13 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref.read(authProvider.notifier).logout();
-              if (context.mounted) {
-                // ponytail: cegah double push ke login jika sudah berada di AppRoutes.login
-                bool isAlreadyLogin = false;
-                Navigator.of(context).popUntil((route) {
-                  if (route.settings.name == AppRoutes.login) {
-                    isAlreadyLogin = true;
-                  }
-                  return true;
-                });
-                if (!isAlreadyLogin) {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-                }
-              }
+              try {
+                await ref.read(authProvider.notifier).logout();
+              } catch (_) {}
+              navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                AppRoutes.login,
+                (route) => false,
+              );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.dangerRed),
             child: const Text('Keluar'),

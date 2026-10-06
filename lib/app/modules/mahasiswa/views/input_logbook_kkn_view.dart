@@ -1339,8 +1339,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       );
     }
 
-    // Mode edit: MENUNGGU_VERIFIKASI_KETUA — banner biru
-    if (isEdit && statusApproval == 'MENUNGGU_VERIFIKASI_KETUA') {
+    // Mode edit: MENUNGGU_VERIFIKASI_KETUA / MENUNGGU_PERSETUJUAN_KETUA — banner biru
+    if (isEdit &&
+        (statusApproval == 'MENUNGGU_VERIFIKASI_KETUA' ||
+            statusApproval == 'MENUNGGU_PERSETUJUAN_KETUA')) {
       return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

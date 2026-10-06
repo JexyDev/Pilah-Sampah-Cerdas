@@ -197,7 +197,12 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final log = filteredLogs[index];
-                              return _buildLogCard(log);
+                              return DismissibleHistoryItem(
+                                scope: HiddenHistoryService.scopeMahasiswaKkn,
+                                itemId: log.scheduleId ??
+                                    '${log.type.name}_${log.timestamp.millisecondsSinceEpoch}',
+                                child: _buildLogCard(log),
+                              );
                             },
                           ),
                         ),
@@ -217,7 +222,10 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
     }
     if (cleaned == 'DISETUJUI') return '✅ Disetujui';
     if (cleaned == 'DITOLAK') return '❌ Ditolak';
-    if (cleaned == 'MENUNGGU_VERIFIKASI_KETUA') return '⏳ Menunggu Verifikasi';
+    if (cleaned == 'MENUNGGU_VERIFIKASI_KETUA' ||
+        cleaned == 'MENUNGGU_PERSETUJUAN_KETUA') {
+      return '⏳ Menunggu Persetujuan';
+    }
     // Replace underscores with spaces for any other generic status
     if (cleaned.contains('_')) {
       return cleaned.replaceAll('_', ' ');

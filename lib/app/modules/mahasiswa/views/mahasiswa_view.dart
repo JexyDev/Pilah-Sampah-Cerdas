@@ -20,7 +20,8 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
-import 'data_logbook_harian_view.dart' show logbookListProvider;
+import 'data_logbook_harian_view.dart'
+    show logbookListProvider, logbookStatsProvider;
 import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
 import 'data_proker_view.dart' show prokerDataListProvider;
 
@@ -121,8 +122,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     });
 
     final state = ref.watch(mahasiswaControllerProvider);
-    final locationState = ref.watch(locationPingControllerProvider);
-    final kknLocationState = ref.watch(kknLocationProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -134,6 +133,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               onRefresh: () async {
                 ref.invalidate(riwayatPemanfaatanProvider);
                 ref.invalidate(prokerDataListProvider);
+                ref.invalidate(logbookStatsProvider);
                 ref.invalidate(logbookListProvider);
                 ref.invalidate(pointHistoryProvider);
                 await ref.read(mahasiswaControllerProvider.notifier).refresh();
@@ -142,7 +142,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(child: _buildHeader(state)),
+                  SliverToBoxAdapter(
+                    child: RepaintBoundary(child: _buildHeader(state)),
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -150,19 +152,37 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        _buildTargetKegiatan(
-                          state,
-                          locationState,
-                          kknLocationState,
+                        RepaintBoundary(
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final locationState =
+                                  ref.watch(locationPingControllerProvider);
+                              final kknLocationState =
+                                  ref.watch(kknLocationProvider);
+                              return _buildTargetKegiatan(
+                                state,
+                                locationState,
+                                kknLocationState,
+                              );
+                            },
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        _buildActiveTimelineCard(),
+                        RepaintBoundary(child: _buildActiveTimelineCard()),
                         const SizedBox(height: 8),
-                        _buildKknStatsRow(context, ref),
+                        RepaintBoundary(child: _buildKknStatsRow(context, ref)),
                         const SizedBox(height: 8),
-                        _buildQuickActions(kknLocationState),
+                        RepaintBoundary(
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final kknLocationState =
+                                  ref.watch(kknLocationProvider);
+                              return _buildQuickActions(kknLocationState);
+                            },
+                          ),
+                        ),
                         const SizedBox(height: 8),
-                        _buildWargaSection(state),
+                        RepaintBoundary(child: _buildWargaSection(state)),
                         const SizedBox(height: 40),
                       ]),
                     ),
@@ -202,6 +222,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
+        memCacheWidth: 150,
+        memCacheHeight: 150,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => Center(
           child: Text(
@@ -225,12 +247,19 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 150,
+          cacheHeight: 150,
+        );
       }
     }
 
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
+      memCacheWidth: 150,
+      memCacheHeight: 150,
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => Center(
         child: Text(
@@ -248,10 +277,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   Widget _buildHeader(MahasiswaState state) {
     final dashboard = state.dashboard;
     final user = ref.watch(authProvider).user;
-    final unreadCount = ref.watch(mahasiswaUnreadNotificationCountProvider);
-    final isOnline = ref.watch(isOnlineProvider);
-    final kknLocationState = ref.watch(kknLocationProvider);
-    final locationPingState = ref.watch(locationPingControllerProvider);
 
     final name = (user?.name != null && user!.name.trim().isNotEmpty)
         ? user.name
@@ -389,216 +414,240 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
               const SizedBox(width: 8),
               // Status Online terpisah dengan margin rapi
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isOnline
-                      ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                      : AppColors.dangerRed.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isOnline
-                        ? AppColors.primaryGreen.withValues(alpha: 0.3)
-                        : AppColors.dangerRed.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
+              // Status Online terpisah dengan margin rapi (Diisolasi dengan Consumer)
+              Consumer(
+                builder: (context, ref, _) {
+                  final isOnline = ref.watch(isOnlineProvider);
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isOnline
+                          ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                          : AppColors.dangerRed.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
                         color: isOnline
-                            ? AppColors.primaryGreen
-                            : AppColors.dangerRed,
-                        boxShadow: [
-                          if (isOnline)
-                            BoxShadow(
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.4,
-                              ),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                        ],
+                            ? AppColors.primaryGreen.withValues(alpha: 0.3)
+                            : AppColors.dangerRed.withValues(alpha: 0.3),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isOnline
-                            ? AppColors.primaryGreen
-                            : AppColors.dangerRed,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Notifikasi
-              IconButton(
-                padding: const EdgeInsets.all(6),
-                constraints: const BoxConstraints(),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.mahasiswaNotifikasi),
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Image.asset(
-                      'assets/icons/notification.png',
-                      color: AppColors.primaryGreen,
-                      width: 22,
-                      height: 22,
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
-                          decoration: const BoxDecoration(
-                            color: AppColors.dangerRed,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
+                            color: isOnline
+                                ? AppColors.primaryGreen
+                                : AppColors.dangerRed,
+                            boxShadow: [
+                              if (isOnline)
+                                BoxShadow(
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                            ],
                           ),
                         ),
-                      ),
-                  ],
-                ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isOnline ? 'Online' : 'Offline',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isOnline
+                                ? AppColors.primaryGreen
+                                : AppColors.dangerRed,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 6),
+              // Notifikasi (Diisolasi dengan Consumer agar unread count tidak merebuild seluruh header)
+              Consumer(
+                builder: (context, ref, _) {
+                  final unreadCount =
+                      ref.watch(mahasiswaUnreadNotificationCountProvider);
+                  return IconButton(
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.mahasiswaNotifikasi,
+                    ),
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Image.asset(
+                          'assets/icons/notification.png',
+                          color: AppColors.primaryGreen,
+                          width: 22,
+                          height: 22,
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: -2,
+                            right: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              constraints: const BoxConstraints(
+                                minWidth: 14,
+                                minHeight: 14,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: AppColors.dangerRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
           const SizedBox(height: 8),
-          // Baris 2: Lokasi Penugasan & GPS Card Terstruktur (2 Tier agar alamat tidak terpotong)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.primaryGreen.withValues(alpha: 0.16),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Tier 1: Kelurahan, RW, & Tombol Perbarui Alamat
-                Row(
+          // Baris 2: Lokasi Penugasan & GPS Card Terstruktur (Diisolasi dengan Consumer)
+          Consumer(
+            builder: (context, ref, _) {
+              final kknLocationState = ref.watch(kknLocationProvider);
+              final locationPingState =
+                  ref.watch(locationPingControllerProvider);
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.16),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 13,
-                      color: AppColors.primaryGreen,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        '$kelurahan • RW $rw',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    // Tier 1: Kelurahan, RW, & Tombol Perbarui Alamat
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 13,
                           color: AppColors.primaryGreen,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (!kknLocationState.isFetchingAddress &&
-                        (kknLocationState.currentPosition != null ||
-                            locationPingState.lastLatitude != null))
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          final lat =
-                              kknLocationState.currentPosition?.latitude ??
-                              locationPingState.lastLatitude!;
-                          final lng =
-                              kknLocationState.currentPosition?.longitude ??
-                              locationPingState.lastLongitude!;
-                          ref
-                              .read(kknLocationProvider.notifier)
-                              .fetchAddress(lat, lng);
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.refresh_rounded,
-                                size: 13,
-                                color: AppColors.primaryBlue,
-                              ),
-                              SizedBox(width: 3),
-                              Text(
-                                'Perbarui',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '$kelurahan • RW $rw',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryGreen,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // Tier 2: Alamat Lengkap GPS (Multiline 2 Baris agar tidak terpotong)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 1),
-                      child: Icon(
-                        Icons.my_location_rounded,
-                        size: 11,
-                        color: AppColors.textSecondary,
-                      ),
+                        if (!kknLocationState.isFetchingAddress &&
+                            (kknLocationState.currentPosition != null ||
+                                locationPingState.lastLatitude != null))
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              final lat =
+                                  kknLocationState.currentPosition?.latitude ??
+                                  locationPingState.lastLatitude!;
+                              final lng =
+                                  kknLocationState.currentPosition?.longitude ??
+                                  locationPingState.lastLongitude!;
+                              ref
+                                  .read(kknLocationProvider.notifier)
+                                  .fetchAddress(lat, lng);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.refresh_rounded,
+                                    size: 13,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'Perbarui',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        kknLocationState.isFetchingAddress
-                            ? 'Mencari alamat...'
-                            : (kknLocationState.currentAddress ??
-                                  ((kknLocationState.currentPosition != null ||
-                                          locationPingState.lastLatitude !=
-                                              null)
-                                      ? '${(kknLocationState.currentPosition?.latitude ?? locationPingState.lastLatitude!).toStringAsFixed(4)}, ${(kknLocationState.currentPosition?.longitude ?? locationPingState.lastLongitude!).toStringAsFixed(4)}'
-                                      : 'Menunggu GPS...')),
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          color: AppColors.textSecondary,
-                          height: 1.25,
+                    const SizedBox(height: 4),
+                    // Tier 2: Alamat Lengkap GPS (Multiline 2 Baris agar tidak terpotong)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.my_location_rounded,
+                            size: 11,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            kknLocationState.isFetchingAddress
+                                ? 'Mencari alamat...'
+                                : (kknLocationState.currentAddress ??
+                                    ((kknLocationState.currentPosition !=
+                                                null ||
+                                            locationPingState.lastLatitude !=
+                                                null)
+                                        ? '${(kknLocationState.currentPosition?.latitude ?? locationPingState.lastLatitude!).toStringAsFixed(4)}, ${(kknLocationState.currentPosition?.longitude ?? locationPingState.lastLongitude!).toStringAsFixed(4)}'
+                                        : 'Menunggu GPS...')),
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: AppColors.textSecondary,
+                              height: 1.25,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -624,7 +673,28 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       return _buildLocationStatus(locationState, kknLocationState);
     }
 
-    final student = students.first is Map ? (students.first as Map) : {};
+    final currentUser = ref.watch(authProvider).user;
+    final currentUserId = currentUser?.id;
+    final currentUserNim = currentUser?.nim;
+
+    final dynamic matchedStudent = students.firstWhere(
+      (s) =>
+          s is Map &&
+          ((currentUserId != null &&
+                  currentUserId.isNotEmpty &&
+                  (s['studentId']?.toString() == currentUserId ||
+                      s['userId']?.toString() == currentUserId)) ||
+              (currentUserNim != null &&
+                  currentUserNim.isNotEmpty &&
+                  s['nim']?.toString() == currentUserNim)),
+      orElse: () => const <String, dynamic>{},
+    );
+
+    if (matchedStudent is! Map || matchedStudent.isEmpty) {
+      return _buildLocationStatus(locationState, kknLocationState);
+    }
+
+    final student = matchedStudent;
     final totalFormatted =
         student['totalFormatted']?.toString() ?? '0 Jam 0 Menit';
     final targetTotalHours =
@@ -1096,7 +1166,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           ),
         ),
         const SizedBox(height: 10),
-        // Logbook & Laporan Akhir Row
         Row(
           children: [
             Expanded(
@@ -1318,7 +1387,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // Linimasa KKN Aktif
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildKknStatsRow(BuildContext context, WidgetRef ref) {
-    final mhsState = ref.watch(mahasiswaControllerProvider);
+    return Consumer(
+      builder: (context, ref, _) {
+        final mhsState = ref.watch(mahasiswaControllerProvider);
+        final user = ref.watch(authProvider).user;
+        final currentUserId = user?.id;
+        final currentUserNim = user?.nim;
 
     // 1. Ambil Angka Presensi Langsung dari Backend (Single Source of Truth)
     int hariTerpenuhi = 0;
@@ -1329,7 +1403,21 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       final summary = mhsState.timesheetSummary!;
       final students = summary['students'] is List ? (summary['students'] as List) : [];
       if (students.isNotEmpty) {
-        final student = students.first is Map ? (students.first as Map) : {};
+        // Cari objek spesifik mahasiswa yang login berdasarkan ID atau NIM
+        final dynamic matchedStudent = students.firstWhere(
+          (s) =>
+              s is Map &&
+              ((currentUserId != null &&
+                      currentUserId.isNotEmpty &&
+                      (s['studentId']?.toString() == currentUserId ||
+                          s['userId']?.toString() == currentUserId)) ||
+                  (currentUserNim != null &&
+                      currentUserNim.isNotEmpty &&
+                      s['nim']?.toString() == currentUserNim)),
+          orElse: () => const <String, dynamic>{},
+        );
+
+        final student = matchedStudent is Map ? matchedStudent : const {};
         
         // Membaca key 'totalHariTerpenuhi' (Single Source of Truth Backend)
         hariTerpenuhi = int.tryParse(student['totalHariTerpenuhi']?.toString() ?? '') ?? 0;
@@ -1347,13 +1435,24 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       }
     }
 
-    // Hitung kegiatan aktif yang belum teragregasi di timesheetSummary atau saat timesheet kosong
+    // Hitung kegiatan aktif HARI INI yang belum teragregasi di timesheetSummary atau saat timesheet kosong
+    final now = DateTime.now();
+    final todayDateStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
     for (final item in mhsState.kegiatanAktifList) {
       if (item is Map) {
         final schId = item['id']?.toString() ?? '';
+        final itemDate = (item['tanggal'] ?? item['date'] ?? '').toString();
+
+        // Lewati bila sudah terhitung di timesheet atau bukan kegiatan hari ini
         if (schId.isNotEmpty && countedScheduleIds.contains(schId)) {
-          continue; // Sudah terhitung di timesheet
+          continue;
         }
+        if (itemDate.isNotEmpty && !itemDate.startsWith(todayDateStr)) {
+          continue;
+        }
+
         final status = (item['attendanceStatus'] ?? item['statusKehadiran'] ?? '').toString().toUpperCase();
         final isMemenuhi = item['isMemenuhiDurasi'] == true;
         if (status == 'HADIR_MEMENUHI' || (status == 'HADIR' && isMemenuhi)) {
@@ -1368,7 +1467,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     }
 
     // 2. Hitung Total Warga Dampingan Personal & Agregasi Dashboard (BEND-MEMO/MOBILE-INTEGRATION/2026-09/007)
-    final user = ref.watch(authProvider).user;
     final dashboardWargaStats = mhsState.dashboard?.wargaStats;
 
     // Filter lokal warga yang resmi didampingi akun ini (Personal Warga Dampingan)
@@ -1406,9 +1504,10 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final izinCount = pengajuanAsync.value?.izinCount ?? 0;
     final sakitCount = pengajuanAsync.value?.sakitCount ?? 0;
 
-    // 6. Hitung Logbook Harian Mahasiswa
+    // 6. Hitung Logbook Harian Mahasiswa (Menggunakan endpoint /mahasiswa/stats yang instan <30ms)
+    final statsAsync = ref.watch(logbookStatsProvider);
     final logbookAsync = ref.watch(logbookListProvider);
-    final logbookCount = logbookAsync.value?.length ?? 0;
+    final logbookCount = statsAsync.value?.total ?? logbookAsync.value?.length ?? 0;
 
     // 7. Total Poin Personal
     final personalPoints = mhsState.dashboard?.personalPoints ?? mhsState.dashboard?.contributionPoints ?? 0;
@@ -1662,12 +1761,16 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         ],
       ),
     );
+      },
+    );
   }
 
   Widget _buildActiveTimelineCard() {
-    final activeTimelineAsync = ref.watch(activeTimelineProvider);
+    return Consumer(
+      builder: (context, ref, _) {
+        final activeTimelineAsync = ref.watch(activeTimelineProvider);
 
-    return activeTimelineAsync.when(
+        return activeTimelineAsync.when(
       data: (response) {
         if (!response.success || response.data == null) {
           return const Padding(
@@ -1955,6 +2058,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

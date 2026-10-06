@@ -429,11 +429,16 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
             ),
           );
         } else if (item is RiwayatItemData) {
+          final itemId = item.wasteLog?.id ?? item.notif?.id ?? '';
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: item.wasteLog != null
-                ? _RiwayatItem(log: item.wasteLog!)
-                : _NotificationHistoryItem(notif: item.notif!),
+            child: DismissibleHistoryItem(
+              scope: HiddenHistoryService.scopeWargaWaste,
+              itemId: itemId,
+              child: item.wasteLog != null
+                  ? _RiwayatItem(log: item.wasteLog!)
+                  : _NotificationHistoryItem(notif: item.notif!),
+            ),
           );
         }
         return const SizedBox.shrink();

@@ -84,6 +84,7 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     String? lastError;
 
     try {
+      final currentUserId = _ref.read(authProvider).user?.id;
       final results = await Future.wait([
         repo.getDashboard().catchError((e) {
           lastError = NetworkExceptionHelper.getErrorMessage(e);
@@ -93,7 +94,7 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
           lastError ??= NetworkExceptionHelper.getErrorMessage(e);
           return cachedWarga ?? state.wargaList;
         }),
-        repo.getTimesheetSummary().catchError((e) {
+        repo.getTimesheetSummary(studentId: currentUserId).catchError((e) {
           return <String, dynamic>{};
         }),
         repo.getKegiatanAktif().catchError((e) {

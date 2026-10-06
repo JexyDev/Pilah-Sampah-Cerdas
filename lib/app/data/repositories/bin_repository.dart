@@ -95,6 +95,9 @@ abstract class BinRepository {
   /// Ambil active reset request dari local storage
   Future<BinResetEntity?> getActiveResetRequest(String userId);
 
+  /// Batalkan pengajuan pengosongan aktif dan bersihkan cache lokal.
+  Future<void> cancelActiveResetRequest(String userId, {String? binId, String? requestId});
+
   /// Set kapasitas tempat sampah setelah aktivasi.
   Future<void> measureBin({
     required String qrCode,

@@ -453,26 +453,32 @@ class _RiwayatPetugasPemilahanViewState
                         final formattedDate = _formatDateTime(rawDate);
                         final isPengosongan = item['type'] == 'PENGAJUAN_RESET' ||
                             (item['title']?.toString().toLowerCase().contains('pengosongan') ?? false);
+                        final itemId = item['id']?.toString() ??
+                            item['reportId']?.toString() ??
+                            '$rawDate';
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
+                        return DismissibleHistoryItem(
+                          scope: HiddenHistoryService.scopePetugasTasks,
+                          itemId: itemId,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              onTap: () => _showDetailModal(item),
-                              child: Padding(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () => _showDetailModal(item),
+                                child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -631,9 +637,10 @@ class _RiwayatPetugasPemilahanViewState
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
+                  ),
             ),
           ],
         ),

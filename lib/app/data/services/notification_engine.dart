@@ -6,6 +6,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_routes.dart';
 
 class NotificationEngine {
@@ -114,11 +115,33 @@ class NotificationEngine {
       }
 
       // 3. Ignore Battery Optimizations
-      if (await Permission.ignoreBatteryOptimizations.isDenied) {
+      // [FIX] Cegah prompt berulang-ulang (looping) di HP Samsung/OEM saat startup atau
+      // saat aplikasi bangkit setelah kamera mengambil foto (Android Process Death).
+      // Minta izin ini cukup 1 kali saja secara anggun (graceful one-time prompt).
+      final prefs = await SharedPreferences.getInstance();
+      final hasPromptedBattery =
+          prefs.getBool('has_prompted_battery_opt') ?? false;
+      if (!hasPromptedBattery &&
+          await Permission.ignoreBatteryOptimizations.isDenied) {
+        await prefs.setBool('has_prompted_battery_opt', true);
         await Permission.ignoreBatteryOptimizations.request();
       }
     } catch (e) {
       debugPrint('[NotificationEngine] Permission request error: $e');
+    }
+  }
+
+  /// Memungkinkan user atau fitur tertentu untuk meminta izin baterai secara manual jika diperlukan.
+  Future<void> requestBatteryOptimizationManually({bool force = false}) async {
+    if (!Platform.isAndroid) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_prompted_battery_opt', true);
+      if (force || await Permission.ignoreBatteryOptimizations.isDenied) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (e) {
+      debugPrint('[NotificationEngine] Manual battery request error: $e');
     }
   }
 

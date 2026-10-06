@@ -129,21 +129,37 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }).toList();
   }
 
-  /// Filter defensif client-side agar daftar pengajuan warga hanya mencakup RW petugas
+  /// Filter defensif client-side agar daftar pengajuan warga mencakup RW petugas atau pengajuan yang ditujukan ke petugas ini
   List<Map<String, dynamic>> _filterPengajuanByRw(
     List<Map<String, dynamic>> rawList,
-    String? targetRw,
-  ) {
-    if (targetRw == null || targetRw.isEmpty || targetRw == '-') {
-      return rawList;
-    }
-    final cleanTarget = targetRw.replaceAll(RegExp(r'[^\d]'), '');
+    String? targetRw, {
+    String? currentPetugasId,
+  }) {
     return rawList.where((item) {
+      // 1. Jika pengajuan secara eksplisit ditujukan ke petugas ini, selalu tampilkan
+      final itemPetugasId = item['petugasId']?.toString().trim();
+      if (currentPetugasId != null &&
+          currentPetugasId.isNotEmpty &&
+          itemPetugasId != null &&
+          itemPetugasId.isNotEmpty &&
+          itemPetugasId == currentPetugasId.trim()) {
+        return true;
+      }
+
+      if (targetRw == null || targetRw.isEmpty || targetRw == '-') {
+        return true;
+      }
+
       final itemRw = item['rtRw']?.toString() ?? item['rw']?.toString() ?? '';
       if (itemRw.isEmpty) return true;
+
+      final cleanTarget = targetRw.replaceAll(RegExp(r'[^\d]'), '');
       final cleanItem = itemRw.replaceAll(RegExp(r'[^\d]'), '');
+
       if (cleanTarget.isNotEmpty && cleanItem.isNotEmpty) {
-        return cleanItem == cleanTarget;
+        if (cleanItem == cleanTarget || cleanItem.endsWith(cleanTarget)) {
+          return true;
+        }
       }
       return itemRw.toLowerCase().contains(targetRw.toLowerCase().trim());
     }).toList();
@@ -209,12 +225,16 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
           }
         });
 
-    // Fetch Daftar Pengajuan Warga dengan filter RW petugas
+    final currentPetugasId = user?.id;
     repo
         .getDaftarPengajuanWarga()
         .then((pengajuan) {
           if (mounted) {
-            final filtered = _filterPengajuanByRw(pengajuan, userRw);
+            final filtered = _filterPengajuanByRw(
+              pengajuan,
+              userRw,
+              currentPetugasId: currentPetugasId,
+            );
             state = state.copyWith(pengajuanList: filtered, isLoading: false);
           }
         })

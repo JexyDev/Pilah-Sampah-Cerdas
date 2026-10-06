@@ -286,7 +286,8 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
         catatanLabel: '',
       );
     }
-    if (status == 'MENUNGGU_VERIFIKASI_KETUA') {
+    if (status == 'MENUNGGU_VERIFIKASI_KETUA' ||
+        status == 'MENUNGGU_PERSETUJUAN_KETUA') {
       return _buildBanner(
         color: AppColors.primaryBlue,
         icon: Icons.hourglass_top_rounded,

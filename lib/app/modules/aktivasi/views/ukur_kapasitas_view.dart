@@ -361,6 +361,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       }
     }
 
+    final existingBins = ref.read(binsProvider).value ?? [];
+    final hasExistingOrg = existingBins.any((b) => b.binType == WasteType.organic && b.isActive);
+    final hasExistingNonOrg = existingBins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
+
     // Lanjut ke aktivasi barcode (sesuai mode pilihan warga: 1 atau 2 tempat sampah)
     Navigator.pushReplacementNamed(
       context,
@@ -369,8 +373,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         'targetType': _targetCategory,
         'orgCapacity': orgVol,
         'anorgCapacity': anorgVol,
-        'hasOrganic': isNonOrgOnly,
-        'hasAnorganic': isOrgOnly,
+        'hasOrganic': hasExistingOrg || isNonOrgOnly,
+        'hasAnorganic': hasExistingNonOrg || isOrgOnly,
         'orgShape': orgShape,
         'orgDiameter': orgDiameter,
         'orgHeight': orgHeight,
@@ -402,7 +406,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   @override
   Widget build(BuildContext context) {
     if (!_hasExplicitTarget && !_targetResolvedFromBins) {
-      final bins = ref.watch(binsProvider).value ?? [];
+      final binsAsync = ref.watch(binsProvider);
+      final bins = binsAsync.value ?? [];
       final hasOrganic = bins.any(
         (b) => b.binType == WasteType.organic && b.isActive,
       );
@@ -415,7 +420,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       } else if (!hasOrganic && hasNonOrganic) {
         _targetCategory = 'organic';
         _targetResolvedFromBins = true;
-      } else if (!hasOrganic && !hasNonOrganic) {
+      } else if (!hasOrganic && !hasNonOrganic && binsAsync is AsyncData) {
         _targetCategory = 'both';
         _targetResolvedFromBins = true;
       }

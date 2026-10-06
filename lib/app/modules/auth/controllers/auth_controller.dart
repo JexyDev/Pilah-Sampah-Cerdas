@@ -83,6 +83,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _init() async {
     final user = await _authRepository.getCurrentUser();
     if (user != null) {
+      HiddenHistoryService.setActiveUser(user.id);
       // getCurrentUser sudah attach householdId dari secure storage cache
       state = state.copyWith(user: user);
       // Daftarkan FCM token jika sesi sudah ada (app restart)
@@ -187,6 +188,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // SEBELUM `user` dimasukkan ke state (yang akan men-trigger notificationsProvider)
       await _restoreNotificationSyncState(user);
 
+      HiddenHistoryService.setActiveUser(user.id);
       state = state.copyWith(user: user, isLoading: false);
       
       // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
@@ -225,6 +227,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _authRepository.register(role: role, data: data);
       await _restoreNotificationSyncState(user);
 
+      HiddenHistoryService.setActiveUser(user.id);
       state = state.copyWith(user: user, isLoading: false);
       
       // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
@@ -289,6 +292,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       await _restoreNotificationSyncState(user);
 
+      HiddenHistoryService.setActiveUser(user.id);
       state = state.copyWith(user: user, isLoading: false);
       
       // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
@@ -411,8 +415,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.invalidate(totalSetoranProvider);
 
       // 4. Hentikan notifikasi & bersihkan cache notifikasi
-      await NotificationEngine().cancelAll();
-      clearNotificationCache();
+      try {
+        await NotificationEngine().cancelAll();
+        clearNotificationCache();
+      } catch (_) {}
 
       // 5. Bersihkan cache API lokal, SafeStorage, dan HiddenHistoryService
       try {
@@ -430,18 +436,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
               key.startsWith('mark_all_notifs_') ||
               key.startsWith('delete_all_notifs_') ||
               key.startsWith('notif_store_v2_') ||
+              key.startsWith('petugas_') ||
+              key.startsWith('offline_queue_') ||
+              key.startsWith('draft_') ||
+              key.startsWith('cached_') ||
+              key.startsWith('cache_') ||
+              key.startsWith('hidden_history_') ||
               key.startsWith('kkn_')) {
             await prefs.remove(key);
           }
         }
       } catch (_) {}
 
-      // 6. Panggil auth repository logout maksimal 2 detik
+      // 6. Panggil auth repository logout maksimal 1 detik
       try {
         await _authRepository
             .logout()
-            .timeout(const Duration(seconds: 2), onTimeout: () {});
+            .timeout(const Duration(seconds: 1), onTimeout: () {});
       } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('[AuthController] Error in logout cleanup: $e\n$stack');
     } finally {
       // Dijamin SELALU tereksekusi, logout instan dalam kondisi sinyal apapun
       state = const AuthState();
@@ -477,6 +491,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> fetchProfile() async {
     try {
       final user = await _authRepository.fetchProfile();
+      HiddenHistoryService.setActiveUser(user.id);
       state = state.copyWith(user: user);
     } catch (_) {
       // Abaikan jika gagal, tetap gunakan data cache

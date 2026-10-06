@@ -125,9 +125,14 @@ class PoinView extends ConsumerWidget {
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: visibleHistory.length,
                               itemBuilder: (context, index) {
+                                final pointItem = visibleHistory[index];
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
-                                  child: _PoinHistoryItem(item: visibleHistory[index]),
+                                  child: DismissibleHistoryItem(
+                                    scope: HiddenHistoryService.scopeWargaPoints,
+                                    itemId: pointItem.id,
+                                    child: _PoinHistoryItem(item: pointItem),
+                                  ),
                                 );
                               },
                             );

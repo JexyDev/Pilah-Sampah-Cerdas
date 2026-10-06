@@ -8,6 +8,7 @@ import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
 import '../models/kelompok_qr_models.dart';
+import '../models/logbook_kkn_models.dart';
 import '../providers/api_client.dart';
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
@@ -562,20 +563,116 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getLogbookList() async {
+  Future<List<Map<String, dynamic>>> getLogbookList({
+    int page = 1,
+    int limit = 15,
+    String? groupId,
+    String? statusApproval,
+    String? search,
+    int? pekanKe,
+    String? tipeAktivitas,
+    String? startDate,
+    String? endDate,
+  }) async {
+    final response = await getPaginatedLogbooks(
+      page: page,
+      limit: limit,
+      groupId: groupId,
+      statusApproval: statusApproval,
+      search: search,
+      pekanKe: pekanKe,
+      tipeAktivitas: tipeAktivitas,
+      startDate: startDate,
+      endDate: endDate,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<LogbookPaginationResponse> getPaginatedLogbooks({
+    int page = 1,
+    int limit = 15,
+    String? groupId,
+    String? statusApproval,
+    String? search,
+    int? pekanKe,
+    String? tipeAktivitas,
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.logbookMahasiswa);
-      if (response.statusCode == 200) {
-        final raw = response.data['data'];
-        if (raw is List) return List<Map<String, dynamic>>.from(raw);
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+        if (groupId != null && groupId.isNotEmpty && groupId != 'ALL') 'groupId': groupId,
+        if (statusApproval != null && statusApproval.isNotEmpty && statusApproval != 'ALL')
+          'statusApproval': statusApproval == 'MENUNGGU_VERIFIKASI_KETUA'
+              ? 'MENUNGGU_PERSETUJUAN_KETUA'
+              : statusApproval,
+        if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+        if (pekanKe != null && pekanKe > 0) 'pekanKe': pekanKe,
+        if (tipeAktivitas != null && tipeAktivitas.isNotEmpty && tipeAktivitas != 'ALL') 'tipeAktivitas': tipeAktivitas,
+        if (startDate != null && startDate.isNotEmpty) 'startDate': startDate,
+        if (endDate != null && endDate.isNotEmpty) 'endDate': endDate,
+      };
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.logbookMahasiswa,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return LogbookPaginationResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
       }
-      return [];
+      return const LogbookPaginationResponse(
+        success: false,
+        total: 0,
+        data: [],
+        pagination: PaginationMeta(page: 1, limit: 15, total: 0, totalPages: 1),
+      );
     } on DioException catch (e) {
-      debugPrint('[KKN] getLogbookList error: $e');
-      if (e.response?.statusCode == 404) return [];
+      debugPrint('[KKN] getPaginatedLogbooks error: $e');
+      if (e.response?.statusCode == 404) {
+        return const LogbookPaginationResponse(
+          success: true,
+          total: 0,
+          data: [],
+          pagination: PaginationMeta(page: 1, limit: 15, total: 0, totalPages: 0),
+        );
+      }
       throw Exception(
         _extractError(e.response?.data, 'Gagal memuat daftar logbook'),
       );
+    }
+  }
+
+  @override
+  Future<LogbookStats?> getLogbookStats({String? groupId}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (groupId != null && groupId.isNotEmpty && groupId != 'ALL') 'groupId': groupId,
+      };
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.logbookMahasiswaStats,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final rawData = response.data['data'];
+        if (rawData is Map<String, dynamic>) {
+          return LogbookStats.fromJson(rawData);
+        }
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('[KKN] getLogbookStats error: $e');
+      return null;
+    } catch (e) {
+      debugPrint('[KKN] getLogbookStats exception: $e');
+      return null;
     }
   }
 
@@ -1126,9 +1223,14 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getTimesheetSummary() async {
+  Future<Map<String, dynamic>> getTimesheetSummary({String? studentId}) async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.timesheetSummary);
+      final response = await apiClient.dio.get(
+        ApiEndpoints.timesheetSummary,
+        queryParameters: {
+          if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+        },
+      );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>;
       }
@@ -1876,6 +1978,90 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       if (e is DioException) {
         throw Exception(_handleDioError(e, 'Gagal hapus panen'));
+      }
+      rethrow;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Domain Mandiri Laporan Akhir KKN (Per-Individu)
+  // ──────────────────────────────────────────────────────────
+
+  @override
+  Future<bool> submitLaporanAkhir({
+    required String judul,
+    String? deskripsi,
+    required String filePdfPath,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'judul': judul,
+        if (deskripsi != null && deskripsi.trim().isNotEmpty)
+          'deskripsi': deskripsi.trim(),
+      });
+
+      formData.files.add(
+        MapEntry(
+          'filePdf',
+          await MultipartFile.fromFile(
+            filePdfPath,
+            filename: filePdfPath.split(RegExp(r'[/\\]')).last,
+            contentType: MediaType.parse('application/pdf'),
+          ),
+        ),
+      );
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknLaporanAkhir,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_handleDioError(e, 'Gagal mengunggah laporan akhir'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getLaporanAkhirMe() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknLaporanAkhirMe);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        if (data is Map<String, dynamic>) {
+          return data;
+        }
+      }
+      return {'hasSubmitted': false, 'data': null};
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_handleDioError(e, 'Gagal mengambil status laporan akhir'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getLaporanAkhirHistory() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknLaporanAkhirHistory);
+      if (response.statusCode == 200 && response.data != null) {
+        final raw = response.data['data'];
+        if (raw is List) {
+          return raw.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_handleDioError(e, 'Gagal mengambil riwayat laporan akhir'));
       }
       rethrow;
     }

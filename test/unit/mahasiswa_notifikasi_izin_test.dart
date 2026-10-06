@@ -8,6 +8,9 @@ import 'package:mobile_app_sampah/app/data/services/local_notification_cache_ser
 import 'package:mobile_app_sampah/app/modules/auth/controllers/auth_controller.dart';
 import 'package:mobile_app_sampah/app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 
+import 'package:mobile_app_sampah/app/data/models/notification_entity.dart';
+import 'package:mobile_app_sampah/app/data/repositories/notification_repository.dart';
+
 class FakeKknRepository extends Fake implements KknRepository {
   List<dynamic> mockIzinList = [];
 
@@ -16,6 +19,13 @@ class FakeKknRepository extends Fake implements KknRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getProgramKerja() async => [];
+}
+
+class FakeNotificationRepository extends Fake implements NotificationRepository {
+  List<NotificationEntity> mockNotifications = [];
+
+  @override
+  Future<List<NotificationEntity>> getNotifications() async => mockNotifications;
 }
 
 class FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
@@ -32,6 +42,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late FakeKknRepository fakeKknRepo;
+  late FakeNotificationRepository fakeNotifRepo;
   const testUser = UserEntity(
     id: 'mhs-123',
     name: 'Mahasiswa Test',
@@ -42,22 +53,28 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     LocalNotificationCacheService().clear();
     fakeKknRepo = FakeKknRepository();
+    fakeNotifRepo = FakeNotificationRepository();
   });
 
   test('Notifikasi pengajuan SAKIT menampilkan judul dan deskripsi yang tepat', () async {
-    fakeKknRepo.mockIzinList = [
-      {
-        'id': 'izin-1',
-        'status': 'PENDING',
-        'kategori': 'SAKIT',
-        'createdAt': DateTime.now().toIso8601String(),
-      }
+    fakeNotifRepo.mockNotifications = [
+      NotificationEntity(
+        id: 'izin_pending_izin-1',
+        title: 'Pengajuan Sakit Dikirim',
+        desc: 'Pengajuan Sakit Anda telah terkirim dan menunggu verifikasi DPL.',
+        time: '2026-10-05 10:00',
+        type: 'IZIN',
+        isRead: false,
+        icon: 'info',
+        createdAt: DateTime.parse('2026-10-05T10:00:00Z'),
+      ),
     ];
 
     final container = ProviderContainer(
       overrides: [
         authProvider.overrideWith((ref) => FakeAuthNotifier(testUser)),
         kknRepositoryProvider.overrideWithValue(fakeKknRepo),
+        notificationRepositoryProvider.overrideWithValue(fakeNotifRepo),
       ],
     );
     addTearDown(container.dispose);
@@ -72,13 +89,17 @@ void main() {
   });
 
   test('LocalNotificationCacheService duplikasi IZIN_DIAJUKAN ditekan jika data server ada', () async {
-    fakeKknRepo.mockIzinList = [
-      {
-        'id': 'izin-1',
-        'status': 'PENDING',
-        'kategori': 'SAKIT',
-        'createdAt': DateTime.now().toIso8601String(),
-      }
+    fakeNotifRepo.mockNotifications = [
+      NotificationEntity(
+        id: 'izin_pending_izin-1',
+        title: 'Pengajuan Sakit Terkirim ⏳',
+        desc: 'Pengajuan Sakit sedang menunggu verifikasi DPL.',
+        time: '2026-10-05 10:00',
+        type: 'IZIN',
+        isRead: false,
+        icon: 'info',
+        createdAt: DateTime.parse('2026-10-05T10:00:00Z'),
+      ),
     ];
 
     // Simulasikan notifikasi lokal lama yang tersimpan di cache
@@ -95,6 +116,7 @@ void main() {
       overrides: [
         authProvider.overrideWith((ref) => FakeAuthNotifier(testUser)),
         kknRepositoryProvider.overrideWithValue(fakeKknRepo),
+        notificationRepositoryProvider.overrideWithValue(fakeNotifRepo),
       ],
     );
     addTearDown(container.dispose);
@@ -103,7 +125,6 @@ void main() {
 
     // Harus tetap 1 (tidak boleh ada 2 notifikasi duplikat)
     expect(notifications.length, 1);
-    expect(notifications.first.title, 'Pengajuan Sakit Dikirim');
-    expect(notifications.first.id, 'izin_pending_izin-1');
+    expect(notifications.first.title, 'Pengajuan Sakit Terkirim ⏳');
   });
 }

@@ -8,6 +8,7 @@ import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../../data/models/bin_entity.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
@@ -775,12 +776,26 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                       .firstOrNull;
                   if (foundBin != null && foundBin.isResetPending) {
                     if (context.mounted) {
-                      _showPendingResetDialog(
-                        context,
-                        'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.',
-                      );
+                      final decision =
+                          await _showPendingResetDecisionDialog(context, foundBin);
+                      if (decision == 'cancel_and_scan') {
+                        final userId = ref.read(authProvider).user?.id;
+                        if (userId != null) {
+                          await ref
+                              .read(resetBinProvider.notifier)
+                              .cancelReset(userId, binId: foundBin.id);
+                          ref.invalidate(binsProvider);
+                        }
+                        // Lanjut proses scan di bawah
+                      } else if (decision == 'continue_scan') {
+                        // Lanjut proses scan di bawah
+                      } else {
+                        _qrScannerKey.currentState?.resetScanner();
+                        return false;
+                      }
+                    } else {
+                      return false;
                     }
-                    return false;
                   }
 
                   // Validasi kategori client-side — cegah scan QR yang salah tanpa hit backend
@@ -1544,20 +1559,117 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     );
   }
 
-  void _showPendingResetDialog(BuildContext context, String? message) {
-    showDialog(
+  Future<String?> _showPendingResetDecisionDialog(
+    BuildContext context,
+    BinEntity bin,
+  ) {
+    final bool isNearlyFull = bin.capacityPercent >= 0.95;
+    final String pct = (bin.capacityPercent * 100).toStringAsFixed(0);
+    final String weight = bin.currentWeightKg.toStringAsFixed(1);
+    final String maxWeight = bin.maxWeightKg.toStringAsFixed(1);
+
+    return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _PendingResetDialog(
-        message: message ?? 'Tempat sampah sedang dalam pengajuan pengosongan.',
-        onScanLain: () {
-          ref.read(scanFlowProvider.notifier).clearError();
-          Navigator.of(context).pop();
-        },
-        onKeluar: () {
-          Navigator.of(context).pop();
-          Navigator.of(context).pop();
-        },
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.warningYellow.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.hourglass_top_rounded,
+                  color: AppColors.warningYellow,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Pengosongan Sedang Diajukan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                isNearlyFull
+                    ? 'Tempat Sampah ${bin.binType.displayName} sudah hampir penuh ($pct%) dan sedang dalam antrean pengosongan petugas.'
+                    : 'Tempat Sampah ${bin.binType.displayName} tercatat sedang dalam proses pengosongan ($weight kg / $maxWeight kg).\n\n'
+                      'Jika tempat sampah belum penuh atau Anda tidak sengaja mengajukan, Anda dapat membatalkan pengajuan dan langsung melanjutkan scan.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop('cancel_and_scan'),
+                  icon: const Icon(Icons.cancel_outlined, size: 18),
+                  label: const Text(
+                    'Batalkan Pengajuan & Lanjut Scan',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(ctx).pop('continue_scan'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Tetap Lanjut Scan',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop('change_bin'),
+                child: const Text(
+                  'Ganti Tempat Sampah Lain',
+                  style: TextStyle(
+                    color: AppColors.textHint,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2403,97 +2515,6 @@ class _OverflowDialog extends StatelessWidget {
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: onKeluar,
-              child: const Text(
-                'Batal',
-                style: TextStyle(
-                  color: AppColors.textHint,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PendingResetDialog extends StatelessWidget {
-  const _PendingResetDialog({
-    required this.message,
-    required this.onScanLain,
-    required this.onKeluar,
-  });
-
-  final String message;
-  final VoidCallback onScanLain;
-  final VoidCallback onKeluar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.access_time_rounded,
-                color: Colors.grey,
-                size: 36,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Sedang Diajukan!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: onScanLain,
-                icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                label: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'Ganti QR Tempat Sampah Lain',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

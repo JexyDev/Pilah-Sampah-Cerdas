@@ -1,17 +1,206 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../data/models/logbook_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/repositories/kkn_repository.dart';
 import '../../../routes/app_routes.dart';
 
+/// Provider statistik KPI logbook mahasiswa (<30ms, ~1KB)
+final logbookStatsProvider =
+    FutureProvider.autoDispose<LogbookStats?>((ref) async {
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getLogbookStats();
+});
+
+/// Provider legacy / fallback untuk pemanggilan daftar logbook
 final logbookListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-      final repo = ref.read(kknRepositoryProvider);
-      return repo.getLogbookList();
-    });
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getLogbookList(page: 1, limit: 15);
+});
 
-class DataLogbookHarianView extends ConsumerWidget {
+/// State untuk Server-Side Pagination Logbook
+class LogbookPaginationState {
+  final List<Map<String, dynamic>> items;
+  final int page;
+  final int totalPages;
+  final int total;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final String? errorMessage;
+  final String statusFilter;
+  final String searchQuery;
+
+  const LogbookPaginationState({
+    this.items = const [],
+    this.page = 1,
+    this.totalPages = 1,
+    this.total = 0,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.errorMessage,
+    this.statusFilter = 'ALL',
+    this.searchQuery = '',
+  });
+
+  LogbookPaginationState copyWith({
+    List<Map<String, dynamic>>? items,
+    int? page,
+    int? totalPages,
+    int? total,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    String? errorMessage,
+    String? statusFilter,
+    String? searchQuery,
+  }) {
+    return LogbookPaginationState(
+      items: items ?? this.items,
+      page: page ?? this.page,
+      totalPages: totalPages ?? this.totalPages,
+      total: total ?? this.total,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      errorMessage: errorMessage,
+      statusFilter: statusFilter ?? this.statusFilter,
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
+  }
+}
+
+/// Notifier Server-Side Pagination Logbook
+class LogbookPaginationNotifier extends StateNotifier<LogbookPaginationState> {
+  final KknRepository _repo;
+
+  LogbookPaginationNotifier(this._repo) : super(const LogbookPaginationState()) {
+    loadInitial();
+  }
+
+  Future<void> loadInitial({String? status, String? search}) async {
+    final statusFilter = status ?? state.statusFilter;
+    final searchQuery = search ?? state.searchQuery;
+
+    state = state.copyWith(
+      isLoading: true,
+      errorMessage: null,
+      statusFilter: statusFilter,
+      searchQuery: searchQuery,
+    );
+
+    try {
+      final res = await _repo.getPaginatedLogbooks(
+        page: 1,
+        limit: 15,
+        statusApproval: statusFilter != 'ALL' ? statusFilter : null,
+        search: searchQuery.isNotEmpty ? searchQuery : null,
+      );
+
+      state = state.copyWith(
+        items: res.data,
+        page: 1,
+        total: res.pagination.total,
+        totalPages: res.pagination.totalPages,
+        isLoading: false,
+        hasMore: res.pagination.page < res.pagination.totalPages,
+      );
+    } catch (e) {
+      final rawErr = e.toString().replaceAll('Exception: ', '');
+      final isTechnicalErr = rawErr.contains('prisma') ||
+          rawErr.contains('invocation') ||
+          rawErr.contains('argument') ||
+          rawErr.contains('StatusLogbookKkn');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: isTechnicalErr
+            ? 'Tidak ada data logbook untuk filter yang dipilih.'
+            : rawErr,
+      );
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(isLoadingMore: true);
+
+    try {
+      final nextPage = state.page + 1;
+      final res = await _repo.getPaginatedLogbooks(
+        page: nextPage,
+        limit: 15,
+        statusApproval: state.statusFilter != 'ALL' ? state.statusFilter : null,
+        search: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+      );
+
+      final merged = [...state.items, ...res.data];
+      state = state.copyWith(
+        items: merged,
+        page: nextPage,
+        total: res.pagination.total,
+        totalPages: res.pagination.totalPages,
+        isLoadingMore: false,
+        hasMore: nextPage < res.pagination.totalPages,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoadingMore: false);
+    }
+  }
+
+  void filterByStatus(String status) {
+    if (state.statusFilter == status) return;
+    loadInitial(status: status);
+  }
+
+  void search(String query) {
+    loadInitial(search: query);
+  }
+
+  Future<void> refresh() async {
+    await loadInitial();
+  }
+}
+
+final logbookPaginationProvider = StateNotifierProvider.autoDispose<
+    LogbookPaginationNotifier, LogbookPaginationState>((ref) {
+  final repo = ref.watch(kknRepositoryProvider);
+  return LogbookPaginationNotifier(repo);
+});
+
+class DataLogbookHarianView extends ConsumerStatefulWidget {
   const DataLogbookHarianView({super.key});
+
+  @override
+  ConsumerState<DataLogbookHarianView> createState() =>
+      _DataLogbookHarianViewState();
+}
+
+class _DataLogbookHarianViewState extends ConsumerState<DataLogbookHarianView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 250) {
+      ref.read(logbookPaginationProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Widget _buildStatusBadge(String? status) {
     final s = (status ?? '').toUpperCase();
@@ -37,6 +226,7 @@ class DataLogbookHarianView extends ConsumerWidget {
         color = Colors.amber.shade700;
         label = 'Menunggu DPL';
         icon = Icons.hourglass_empty_rounded;
+      case 'MENUNGGU_PERSETUJUAN_KETUA':
       case 'MENUNGGU_VERIFIKASI_KETUA':
         color = AppColors.primaryBlue;
         label = 'Menunggu Ketua';
@@ -107,6 +297,144 @@ class DataLogbookHarianView extends ConsumerWidget {
     final parts = t.split(':');
     if (parts.length >= 2) return '${parts[0]}:${parts[1]}';
     return t;
+  }
+
+  Widget _buildKpiStatsHeader(LogbookStats? stats) {
+    if (stats == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildKpiItem(
+            label: 'Total',
+            count: stats.total,
+            color: AppColors.textPrimary,
+            icon: Icons.assignment_rounded,
+          ),
+          _buildKpiItem(
+            label: 'Menunggu',
+            count: stats.pendingKetua + stats.pendingDpl,
+            color: Colors.amber.shade700,
+            icon: Icons.hourglass_top_rounded,
+          ),
+          _buildKpiItem(
+            label: 'Disetujui',
+            count: stats.approved,
+            color: AppColors.primaryGreen,
+            icon: Icons.check_circle_rounded,
+          ),
+          _buildKpiItem(
+            label: 'Revisi',
+            count: stats.revisi,
+            color: Colors.orange.shade800,
+            icon: Icons.rate_review_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKpiItem({
+    required String label,
+    required int count,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(String currentFilter) {
+    final filters = [
+      {'key': 'ALL', 'label': 'Semua'},
+      {'key': 'MENUNGGU_VERIFIKASI_DPL', 'label': 'Menunggu DPL'},
+      {'key': 'DISETUJUI_DPL', 'label': 'Disetujui'},
+      {'key': 'PERLU_REVISI_DPL', 'label': 'Perlu Revisi'},
+      {'key': 'DITOLAK_KETUA', 'label': 'Ditolak'},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: filters.map((f) {
+          final isSelected = currentFilter == f['key'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              selected: isSelected,
+              label: Text(
+                f['label']!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+              selectedColor: AppColors.primaryGreen,
+              backgroundColor: Colors.white,
+              checkmarkColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                ),
+              ),
+              onSelected: (_) {
+                ref
+                    .read(logbookPaginationProvider.notifier)
+                    .filterByStatus(f['key']!);
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   Widget _buildLogbookCard(
@@ -340,6 +668,8 @@ class DataLogbookHarianView extends ConsumerWidget {
                       AppRoutes.editLogbookKkn,
                       arguments: {'id': id},
                     );
+                    ref.read(logbookPaginationProvider.notifier).refresh();
+                    ref.invalidate(logbookStatsProvider);
                     ref.invalidate(logbookListProvider);
                   },
                 ),
@@ -352,8 +682,9 @@ class DataLogbookHarianView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final listState = ref.watch(logbookListProvider);
+  Widget build(BuildContext context) {
+    final paginationState = ref.watch(logbookPaginationProvider);
+    final statsAsync = ref.watch(logbookStatsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -373,7 +704,11 @@ class DataLogbookHarianView extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Muat Ulang',
-            onPressed: () => ref.invalidate(logbookListProvider),
+            onPressed: () {
+              ref.read(logbookPaginationProvider.notifier).refresh();
+              ref.invalidate(logbookStatsProvider);
+              ref.invalidate(logbookListProvider);
+            },
           ),
         ],
       ),
@@ -389,89 +724,128 @@ class DataLogbookHarianView extends ConsumerWidget {
         ),
         onPressed: () async {
           await Navigator.pushNamed(context, AppRoutes.inputLogbookKkn);
+          ref.read(logbookPaginationProvider.notifier).refresh();
+          ref.invalidate(logbookStatsProvider);
           ref.invalidate(logbookListProvider);
         },
       ),
-      body: listState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.cloud_off_rounded,
-                  size: 52,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  err.toString(),
-                  style: const TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(logbookListProvider),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Coba Lagi'),
-                ),
-              ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(logbookPaginationProvider.notifier).refresh();
+          ref.invalidate(logbookStatsProvider);
+        },
+        child: Column(
+          children: [
+            _buildKpiStatsHeader(statsAsync.valueOrNull),
+            _buildFilterChips(paginationState.statusFilter),
+            const SizedBox(height: 4),
+            Expanded(
+              child: _buildContent(paginationState),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(LogbookPaginationState state) {
+    if (state.isLoading && state.items.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.errorMessage != null && state.items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_rounded,
+                size: 52,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                state.errorMessage!,
+                style: const TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(logbookPaginationProvider.notifier).refresh(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Coba Lagi'),
+              ),
+            ],
           ),
         ),
-        data: (list) {
-          if (list.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.edit_document,
-                      size: 48,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Belum ada logbook harian',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'Tap tombol di bawah untuk mulai mencatat aktivitas harian.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 80),
-                ],
+      );
+    }
+
+    if (state.items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
               ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(logbookListProvider),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (ctx, i) => _buildLogbookCard(ctx, ref, list[i]),
+              child: const Icon(
+                Icons.edit_document,
+                size: 48,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Belum ada logbook harian',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'Tap tombol di bawah untuk mulai mencatat aktivitas harian.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 80),
+          ],
+        ),
+      );
+    }
+
+    final int itemCount = state.items.length + (state.isLoadingMore ? 1 : 0);
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (ctx, i) {
+        if (i == state.items.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
           );
-        },
-      ),
+        }
+        return _buildLogbookCard(ctx, ref, state.items[i]);
+      },
     );
   }
 }

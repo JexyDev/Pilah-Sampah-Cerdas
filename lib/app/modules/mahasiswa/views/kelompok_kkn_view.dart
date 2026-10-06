@@ -140,7 +140,7 @@ class KelompokKknView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (state.isLoading) ...[
+              if (state.isLoading && state.kelompok == null) ...[
                 const SizedBox(height: 100),
                 const Center(
                   child: CircularProgressIndicator(
@@ -550,7 +550,7 @@ class KelompokKknView extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
@@ -558,13 +558,13 @@ class KelompokKknView extends ConsumerWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
@@ -572,24 +572,31 @@ class KelompokKknView extends ConsumerWidget {
                       child: Icon(blockIcon, color: Colors.white, size: 16),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          bigValue,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: color,
-                            letterSpacing: -0.5,
-                            height: 1.0,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            bigValue,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: color,
+                              letterSpacing: -0.5,
+                              height: 1.0,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           unit,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -988,6 +995,7 @@ class KelompokKknView extends ConsumerWidget {
       ),
     );
   }
+
 
   Widget _buildGoogleDriveCard(BuildContext context, String? driveUrl) {
     final bool hasUrl = driveUrl != null && driveUrl.trim().isNotEmpty;

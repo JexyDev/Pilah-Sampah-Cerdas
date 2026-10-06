@@ -10,6 +10,7 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../core/widgets/profile_photo_cropper_view.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../../main.dart' show navigatorKey;
 
 class PetugasPemilahanProfilView extends ConsumerStatefulWidget {
   const PetugasPemilahanProfilView({super.key});
@@ -361,6 +362,8 @@ class _PetugasPemilahanProfilViewState
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
+        memCacheWidth: 200,
+        memCacheHeight: 200,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => const Icon(
           Icons.person_rounded,
@@ -379,12 +382,19 @@ class _PetugasPemilahanProfilViewState
           : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          cacheWidth: 200,
+          cacheHeight: 200,
+        );
       }
     }
 
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
+      memCacheWidth: 200,
+      memCacheHeight: 200,
       fit: BoxFit.cover,
       errorWidget: (_, __, ___) => const Icon(
         Icons.person_rounded,
@@ -411,22 +421,13 @@ class _PetugasPemilahanProfilViewState
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref.read(authProvider.notifier).logout();
-              if (mounted) {
-                // ponytail: cegah double push ke login jika sudah berada di AppRoutes.login
-                bool isAlreadyLogin = false;
-                Navigator.of(context).popUntil((route) {
-                  if (route.settings.name == AppRoutes.login) {
-                    isAlreadyLogin = true;
-                  }
-                  return true;
-                });
-                if (!isAlreadyLogin) {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-                }
-              }
+              try {
+                await ref.read(authProvider.notifier).logout();
+              } catch (_) {}
+              navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                AppRoutes.login,
+                (route) => false,
+              );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.maroonRed),
             child: const Text('Keluar'),

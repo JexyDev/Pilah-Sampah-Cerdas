@@ -462,9 +462,14 @@ class MahasiswaPoinView extends ConsumerWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: pointLogs.length,
           itemBuilder: (context, index) {
+            final logItem = pointLogs[index];
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _PoinHistoryItem(item: pointLogs[index]),
+              child: DismissibleHistoryItem(
+                scope: HiddenHistoryService.scopeMahasiswaPoints,
+                itemId: logItem.id,
+                child: _PoinHistoryItem(item: logItem),
+              ),
             );
           },
         );

@@ -17,6 +17,7 @@ class BinEntity extends Equatable {
     this.kelurahan = '',
     required this.isActive,
     this.isResetPending = false,
+    this.activeResetRequestId,
     this.createdAt,
     this.activatedAt,
     this.backendStatus = '',
@@ -36,6 +37,7 @@ class BinEntity extends Equatable {
     String? kelurahan,
     bool? isActive,
     bool? isResetPending,
+    String? activeResetRequestId,
     String? backendStatus,
   }) {
     return BinEntity(
@@ -52,6 +54,7 @@ class BinEntity extends Equatable {
       kelurahan: kelurahan ?? this.kelurahan,
       isActive: isActive ?? this.isActive,
       isResetPending: isResetPending ?? this.isResetPending,
+      activeResetRequestId: activeResetRequestId ?? this.activeResetRequestId,
       backendStatus: backendStatus ?? this.backendStatus,
     );
   }
@@ -69,15 +72,25 @@ class BinEntity extends Equatable {
   final String kelurahan;
   final bool isActive;
   final bool isResetPending;
+  final String? activeResetRequestId;
   final DateTime? createdAt;
   final DateTime? activatedAt;
   final String backendStatus;
 
   /// Persentase kapasitas terisi (0.0 – 1.0).
-  double get capacityPercent => maxCapacityL > 0 ? (currentVolumeL / maxCapacityL) : 0.0;
+  double get capacityPercent {
+    if (maxCapacityL <= 0 || currentVolumeL.isNaN || maxCapacityL.isNaN) return 0.0;
+    final val = currentVolumeL / maxCapacityL;
+    if (val.isNaN || val.isInfinite) return 0.0;
+    return val;
+  }
 
   /// Volume sisa dalam liter.
-  double get remainingVolumeL => maxCapacityL - currentVolumeL;
+  double get remainingVolumeL {
+    if (maxCapacityL.isNaN || currentVolumeL.isNaN) return 0.0;
+    final val = maxCapacityL - currentVolumeL;
+    return (val.isNaN || val.isInfinite) ? 0.0 : val;
+  }
 
   /// Densitas berat per liter tempat sampah — disamakan 0.4 kg/L agar kapasitas kg seragam antara Organik dan Anorganik.
   // ponytail: density seragam 0.4 kg/L; ubah jika regulasi kembali memisahkan rasio kapasitas fisik.

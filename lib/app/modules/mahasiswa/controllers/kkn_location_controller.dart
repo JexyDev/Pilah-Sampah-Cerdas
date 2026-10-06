@@ -1485,7 +1485,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         currentStatus == 'berlangsung' || currentStatus == 'terjeda';
 
     // Send update to backend only if background service is not handling it AND activity has officially started
-    if (!_backgroundServiceStarted && isBerlangsungOrTerjeda) {
+    // [OPTIMIZATION] Jangan kirim ping duplikat jika locationPingControllerProvider sudah aktif tracking
+    final isPingControllerTracking =
+        ref.read(locationPingControllerProvider).isTracking;
+    if (!_backgroundServiceStarted &&
+        isBerlangsungOrTerjeda &&
+        !isPingControllerTracking) {
       try {
         final repo = ref.read(kknRepositoryProvider);
         final pingResponse = await repo.sendLocationPing(

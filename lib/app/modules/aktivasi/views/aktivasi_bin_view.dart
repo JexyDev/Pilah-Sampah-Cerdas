@@ -11,6 +11,7 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../riwayat/controllers/riwayat_controller.dart';
+import '../../../data/models/bin_entity.dart';
 
 /// Aktivasi Tempat Sampah — sesuai desain:
 /// AppBar biru, QrScannerWidget (kamera native / input manual),
@@ -23,6 +24,8 @@ class AktivasiBinView extends ConsumerStatefulWidget {
 }
 
 class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
+  final GlobalKey<QrScannerWidgetState> _qrScannerKey =
+      GlobalKey<QrScannerWidgetState>();
   int _step = 1; // 1 = Organik, 2 = Anorganik
   String _targetType = 'both'; // 'organic', 'non_organic', 'both'
   String _qrOrganik = '';
@@ -54,6 +57,15 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       _hasOrganic = args?['hasOrganic'] ?? false;
       _hasAnorganic = args?['hasAnorganic'] ?? false;
 
+      // Sinkronkan juga langsung dengan state binsProvider jika args belum lengkap
+      final existingBins = ref.read(binsProvider).value ?? [];
+      if (!_hasOrganic) {
+        _hasOrganic = existingBins.any((b) => b.binType == WasteType.organic && b.isActive);
+      }
+      if (!_hasAnorganic) {
+        _hasAnorganic = existingBins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
+      }
+
       if (args != null && args['targetType'] != null) {
         _targetType = args['targetType'].toString();
       } else if (_hasOrganic && !_hasAnorganic) {
@@ -64,8 +76,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         _targetType = 'both';
       }
 
-      if (_targetType == 'non_organic') {
+      if (_targetType == 'non_organic' || (_hasOrganic && !_hasAnorganic)) {
+        _targetType = 'non_organic';
         _step = 2; // Langsung ke anorganik
+      } else if (_targetType == 'organic' || (!_hasOrganic && _hasAnorganic)) {
+        _targetType = 'organic';
+        _step = 1;
       } else {
         _step = 1;
       }
@@ -144,17 +160,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       }
     } else {
       // Mode 'both' (Sepasang Tempat Sampah)
-      if (step == 1) {
-        if (isAnorganicPattern) {
-          return 'QR Code terdeteksi sebagai Tempat Sampah ANORGANIK.\n\nHarap scan barcode pada Tempat Sampah ORGANIK (Warna Hijau) terlebih dahulu untuk Tahap 1.';
-        }
-      } else if (step == 2) {
-        if (isOrganicPattern) {
-          return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK.\n\nHarap scan barcode pada Tempat Sampah ANORGANIK (Warna Kuning) untuk Tahap 2.';
-        }
-        if (qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
-          return 'QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik!';
-        }
+      // Cek duplikasi dengan QR yang sudah terdeteksi sebelumnya
+      if (_qrOrganik.isNotEmpty && qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
+        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ORGANIK. Harap scan Tempat Sampah ANORGANIK.';
+      }
+      if (_qrAnorganik.isNotEmpty && qr.trim().toUpperCase() == _qrAnorganik.trim().toUpperCase()) {
+        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ANORGANIK. Harap scan Tempat Sampah ORGANIK.';
       }
     }
 
@@ -179,6 +190,31 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       return false;
     }
 
+    final lower = detected.toLowerCase();
+    final isAnorganicPattern =
+        lower.contains('anorganik') ||
+        lower.contains('anorganic') ||
+        lower.contains('anorg') ||
+        lower.contains('agn') ||
+        lower.contains('ano') ||
+        lower.contains('non') ||
+        lower.contains('an-org') ||
+        lower.contains('non-org') ||
+        lower.contains('an_org') ||
+        lower.contains('plastik') ||
+        lower.contains('kertas') ||
+        lower.contains('logam');
+
+    final isOrganicPattern =
+        !isAnorganicPattern &&
+        (lower.contains('organik') ||
+            lower.contains('organic') ||
+            lower.contains('organ') ||
+            lower.contains('ogn') ||
+            lower.contains('org') ||
+            lower.contains('kompos') ||
+            lower.contains('basah'));
+
     setState(() {
       if (_targetType == 'organic') {
         _qrOrganik = detected;
@@ -187,20 +223,35 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         _qrAnorganik = detected;
         _bothBinsDetected = true;
       } else {
-        if (_step == 1) {
-          _qrOrganik = detected;
-          if (_hasAnorganic) {
-            _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
-          } else {
-            _step = 2; // Lanjut ke scan Anorganik
-            _lastStepChangeTime = DateTime.now(); // Mulai cooldown
-          }
-        } else if (_step == 2) {
+        // Mode 'both': Dukung pemindaian Organik & Anorganik dalam urutan bebas!
+        if (isAnorganicPattern || (!isOrganicPattern && _step == 2)) {
           _qrAnorganik = detected;
-          _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
+          if (_qrOrganik.isNotEmpty || _hasOrganic) {
+            _bothBinsDetected = true;
+          } else {
+            _step = 1; // Alihkan otomatis ke tahap Organik
+            _lastStepChangeTime = DateTime.now();
+          }
+        } else {
+          // isOrganicPattern atau fallback ke step 1
+          _qrOrganik = detected;
+          if (_qrAnorganik.isNotEmpty || _hasAnorganic) {
+            _bothBinsDetected = true;
+          } else {
+            _step = 2; // Alihkan otomatis ke tahap Anorganik
+            _lastStepChangeTime = DateTime.now();
+          }
         }
       }
     });
+
+    if (!_bothBinsDetected) {
+      Future.delayed(const Duration(milliseconds: 700), () {
+        if (mounted && !_bothBinsDetected) {
+          _qrScannerKey.currentState?.resetScanner();
+        }
+      });
+    }
 
     return true;
   }
@@ -364,18 +415,65 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   Widget build(BuildContext context) {
     final aktivasiState = ref.watch(aktivasiBinProvider);
 
+    // Otomatis sinkronkan status kepemilikan bin via ref.listen jika data profil/bin termuat
+    ref.listen(binsProvider, (prev, next) {
+      final binsList = next.value ?? [];
+      if (binsList.isNotEmpty && mounted) {
+        final hasOrgInDb = binsList.any((b) => b.binType == WasteType.organic && b.isActive);
+        final hasNonOrgInDb = binsList.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
+        setState(() {
+          if (hasOrgInDb && !_hasOrganic) {
+            _hasOrganic = true;
+            if (!hasNonOrgInDb && _targetType == 'both' && _qrOrganik.isEmpty) {
+              _targetType = 'non_organic';
+              _step = 2;
+            }
+          }
+          if (hasNonOrgInDb && !_hasAnorganic) {
+            _hasAnorganic = true;
+            if (!hasOrgInDb && _targetType == 'both' && _qrAnorganik.isEmpty) {
+              _targetType = 'organic';
+              _step = 1;
+            }
+          }
+        });
+      }
+    });
+
     ref.listen(aktivasiBinProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
+        final errText = _mapError(next.errorCode!, next.errorMessage);
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_mapError(next.errorCode!, next.errorMessage)),
+            content: Text(errText),
             backgroundColor: AppColors.dangerRed,
+            duration: const Duration(seconds: 4),
           ),
         );
         ref.read(aktivasiBinProvider.notifier).reset();
+
+        final rawMsg = next.errorMessage ?? '';
+        final isNonOrgNeeded = next.errorCode == 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY' &&
+            (rawMsg.contains('Non-Organik') ||
+             rawMsg.contains('NON_ORGANIC') ||
+             rawMsg.contains('ORGANIC'));
+        final isOrgNeeded = next.errorCode == 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY' &&
+            rawMsg.contains('Organik') &&
+            !rawMsg.contains('Non-Organik');
+
         setState(() {
-          _step = 1;
+          if (isNonOrgNeeded) {
+            _hasOrganic = true;
+            _targetType = 'non_organic';
+            _step = 2;
+          } else if (isOrgNeeded) {
+            _hasAnorganic = true;
+            _targetType = 'organic';
+            _step = 1;
+          } else {
+            _step = _targetType == 'non_organic' ? 2 : 1;
+          }
           _qrOrganik = '';
           _qrAnorganik = '';
           _bothBinsDetected = false;
@@ -407,6 +505,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         isFirstActivation: isFirstActivation,
         onBack: () {
           ref.read(aktivasiBinProvider.notifier).reset();
+          ref.invalidate(binsProvider);
           Navigator.maybePop(context);
         },
       );
@@ -481,18 +580,20 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     ),
                   )
                 // Belum terdeteksi — tampil QR scanner (gantian)
-                : Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: QrScannerWidget(
-                        hint: _step == 1
-                            ? 'BIN-ORG-EF2072F0'
-                            : 'BIN-NON-EF2072F1',
-                        overlayColor: _step == 1
-                            ? AppColors.organicColor
-                            : AppColors.nonOrganicColor,
-                        onQrDetected: _onQrDetected,
-                      ),
+                : Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: QrScannerWidget(
+                      key: _qrScannerKey,
+                      hint: _step == 1
+                          ? 'BIN-ORG-EF2072F0'
+                          : 'BIN-NON-EF2072F1',
+                      overlayColor: _step == 1
+                          ? AppColors.organicColor
+                          : AppColors.nonOrganicColor,
+                      onQrDetected: _onQrDetected,
                     ),
                   ),
           ),
@@ -502,7 +603,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             top: false,
             child: Container(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.58,
+                maxHeight: MediaQuery.sizeOf(context).height * 0.54,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -518,7 +619,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
                 child: _bothBinsDetected
@@ -530,6 +631,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         ],
       ),
     );
+  }
+
+  String _formatDisplayCode(String qr) {
+    if (qr.isEmpty) return '';
+    String code = qr.trim();
+    if (code.contains('/')) {
+      code = code.split('/').lastWhere((s) => s.isNotEmpty, orElse: () => code);
+    }
+    code = code.replaceAll(RegExp(r'^[_\-\s]+'), '');
+    return code;
   }
 
   Widget _buildScanPrompt() {
@@ -545,7 +656,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         Text(
           _targetType == 'organic'
               ? 'Scan QR Tempat Sampah Organik'
@@ -563,14 +674,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         Text(
           _targetType == 'organic'
               ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Organik (Hijau)'
               : _targetType == 'non_organic'
                   ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Anorganik (Kuning)'
                   : (_step == 1
-                      ? 'Wajib scan barcode Tempat Sampah ORGANIK (Hijau) terlebih dahulu'
+                      ? (_qrAnorganik.isNotEmpty
+                          ? 'Lanjutkan scan barcode Tempat Sampah ORGANIK (Hijau)'
+                          : 'Wajib scan barcode Tempat Sampah ORGANIK (Hijau) terlebih dahulu')
                       : 'Lanjutkan scan barcode Tempat Sampah ANORGANIK (Kuning)'),
           style: const TextStyle(
             fontSize: 12,
@@ -579,31 +692,39 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           textAlign: TextAlign.center,
         ),
         if (isBoth) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           _buildStepCard(
             title: '1. Tempat Sampah Organik',
             subtitle: _qrOrganik.isNotEmpty
-                ? 'Terpindai: ${_qrOrganik.length > 16 ? _qrOrganik.substring(_qrOrganik.length - 16) : _qrOrganik}'
+                ? 'ID: ${_formatDisplayCode(_qrOrganik)}'
                 : (_step == 1
                     ? 'Arahkan kamera ke stiker Organik (Hijau)'
-                    : 'Menunggu pemindaian'),
+                    : 'Ketuk untuk beralih dan scan tempat sampah ini'),
             color: AppColors.organicColor,
             icon: Icons.eco_rounded,
             isCompleted: _qrOrganik.isNotEmpty,
             isActive: _step == 1 && _qrOrganik.isEmpty,
+            onTap: () {
+              setState(() => _step = 1);
+              _qrScannerKey.currentState?.resetScanner();
+            },
           ),
           const SizedBox(height: 8),
           _buildStepCard(
             title: '2. Tempat Sampah Anorganik',
             subtitle: _qrAnorganik.isNotEmpty
-                ? 'Terpindai: ${_qrAnorganik.length > 16 ? _qrAnorganik.substring(_qrAnorganik.length - 16) : _qrAnorganik}'
+                ? 'ID: ${_formatDisplayCode(_qrAnorganik)}'
                 : (_step == 2
                     ? 'Arahkan kamera ke stiker Anorganik (Kuning)'
-                    : 'Menunggu tahap 1 (Organik) selesai'),
+                    : 'Ketuk untuk beralih dan scan tempat sampah ini'),
             color: AppColors.nonOrganicColor,
             icon: Icons.category_rounded,
             isCompleted: _qrAnorganik.isNotEmpty,
             isActive: _step == 2 && _qrAnorganik.isEmpty,
+            onTap: () {
+              setState(() => _step = 2);
+              _qrScannerKey.currentState?.resetScanner();
+            },
           ),
         ],
         const SizedBox(height: 10),
@@ -611,16 +732,17 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           'atau masukkan ID tempat sampah secara manual di atas',
           style: TextStyle(fontSize: 11, color: AppColors.textHint),
         ),
-        if (isBoth && _step == 2) ...[
+        if (isBoth && (_qrOrganik.isNotEmpty || _qrAnorganik.isNotEmpty)) ...[
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () {
               setState(() {
-                _step = 1;
+                _step = _targetType == 'non_organic' ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
                 _bothBinsDetected = false;
               });
+              _qrScannerKey.currentState?.resetScanner();
             },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed, size: 16),
             label: const Text(
@@ -640,90 +762,144 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     required IconData icon,
     required bool isCompleted,
     required bool isActive,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isCompleted
-            ? color.withValues(alpha: 0.08)
-            : (isActive ? color.withValues(alpha: 0.04) : const Color(0xFFF7F8FA)),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCompleted || isActive ? color : Colors.grey.shade300,
-          width: isActive ? 1.5 : 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: (isCompleted || isActive ? color : Colors.grey.shade400).withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isCompleted ? Icons.check_rounded : icon,
-              color: isCompleted || isActive ? color : Colors.grey.shade500,
-              size: 16,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isCompleted
+                ? color.withValues(alpha: 0.08)
+                : (isActive ? color.withValues(alpha: 0.04) : const Color(0xFFF7F8FA)),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCompleted || isActive ? color : Colors.grey.shade300,
+              width: isCompleted || isActive ? 1.5 : 1,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isCompleted || isActive ? color : AppColors.textSecondary,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? color
+                      : (isActive ? color.withValues(alpha: 0.15) : Colors.grey.shade200),
+                  shape: BoxShape.circle,
+                  boxShadow: isCompleted
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.35),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ]
+                      : null,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
+                child: Center(
+                  child: Icon(
+                    isCompleted ? Icons.check_rounded : icon,
                     color: isCompleted
-                        ? AppColors.textPrimary
-                        : (isActive ? color : AppColors.textHint),
-                    fontWeight: isCompleted ? FontWeight.w600 : FontWeight.normal,
+                        ? Colors.white
+                        : (isActive ? color : Colors.grey.shade500),
+                    size: isCompleted ? 18 : 15,
                   ),
                 ),
-              ],
-            ),
-          ),
-          if (isActive)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'SCAN INI',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isCompleted || isActive ? color : AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isCompleted
+                            ? AppColors.textPrimary
+                            : (isActive ? color : AppColors.textHint),
+                        fontWeight: isCompleted ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-            ),
-        ],
+              const SizedBox(width: 8),
+              if (isCompleted)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 11,
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        'TERPINDAI',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (isActive)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'SCAN INI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildDetectedContent() {
-    final displayOrgId = _qrOrganik.length > 12
-        ? _qrOrganik.substring(_qrOrganik.length - 12)
-        : _qrOrganik;
-    final displayNonId = _qrAnorganik.length > 12
-        ? _qrAnorganik.substring(_qrAnorganik.length - 12)
-        : _qrAnorganik;
+    final displayOrgId = _formatDisplayCode(_qrOrganik);
+    final displayNonId = _formatDisplayCode(_qrAnorganik);
 
     return Column(
       mainAxisSize: MainAxisSize.min,

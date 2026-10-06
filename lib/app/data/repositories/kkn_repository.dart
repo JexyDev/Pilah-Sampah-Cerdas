@@ -2,6 +2,7 @@ import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
 import '../models/kelompok_qr_models.dart';
+import '../models/logbook_kkn_models.dart';
 
 /// Interface repository untuk fitur Mahasiswa KKN.
 ///
@@ -107,7 +108,34 @@ abstract class KknRepository {
 
   /// Mengambil daftar semua logbook harian milik mahasiswa yang sedang login
   /// GET /api/v1/logbook/mahasiswa
-  Future<List<Map<String, dynamic>>> getLogbookList();
+  Future<List<Map<String, dynamic>>> getLogbookList({
+    int page = 1,
+    int limit = 15,
+    String? groupId,
+    String? statusApproval,
+    String? search,
+    int? pekanKe,
+    String? tipeAktivitas,
+    String? startDate,
+    String? endDate,
+  });
+
+  /// Mengambil response paginasi logbook lengkap beserta metadata server-side
+  Future<LogbookPaginationResponse> getPaginatedLogbooks({
+    int page = 1,
+    int limit = 15,
+    String? groupId,
+    String? statusApproval,
+    String? search,
+    int? pekanKe,
+    String? tipeAktivitas,
+    String? startDate,
+    String? endDate,
+  });
+
+  /// Mengambil ringkasan statistik KPI logbook mahasiswa secara instan (<30ms)
+  /// GET /api/v1/logbook/mahasiswa/stats
+  Future<LogbookStats?> getLogbookStats({String? groupId});
 
   /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
   Future<KelompokKknData?> getKelompokKkn();
@@ -223,7 +251,7 @@ abstract class KknRepository {
 
   /// Ambil ringkasan total jam presensi KKN (Timesheet Summary)
   /// GET /api/v1/timesheet/summary
-  Future<Map<String, dynamic>> getTimesheetSummary();
+  Future<Map<String, dynamic>> getTimesheetSummary({String? studentId});
 
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
@@ -328,6 +356,26 @@ abstract class KknRepository {
 
   /// DELETE /api/v1/kkn/panen-hasil/:id
   Future<bool> deletePanenHasil(String id);
+
+  // ──────────────────────────────────────────────────────────
+  // Domain Mandiri Laporan Akhir KKN (Per-Individu)
+  // ──────────────────────────────────────────────────────────
+
+  /// Mengunggah atau merevisi dokumen Laporan Akhir KKN mandiri per-individu
+  /// POST /api/v1/kkn/laporan-akhir
+  Future<bool> submitLaporanAkhir({
+    required String judul,
+    String? deskripsi,
+    required String filePdfPath,
+  });
+
+  /// Mengambil data laporan akhir & penilaian milik mahasiswa yang sedang login
+  /// GET /api/v1/kkn/laporan-akhir/me
+  Future<Map<String, dynamic>> getLaporanAkhirMe();
+
+  /// Mengambil riwayat pengajuan/versi dokumen Laporan Akhir mahasiswa
+  /// GET /api/v1/kkn/laporan-akhir/history
+  Future<List<Map<String, dynamic>>> getLaporanAkhirHistory();
 
   // ──────────────────────────────────────────────────────────
   // Smart Multi-Zone Geofence

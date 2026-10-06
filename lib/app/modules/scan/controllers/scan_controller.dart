@@ -330,12 +330,14 @@ class ResetBinState {
   const ResetBinState({
     this.isLoading = false,
     this.result,
+    this.isJustSubmitted = false,
     this.errorCode,
     this.errorMessage,
   });
 
   final bool isLoading;
   final BinResetEntity? result;
+  final bool isJustSubmitted;
   final String? errorCode;
   final String? errorMessage;
 
@@ -368,7 +370,7 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
           jenisSampah: jenisSampah,
         );
       }
-      state = ResetBinState(result: lastResult);
+      state = ResetBinState(result: lastResult, isJustSubmitted: true);
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }
@@ -378,13 +380,30 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
     state = const ResetBinState(isLoading: true);
     try {
       final activeReq = await _binRepository.getActiveResetRequest(userId);
-      if (activeReq != null && activeReq.status == BinResetStatus.pending) {
-        state = ResetBinState(result: activeReq);
+      if (activeReq != null &&
+          (activeReq.status == BinResetStatus.pending ||
+              activeReq.status == BinResetStatus.assigned)) {
+        state = ResetBinState(result: activeReq, isJustSubmitted: false);
       } else {
         state = const ResetBinState();
       }
     } catch (e) {
       state = const ResetBinState();
+    }
+  }
+
+  Future<bool> cancelReset(String userId, {String? binId, String? requestId}) async {
+    state = const ResetBinState(isLoading: true);
+    try {
+      await _binRepository.cancelActiveResetRequest(userId, binId: binId, requestId: requestId);
+      state = const ResetBinState();
+      return true;
+    } on BinException catch (e) {
+      state = ResetBinState(errorCode: e.code, errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = ResetBinState(errorCode: 'CANCEL_FAILED', errorMessage: e.toString());
+      return false;
     }
   }
 

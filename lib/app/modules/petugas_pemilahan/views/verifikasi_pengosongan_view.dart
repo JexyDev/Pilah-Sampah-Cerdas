@@ -349,7 +349,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
   @override
   Widget build(BuildContext context) {
     final isOrganik = _category.toLowerCase().contains('organik') && !_category.toLowerCase().contains('anorganik');
-    final categoryColor = isOrganik ? AppColors.primaryGreen : AppColors.primaryBlue;
+    final categoryColor = isOrganik ? AppColors.organicColor : AppColors.nonOrganicColor;
 
     // ─── TAHAP 1: SCANNER PENUH (FULL-SCREEN SCANNER) ────────────────────────
     if (!_isQrMatched) {

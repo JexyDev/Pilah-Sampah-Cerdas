@@ -33,15 +33,19 @@ class BinResetEntity extends Equatable {
 }
 
 /// Status pengajuan tempat sampah penuh
-enum BinResetStatus { pending, approved, rejected }
+enum BinResetStatus { pending, assigned, approved, cancelled, rejected }
 
 extension BinResetStatusExtension on BinResetStatus {
   String get displayName {
     switch (this) {
       case BinResetStatus.pending:
-        return 'Menunggu Persetujuan';
+        return 'Menunggu Konfirmasi';
+      case BinResetStatus.assigned:
+        return 'Petugas Sedang Menuju Lokasi';
       case BinResetStatus.approved:
-        return 'Disetujui';
+        return 'Selesai Dikosongkan';
+      case BinResetStatus.cancelled:
+        return 'Dibatalkan';
       case BinResetStatus.rejected:
         return 'Ditolak';
     }

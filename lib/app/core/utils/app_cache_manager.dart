@@ -89,8 +89,10 @@ class AppCacheManager {
         }
 
         if (key == 'cached_bins' ||
+            key.startsWith('cached_bins_') ||
             key.startsWith('cached_waste_logs_') ||
             key.startsWith('active_reset_request_') ||
+            key.startsWith('ai_limit_') ||
             key.startsWith('backup_hidden_history_')) {
           await storage.delete(key: key);
         }

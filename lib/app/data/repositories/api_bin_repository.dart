@@ -36,7 +36,7 @@ class ApiBinRepository implements BinRepository {
 
   @override
   Future<List<BinEntity>> getBinsByHousehold(String householdId) async {
-    const cacheKey = 'cached_bins';
+    final cacheKey = 'cached_bins_${householdId.isNotEmpty ? householdId : 'default'}';
     try {
       final response = await apiClient.dio.get(ApiEndpoints.binsMyBins);
 
@@ -48,42 +48,22 @@ class ApiBinRepository implements BinRepository {
         );
 
         final allKeys = await apiClient.secureStorage.readAll();
-        final pendingBinIds = <String>{};
+        final List<BinEntity> parsedBins = data.map((json) {
+          return _mapMyBin(json as Map<String, dynamic>);
+        }).toList();
+
+        // Sinkronisasi cache lokal pengajuan pengosongan:
+        // Hapus cache lokal jika di backend tempat sampah sudah tidak pending atau volumenya < 0.05L
         for (final entry in allKeys.entries) {
           if (entry.key.startsWith('active_reset_request_')) {
             try {
               final reqMap = jsonDecode(entry.value);
-              final status = (reqMap['status']?.toString() ?? 'PENDING')
-                  .toUpperCase();
               final binId = reqMap['binId']?.toString();
-              if (status == 'PENDING' && binId != null) {
-                pendingBinIds.add(binId);
-              }
-            } catch (e) {
-              debugPrint('Silenced error: $e');
-            }
-          }
-        }
-
-        final List<BinEntity> parsedBins = data.map((json) {
-          final bin = _mapMyBin(json as Map<String, dynamic>);
-          if (pendingBinIds.contains(bin.id) && bin.currentVolumeL >= 0.05) {
-            return bin.copyWith(isResetPending: true);
-          }
-          return bin;
-        }).toList();
-
-        // Auto-clean approved/processed reset requests jika volume tempat sampah di backend sudah 0L
-        for (final entry in allKeys.entries) {
-          if (entry.key.startsWith('active_reset_request_')) {
-            try {
-              final req = _mapResetRequest(jsonDecode(entry.value));
-              // Cari bin yang tepat sesuai binId pengajuan; skip jika tidak ditemukan
-              final matchingBin = parsedBins.where((b) => b.id == req.binId).firstOrNull;
-              if (matchingBin == null) continue; // Bin tidak ditemukan, jangan hapus pengajuan
-              // Hanya hapus pengajuan aktif jika tempat sampah telah benar-benar dikosongkan petugas (volume mendekati 0L)
-              if (matchingBin.currentVolumeL < 0.05) {
-                await apiClient.secureStorage.delete(key: entry.key);
+              if (binId != null) {
+                final matchingBin = parsedBins.where((b) => b.id == binId).firstOrNull;
+                if (matchingBin != null && (!matchingBin.isResetPending || matchingBin.currentVolumeL < 0.05)) {
+                  await apiClient.secureStorage.delete(key: entry.key);
+                }
               }
             } catch (e) {
               debugPrint('Silenced error: $e');
@@ -751,22 +731,22 @@ class ApiBinRepository implements BinRepository {
         if (response.statusCode == 200 && response.data?['data'] is List) {
           final List list = response.data['data'] as List;
           final pending = list.cast<Map<String, dynamic>>().where(
-            (r) => (r['status'] ?? '').toString().toUpperCase() == 'PENDING',
+            (r) {
+              final st = (r['status'] ?? '').toString().toUpperCase();
+              return st == 'PENDING' || st == 'ASSIGNED';
+            },
           );
           if (pending.isNotEmpty) {
             return _mapResetRequest(pending.first);
           } else {
-            // Cek apakah ada pengajuan aktif di local storage yang baru saja disetujui / selesai
-            final cachedStr = await apiClient.secureStorage.read(
-              key: 'active_reset_request_$userId',
-            );
-            if (cachedStr != null) {
-              await apiClient.secureStorage.delete(
-                key: 'active_reset_request_$userId',
-              );
-              // ponytail: notifikasi selesai pengosongan dikirim murni via backend FCM
-              return null;
+            // Jika backend menyatakan tidak ada pengajuan pending, bersihkan seluruh cache pengajuan lokal user ini
+            final allKeys = await apiClient.secureStorage.readAll();
+            for (final entry in allKeys.entries) {
+              if (entry.key.startsWith('active_reset_request_') && entry.key.contains(userId)) {
+                await apiClient.secureStorage.delete(key: entry.key);
+              }
             }
+            return null;
           }
         }
       } catch (e) {
@@ -803,6 +783,80 @@ class ApiBinRepository implements BinRepository {
       debugPrint('Silenced error: $e');
     }
     return null;
+  }
+
+  @override
+  Future<void> cancelActiveResetRequest(String userId, {String? binId, String? requestId}) async {
+    // 1. Jika ada binId, gunakan endpoint direct resmi backend: PUT /api/v1/bins/:binId/cancel-reset
+    if (binId != null && binId.isNotEmpty) {
+      try {
+        await apiClient.dio.put(
+          ApiEndpoints.binsCancelByBinId(binId),
+          data: {'reason': 'Dibatalkan oleh warga'},
+        );
+      } on DioException catch (dioErr) {
+        final errorCode = dioErr.response?.data?['error']?.toString();
+        // Jika 404 / NO_ACTIVE_RESET_REQUEST, berarti di backend tempat sampah memang sudah tidak memiliki pengajuan aktif
+        if (errorCode == 'NO_ACTIVE_RESET_REQUEST' || dioErr.response?.statusCode == 404) {
+          debugPrint('[BinRepository] Tidak ada pengajuan aktif untuk bin $binId');
+        } else {
+          final errorMsg = dioErr.response?.data?['message']?.toString() ??
+              dioErr.response?.data?['error']?.toString() ??
+              'Gagal membatalkan pengajuan tempat sampah di server.';
+          throw BinException(errorCode ?? 'CANCEL_FAILED', errorMsg);
+        }
+      } catch (e) {
+        if (e is BinException) rethrow;
+        throw BinException('CANCEL_FAILED', 'Gagal membatalkan pengajuan tempat sampah: $e');
+      }
+
+      // ✅ ISOLASI CACHE: HANYA HAPUS CACHE TEMPAT SAMPAH INI
+      await apiClient.secureStorage.delete(
+        key: 'active_reset_request_${userId}_$binId',
+      );
+      // Dilarang menghapus active_reset_request_$userId agar tidak mengganggu status tempat sampah lain milik warga!
+      return;
+    }
+
+    // 2. Jika ada requestId spesifik tapi binId tidak ada
+    if (requestId != null && requestId.isNotEmpty) {
+      try {
+        await apiClient.dio.put(
+          ApiEndpoints.binsResetCancel(requestId),
+          data: {'reason': 'Dibatalkan oleh warga'},
+        );
+      } on DioException catch (dioErr) {
+        final errorCode = dioErr.response?.data?['error']?.toString();
+        if (errorCode == 'NO_ACTIVE_RESET_REQUEST' || dioErr.response?.statusCode == 404) {
+          debugPrint('[BinRepository] Tidak ada pengajuan aktif untuk request $requestId');
+        } else {
+          final errorMsg = dioErr.response?.data?['message']?.toString() ??
+              dioErr.response?.data?['error']?.toString() ??
+              'Gagal membatalkan pengajuan tempat sampah di server.';
+          throw BinException(errorCode ?? 'CANCEL_FAILED', errorMsg);
+        }
+      } catch (e) {
+        if (e is BinException) rethrow;
+        throw BinException('CANCEL_FAILED', 'Gagal membatalkan pengajuan tempat sampah: $e');
+      }
+
+      // Bersihkan safe storage terkait requestId ini saja
+      final allKeys = await apiClient.secureStorage.readAll();
+      for (final entry in allKeys.entries) {
+        if (entry.key.startsWith('active_reset_request_') && entry.key.contains(userId)) {
+          try {
+            final data = jsonDecode(entry.value);
+            if (data['id']?.toString() == requestId) {
+              await apiClient.secureStorage.delete(key: entry.key);
+            }
+          } catch (_) {}
+        }
+      }
+      return;
+    }
+
+    // 3. Jika kedua binId dan requestId null, tolak eksekusi massal tanpa identitas spesifik
+    debugPrint('[BinRepository] cancelActiveResetRequest dipanggil tanpa binId atau requestId. Pembatalan massal dilarang.');
   }
 
   @override
@@ -979,9 +1033,15 @@ class ApiBinRepository implements BinRepository {
         json['isResetPending'] == true ||
         json['isPendingReset'] == true ||
         json['resetRequestStatus']?.toString().toUpperCase() == 'PENDING' ||
+        json['resetRequestStatus']?.toString().toUpperCase() == 'ASSIGNED' ||
         json['resetStatus']?.toString().toUpperCase() == 'PENDING' ||
+        json['resetStatus']?.toString().toUpperCase() == 'ASSIGNED' ||
         json['status']?.toString().toUpperCase() == 'RESET_PENDING' ||
         json['status']?.toString().toUpperCase() == 'PENDING PENGOSONGAN';
+
+    final String? activeResetRequestId =
+        json['activeResetRequestId']?.toString() ??
+        json['resetRequestId']?.toString();
 
     return BinEntity(
       id: json['id']?.toString() ?? '',
@@ -996,6 +1056,7 @@ class ApiBinRepository implements BinRepository {
       rw: json['rw']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       isResetPending: isResetPending,
+      activeResetRequestId: activeResetRequestId,
       isActive:
           (json['isActive'] as bool?) ??
           (json['enabled'] as bool?) ??
@@ -1012,8 +1073,16 @@ class ApiBinRepository implements BinRepository {
     final statusStr = (json['status']?.toString() ?? 'PENDING').toUpperCase();
     BinResetStatus status;
     switch (statusStr) {
+      case 'ASSIGNED':
+        status = BinResetStatus.assigned;
+        break;
       case 'APPROVED':
+      case 'COMPLETED':
         status = BinResetStatus.approved;
+        break;
+      case 'CANCELLED':
+      case 'CANCELED':
+        status = BinResetStatus.cancelled;
         break;
       case 'REJECTED':
         status = BinResetStatus.rejected;
