@@ -336,12 +336,59 @@ export const DashboardEksekutifKkn: React.FC = () => {
     const fetchLogs = async () => {
       setLoadingDplDetailLogs(true);
       try {
-        const res = await dplActivityLogService.getActivityLogs({
-          search: selectedDplForDetailLogbook.name,
-          limit: 100,
-        });
+        const groups = selectedDplForDetailLogbook.kelompok || [];
+        let items: DplActivityLogItem[] = [];
+
+        // 1. Ambil logbook berdasarkan kelompok binaan DPL
+        if (groups.length > 0) {
+          const results = await Promise.all(
+            groups.map((g: any) =>
+              dplActivityLogService
+                .getActivityLogs({
+                  groupId: g.id,
+                  limit: 100,
+                })
+                .catch(() => null)
+            )
+          );
+          results.forEach((res) => {
+            if (res?.items && Array.isArray(res.items)) {
+              items.push(...res.items);
+            }
+          });
+        }
+
+        // 2. Jika via groupId masih kosong (atau kelompok tidak terpetakan), ambil list dan filter by dplId / dplNama
+        if (items.length === 0) {
+          const fallbackRes = await dplActivityLogService
+            .getActivityLogs({
+              limit: 200,
+            })
+            .catch(() => null);
+
+          if (fallbackRes?.items) {
+            items = fallbackRes.items.filter((item: any) => {
+              if (item.dplId && item.dplId === selectedDplForDetailLogbook.id) return true;
+              if (
+                item.dplNama &&
+                selectedDplForDetailLogbook.name &&
+                (item.dplNama.toLowerCase().includes(selectedDplForDetailLogbook.name.toLowerCase()) ||
+                  selectedDplForDetailLogbook.name.toLowerCase().includes(item.dplNama.toLowerCase()))
+              ) {
+                return true;
+              }
+              if (groups.some((g: any) => g.id === item.kelompokId)) return true;
+              return false;
+            });
+          }
+        }
+
+        // 3. Deduplikasi dan urutkan dari tanggal terbaru
+        const uniqueItems = Array.from(new Map(items.map((i) => [i.id, i])).values());
+        uniqueItems.sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+
         if (!isCancelled) {
-          setDplDetailLogs(res.items || []);
+          setDplDetailLogs(uniqueItems);
         }
       } catch (err) {
         console.error("Gagal memuat logbook aktivitas DPL:", err);
