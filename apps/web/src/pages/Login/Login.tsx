@@ -1,37 +1,17 @@
 /**
- * Project: TrashCare Login Page (Modern Clean 2-Column Split Layout & HD Vector Logo)
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * Project: TrashCare Login Page (BERSEKA.ID Modern Clean 2-Column Responsive Design)
+ * Acuan Desain: docs/login-berseka.html & Mockup Resmi BERSEKA.ID
+ * Copyright (c) 2026 Universitas Komputer Indonesia & Kecamatan Coblong.
  */
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  Lock,
-  EyeOff,
-  Eye,
-  AlertTriangle,
-  RefreshCcw,
-  Phone,
-  LogIn,
-  Download,
-  ShieldAlert,
-} from "lucide-react";
+import { Download } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useThemeStore } from "../../store/useThemeStore";
 import showToast from "../../utils/showToast";
 
-// Official High-Resolution BERSEKA Full Logo Asset
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-10 sm:h-11 w-auto" }) => (
-  <img
-    src="/logos/berseka/berseka-logo-full.png"
-    alt="BERSEKA"
-    className={`${className} object-contain shrink-0`}
-  />
-);
-
-// Hanya menerima format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx
-// Minimal 9 digit, maksimal 14 digit.
+// Format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx atau NIM / NIP DPL
 const PHONE_REGEX = /^\+628[0-9]\d{6,11}$/;
 
 function normalizePhone(val: string): string {
@@ -84,26 +64,31 @@ const Login: React.FC = () => {
   }, []);
 
   const handleIdentifierBlur = () => {
-    const normalized = normalizePhone(identifier);
-    if (normalized !== identifier && normalized) setIdentifier(normalized);
-    if (!normalized) {
-      setIdentifierError("Nomor HP wajib diisi");
-    } else if (!isPhoneValid(normalized)) {
-      setIdentifierError("Format nomor HP tidak valid (Contoh: 08123456789 atau +628123456789)");
-    } else {
-      setIdentifierError("");
+    const raw = identifier.trim();
+    if (!raw) {
+      setIdentifierError("Nomor HP wajib diisi.");
+      return;
     }
+    const normalized = normalizePhone(raw);
+    if (!isPhoneValid(normalized)) {
+      setIdentifierError("Masukkan nomor HP yang diawali 08, berisi 10–13 angka.");
+      return;
+    }
+    setIdentifierError("");
   };
 
   const handlePasswordBlur = () => {
     const trimmed = password.trim();
-    if (!trimmed) { setPasswordError("Kata sandi wajib diisi"); return; }
-    if (trimmed.length < 6) { setPasswordError("Kata sandi salah. Silakan coba lagi."); return; }
+    if (!trimmed) {
+      setPasswordError("Kata sandi wajib diisi.");
+      return;
+    }
+    if (trimmed.length < 6) {
+      setPasswordError("Kata sandi salah. Silakan coba lagi.");
+      return;
+    }
     setPasswordError("");
   };
-
-  const isFormInvalid = !identifier.trim() || !password.trim() || !!identifierError || !!passwordError;
-  const isBtnDisabled = isStoreLoading || isLocalLoading || isFormInvalid;
 
   const triggerToast = (message: string, type: "error" | "warning" | "server" | "network" = "error") => {
     if (type === "warning") {
@@ -117,30 +102,33 @@ const Login: React.FC = () => {
     if (e) e.preventDefault();
     if (isStoreLoading || isLocalLoading) return;
 
-    const idVal = normalizePhone(identifier);
-    if (idVal !== identifier) setIdentifier(idVal);
-    const passVal = password.trim();
+    const rawId = identifier.trim();
     let hasError = false;
 
-    if (!idVal) {
-      setIdentifierError("Nomor HP wajib diisi");
+    if (!rawId) {
+      setIdentifierError("Nomor HP wajib diisi.");
       hasError = true;
-    } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid (Contoh: 08123456789 atau +628123456789)");
-      hasError = true;
+    } else {
+      const normalized = normalizePhone(rawId);
+      if (!isPhoneValid(normalized)) {
+        setIdentifierError("Masukkan nomor HP yang diawali 08, berisi 10–13 angka.");
+        hasError = true;
+      }
     }
 
-    if (!passVal) { 
-      setPasswordError("Kata sandi wajib diisi"); 
-      hasError = true; 
+    const passVal = password.trim();
+    if (!passVal) {
+      setPasswordError("Kata sandi wajib diisi.");
+      hasError = true;
     } else if (passVal.length < 6) {
-      setPasswordError("Kata sandi salah. Silakan coba lagi."); 
-      hasError = true; 
-    } else { 
-      setPasswordError(""); 
+      setPasswordError("Kata sandi salah. Silakan coba lagi.");
+      hasError = true;
     }
 
     if (hasError) return;
+
+    const idVal = normalizePhone(rawId);
+    if (idVal !== identifier) setIdentifier(idVal);
 
     setIsLocalLoading(true);
     const success = await login(idVal, passVal, rememberMe);
@@ -165,9 +153,8 @@ const Login: React.FC = () => {
       };
       const displayRole = user?.peran ? (roleLabelMap[user.peran] || user.peran) : "Pengguna";
       const displayName = user?.name || displayRole;
-      
-      showToast.success(`Selamat datang kembali, ${displayName}!`);
 
+      showToast.success(`Selamat datang kembali, ${displayName}!`);
       navigate("/dasbor");
     } else {
       const storeErr = useAuthStore.getState().error;
@@ -200,262 +187,271 @@ const Login: React.FC = () => {
     }
   };
 
+  const isLoading = isStoreLoading || isLocalLoading;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-100 p-4 sm:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#f2f8fd] text-[#0f2142] flex items-center justify-center p-3 sm:p-6 md:p-10 relative overflow-x-hidden font-sans">
+      {/* Background Soft Radial Blobs */}
+      <div className="fixed w-[60vw] h-[60vw] -left-[25vw] -bottom-[30vw] rounded-full bg-[radial-gradient(closest-side,#dcefff_0%,rgba(220,239,255,0)_100%)] pointer-events-none z-0" />
+      <div className="fixed w-[50vw] h-[50vw] -right-[20vw] -top-[25vw] rounded-full bg-[radial-gradient(closest-side,#dcefff_0%,rgba(220,239,255,0)_100%)] pointer-events-none z-0" />
 
-      {/* Background Decorative Blur Spheres */}
-      <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-300/30 blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
-
-      {/* Main Split Container Card */}
-      <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
-
-        {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
-        <div className="hidden md:flex md:col-span-6 bg-gradient-to-br from-[#035941] via-[#024633] to-[#013325] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
-          {/* Background Decorative Animated Element */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-[#58A621]/20 rounded-full blur-3xl pointer-events-none animate-float" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0468BF]/15 rounded-full blur-3xl pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
-
-          <div className="relative z-10 space-y-6 my-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-extrabold tracking-wide shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#58A621] animate-pulse shrink-0"></span>
-              <span>Web Monitoring BERSEKA</span>
-            </div>
-
-            <div className="space-y-3">
-              <h2 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white">
-                Bersih, Sehat,<br />Kampung Asri.
-              </h2>
-              <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Sistem pemantauan dan tata kelola sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) dalam kerangka kegiatan KKN Berdampak Universitas Komputer Indonesia dan Pemerintah Kecamatan Coblong.
-              </p>
-            </div>
-
-            {/* Feature Highlights Showcase List */}
-            <div className="pt-4 space-y-3 border-t border-white/15">
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">analytics</span>
-                </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Pemantauan Real-Time</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan berat sampah organik &amp; anorganik.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">stars</span>
-                </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Transparansi Audit Poin</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Buku besar poin terpisah bagi insentif warga.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">handshake</span>
-                </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Sinergi Berkelanjutan</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Kolaborasi pemerintah daerah, kampus &amp; warga.</p>
-                </div>
-              </div>
-            </div>
+      {/* Main Container Card (53% Left Hero / 47% Right Auth) */}
+      <main className="relative z-10 w-full max-w-[1360px] bg-white rounded-[22px] overflow-hidden shadow-[0_30px_70px_-30px_rgba(31,73,125,0.25),0_2px_6px_rgba(31,73,125,0.05)] grid grid-cols-1 lg:grid-cols-[53fr_47fr] animate-fade-in-up">
+        
+        {/* ===== Panel Kiri: Hero Ilustrasi ===== */}
+        <section aria-label="Tentang BERSEKA" className="relative flex flex-col bg-gradient-to-b from-[#dceefc] via-[#edf6fe] to-[#eef6fd] min-h-[460px] lg:min-h-[640px]">
+          <div className="pt-8 sm:pt-10 md:pt-12 lg:pt-16 px-6 sm:px-8 md:px-12 lg:px-16 z-2 relative text-left">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold tracking-[-0.035em] leading-[1.08] text-[#0f2142] m-0">
+              Bersih, Sehat,
+              <span className="block text-[#16894f]">Kampung Asri.</span>
+            </h2>
+            <p className="mt-4 sm:mt-5 max-w-[34ch] text-sm sm:text-base md:text-lg text-[#4b6283] leading-relaxed font-normal">
+              Bersama membangun lingkungan yang lebih bersih melalui BERSEKA.
+            </p>
           </div>
 
-          <div className="pt-4 relative z-10 text-[11px] text-emerald-200/80 font-medium">
-            © 2026 Universitas Komputer Indonesia. All Rights Reserved.
+          <div className="mt-auto relative leading-none w-full">
+            <picture>
+              <source srcSet="/image/ilustrasi-kkn.webp" type="image/webp" />
+              <img
+                src="/image/ilustrasi-kkn.jpg"
+                alt="Ilustrasi Pemilahan Sampah Mahasiswa KKN BERSEKA"
+                className="w-full h-auto block object-cover max-h-[300px] lg:max-h-none [mask-image:linear-gradient(180deg,transparent_0%,#000_14%)] [-webkit-mask-image:linear-gradient(180deg,transparent_0%,#000_14%)]"
+                loading="eager"
+              />
+            </picture>
           </div>
-        </div>
 
-        {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-6 p-5 sm:p-8 md:p-10 flex flex-col justify-between bg-white space-y-6">
+          <p className="m-0 py-3 px-6 sm:px-8 md:px-10 text-xs sm:text-[0.85rem] font-medium text-[#0f2142] bg-gradient-to-b from-[#f1ecef] to-[#f6f3f5] text-left">
+            KKN Berdampak UNIKOM · Kecamatan Coblong
+          </p>
+        </section>
 
-          <div className="space-y-5">
+        {/* ===== Panel Kanan: Form Login ===== */}
+        <section className="flex flex-col p-6 sm:p-9 md:p-12 lg:p-14 bg-white text-left justify-between">
+          
+          {/* Header Bar: Logo & Link Beranda */}
+          <div className="flex items-center justify-between gap-4">
+            <Link to="/" aria-label="BERSEKA.ID beranda" className="inline-flex items-center gap-2 text-[#0f2142] no-underline group">
+              <svg viewBox="0 0 42 56" fill="none" className="w-8 h-10 sm:w-10 sm:h-12 shrink-0 transition-transform group-hover:scale-105" aria-hidden="true">
+                <path d="M13 6C17 2.5 31 1.5 32 11c.7 6.5-5 9.5-8.5 10.6C31 22 37 26.5 36 35c-1.2 10-13 15-22.5 12.5" stroke="#0f2142" strokeWidth="3.6" strokeLinecap="round"/>
+                <path d="M13 6c-3 4-1.5 9 .5 14 2.8 7.2.8 19-5 32" stroke="#0f2142" strokeWidth="3.6" strokeLinecap="round"/>
+                <path d="M14.5 44.5C13 34 18.5 26 30 24.5 31.5 35 25.5 43 14.5 44.5Z" fill="#2fa65a"/>
+                <path d="M15.5 43.5C19 37 23 31.5 28 27" stroke="#fff" strokeWidth="1.6" strokeLinecap="round"/>
+                <path d="M14 21c1.5-5 6-8 12-8.5-.6 5.5-5 8.6-12 8.5Z" fill="#7cc95b"/>
+              </svg>
+              <span className="text-xl sm:text-2xl font-extrabold tracking-[0.04em] text-[#0f2142]">
+                BERSEKA<span className="text-[#16894f]">.ID</span>
+              </span>
+            </Link>
 
-            {/* Header Brand Block */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <Link to="/" className="flex items-center gap-2 group">
-                <BersekaLogoIcon className="h-10 sm:h-11 w-auto transition-transform group-hover:scale-105 shrink-0" />
-              </Link>
+            <Link to="/" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#16894f] hover:underline hover:underline-offset-4 transition-all">
+              <span><span className="hidden sm:inline">Kembali ke </span>Beranda</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+                <path d="M7 17 17 7M8 7h9v9"/>
+              </svg>
+            </Link>
+          </div>
 
-              <Link to="/" className="text-xs font-extrabold text-[#035941] hover:text-[#024633] transition">
-                Kembali ke Beranda →
-              </Link>
-            </div>
+          {/* Body: Form Login */}
+          <div className="w-full max-w-[560px] mx-auto lg:mx-0 mt-6 sm:mt-8 md:mt-10">
+            <h1 className="text-2xl sm:text-3xl md:text-[2.25rem] font-extrabold tracking-[-0.03em] leading-tight text-[#0f2142] m-0">
+              Selamat datang kembali
+            </h1>
+            <p className="mt-2 text-sm sm:text-base text-[#7d8ea6]">
+              Masuk untuk mengakses layanan BERSEKA.
+            </p>
 
-            <div className="space-y-2 text-left pt-1">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Akun</h1>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
-              </p>
-            </div>
-
-            {/* Warning Khusus iOS Safari untuk Mahasiswa KKN */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-rose-50/80 to-amber-50/70 border border-rose-200/90 shadow-xs flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-600 mt-0.5">
-                <ShieldAlert size={18} />
-              </div>
-              <div className="space-y-0.5 text-left min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-xs font-black text-rose-900 tracking-tight">
-                    Khusus Mahasiswa KKN
-                  </p>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white tracking-wider">
-                    Wajib iPhone &amp; Safari
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-700 leading-snug font-medium">
-                  Portal presensi &amp; logbook mahasiswa hanya dapat diakses melalui peramban resmi <strong className="text-slate-900 font-extrabold">Apple iPhone (Safari)</strong>. Akses via Android / non-Safari otomatis diblokir sistem.
-                </p>
-              </div>
-            </div>
-
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-4 text-left">
-
-              {/* Phone Input */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Nomor Telepon
+            <form onSubmit={handleSubmit} noValidate className="mt-6 sm:mt-8 space-y-5">
+              
+              {/* Field 1: Nomor HP */}
+              <div>
+                <label htmlFor="phone" className="block font-bold text-sm sm:text-[1.02rem] text-[#0f2142] mb-2">
+                  Nomor HP
                 </label>
-                <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="relative flex items-center">
+                  <svg className="absolute left-4 sm:left-5 w-5 h-5 sm:w-6 sm:h-6 text-[#8796ab] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z"/>
+                  </svg>
                   <input
-                    id="login-phone"
-                    autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#035941] focus:ring-2 focus:ring-[#035941]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
-                    placeholder="08123456789 atau +6281234567890"
-                    type="text"
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="Contoh: 081234567890"
+                    maxLength={15}
                     value={identifier}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^\d+]/g, "");
+                      let val = e.target.value.replace(/[^\d+]/g, '');
+                      if (val.startsWith('+62')) val = '0' + val.slice(3);
+                      val = val.replace(/\D/g, '');
                       setIdentifier(val);
                       if (val.trim()) setIdentifierError("");
                     }}
-                    onKeyDown={(e) => {
-                      if (e.ctrlKey || e.metaKey) return;
-                      const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"];
-                      if (!/^[0-9+]$/.test(e.key) && !allowed.includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
                     onBlur={handleIdentifierBlur}
-                    disabled={isStoreLoading || isLocalLoading}
+                    disabled={isLoading}
+                    className={`w-full h-12 sm:h-14 pl-12 sm:pl-16 pr-4 sm:pr-6 bg-white text-[#0f2142] placeholder-[#8a99ae] text-base font-medium rounded-[11px] border-[1.5px] outline-none transition-all shadow-[0_1px_2px_rgba(15,33,66,0.04)] ${
+                      identifierError
+                        ? "border-[#c93a3a] focus:ring-4 focus:ring-[#c93a3a]/15"
+                        : "border-[#dfe6ee] focus:border-[#138861] focus:ring-4 focus:ring-[#138861]/15"
+                    }`}
                   />
                 </div>
-
                 {identifierError && (
-                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
-                    <AlertTriangle size={11} />
+                  <p className="mt-2 text-xs sm:text-sm font-semibold text-[#c93a3a]">
                     {identifierError}
                   </p>
                 )}
               </div>
 
-              {/* Password Input */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Kata Sandi
+              {/* Field 2: Kata Sandi */}
+              <div>
+                <label htmlFor="password" className="block font-bold text-sm sm:text-[1.02rem] text-[#0f2142] mb-2">
+                  Kata sandi
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="relative flex items-center">
+                  <svg className="absolute left-4 sm:left-5 w-5 h-5 sm:w-6 sm:h-6 text-[#8796ab] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="4.5" y="10.5" width="15" height="11" rx="2.5"/>
+                    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+                  </svg>
                   <input
-                    id="login-password"
+                    id="password"
+                    name="password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#035941] focus:ring-2 focus:ring-[#035941]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
-                    placeholder="Masukkan kata sandi akun"
                     type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); if (e.target.value.trim()) setPasswordError(""); }}
-                    onBlur={handlePasswordBlur}
-                    disabled={isStoreLoading || isLocalLoading}
                     autoComplete="current-password"
+                    placeholder="Masukkan kata sandi"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (e.target.value.trim()) setPasswordError("");
+                    }}
+                    onBlur={handlePasswordBlur}
+                    disabled={isLoading}
+                    className={`w-full h-12 sm:h-14 pl-12 sm:pl-16 pr-12 sm:pr-14 bg-white text-[#0f2142] placeholder-[#8a99ae] text-base font-medium rounded-[11px] border-[1.5px] outline-none transition-all shadow-[0_1px_2px_rgba(15,33,66,0.04)] ${
+                      passwordError
+                        ? "border-[#c93a3a] focus:ring-4 focus:ring-[#c93a3a]/15"
+                        : "border-[#dfe6ee] focus:border-[#138861] focus:ring-4 focus:ring-[#138861]/15"
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 transition cursor-pointer"
-                    disabled={isStoreLoading || isLocalLoading}
-                    title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
+                    className="absolute right-3 sm:right-4 w-9 h-9 flex items-center justify-center text-[#5d6f88] hover:bg-[#f1f5f9] rounded-lg transition-colors cursor-pointer"
+                    aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
+                        <path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.6M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/>
+                        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
+                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
-
                 {passwordError && (
-                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
-                    <AlertTriangle size={11} />
+                  <p className="mt-2 text-xs sm:text-sm font-semibold text-[#c93a3a]">
                     {passwordError}
                   </p>
                 )}
               </div>
 
-              {/* Row: Ingat Saya */}
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={rememberMe}
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      rememberMe
-                        ? "bg-[#035941] border-[#035941] text-white shadow-xs"
-                        : "bg-white border-slate-300 hover:border-[#035941]"
-                    }`}
-                  >
+              {/* Checkbox: Ingat Saya */}
+              <div className="pt-1">
+                <label className="inline-flex items-center gap-3 cursor-pointer select-none font-semibold text-sm sm:text-base text-[#0f2142]">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span className={`w-6 h-6 rounded-md border-[1.5px] flex items-center justify-center transition-all ${
+                    rememberMe ? "bg-[#138861] border-[#138861]" : "border-[#dfe6ee] bg-white hover:border-[#138861]"
+                  }`}>
                     {rememberMe && (
-                      <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
-                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white">
+                        <path d="m5 12.5 4.5 4.5L19 7.5"/>
                       </svg>
                     )}
-                  </button>
-                  <label
-                    className="text-xs text-slate-600 font-bold select-none cursor-pointer flex items-center gap-1"
-                    onClick={() => setRememberMe(!rememberMe)}
-                  >
-                    <span>Ingat Saya</span>
-                  </label>
-                </div>
+                  </span>
+                  <span>Ingat saya</span>
+                </label>
               </div>
 
-              {/* Submit Button */}
+              {/* Tombol Submit */}
               <button
                 type="submit"
-                id="login-submit-btn"
-                disabled={isBtnDisabled}
-                className="w-full h-12 bg-[#035941] hover:bg-[#024633] text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-[#035941]/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-4 cursor-pointer"
+                id="submitBtn"
+                disabled={isLoading}
+                className="w-full h-12 sm:h-14 flex items-center justify-center gap-3 font-bold text-base sm:text-lg text-white bg-[#138861] hover:bg-[#0e6e4e] rounded-[11px] border-0 cursor-pointer shadow-[0_10px_22px_-12px_rgba(19,136,97,0.75)] active:translate-y-px transition-all disabled:opacity-75 disabled:cursor-wait"
               >
-                {isLocalLoading || isStoreLoading ? (
-                  <><RefreshCcw className="animate-spin" size={16} /><span>Memproses...</span></>
+                {isLoading ? (
+                  <>
+                    <span className="w-5 h-5 rounded-full border-3 border-white/40 border-t-white animate-spin" aria-hidden="true" />
+                    <span>Memproses…</span>
+                  </>
                 ) : (
-                  <><LogIn size={18} /><span>Masuk</span></>
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6" aria-hidden="true">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                      <path d="M10 17l5-5-5-5"/>
+                      <path d="M15 12H3"/>
+                    </svg>
+                    <span>Masuk</span>
+                  </>
                 )}
               </button>
             </form>
+
+            {/* Warning Notice Box: Khusus Mahasiswa KKN */}
+            <aside role="note" className="flex gap-4 mt-6 p-4 sm:p-5 bg-[#fff8e9] border border-[#f6e4b8] rounded-xl text-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 text-[#e48d02] mt-0.5" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 11v6"/>
+                <circle cx="12" cy="7.5" r=".6" fill="currentColor"/>
+              </svg>
+              <div className="space-y-1">
+                <div className="flex items-center flex-wrap gap-2 sm:gap-4">
+                  <strong className="text-sm sm:text-base font-bold text-[#0f2142]">Khusus Mahasiswa KKN</strong>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fde8b6] text-[#d07c00] text-xs font-semibold">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
+                      <path d="M16.4 12.7c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1ZM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5Z"/>
+                    </svg>
+                    iPhone · Safari
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[#2f4260] leading-relaxed m-0">
+                  Presensi dan logbook hanya dapat diakses melalui <b className="text-[#0f2142] font-bold">Safari</b> di <b className="text-[#0f2142] font-bold">Apple iPhone</b>. Akses Android dan peramban lain dibatasi.
+                </p>
+              </div>
+            </aside>
           </div>
 
-        </div>
+          {/* Footer Card */}
+          <footer className="mt-8 pt-4 w-full max-w-[560px] mx-auto lg:mx-0">
+            <p className="m-0 pt-3 border-t border-[#e7ecf2] text-center text-xs sm:text-sm text-[#7d8ea6]">
+              © 2026 Universitas Komputer Indonesia
+            </p>
+          </footer>
+        </section>
 
-      </div>
+      </main>
 
       {/* Floating Action Button: Download Aplikasi Seluler APK */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-8 z-50 group flex items-center justify-center pointer-events-auto">
         <div className="relative flex items-center justify-center">
-          {/* Outer Animated Ping Ripple Effect */}
-          <span className="absolute -inset-1.5 rounded-full bg-[#035941]/30 animate-ping opacity-75 pointer-events-none" />
-          
+          <span className="absolute -inset-1.5 rounded-full bg-[#138861]/30 animate-ping opacity-75 pointer-events-none" />
           <Link
             to="/download"
-            className="relative w-12 h-12 sm:w-14 sm:h-14 bg-[#035941] hover:bg-[#024633] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#035941]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
+            className="relative w-12 h-12 sm:w-14 sm:h-14 bg-[#138861] hover:bg-[#0e6e4e] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#138861]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
             aria-label="Unduh Aplikasi Seluler BERSEKA (APK)"
           >
             <Download size={20} className="sm:w-[22px] sm:h-[22px] text-white group-hover:rotate-12 transition-transform" />
-            
-            {/* Tooltip on Hover */}
             <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800 hidden sm:block">
               Unduh Aplikasi Seluler BERSEKA (APK)
             </span>
