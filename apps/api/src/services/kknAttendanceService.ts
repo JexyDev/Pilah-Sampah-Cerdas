@@ -2402,72 +2402,30 @@ export class KknAttendanceService {
     // (misal >= 240 menit / 4 jam), mahasiswa diperbolehkan checkout tanpa harus
     // menunggu batas H-30 jam jadwal (misal pukul 15:30 WIB).
     // =========================================================================
-    if (!isAutoCheckout) {
-      const isTargetDurationMet =
-        durasiWajibMenit > 0 ? actualInZoneMins >= durasiWajibMenit : actualInZoneMins >= 240;
-
-      // 1. Cek batas minimal jam pulang berdasarkan jadwal (H-30 menit dari jam selesai kegiatan)
-      // Hanya wajib jika target durasi kerja BELUM tercapai!
-      if (!isTargetDurationMet && schedule?.time) {
-        const timeRange = parseScheduleTimeRange(schedule.time);
-        if (!timeRange.isOvernight && timeRange.endMinutesTotal > timeRange.startMinutesTotal) {
-          const nowWib = new Date(checkOutTime.getTime() + 7 * 60 * 60 * 1000);
-          const currentMinutesTotal = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
-
-          let isSameDay = true;
-          if (schedule.date) {
-            const schDateWib = new Date(new Date(schedule.date).getTime() + 7 * 60 * 60 * 1000);
-            isSameDay = schDateWib.toISOString().slice(0, 10) === nowWib.toISOString().slice(0, 10);
-          }
-
-          if (isSameDay) {
-            const minCheckoutMinutesTotal = timeRange.endMinutesTotal - 30;
-            if (currentMinutesTotal < minCheckoutMinutesTotal) {
-              const minutesRemaining = minCheckoutMinutesTotal - currentMinutesTotal;
-              const earliestHour = Math.floor(minCheckoutMinutesTotal / 60);
-              const earliestMin = minCheckoutMinutesTotal % 60;
-              const earliestTimeString = `${String(earliestHour).padStart(2, "0")}:${String(earliestMin).padStart(2, "0")} WIB`;
-              const jamPulangString = `${timeRange.jamSelesai} WIB`;
-              const currentHour = nowWib.getUTCHours();
-              const currentMin = nowWib.getUTCMinutes();
-              const currentTimeString = `${String(currentHour).padStart(2, "0")}:${String(currentMin).padStart(2, "0")} WIB`;
-
-              const errorMsg = `EARLY_CHECKOUT_RESTRICTED: Presensi pulang minimal dapat dilakukan jika durasi wajib (${durasiWajibMenit} menit) telah tercapai, atau mulai 30 menit sebelum jam pulang kegiatan (pukul ${earliestTimeString}). Jam pulang jadwal: ${jamPulangString}. Jam saat ini: ${currentTimeString}. Durasi Anda saat ini: ${actualInZoneMins} menit.`;
-              const err: any = new Error(errorMsg);
-              err.code = "EARLY_CHECKOUT_RESTRICTED";
-              err.statusCode = 422;
-              err.details = {
-                earliestCheckoutTimeString: earliestTimeString,
-                jamPulangJadwal: jamPulangString,
-                currentTimeString,
-                minutesRemaining,
-                durasiWajibMenit,
-                actualInZoneMins,
-              };
-              throw err;
-            }
-          }
-        }
-      }
-
-      // 2. Cek durasi minimal sejak check-in (wajib minimal 30 menit dari jam masuk)
-      if (attendance.attendedAt) {
-        const diffMs = checkOutTime.getTime() - new Date(attendance.attendedAt).getTime();
-        const diffMinutes = Math.floor(diffMs / (60 * 1000));
-        if (diffMinutes < 30) {
-          const minutesRemaining = 30 - diffMinutes;
-          const err: any = new Error(
-            `EARLY_CHECKOUT_RESTRICTED: Presensi pulang minimal dapat dilakukan 30 menit setelah jam masuk (waktu check-in). Anda baru berkegiatan selama ${Math.max(0, diffMinutes)} menit. Sisa waktu: ${minutesRemaining} menit lagi.`
-          );
-          err.code = "EARLY_CHECKOUT_RESTRICTED";
-          err.statusCode = 422;
-          err.details = {
-            minutesRemaining,
-            elapsedMinutes: diffMinutes,
-            minimumRequiredMinutes: 30,
-          };
-          throw err;
-        }
+    // =========================================================================
+    // Validasi Minimal Jam Pulang: Wajib Minimal 30 Menit Sejak Check-in (Jam Masuk)
+    // Mahasiswa dapat melakukan presensi pulang 30 menit setelah jam check-in.
+    // =========================================================================
+    if (!isAutoCheckout && attendance.attendedAt) {
+      const diffMs = checkOutTime.getTime() - new Date(attendance.attendedAt).getTime();
+      const diffMinutes = Math.floor(diffMs / (60 * 1000));
+      if (diffMinutes < 30) {
+        const minutesRemaining = 30 - diffMinutes;
+        const earliestDate = new Date(new Date(attendance.attendedAt).getTime() + 30 * 60 * 1000);
+        const earliestWib = new Date(earliestDate.getTime() + 7 * 60 * 60 * 1000);
+        const earliestTimeString = `${String(earliestWib.getUTCHours()).padStart(2, "0")}:${String(earliestWib.getUTCMinutes()).padStart(2, "0")} WIB`;
+        const err: any = new Error(
+          `EARLY_CHECKOUT_RESTRICTED: Presensi pulang minimal dapat dilakukan 30 menit setelah jam masuk (waktu check-in). Jam presensi pulang dibuka mulai pukul ${earliestTimeString}. Anda baru berkegiatan selama ${Math.max(0, diffMinutes)} menit. Sisa waktu: ${minutesRemaining} menit lagi.`
+        );
+        err.code = "EARLY_CHECKOUT_RESTRICTED";
+        err.statusCode = 422;
+        err.details = {
+          minutesRemaining,
+          elapsedMinutes: diffMinutes,
+          minimumRequiredMinutes: 30,
+          earliestCheckoutTimeString: earliestTimeString,
+        };
+        throw err;
       }
     }
 
@@ -3671,6 +3629,10 @@ export class KknAttendanceService {
       };
     });
 
+    if (studentId && summary.length > 1) {
+      summary.sort((a, b) => (a.studentId === studentId ? -1 : b.studentId === studentId ? 1 : 0));
+    }
+
     return {
       targetRules: {
         hariKerja: config.hariKerja || "Senin - Jumat",
@@ -3970,21 +3932,22 @@ export class KknAttendanceService {
         } else if (att.status === "TIDAK_ADA_KEGIATAN" || att.status === "SKIP_KEGIATAN") {
           statusKehadiran = "TIDAK_ADA_KEGIATAN";
           isMemenuhiDurasi = false;
+        } else if (att.status === "HADIR_MEMENUHI") {
+          statusKehadiran = "HADIR_MEMENUHI";
+          isMemenuhiDurasi = true;
         } else if (
-          att.status === "HADIR_MEMENUHI" ||
           att.status === "HADIR_TIDAK_MEMENUHI" ||
-          att.status === "SELESAI_TELAT" ||
+          att.status === "SELESAI_TELAT"
+        ) {
+          statusKehadiran = "HADIR_TIDAK_MEMENUHI";
+          isMemenuhiDurasi = false;
+        } else if (
           att.checkOutAt ||
           att.status === "HADIR" ||
           att.status === "SELESAI"
         ) {
-          if (att.status === "SELESAI_TELAT") {
-            statusKehadiran = "HADIR_TIDAK_MEMENUHI";
-            isMemenuhiDurasi = false;
-          } else {
-            statusKehadiran = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
-            isMemenuhiDurasi = isMemenuhi;
-          }
+          statusKehadiran = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+          isMemenuhiDurasi = isMemenuhi;
         } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
           isMemenuhiDurasi = isMemenuhi;
@@ -4148,41 +4111,23 @@ export class KknAttendanceService {
       const jedaMins = isSkip ? 0 : calculateTotalJedaMinutes(att as any);
       const jedaFormatted = formatDurasiMenitIndo(jedaMins);
 
-      // Waktu minimal diperbolehkan presensi pulang (H-30 menit dari jam selesai)
-      let earliestCheckoutTimeString = "15:30 WIB";
+      // Presensi pulang dapat dilakukan minimal 30 menit setelah jam check-in (waktu masuk)
+      let earliestCheckoutTimeString = "30 Menit Setelah Check-In";
       let earliestCheckoutTime: string | null = null;
-      let canCheckoutNow = true;
+      let canCheckoutNow = false;
 
-      const parsedSchRange = parseScheduleTimeRange(sch.time);
-      if (
-        !parsedSchRange.isOvernight &&
-        parsedSchRange.endMinutesTotal > parsedSchRange.startMinutesTotal
-      ) {
-        const minCheckoutMins = parsedSchRange.endMinutesTotal - 30;
-        const eHour = Math.floor(minCheckoutMins / 60);
-        const eMin = minCheckoutMins % 60;
+      const effectiveAttendedAt = att?.attendedAt || todayMandiri?.checkInAt || null;
+      if (effectiveAttendedAt) {
+        const attDate = new Date(effectiveAttendedAt);
+        const earliestDate = new Date(attDate.getTime() + 30 * 60 * 1000);
+        earliestCheckoutTime = earliestDate.toISOString();
+        const earliestWib = new Date(earliestDate.getTime() + 7 * 60 * 60 * 1000);
+        const eHour = earliestWib.getUTCHours();
+        const eMin = earliestWib.getUTCMinutes();
         earliestCheckoutTimeString = `${String(eHour).padStart(2, "0")}:${String(eMin).padStart(2, "0")} WIB`;
 
-        const schDateBase = sch.date ? new Date(sch.date) : new Date();
-        const baseWib = new Date(schDateBase.getTime() + 7 * 60 * 60 * 1000);
-        const targetDateUtc = new Date(
-          Date.UTC(
-            baseWib.getUTCFullYear(),
-            baseWib.getUTCMonth(),
-            baseWib.getUTCDate(),
-            eHour - 7,
-            eMin,
-            0,
-            0
-          )
-        );
-        earliestCheckoutTime = targetDateUtc.toISOString();
-
-        const nowWibTime = new Date(Date.now() + 7 * 60 * 60 * 1000);
-        const nowTotalMins = nowWibTime.getUTCHours() * 60 + nowWibTime.getUTCMinutes();
-        // Mahasiswa dapat checkout jika waktu sekarang sudah >= H-30 menit jam pulang,
-        // ATAU jika durasi kerja di zona posko sudah mencapai target wajib (misal >= 240 menit).
-        canCheckoutNow = nowTotalMins >= minCheckoutMins || isMemenuhi;
+        const diffMinutes = Math.floor((Date.now() - attDate.getTime()) / (60 * 1000));
+        canCheckoutNow = diffMinutes >= 30;
       }
 
       return {
@@ -4223,6 +4168,7 @@ export class KknAttendanceService {
         actualInZoneMinutes,
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
+        jedaLogs: (att?.jedaLogs as any[]) || [],
         attendedAt: att?.attendedAt
           ? att.attendedAt.toISOString()
           : (todayMandiri?.checkInAt ? todayMandiri.checkInAt.toISOString() : null),
@@ -4231,7 +4177,7 @@ export class KknAttendanceService {
           : (todayMandiri?.checkOutAt ? todayMandiri.checkOutAt.toISOString() : null),
         earliestCheckoutTime,
         earliestCheckoutTimeString,
-        canCheckoutNow: (todayMandiri && !att) ? (actualInZoneMinutes >= 30) : canCheckoutNow,
+        canCheckoutNow,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",
