@@ -431,7 +431,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     }
   }
 
-  /// Mendaftarkan Tong Komunal (Khusus Petugas)
+  /// Mendaftarkan Tempat Sampah Komunal (Khusus Petugas)
   @override
   Future<Map<String, dynamic>> registerKomunalBin({
     required List<String> qrCodes,
@@ -458,7 +458,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         }
         return {'success': true};
       }
-      throw Exception('Gagal mendaftarkan tong komunal.');
+      throw Exception('Gagal mendaftarkan tempat sampah komunal.');
     } on DioException catch (e) {
       debugPrint('=========================================');
       debugPrint('[ApiPetugasPemilahanRepository] ERROR registerKomunalBin');

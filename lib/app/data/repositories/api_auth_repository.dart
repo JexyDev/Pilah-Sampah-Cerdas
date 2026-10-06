@@ -1280,7 +1280,6 @@ class ApiAuthRepository implements AuthRepository {
       fullAddress = filteredParts.join(', ');
     }
 
-<<<<<<< Updated upstream
     // 11. Ekstrak data profil Petugas Residu/Pemilahan jika ada
     final pp = userMap['petugasProfile'] is Map
         ? (userMap['petugasProfile'] as Map<String, dynamic>)
@@ -1300,7 +1299,7 @@ class ApiAuthRepository implements AuthRepository {
         pp?['zona_ditugaskan']?.toString() ??
         userMap['assignedZone']?.toString() ??
         '';
-=======
+
     // Ekstraksi pendamping secara aman dan konsisten dengan Web & Backend baru
     String? resolvedPendampingName;
     if (userMap['pendampingName'] != null &&
@@ -1322,7 +1321,6 @@ class ApiAuthRepository implements AuthRepository {
         resolvedPendampingName.toLowerCase() == 'null') {
       resolvedPendampingName = null;
     }
->>>>>>> Stashed changes
 
     return UserEntity(
       id: userMap['id']?.toString() ?? '',

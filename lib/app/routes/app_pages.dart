@@ -45,6 +45,7 @@ import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../modules/petugas_pemilahan/views/ganti_password_petugas_view.dart';
 import '../modules/petugas_pemilahan/views/edit_profil_petugas_view.dart';
+import '../modules/petugas_pemilahan/views/aktivasi_tempat_sampah_komunal_view.dart';
 import 'app_routes.dart';
 
 import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
@@ -191,6 +192,8 @@ class AppPages {
         return _buildRoute(const EditProfilPetugasView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
+      case AppRoutes.aktivasiTempatSampahKomunal:
+        return _buildRoute(const AktivasiTempatSampahKomunalView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
         return _buildRoute(const MonitoringDampakKelurahanView(), settings);
       case AppRoutes.registerPosko:

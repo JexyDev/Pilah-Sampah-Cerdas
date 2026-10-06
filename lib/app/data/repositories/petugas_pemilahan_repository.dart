@@ -56,7 +56,7 @@ abstract class PetugasPemilahanRepository {
     double? longitude,
   });
 
-  /// Mendaftarkan Tong Komunal (Khusus Petugas)
+  /// Mendaftarkan Tempat Sampah Komunal (Khusus Petugas)
   Future<Map<String, dynamic>> registerKomunalBin({
     required List<String> qrCodes,
     required double latitude,

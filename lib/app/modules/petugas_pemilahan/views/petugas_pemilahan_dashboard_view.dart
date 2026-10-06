@@ -14,7 +14,6 @@ import '../controllers/petugas_pemilahan_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'petugas_notification_view.dart';
 import 'pengajuan_warga_view.dart';
-import 'aktivasi_tong_komunal_view.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
@@ -939,10 +938,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   ),
                   const SizedBox(height: 10),
                   
-                  // ── Menu Aktivasi Tong Komunal (Baru) ────────────────────────
+                  // ── Menu Aktivasi Tempat Sampah Komunal (Baru) ───────────────
                   GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AktivasiTongKomunalView()),
+                    onTap: () => Navigator.of(context).pushNamed(
+                      AppRoutes.aktivasiTempatSampahKomunal,
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -972,7 +971,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  'Daftarkan lokasi dan QR Code tong khusus organik di posko',
+                                  'Daftarkan lokasi dan QR Code tempat sampah khusus organik di posko',
                                   style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                                 ),
                               ],

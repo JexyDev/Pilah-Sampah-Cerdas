@@ -8,18 +8,18 @@ import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/providers/repository_providers.dart';
 
-/// Aktivasi Tong Komunal (Role Petugas Pemilahan / Residu)
+/// Aktivasi Tempat Sampah Komunal (Role Petugas Pemilahan / Residu)
 /// Tampilan menyatu (Unified Layout): Scanner QR, Lokasi GPS, dan Form Alamat TPS dalam 1 halaman scrollable.
-class AktivasiTongKomunalView extends ConsumerStatefulWidget {
-  const AktivasiTongKomunalView({super.key});
+class AktivasiTempatSampahKomunalView extends ConsumerStatefulWidget {
+  const AktivasiTempatSampahKomunalView({super.key});
 
   @override
-  ConsumerState<AktivasiTongKomunalView> createState() =>
-      _AktivasiTongKomunalViewState();
+  ConsumerState<AktivasiTempatSampahKomunalView> createState() =>
+      _AktivasiTempatSampahKomunalViewState();
 }
 
-class _AktivasiTongKomunalViewState
-    extends ConsumerState<AktivasiTongKomunalView> {
+class _AktivasiTempatSampahKomunalViewState
+    extends ConsumerState<AktivasiTempatSampahKomunalView> {
   final GlobalKey<QrScannerWidgetState> _scannerKey =
       GlobalKey<QrScannerWidgetState>();
   final TextEditingController _addressController = TextEditingController();
@@ -90,12 +90,12 @@ class _AktivasiTongKomunalViewState
   /// Ambil koordinat GPS realtime dan auto-fill alamat TPS via reverse geocoding
   Future<void> _fetchGps() async {
     if (!PlatformUtils.isMobile) {
-      debugPrint('[AktivasiTongKomunal] Skip GPS: Platform bukan mobile');
+      debugPrint('[AktivasiTempatSampahKomunal] Skip GPS: Platform bukan mobile');
       return;
     }
     if (!mounted) return;
 
-    debugPrint('[AktivasiTongKomunal] Memulai pencarian sinyal GPS realtime...');
+    debugPrint('[AktivasiTempatSampahKomunal] Memulai pencarian sinyal GPS realtime...');
     setState(() => _gpsLoading = true);
 
     try {
@@ -107,7 +107,7 @@ class _AktivasiTongKomunalViewState
       );
 
       debugPrint(
-        '[AktivasiTongKomunal] GPS BERHASIL DIKUNCI: Lat: ${position.latitude}, Lng: ${position.longitude}',
+        '[AktivasiTempatSampahKomunal] GPS BERHASIL DIKUNCI: Lat: ${position.latitude}, Lng: ${position.longitude}',
       );
 
       if (mounted) {
@@ -118,12 +118,12 @@ class _AktivasiTongKomunalViewState
 
         // Auto-fill alamat dari GPS jika field masih kosong
         if (_addressController.text.trim().isEmpty) {
-          debugPrint('[AktivasiTongKomunal] Reverse Geocoding alamat dari GPS...');
+          debugPrint('[AktivasiTempatSampahKomunal] Reverse Geocoding alamat dari GPS...');
           final addr = await LocationService.instance.getAddressFromCoordinates(
             position.latitude,
             position.longitude,
           );
-          debugPrint('[AktivasiTongKomunal] Hasil alamat GPS: "$addr"');
+          debugPrint('[AktivasiTempatSampahKomunal] Hasil alamat GPS: "$addr"');
           if (addr != null && addr.isNotEmpty && mounted) {
             setState(() {
               _addressController.text = addr;
@@ -132,7 +132,7 @@ class _AktivasiTongKomunalViewState
         }
       }
     } catch (e, stack) {
-      debugPrint('[AktivasiTongKomunal] PERINGATAN/ERROR GPS: $e\n$stack');
+      debugPrint('[AktivasiTempatSampahKomunal] PERINGATAN/ERROR GPS: $e\n$stack');
       if (mounted) {
         _showErrorSnackBar(
             'Gagal mengunci GPS akurat. Pastikan Anda berada di area terbuka.');
@@ -145,7 +145,7 @@ class _AktivasiTongKomunalViewState
   }
 
   void _showErrorSnackBar(String message) {
-    debugPrint('[AktivasiTongKomunal] SnackBar Error: $message');
+    debugPrint('[AktivasiTempatSampahKomunal] SnackBar Error: $message');
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +159,7 @@ class _AktivasiTongKomunalViewState
   }
 
   void _showSuccessSnackBar(String message) {
-    debugPrint('[AktivasiTongKomunal] SnackBar Sukses: $message');
+    debugPrint('[AktivasiTempatSampahKomunal] SnackBar Sukses: $message');
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -173,10 +173,10 @@ class _AktivasiTongKomunalViewState
   }
 
   Future<bool> _onQrDetected(String detected) async {
-    debugPrint('[AktivasiTongKomunal] EVENT: QR Terdeteksi: "$detected"');
+    debugPrint('[AktivasiTempatSampahKomunal] EVENT: QR Terdeteksi: "$detected"');
 
     if (_isLoading || _qrCode.isNotEmpty) {
-      debugPrint('[AktivasiTongKomunal] Ignored scan: loading=$_isLoading, existingQr=$_qrCode');
+      debugPrint('[AktivasiTempatSampahKomunal] Ignored scan: loading=$_isLoading, existingQr=$_qrCode');
       return false;
     }
 
@@ -188,14 +188,14 @@ class _AktivasiTongKomunalViewState
 
     if (!isOrganicPattern) {
       debugPrint(
-        '[AktivasiTongKomunal] PERINGATAN: QR Ditolak! Pola "$detected" tidak mengandung pattern organik.',
+        '[AktivasiTempatSampahKomunal] PERINGATAN: QR Ditolak! Pola "$detected" tidak mengandung pattern organik.',
       );
-      _showErrorSnackBar('Harap scan QR untuk tong Organik');
+      _showErrorSnackBar('Harap scan QR untuk Tempat Sampah Organik');
       _scannerKey.currentState?.resetScanner();
       return false;
     }
 
-    debugPrint('[AktivasiTongKomunal] SUKSES: QR Valid "$detected"');
+    debugPrint('[AktivasiTempatSampahKomunal] SUKSES: QR Valid "$detected"');
 
     setState(() {
       _qrCode = detected.trim();
@@ -209,11 +209,11 @@ class _AktivasiTongKomunalViewState
   }
 
   Future<void> _submit() async {
-    debugPrint('[AktivasiTongKomunal] Memulai submit aktivasi...');
+    debugPrint('[AktivasiTempatSampahKomunal] Memulai submit aktivasi...');
 
     if (_qrCode.isEmpty) {
-      debugPrint('[AktivasiTongKomunal] Submit gagal: QR Code belum dipindai');
-      _showErrorSnackBar('Silakan scan QR Code Tong terlebih dahulu.');
+      debugPrint('[AktivasiTempatSampahKomunal] Submit gagal: QR Code belum dipindai');
+      _showErrorSnackBar('Silakan scan QR Code Tempat Sampah terlebih dahulu.');
       return;
     }
 
@@ -221,14 +221,14 @@ class _AktivasiTongKomunalViewState
     final lng = _lng;
 
     if (PlatformUtils.isMobile && (lat == null || lng == null)) {
-      debugPrint('[AktivasiTongKomunal] Submit gagal: Sinyal GPS belum terkunci');
+      debugPrint('[AktivasiTempatSampahKomunal] Submit gagal: Sinyal GPS belum terkunci');
       _showErrorSnackBar('Sinyal GPS belum terkunci. Mohon tunggu atau pindah ke luar ruangan.');
       _fetchGps();
       return;
     }
 
     debugPrint(
-      '[AktivasiTongKomunal] Mengirim request ke backend: qrCodes=[$_qrCode], lat=$lat, lng=$lng, address="${_addressController.text.trim()}"',
+      '[AktivasiTempatSampahKomunal] Mengirim request ke backend: qrCodes=[$_qrCode], lat=$lat, lng=$lng, address="${_addressController.text.trim()}"',
     );
 
     setState(() => _isLoading = true);
@@ -243,13 +243,13 @@ class _AktivasiTongKomunalViewState
         address: _addressController.text.trim(),
       );
 
-      debugPrint('[AktivasiTongKomunal] SUKSES: Backend merespons OK!');
+      debugPrint('[AktivasiTempatSampahKomunal] SUKSES: Backend merespons OK!');
       if (mounted) {
-        _showSuccessSnackBar('Tong Komunal TPS berhasil diaktifkan!');
+        _showSuccessSnackBar('Tempat Sampah Komunal TPS berhasil diaktifkan!');
         Navigator.of(context).pop(true);
       }
     } catch (e, stack) {
-      debugPrint('[AktivasiTongKomunal] ERROR REGISTER BIN: $e\n$stack');
+      debugPrint('[AktivasiTempatSampahKomunal] ERROR REGISTER BIN: $e\n$stack');
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
       if (mounted) {
         setState(() {
@@ -266,7 +266,9 @@ class _AktivasiTongKomunalViewState
 
   @override
   Widget build(BuildContext context) {
-    final bool isReadyToSubmit = _qrCode.isNotEmpty && !_isLoading && (!PlatformUtils.isMobile || (_lat != null && _lng != null));
+    final bool isReadyToSubmit = _qrCode.isNotEmpty &&
+        !_isLoading &&
+        (!PlatformUtils.isMobile || (_lat != null && _lng != null));
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -295,9 +297,9 @@ class _AktivasiTongKomunalViewState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── 1. SCAN QR CODE TONG ORGANIK ──
+                // ── 1. SCAN QR CODE TEMPAT SAMPAH ORGANIK ──
                 const Text(
-                  '1. Scan QR Code Tong Organik',
+                  '1. Scan QR Code Tempat Sampah Organik',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -341,7 +343,7 @@ class _AktivasiTongKomunalViewState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'QR Terdeteksi:',
+                                'QR Tempat Sampah Terdeteksi:',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -363,7 +365,7 @@ class _AktivasiTongKomunalViewState
                           icon: const Icon(Icons.refresh_rounded, color: AppColors.warningOrange),
                           tooltip: 'Scan Ulang',
                           onPressed: () {
-                            debugPrint('[AktivasiTongKomunal] Reset scan QR oleh user');
+                            debugPrint('[AktivasiTempatSampahKomunal] Reset scan QR oleh user');
                             setState(() {
                               _qrCode = '';
                             });
@@ -490,7 +492,7 @@ class _AktivasiTongKomunalViewState
                   child: Text(
                     _isLoading
                         ? 'Memproses...'
-                        : 'Aktifkan Tong Komunal',
+                        : 'Aktifkan Tempat Sampah Komunal',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -505,7 +507,7 @@ class _AktivasiTongKomunalViewState
             const Positioned.fill(
               child: ColoredBox(
                 color: Colors.black26,
-                child: AppLoading(message: 'Mengaktifkan tong komunal...'),
+                child: AppLoading(message: 'Mengaktifkan tempat sampah komunal...'),
               ),
             ),
         ],

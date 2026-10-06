@@ -47,6 +47,7 @@ void main() {
       AppRoutes.riwayatPetugasPemilahan,
       AppRoutes.petugasPemilahanGantiPassword,
       AppRoutes.pengajuanWarga,
+      AppRoutes.aktivasiTempatSampahKomunal,
       AppRoutes.monitoringDampakKelurahan,
       AppRoutes.registerPosko,
       AppRoutes.registerFasilitas,
