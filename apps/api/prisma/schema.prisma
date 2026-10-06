@@ -367,6 +367,7 @@ model Bin {
   binType               String?           @map("tipe_wadah")
   deskripsiLokasi       String?           @map("deskripsi_lokasi")
   tipeKepemilikan       String?           @default("RUMAH_TANGGA") @map("tipe_kepemilikan")
+  isCommunal            Boolean           @default(false) @map("is_communal")
   binOwnerships         BinOwnership[]
   violations            Violation[]
   binResetRequests      BinResetRequest[]
@@ -1479,6 +1480,7 @@ enum FacilityType {
 enum OwnershipType {
   UTAMA
   TAMBAHAN
+  KOMUNAL
 }
 
 enum DispatchStatus {

@@ -58,6 +58,22 @@ router.post(
 
 /**
  * @swagger
+ * /api/v1/bins/komunal:
+ *   post:
+ *     summary: Aktivasi Tong Komunal TPS (Khusus Petugas Residu)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/komunal",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU", "PETUGAS"]),
+  binController.registerKomunalBin
+);
+
+/**
+ * @swagger
  * /api/v1/bins/{id}:
  *   put:
  *     summary: Update a bin
