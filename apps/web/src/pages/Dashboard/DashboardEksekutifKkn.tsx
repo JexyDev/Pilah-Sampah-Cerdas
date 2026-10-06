@@ -40,6 +40,9 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
+  Eye,
+  BookOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -59,6 +62,8 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
+import { dplActivityLogService, type DplActivityLogItem } from "../../services/dplActivityLogService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 import { isTestKelompok, isTestStudent, isTestUser } from "../../utils/filterTestingUtils";
@@ -305,7 +310,51 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [dplLogbookModalTab, setDplLogbookModalTab] = useState<"TERISI" | "KOSONG">("TERISI");
   const [dplModalSearchQuery, setDplModalSearchQuery] = useState("");
   const [dplModalPage, setDplModalPage] = useState(1);
-  const DPL_MODAL_PER_PAGE = 8;
+  const [dplModalPerPage, setDplModalPerPage] = useState<number>(10);
+
+  // Modal Drilldown: Detail Riwayat Aktivitas Logbook DPL Spesifik
+  const [selectedDplForDetailLogbook, setSelectedDplForDetailLogbook] = useState<{
+    id: string;
+    name: string;
+    nip: string;
+    phone: string | null;
+    email: string | null;
+    programStudi: string;
+    totalLog: number;
+    totalJam: number;
+    kelompok: Array<{ id: string; name: string; kelurahan: string; cakupanRw: any }>;
+  } | null>(null);
+  const [dplDetailLogs, setDplDetailLogs] = useState<DplActivityLogItem[]>([]);
+  const [loadingDplDetailLogs, setLoadingDplDetailLogs] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDplForDetailLogbook) {
+      setDplDetailLogs([]);
+      return;
+    }
+    let isCancelled = false;
+    const fetchLogs = async () => {
+      setLoadingDplDetailLogs(true);
+      try {
+        const res = await dplActivityLogService.getActivityLogs({
+          search: selectedDplForDetailLogbook.name,
+          limit: 100,
+        });
+        if (!isCancelled) {
+          setDplDetailLogs(res.items || []);
+        }
+      } catch (err) {
+        console.error("Gagal memuat logbook aktivitas DPL:", err);
+        if (!isCancelled) setDplDetailLogs([]);
+      } finally {
+        if (!isCancelled) setLoadingDplDetailLogs(false);
+      }
+    };
+    fetchLogs();
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedDplForDetailLogbook]);
 
 
 
@@ -483,11 +532,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
     });
   }, [currentDplSourceList, dplModalSearchQuery]);
 
-  const totalDplModalPages = Math.ceil(filteredDplList.length / DPL_MODAL_PER_PAGE) || 1;
+  const totalDplModalPages = dplModalPerPage === 0 ? 1 : Math.ceil(filteredDplList.length / dplModalPerPage) || 1;
   const paginatedDplList = useMemo(() => {
-    const start = (dplModalPage - 1) * DPL_MODAL_PER_PAGE;
-    return filteredDplList.slice(start, start + DPL_MODAL_PER_PAGE);
-  }, [filteredDplList, dplModalPage]);
+    if (dplModalPerPage === 0) return filteredDplList;
+    const start = (dplModalPage - 1) * dplModalPerPage;
+    return filteredDplList.slice(start, start + dplModalPerPage);
+  }, [filteredDplList, dplModalPage, dplModalPerPage]);
 
   const fetchData = async (isSilent = false) => {
     try {
@@ -3771,12 +3821,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         <th className="py-2.5 px-3.5 text-center">
                           {dplLogbookModalTab === "TERISI" ? "Aktivitas Bimbingan" : "Status Pengisian"}
                         </th>
+                        <th className="py-2.5 px-3.5 text-center w-28">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {paginatedDplList.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
+                          <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
                             {dplModalSearchQuery
                               ? "Tidak ditemukan dosen pembimbing dengan kata kunci tersebut."
                               : dplLogbookModalTab === "TERISI"
@@ -3786,7 +3837,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         </tr>
                       ) : (
                         paginatedDplList.map((dpl, idx) => {
-                          const realIndex = (dplModalPage - 1) * DPL_MODAL_PER_PAGE + idx + 1;
+                          const realIndex =
+                            dplModalPerPage === 0
+                              ? idx + 1
+                              : (dplModalPage - 1) * dplModalPerPage + idx + 1;
                           return (
                             <tr key={dpl.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                               <td className="py-2.5 px-3.5 text-center text-slate-400 font-mono">
@@ -3863,6 +3917,21 @@ export const DashboardEksekutifKkn: React.FC = () => {
                                   </span>
                                 )}
                               </td>
+                              <td className="py-2.5 px-3.5 text-center">
+                                {dpl.totalLog > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedDplForDetailLogbook(dpl)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-2xs hover:shadow-xs transition cursor-pointer"
+                                    title={`Lihat rincian logbook aktivitas bimbingan ${dpl.name}`}
+                                  >
+                                    <Eye size={12} />
+                                    <span>Detail Logbook</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px] italic">Tidak Ada</span>
+                                )}
+                              </td>
                             </tr>
                           );
                         })
@@ -3872,19 +3941,55 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 </div>
 
                 {/* Pagination Controls */}
-                {totalDplModalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
                     <span>
-                      Menampilkan {Math.min((dplModalPage - 1) * DPL_MODAL_PER_PAGE + 1, filteredDplList.length)} -{" "}
-                      {Math.min(dplModalPage * DPL_MODAL_PER_PAGE, filteredDplList.length)} dari{" "}
-                      {filteredDplList.length} DPL
+                      Menampilkan{" "}
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        {filteredDplList.length === 0
+                          ? 0
+                          : dplModalPerPage === 0
+                          ? 1
+                          : (dplModalPage - 1) * dplModalPerPage + 1}
+                      </strong>{" "}
+                      –{" "}
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        {dplModalPerPage === 0
+                          ? filteredDplList.length
+                          : Math.min(dplModalPage * dplModalPerPage, filteredDplList.length)}
+                      </strong>{" "}
+                      dari{" "}
+                      <strong className="text-slate-800 dark:text-slate-200">{filteredDplList.length}</strong> DPL
                     </span>
+
+                    {/* Per Page Selector */}
+                    <div className="flex items-center gap-1.5 ml-2">
+                      <span className="text-slate-400">| Per hal:</span>
+                      <select
+                        value={dplModalPerPage}
+                        onChange={(e) => {
+                          setDplModalPerPage(Number(e.target.value));
+                          setDplModalPage(1);
+                        }}
+                        aria-label="Jumlah DPL per halaman"
+                        className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 outline-none font-bold cursor-pointer"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={0}>Semua</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {dplModalPerPage > 0 && totalDplModalPages > 1 && (
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         disabled={dplModalPage === 1}
                         onClick={() => setDplModalPage((p) => Math.max(1, p - 1))}
                         className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                        title="Halaman Sebelumnya"
                       >
                         <ChevronLeft size={14} />
                       </button>
@@ -3896,27 +4001,208 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         disabled={dplModalPage === totalDplModalPages}
                         onClick={() => setDplModalPage((p) => Math.min(totalDplModalPages, p + 1))}
                         className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                        title="Halaman Selanjutnya"
                       >
                         <ChevronRight size={14} />
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Modal Footer */}
             <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 shrink-0">
               <Link
-                to="/monitoring-kegiatan/logbook?role=dpl"
+                to="/log-aktivitas-dpl"
                 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5"
               >
-                <span>Buka Detail Modul Logbook DPL</span>
+                <span>Buka Modul Lengkap Log Aktivitas DPL</span>
                 <ChevronRight size={14} />
               </Link>
               <button
                 type="button"
                 onClick={() => setShowDplLogbookModal(false)}
+                className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Drilldown: Rincian Riwayat Logbook Aktivitas DPL */}
+      {selectedDplForDetailLogbook && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>Riwayat Aktivitas: {selectedDplForDetailLogbook.name}</span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      {selectedDplForDetailLogbook.totalLog} Logbook
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    NIP: {selectedDplForDetailLogbook.nip || "-"} • Prodi: {selectedDplForDetailLogbook.programStudi || "-"} • Total {selectedDplForDetailLogbook.totalJam} Jam Bimbingan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDplForDetailLogbook(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {loadingDplDetailLogs ? (
+                <div className="py-16 text-center text-slate-400">
+                  <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    Memuat riwayat logbook aktivitas bimbingan...
+                  </p>
+                </div>
+              ) : dplDetailLogs.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <AlertCircle size={32} className="mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Belum ada riwayat aktivitas logbook yang ditemukan.
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Dosen pembimbing belum menginput atau data logbook sedang dalam sinkronisasi.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {dplDetailLogs.map((log, index) => (
+                    <div
+                      key={log.id || index}
+                      className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-700 transition"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                            {log.tanggalFormatted || log.tanggal}
+                          </span>
+                          <span className="text-slate-300 dark:text-slate-600">•</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                            {log.waktuLengkap || `${log.waktuMulai} - ${log.waktuSelesai}`}
+                          </span>
+                          <span className="text-slate-300 dark:text-slate-600">•</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                            {log.kategori || "Bimbingan"}
+                          </span>
+                          {log.pekanKe && (
+                            <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              Pekan ke-{log.pekanKe}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                            {log.durasi || `${log.durasiMenit || 0} menit`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                            Kelompok & Lokasi
+                          </p>
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">
+                            {log.kelompokNama || "-"} {log.kelurahan ? `(Kel. ${log.kelurahan})` : ""}
+                          </p>
+                          <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
+                            {log.lokasi || log.tempat || "-"}
+                          </p>
+                        </div>
+                        {log.programKerjaDeskripsi && (
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Program Kerja Terkait
+                            </p>
+                            <p className="text-slate-700 dark:text-slate-300 font-medium">
+                              {log.programKerjaDeskripsi}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                          <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
+                            Uraian / Ringkasan Aktivitas:
+                          </p>
+                          <p className="text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                            {log.deskripsi || log.ringkasanAktivitas || log.uraianKegiatan || "-"}
+                          </p>
+                        </div>
+
+                        {(log.hasilTindakLanjut || log.arahanEvaluasi) && (
+                          <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-lg">
+                            <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 mb-1">
+                              Arahan & Tindak Lanjut DPL:
+                            </p>
+                            <p className="text-emerald-900 dark:text-emerald-200 leading-relaxed whitespace-pre-wrap">
+                              {log.hasilTindakLanjut || log.arahanEvaluasi}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Foto Bukti */}
+                        {(log.fotoBuktiUrl || log.bukti) && (
+                          <div className="pt-2">
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                              <ImageIcon size={12} />
+                              <span>Foto Bukti Kegiatan</span>
+                            </p>
+                            <a
+                              href={resolveImageUrl(log.fotoBuktiUrl || log.bukti)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:ring-2 hover:ring-emerald-500 transition cursor-pointer"
+                            >
+                              <img
+                                src={resolveImageUrl(log.fotoBuktiUrl || log.bukti)}
+                                alt="Bukti Kegiatan DPL"
+                                className="w-32 h-20 object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 shrink-0">
+              <Link
+                to="/log-aktivitas-dpl"
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5"
+              >
+                <span>Buka di Halaman Modul Lengkap Log Aktivitas DPL</span>
+                <ChevronRight size={14} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSelectedDplForDetailLogbook(null)}
                 className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
               >
                 Tutup
