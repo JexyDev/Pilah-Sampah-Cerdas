@@ -504,6 +504,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           }
           setActiveSession((prev: any) => prev || {
             id: primary.id,
+            scheduleId: primary.id,
             jamMasuk: primary.attendedAt || new Date().toISOString(),
             deskripsiKegiatan: primary.namaKegiatan,
             status: "BERLANGSUNG",
@@ -518,6 +519,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           }
           setActiveSession((prev: any) => prev || {
             id: primary.id,
+            scheduleId: primary.id,
             jamMasuk: primary.attendedAt || new Date().toISOString(),
             deskripsiKegiatan: primary.namaKegiatan,
             status: "TERJEDA",
@@ -839,40 +841,36 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           const errCode = errResp?.error || errResp?.code;
           const errMsg = errResp?.message || "";
 
-          // Jika mahasiswa juga punya presensi mandiri aktif, jangan abort return jika official gagal
-          const hasMandiriFallback = Boolean(
-            activeSession &&
-            (activeSession.id || activeSession.presensiId) &&
-            !activeSession.scheduleId
-          );
-
+          // Jika gagal karena aturan minimal 30 menit setelah jam masuk
           if (
             officialErr?.response?.status === 422 ||
             errCode === "EARLY_CHECKOUT_RESTRICTED"
           ) {
-            if (!hasMandiriFallback) {
-              showToast.error(
-                errMsg || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
-              );
-              setIsSubmitting(false);
-              return;
-            }
+            showToast.error(
+              errMsg || "Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (check-in)."
+            );
+            setIsSubmitting(false);
+            return;
           }
 
           if (
             errCode === "OUT_OF_GEOFENCE" ||
             errMsg.includes("OUT_OF_GEOFENCE")
           ) {
-            if (!hasMandiriFallback) {
-              // Bersihkan prefix teknis 'OUT_OF_GEOFENCE:' jika ada
-              const cleanMsg = errMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
-              showToast.error(
-                cleanMsg || "Gagal check-out: Posisi Anda berada di luar area posko KKN. Presensi pulang wajib dilakukan di area posko sebelum meninggalkan lokasi.",
-                { duration: 7000 }
-              );
-              setIsSubmitting(false);
-              return;
-            }
+            // Bersihkan prefix teknis 'OUT_OF_GEOFENCE:' jika ada
+            const cleanMsg = errMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
+            showToast.error(
+              cleanMsg || "Gagal check-out: Posisi Anda berada di luar area posko KKN. Presensi pulang wajib dilakukan di area posko sebelum meninggalkan lokasi.",
+              { duration: 7000 }
+            );
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (errMsg) {
+            showToast.error(errMsg);
+            setIsSubmitting(false);
+            return;
           }
         }
       }
@@ -1325,7 +1323,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-center">
             {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString ? (
               <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold leading-relaxed">
-                ⏳ Presensi pulang dibuka setelah target <b>{primaryKegiatan.durasiWajibMenit || 240} menit</b> tercapai atau mulai pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b>.
+                ⏳ Presensi pulang dibuka minimal 30 menit setelah jam masuk (mulai pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b>).
               </p>
             ) : (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -1743,7 +1741,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
                   {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString && (
                     <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
-                      ⚠️ Peringatan: Jam pulang minimal adalah pukul {primaryKegiatan.earliestCheckoutTimeString}. Jika Anda checkout lebih awal, presensi dapat ditolak oleh sistem.
+                      ⚠️ Peringatan: Presensi pulang baru dibuka mulai pukul {primaryKegiatan.earliestCheckoutTimeString} (minimal 30 menit setelah jam masuk).
                     </div>
                   )}
 
