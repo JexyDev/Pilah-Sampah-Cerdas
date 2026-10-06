@@ -329,7 +329,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
               </>
             ) : selectedSource === "WARGA_APP" ? (
               <>
-                Menampilkan berat sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
+                Menampilkan berat sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI di 24 RW wilayah binaan KKN. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
               </>
             ) : (
               <>
@@ -723,7 +723,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
             {selectedSource === "WARGA_APP" ? (
               <>
-                <strong>Prinsip Anti-Misleading Data:</strong> Pada tab Aktivitas Warga, angka aktual mencerminkan sampah terpilah mandiri rumah tangga melalui BERSEKA Vision AI (cakupan adopsi sistem), bukan penurunan timbulan fisik kecamatan (±38 ton/hari). Sisanya tetap diangkut melalui jalur penanganan konvensional TPS/TPA.
+                <strong>Prinsip Anti-Misleading Data:</strong> Pada tab Aktivitas Warga, baseline timbulan (1.670,5 kg/hari) mengacu pada <strong>24 RW Wilayah Binaan KKN</strong>. Angka aktual mencerminkan sampah terpilah mandiri rumah tangga melalui pemindaian QR &amp; BERSEKA Vision AI (menunjukkan tingkat adopsi mandiri dan reduksi sampah langsung di sumbernya).
               </>
             ) : (
               <>

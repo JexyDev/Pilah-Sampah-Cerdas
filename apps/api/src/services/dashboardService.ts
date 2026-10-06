@@ -994,11 +994,20 @@ export const dashboardService = {
         const anorg = anorgRaw > 10000 ? 0 : anorgRaw;
         const res = Number(b.volumeSampah.residuKgPerHari || 0);
 
-        // Utamakan total volume resmi survei KKN (termasuk residu dan skala kelurahan)
+        // Utamakan total volume resmi survei KKN (skala wilayah binaan percontohan KKN 24 RW)
         if (totalVol > 0) {
-          // Normalisasi khusus Lebak Siliwangi jika hanya terdata sampling mikro 20 kg (sampah daun Saraga belum terkonversi)
           if (normK.includes("lebaksiliwangi") && totalVol <= 50) {
-            baselineKg = 2628.0; // Standar BPS: 4.172 jiwa x 0,63 kg/hari
+            baselineKg = 96.5; // Pilot baseline area binaan KKN
+          } else if (normK.includes("dago") && totalVol > 5000) {
+            baselineKg = 122.0; // Normalisasi skala area binaan KKN 4 RW
+          } else if (normK.includes("cipaganti") && totalVol > 1000) {
+            baselineKg = 96.0; // Normalisasi skala area binaan KKN 2 RW
+          } else if (normK.includes("lebakgede") && totalVol > 1000) {
+            baselineKg = 100.0; // Normalisasi skala area binaan KKN 3 RW
+          } else if (normK.includes("sekeloa") && totalVol > 5000) {
+            baselineKg = 421.0; // Normalisasi skala area binaan KKN 5 RW
+          } else if (normK.includes("sadangserang") && totalVol > 5000) {
+            baselineKg = 835.0; // Normalisasi skala area binaan KKN 8 RW
           } else {
             baselineKg = Number(totalVol.toFixed(2));
           }
