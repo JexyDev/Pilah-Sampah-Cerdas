@@ -76,6 +76,13 @@ vi.mock("../lib/prisma.js", () => {
         upsert: vi.fn(),
         count: vi.fn(),
       },
+      kelompokKkn: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "kel-1", name: "Kelompok 1", kelurahan: "Coblong", cakupanRw: ["01"], dplNamaMentah: "DPL 1", dpl: { id: "dpl-1", name: "DPL 1", phone: "0812345678" } }
+        ]),
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
       poskoKkn: {
         findUnique: vi.fn(),
         findFirst: vi.fn(),
@@ -1873,6 +1880,117 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(report.items[0].poskoName).toBe("PRESENSI POSKO UNIKOM");
       expect(report.items[0].deskripsiKegiatan).toBe("Bimbingan dengan DPL di Kampus UNIKOM");
       expect(report.items[0].fotoUrl).toBe("https://berseka.id/uploads/foto-unikom.jpg");
+    });
+
+    it("should filter out test student accounts and test groups from student aggregates in getLaporanPresensi", async () => {
+      vi.mocked(prisma.activityAttendance.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([
+        {
+          id: "att-real-1",
+          studentId: "student-real-1",
+          scheduleId: "sch-1",
+          status: "HADIR_MEMENUHI",
+          actualInZoneMinutes: 240,
+          attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+          checkOutAt: new Date("2026-09-02T12:00:00+07:00"),
+          jedaLogs: [],
+          schedule: {
+            id: "sch-1",
+            title: "Kegiatan Posko 1",
+            date: new Date("2026-09-02"),
+            time: "08:00 - 16:00",
+            kelompok: { id: "kel-1", name: "Kelompok 1", kelurahan: "Dago" },
+          },
+          student: {
+            id: "student-real-1",
+            name: "Mahasiswa Asli",
+            phone: "081299998888",
+            isTestAccount: false,
+            studentProfile: {
+              nim: "21224001",
+              jurusan: "Informatika",
+              isKetua: false,
+              noWa: "081299998888",
+              assignedRw: { id: 1, name: "RW 01" },
+              kelompok: {
+                id: "kel-1",
+                name: "Kelompok 1",
+                kelurahan: "Dago",
+                cakupanRw: ["01"],
+                dplNamaMentah: "DPL 1",
+                dpl: { id: "dpl-1", name: "DPL 1", phone: "0812345678" },
+              },
+            },
+          },
+        } as any,
+      ]);
+      // allSummaryRecords with 1 real student and 1 test student in "Kelompok TEST"
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([
+        {
+          id: "att-real-1",
+          studentId: "student-real-1",
+          status: "HADIR_MEMENUHI",
+          actualInZoneMinutes: 240,
+          attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+          checkOutAt: new Date("2026-09-02T12:00:00+07:00"),
+          jedaLogs: [],
+          student: {
+            id: "student-real-1",
+            name: "Mahasiswa Asli",
+            phone: "081299998888",
+            isTestAccount: false,
+            studentProfile: {
+              nim: "21224001",
+              jurusan: "Informatika",
+              isKetua: false,
+              noWa: "081299998888",
+              kelompok: {
+                id: "kel-1",
+                name: "Kelompok 1",
+                kelurahan: "Dago",
+                cakupanRw: ["01"],
+                dplNamaMentah: "DPL 1",
+                dpl: { id: "dpl-1", name: "DPL 1", phone: "0812345678" },
+              },
+            },
+          },
+        } as any,
+        {
+          id: "att-test-1",
+          studentId: "student-test-1",
+          status: "HADIR_MEMENUHI",
+          actualInZoneMinutes: 180,
+          attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+          checkOutAt: new Date("2026-09-02T11:00:00+07:00"),
+          jedaLogs: [],
+          student: {
+            id: "student-test-1",
+            name: "wulan mahasiswa",
+            phone: "081211111111",
+            isTestAccount: false,
+            studentProfile: {
+              nim: "098786",
+              jurusan: "Informatika",
+              isKetua: false,
+              noWa: "081211111111",
+              kelompok: {
+                id: "kel-test",
+                name: "Kelompok TEST",
+                kelurahan: "Cipaganti",
+                cakupanRw: ["98", "99"],
+                dplNamaMentah: "Dpl Test",
+                dpl: { id: "dpl-test", name: "Dpl Test", phone: "081111111111" },
+              },
+            },
+          },
+        } as any,
+      ]);
+
+      const report = await service.getLaporanPresensi({});
+      expect(report.summary.totalMahasiswa).toBe(1);
+      expect(report.studentAggregates).toHaveLength(1);
+      expect(report.studentAggregates[0].studentId).toBe("student-real-1");
+      expect(report.studentAggregates[0].namaMahasiswa).toBe("Mahasiswa Asli");
     });
   });
 

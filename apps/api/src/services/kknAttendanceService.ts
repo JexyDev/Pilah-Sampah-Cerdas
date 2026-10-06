@@ -18,6 +18,7 @@ import { auditTrailService } from "./auditTrailService.js";
 import { smartZoneService, UNIKOM_CENTRAL_ZONE, type ZoneCheckResult } from "./smartZoneService.js";
 export { UNIKOM_CENTRAL_ZONE };
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
+import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
 
 /**
  * Helper: Memeriksa apakah batas area kerja polygon sudah aktif/berlaku berdasarkan bulan WIB saat ini.
@@ -5617,10 +5618,40 @@ export class KknAttendanceService {
       };
     }
 
+    // Validasi Kelompok KKN Resmi jika tidak menyertakan akun uji coba
+    let validKelompokIds: string[] | undefined;
+    if (!params.includeTestAccounts && prisma.kelompokKkn?.findMany) {
+      try {
+        const allGroups = await prisma.kelompokKkn.findMany({
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+            dplNamaMentah: true,
+            dpl: { select: { id: true, name: true, phone: true } },
+          },
+        });
+        if (Array.isArray(allGroups)) {
+          const validGroups = allGroups.filter((k) => !isTestKelompok(k));
+          validKelompokIds = validGroups.map((k) => k.id);
+        }
+      } catch (err) {
+        console.error("[kknAttendanceService] Gagal fetch valid kelompok:", err);
+      }
+    }
+
     if (!params.includeTestAccounts) {
       where.student = {
         ...(where.student || {}),
         isTestAccount: false,
+        ...(validKelompokIds && validKelompokIds.length > 0
+          ? {
+              studentProfile: {
+                kelompokId: { in: validKelompokIds },
+              },
+            }
+          : {}),
       };
     }
 
@@ -5646,12 +5677,14 @@ export class KknAttendanceService {
               id: true,
               name: true,
               phone: true,
+              isTestAccount: true,
               fotoProfil: true,
               studentProfile: {
                 select: {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  noWa: true,
                   assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
@@ -5659,6 +5692,7 @@ export class KknAttendanceService {
                       name: true,
                       kelurahan: true,
                       cakupanRw: true,
+                      dplNamaMentah: true,
                       dpl: { select: { id: true, name: true, phone: true } },
                     },
                   },
@@ -5682,12 +5716,15 @@ export class KknAttendanceService {
             select: {
               id: true,
               name: true,
+              phone: true,
+              isTestAccount: true,
               fotoProfil: true,
               studentProfile: {
                 select: {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  noWa: true,
                   assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
@@ -5695,7 +5732,8 @@ export class KknAttendanceService {
                       name: true,
                       kelurahan: true,
                       cakupanRw: true,
-                      dpl: { select: { id: true, name: true } },
+                      dplNamaMentah: true,
+                      dpl: { select: { id: true, name: true, phone: true } },
                     },
                   },
                 },
@@ -5732,7 +5770,7 @@ export class KknAttendanceService {
             ...(!params.includeTestAccounts ? { user: { isTestAccount: false } } : {}),
           },
           include: {
-            user: { select: { id: true, name: true, fotoProfil: true } },
+            user: { select: { id: true, name: true, phone: true, isTestAccount: true, fotoProfil: true } },
             assignedRw: { select: { id: true, name: true } },
             kelompok: {
               select: {
@@ -5740,18 +5778,31 @@ export class KknAttendanceService {
                 name: true,
                 kelurahan: true,
                 cakupanRw: true,
+                dplNamaMentah: true,
                 dpl: { select: { id: true, name: true } },
               },
             },
           },
         });
         for (const s of groupStudents) {
+          if (!params.includeTestAccounts) {
+            if (
+              isTestKelompok(s.kelompok) ||
+              isTestStudent(s) ||
+              isTestStudent({ ...s.user, nim: s.nim, noWa: s.noWa, kelompok: s.kelompok })
+            ) {
+              continue;
+            }
+          }
           if (!studentAggMap.has(s.userId)) {
             studentAggMap.set(s.userId, {
               studentId: s.userId,
               namaMahasiswa: s.user?.name || "Mahasiswa",
               nim: s.nim || "-",
               jurusan: s.jurusan || "-",
+              phone: s.user?.phone || null,
+              noWa: s.noWa || null,
+              isTestAccount: s.user?.isTestAccount || false,
               fotoProfil: s.user?.fotoProfil || null,
               isKetua: s.isKetua || false,
               kelompok: s.kelompok
@@ -5760,9 +5811,11 @@ export class KknAttendanceService {
                     name: s.kelompok.name,
                     kelurahan: s.kelompok.kelurahan,
                     cakupanRw: (s.kelompok as any).cakupanRw || [],
-                    dplName: (s.kelompok as any).dpl?.name || "-",
+                    dplName: (s.kelompok as any).dpl?.name || (s.kelompok as any).dplNamaMentah || "-",
                   }
                 : null,
+              kelompokName: s.kelompok?.name || "-",
+              dplName: (s.kelompok as any)?.dpl?.name || (s.kelompok as any)?.dplNamaMentah || "-",
               assignedRw: s.assignedRw?.name || null,
               totalSessions: 0,
               totalMinutes: 0,
@@ -5780,6 +5833,29 @@ export class KknAttendanceService {
     }
 
     for (const r of allSummaryRecords) {
+      const kknGroup = r.student?.studentProfile?.kelompok;
+
+      // 100% Filter Akun Mahasiswa Testing & Mahasiswa Tanpa Kelompok Sah
+      if (!params.includeTestAccounts) {
+        if (!kknGroup || isTestKelompok(kknGroup)) {
+          continue;
+        }
+        if (
+          r.student?.isTestAccount ||
+          isTestStudent({
+            id: r.student?.id,
+            name: r.student?.name,
+            phone: r.student?.phone,
+            nim: r.student?.studentProfile?.nim,
+            noWa: r.student?.studentProfile?.noWa,
+            user: r.student,
+            kelompok: kknGroup,
+          })
+        ) {
+          continue;
+        }
+      }
+
       const st = String(r.status || "").toUpperCase();
       const jedaLogsArr = (r.jedaLogs as any[]) || [];
       const isPaused =
@@ -5824,12 +5900,14 @@ export class KknAttendanceService {
       // Group per student for cumulative reporting
       const sId = r.studentId;
       if (!studentAggMap.has(sId)) {
-        const kknGroup = r.student?.studentProfile?.kelompok;
         studentAggMap.set(sId, {
           studentId: sId,
           namaMahasiswa: r.student?.name || "Mahasiswa",
           nim: r.student?.studentProfile?.nim || "-",
           jurusan: r.student?.studentProfile?.jurusan || "-",
+          phone: r.student?.phone || null,
+          noWa: r.student?.studentProfile?.noWa || null,
+          isTestAccount: r.student?.isTestAccount || false,
           fotoProfil: r.student?.fotoProfil || null,
           isKetua: r.student?.studentProfile?.isKetua || false,
           kelompok: kknGroup
@@ -5838,9 +5916,11 @@ export class KknAttendanceService {
                 name: kknGroup.name,
                 kelurahan: kknGroup.kelurahan,
                 cakupanRw: (kknGroup as any).cakupanRw || [],
-                dplName: (kknGroup as any).dpl?.name || "-",
+                dplName: (kknGroup as any).dpl?.name || (kknGroup as any).dplNamaMentah || "-",
               }
             : null,
+          kelompokName: kknGroup?.name || "-",
+          dplName: (kknGroup as any)?.dpl?.name || (kknGroup as any)?.dplNamaMentah || "-",
           assignedRw: r.student?.studentProfile?.assignedRw?.name || null,
           totalSessions: 0,
           totalMinutes: 0,
@@ -5889,6 +5969,8 @@ export class KknAttendanceService {
 
         return {
           ...agg,
+          kelompokName: agg.kelompok?.name || agg.kelompokName || "-",
+          dplName: agg.kelompok?.dplName || agg.dplName || "-",
           totalHours: Math.round((agg.totalMinutes / 60) * 10) / 10,
           totalFormatted,
           avgMinutesPerDay: avgMins,
@@ -5988,6 +6070,9 @@ export class KknAttendanceService {
         namaMahasiswa: att.student?.name || "Mahasiswa",
         nim: att.student?.studentProfile?.nim ?? "-",
         jurusan: att.student?.studentProfile?.jurusan ?? "-",
+        phone: att.student?.phone ?? null,
+        noWa: att.student?.studentProfile?.noWa ?? null,
+        isTestAccount: att.student?.isTestAccount ?? false,
         fotoProfil: att.student?.fotoProfil ?? null,
         isKetua: att.student?.studentProfile?.isKetua ?? false,
         kelompok: kknGroup
@@ -5996,9 +6081,11 @@ export class KknAttendanceService {
               name: kknGroup.name,
               kelurahan: kknGroup.kelurahan,
               cakupanRw: (kknGroup as any).cakupanRw || [],
-              dplName: (kknGroup as any).dpl?.name ?? "-",
+              dplName: (kknGroup as any).dpl?.name ?? (kknGroup as any).dplNamaMentah ?? "-",
             }
           : null,
+        kelompokName: kknGroup?.name ?? "-",
+        dplName: (kknGroup as any)?.dpl?.name ?? (kknGroup as any)?.dplNamaMentah ?? "-",
         assignedRw: att.student?.studentProfile?.assignedRw?.name ?? null,
         scheduleId: att.scheduleId,
         namaKegiatan: att.schedule?.title ?? "Kegiatan Harian Lapangan",
