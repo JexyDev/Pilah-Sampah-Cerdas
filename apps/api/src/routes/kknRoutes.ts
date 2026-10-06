@@ -1254,7 +1254,22 @@ router.get(
 router.get(
   ["/kegiatan/:id/lokasi", "/target-lokasi"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "PIMPINAN",
+  ]),
   kknAttendanceController.getActivityLocation
 );
 
