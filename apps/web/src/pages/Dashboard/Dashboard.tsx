@@ -2735,14 +2735,15 @@ const Dashboard: React.FC = () => {
                 <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
                   <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
                   <th className="py-3 px-4">Wilayah &amp; Pemilik</th>
-                  <th className="py-3 px-4 w-2/5">Kapasitas Terisi</th>
+                  <th className="py-3 px-4 w-1/3">Kapasitas Terisi</th>
+                  <th className="py-3 px-4">Waktu</th>
                   <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800 text-xs">
                 {recentBins.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-10 text-center text-slate-500 dark:text-slate-400 font-medium">
+                    <td colSpan={5} className="py-10 text-center text-slate-500 dark:text-slate-400 font-medium">
                       Belum ada data tempat sampah terdaftar.
                     </td>
                   </tr>
@@ -2852,6 +2853,44 @@ const Dashboard: React.FC = () => {
                               />
                             </div>
                           </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {(() => {
+                            const rawDate = bin.updatedAt || bin.createdAt || bin.verifiedAt;
+                            if (!rawDate) {
+                              return <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>;
+                            }
+                            try {
+                              const d = new Date(rawDate);
+                              if (isNaN(d.getTime())) {
+                                return (
+                                  <span className="text-slate-600 dark:text-slate-400 text-[11px] font-medium">
+                                    {bin.verifiedAt || bin.lastUpdate || "-"}
+                                  </span>
+                                );
+                              }
+                              const months = [
+                                "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+                                "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+                              ];
+                              const dateFormatted = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                              const timeFormatted = `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")} WIB`;
+                              return (
+                                <div className="flex flex-col min-w-[105px]">
+                                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-[12px]">
+                                    <Calendar size={12} className="text-slate-400 shrink-0" />
+                                    <span>{dateFormatted}</span>
+                                  </div>
+                                  <span className="text-[10.5px] text-slate-400 dark:text-slate-500 pl-4 font-mono">
+                                    {timeFormatted}
+                                  </span>
+                                </div>
+                              );
+                            } catch {
+                              return <span className="text-slate-400 text-[11px]">-</span>;
+                            }
+                          })()}
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
@@ -3011,6 +3050,31 @@ const Dashboard: React.FC = () => {
                             {" "}({Number(selectedBinForDetail.currentVolumeLiter) || 0}L / {maxCapacityLiter}L)
                           </span>
                         )}
+                      </span>
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  const rawDate = selectedBinForDetail.updatedAt || selectedBinForDetail.createdAt || selectedBinForDetail.verifiedAt;
+                  if (!rawDate) return null;
+                  let displayTime = selectedBinForDetail.verifiedAt || selectedBinForDetail.lastUpdate || "-";
+                  try {
+                    const d = new Date(rawDate);
+                    if (!isNaN(d.getTime())) {
+                      const months = [
+                        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                      ];
+                      displayTime = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} • ${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")} WIB`;
+                    }
+                  } catch {
+                    // fallback
+                  }
+                  return (
+                    <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
+                      <span className="text-slate-400">Waktu Aktivasi / Update</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {displayTime}
                       </span>
                     </div>
                   );
