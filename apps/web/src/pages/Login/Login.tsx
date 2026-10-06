@@ -198,56 +198,42 @@ const Login: React.FC = () => {
       {/* Main Container Card (53% Left Hero / 47% Right Auth) */}
       <main className="relative z-10 w-full max-w-[1360px] bg-white rounded-[22px] overflow-hidden shadow-[0_30px_70px_-30px_rgba(31,73,125,0.25),0_2px_6px_rgba(31,73,125,0.05)] grid grid-cols-1 lg:grid-cols-[53fr_47fr] animate-fade-in-up">
         
-        {/* ===== Panel Kiri: Hero Ilustrasi Full ===== */}
-        <section aria-label="Tentang BERSEKA" className="relative flex flex-col justify-between overflow-hidden min-h-[480px] lg:min-h-[640px] bg-slate-900">
+        {/* ===== Panel Kiri: Hero Ilustrasi ===== */}
+        <section aria-label="Tentang BERSEKA" className="relative flex flex-col justify-between overflow-hidden min-h-[420px] lg:min-h-[640px] bg-[#dceefc]">
           {/* Full Cover Background Image */}
           <picture className="absolute inset-0 w-full h-full">
             <source srcSet="/image/ilustrasi-kkn.webp" type="image/webp" />
             <img
               src="/image/ilustrasi-kkn.jpg"
-              alt="Ilustrasi Pemilahan Sampah Mahasiswa KKN BERSEKA"
+              alt="Bersih, Sehat, Kampung Asri. Bersama membangun lingkungan yang lebih bersih melalui BERSEKA. KKN Berdampak UNIKOM - Kecamatan Coblong"
               className="w-full h-full object-cover object-center"
               loading="eager"
+              decoding="async"
             />
           </picture>
 
-          {/* Top Gradient Overlay untuk memastikan keterbacaan teks headline */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#dceefc]/90 via-[#edf6fe]/40 to-transparent h-[45%] pointer-events-none" />
-
-          {/* Bottom Gradient Overlay tipis untuk badge KKN */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/60 to-transparent h-20 pointer-events-none" />
-
-          {/* Headline Teks */}
-          <div className="pt-8 sm:pt-10 md:pt-12 lg:pt-16 px-6 sm:px-8 md:px-12 lg:px-16 z-10 relative text-left">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-extrabold tracking-[-0.035em] leading-[1.08] text-[#0f2142] m-0 drop-shadow-sm">
-              Bersih, Sehat,
-              <span className="block text-[#16894f]">Kampung Asri.</span>
-            </h2>
-            <p className="mt-4 sm:mt-5 max-w-[34ch] text-sm sm:text-base md:text-lg text-[#324b6f] font-semibold leading-relaxed drop-shadow-xs">
-              Bersama membangun lingkungan yang lebih bersih melalui BERSEKA.
-            </p>
-          </div>
-
-          {/* Badge KKN di bawah */}
-          <div className="z-10 relative mt-auto py-3 px-6 sm:px-8 md:px-10 text-xs sm:text-[0.85rem] font-medium text-white/95 bg-black/30 backdrop-blur-xs text-left">
-            KKN Berdampak UNIKOM · Kecamatan Coblong
+          {/* Accessible Screen-Reader Description */}
+          <div className="sr-only">
+            <h2>Bersih, Sehat, Kampung Asri.</h2>
+            <p>Bersama membangun lingkungan yang lebih bersih melalui BERSEKA.</p>
+            <p>KKN Berdampak UNIKOM - Kecamatan Coblong</p>
           </div>
         </section>
 
         {/* ===== Panel Kanan: Form Login ===== */}
         <section className="flex flex-col p-6 sm:p-9 md:p-12 lg:p-14 bg-white text-left justify-between">
           
-          {/* Header Bar: Logo & Link Beranda */}
+          {/* Header Bar: Logo & Link Beranda (Selaras dengan Landing Page) */}
           <div className="flex items-center justify-between gap-4">
             <Link to="/" aria-label="BERSEKA.ID beranda" className="inline-flex items-center text-[#0f2142] no-underline group">
               <picture>
-                <source srcSet="/logos/berseka/berseka-brand-logo.webp" type="image/webp" />
+                <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
                 <img
-                  src="/logos/berseka/berseka-brand-logo.png"
+                  src="/logos/berseka/berseka-logo-full.png"
                   alt="BERSEKA.ID"
-                  className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105"
-                  width={150}
-                  height={61}
+                  className="h-10 sm:h-11 w-auto max-w-[175px] object-contain transition-transform group-hover:scale-105"
+                  width={160}
+                  height={42}
                   loading="eager"
                   decoding="async"
                 />
