@@ -443,7 +443,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4 ${className}`}
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4 ${className}`}
     >
       {/* Header Bar: Refaktor Naming (Eliminasi Waktu Nyata) & Filter Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -457,7 +457,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-            Monitoring tren berat sampah (kg) dan evaluasi capaian penurunan timbulan sampah sesuai target KKN
+            Pemantauan tren berat sampah (kg) dan evaluasi capaian penurunan timbulan sampah sesuai target program KKN
           </p>
 
           {/* Data Series Legends: HANYA 2 Kategori (Organik & Anorganik), Residu Ditiadakan */}
@@ -476,8 +476,8 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
         {/* Dropdown Selectors: Filter Tahun & Filter Rentang Waktu Bersanding */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
           {/* Dropdown Selector: Filter Tahun */}
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-2xs hover:border-emerald-500/50 transition-all">
-            <Calendar size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-2xs hover:border-emerald-500/50 transition-all">
+            <Calendar size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold mr-0.5">
               Tahun
             </span>
@@ -500,8 +500,8 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
           </div>
 
           {/* Dropdown Selector: Rentang Waktu */}
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-2xs hover:border-emerald-500/50 transition-all">
-            <Clock size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-2xs hover:border-emerald-500/50 transition-all">
+            <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold mr-0.5">
               Rentang
             </span>
