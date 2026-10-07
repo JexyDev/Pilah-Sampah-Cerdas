@@ -1648,50 +1648,62 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const effectiveLinkTo = isAccessible ? linkTo : undefined;
   const isClickable = Boolean(effectiveLinkTo || onClick);
 
+  const rawValueStr = value !== undefined ? String(value) : "-";
+  const isKg = rawValueStr.endsWith(" kg");
+  const displayVal = isKg ? rawValueStr.slice(0, -3) : rawValueStr;
+
   const content = (
     <div
       onClick={!effectiveLinkTo ? onClick : undefined}
-      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full transition-all duration-300 group ${
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full transition-all duration-300 group ${
         isClickable
           ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
           : "cursor-default"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <div
-          className={`w-11 h-11 ${styles.icon} text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs`}
+          className={`w-10 h-10 sm:w-11 sm:h-11 ${styles.icon} text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs mt-0.5`}
         >
           {renderKpiIcon(iconName)}
         </div>
         <div className="flex-1 min-w-0">
           <p 
             title={label}
-            className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider leading-snug line-clamp-2 min-h-[2.4em] flex items-center"
+            className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-normal leading-snug line-clamp-2 min-h-[2.2rem] block break-words"
           >
             {label}
           </p>
-          <h4 className="text-[22px] sm:text-[24px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none">
-            {value !== undefined ? value : "-"}
-          </h4>
+          <div className="mt-1 flex items-baseline gap-1 flex-wrap">
+            <h4 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight truncate">
+              {displayVal}
+            </h4>
+            {isKg && (
+              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+                kg
+              </span>
+            )}
+          </div>
         </div>
       </div>
       {trend || trendLabel ? (
-        <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5">
+        <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5 min-w-0">
           {trendUp !== undefined && (
             trendUp ? (
-              <TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <TrendingUp size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <TrendingDown size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+              <TrendingDown size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
             )
           )}
           <span
-            className={`text-[10.5px] font-bold ${trendUp === true ? "text-emerald-600 dark:text-emerald-400" : trendUp === false ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
+            title={trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
+            className={`text-[10px] sm:text-[11px] font-semibold leading-tight line-clamp-1 truncate ${trendUp === true ? "text-emerald-600 dark:text-emerald-400" : trendUp === false ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
           >
             {trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
           </span>
         </div>
       ) : (
-        <div className="mt-3 border-t border-transparent pt-2.5 min-h-[26px] hidden sm:block" aria-hidden="true" />
+        <div className="mt-3 border-t border-transparent pt-2.5 min-h-[22px] hidden sm:block" aria-hidden="true" />
       )}
     </div>
   );
@@ -2469,7 +2481,7 @@ const Dashboard: React.FC = () => {
       <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Ringkasan Operasional Pemilahan Sampah & Program KKN
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 relative z-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3.5 sm:gap-4 relative z-10">
         <KpiCard
           iconName="users"
           color="blue"
