@@ -39,10 +39,11 @@ class AiDetectionEntity extends Equatable {
   /// Wajib dikirim ulang saat scanAndCommit agar backend tidak menolak transaksi.
   final String? evidencePhotoUrl;
 
-  /// Berat yang ditampilkan ke user (harus dari backend)
-  double get displayWeightKg {
-    return weightKg ?? 0.0;
-  }
+  /// Volume yang ditampilkan ke user dalam Liter (murni dari AI tanpa konversi).
+  double get displayVolumeLiter => volumeEstimate;
+
+  /// Nilai numerik volume yang ditampilkan ke user (kompatibilitas getter lama).
+  double get displayWeightKg => volumeEstimate;
 
   @override
   List<Object?> get props => [requestId, detectedType, volumeEstimate];

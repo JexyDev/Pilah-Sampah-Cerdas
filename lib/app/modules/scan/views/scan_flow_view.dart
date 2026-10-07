@@ -696,8 +696,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               Expanded(
                 child: Text(
                   'Sampah: ${result.detectedType.displayName} '
-                  '(${(result.volumeEstimate * (isOrganic ? 0.4 : 0.2)).toStringAsFixed(1)} kg) '
-                  '— Arahkan ke tempat sampah ${result.detectedType.displayName.toUpperCase()}',
+                  '(${result.volumeEstimate.toStringAsFixed(1)} Liter) '
+                  '— Arahkan ke Tempat Sampah ${result.detectedType.displayName.toUpperCase()}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -818,13 +818,22 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         lower.contains('anorganic') ||
                         lower.contains('anorg') ||
                         lower.contains('agn') ||
-                        lower.contains('ano') ||
-                        lower.contains('non');
+                        lower.contains('non-org') ||
+                        lower.contains('non_org') ||
+                        lower.contains('non_organic') ||
+                        lower.contains('non organik') ||
+                        lower.contains('plastik') ||
+                        lower.contains('kertas') ||
+                        lower.contains('logam');
                     final isOrgPattern = !isAnorgPattern &&
                         (lower.contains('organik') ||
                             lower.contains('organic') ||
+                            lower.contains('organ') ||
                             lower.contains('ogn') ||
-                            lower.contains('org'));
+                            lower.contains('org') ||
+                            lower.contains('kompos') ||
+                            lower.contains('basah') ||
+                            lower.startsWith('bsk-member-'));
 
                     if (expectedType == WasteType.organic && isAnorgPattern) {
                       _showThrottledWarning(
@@ -1040,8 +1049,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         ? activeBin.maxCapacityL
         : 25.0;
     final double pct = (maxVol > 0 ? newVol / maxVol : 0.0).clamp(0.0, 1.0);
-    final double currentBinWeightKg = newVol * activeBin.densityKgPerLiter;
-    final double maxWeightKg = activeBin.maxWeightKg;
+    final double currentBinVolumeL = newVol;
+    final double maxBinVolumeL = maxVol;
 
     return Container(
       color: Colors.black54,
@@ -1145,7 +1154,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                           child: Column(
                             children: [
                               const Text(
-                                'BERAT',
+                                'EST. VOLUME',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textSecondary,
@@ -1153,7 +1162,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               ),
                               const SizedBox(height: 4),
                               WeightText(
-                                result.weightKg,
+                                result.volumeLiter,
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -1166,7 +1175,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Kapasitas tempat sampah
+                  // Kapasitas Tempat Sampah
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -1189,7 +1198,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '${currentBinWeightKg.toStringAsFixed(1)} kg',
+                              '${currentBinVolumeL.toStringAsFixed(1)} L',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -1217,7 +1226,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Maks ${maxWeightKg.toStringAsFixed(1)} kg',
+                                'Maks ${maxBinVolumeL.toStringAsFixed(0)} L',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
@@ -1565,8 +1574,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   ) {
     final bool isNearlyFull = bin.capacityPercent >= 0.95;
     final String pct = (bin.capacityPercent * 100).toStringAsFixed(0);
-    final String weight = bin.currentWeightKg.toStringAsFixed(1);
-    final String maxWeight = bin.maxWeightKg.toStringAsFixed(1);
+    final String currentVol = bin.currentVolumeL.toStringAsFixed(1);
+    final String maxVol = bin.maxCapacityL.toStringAsFixed(0);
 
     return showDialog<String>(
       context: context,
@@ -1605,7 +1614,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               Text(
                 isNearlyFull
                     ? 'Tempat Sampah ${bin.binType.displayName} sudah hampir penuh ($pct%) dan sedang dalam antrean pengosongan petugas.'
-                    : 'Tempat Sampah ${bin.binType.displayName} tercatat sedang dalam proses pengosongan ($weight kg / $maxWeight kg).\n\n'
+                    : 'Tempat Sampah ${bin.binType.displayName} tercatat sedang dalam proses pengosongan ($currentVol L / $maxVol L).\n\n'
                       'Jika tempat sampah belum penuh atau Anda tidak sengaja mengajukan, Anda dapat membatalkan pengajuan dan langsung melanjutkan scan.',
                 style: const TextStyle(
                   fontSize: 13,
@@ -1931,10 +1940,10 @@ class _AiSuccessSheet extends StatelessWidget {
                         ),
                         Expanded(
                           child: _buildDetailItem(
-                            icon: Icons.scale_rounded,
-                            label: 'EST. BERAT',
+                            icon: Icons.water_drop_rounded,
+                            label: 'EST. VOLUME',
                             valueWidget: WeightText(
-                              result.displayWeightKg,
+                              result.displayVolumeLiter,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,

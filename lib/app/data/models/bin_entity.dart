@@ -92,15 +92,20 @@ class BinEntity extends Equatable {
     return (val.isNaN || val.isInfinite) ? 0.0 : val;
   }
 
-  /// Densitas berat per liter tempat sampah — disamakan 0.4 kg/L agar kapasitas kg seragam antara Organik dan Anorganik.
-  // ponytail: density seragam 0.4 kg/L; ubah jika regulasi kembali memisahkan rasio kapasitas fisik.
+  /// Volume saat ini dalam Liter murni.
+  double get currentVolumeLiter => currentVolumeL;
+
+  /// Kapasitas maksimal dalam Liter murni.
+  double get maxCapacityLiter => maxCapacityL;
+
+  /// Densitas berat per liter tempat sampah (deprecated, role warga menggunakan satuan pure Liter).
   double get densityKgPerLiter => AppConfig.organicDensityKgPerLiter;
 
-  /// Estimasi berat saat ini dalam Kg (konsisten dengan densitas jenis sampah).
-  double get currentWeightKg => currentVolumeL * densityKgPerLiter;
+  /// Estimasi saat ini dalam Liter (kompatibilitas getter lama).
+  double get currentWeightKg => currentVolumeL;
 
-  /// Estimasi kapasitas maksimal dalam Kg (konsisten dengan densitas jenis sampah).
-  double get maxWeightKg => maxCapacityL * densityKgPerLiter;
+  /// Kapasitas maksimal dalam Liter (kompatibilitas getter lama).
+  double get maxWeightKg => maxCapacityL;
 
   /// Status kapasitas tempat sampah sesuai threshold srs.md FR-04.
   BinStatus get status {

@@ -489,9 +489,9 @@ class _SummaryCard extends StatelessWidget {
     for (var item in items) {
       if (item.wasteLog != null) {
         if (item.wasteLog!.wasteType == WasteType.organic) {
-          org += item.wasteLog!.weightKg;
+          org += item.wasteLog!.volumeLiter;
         } else if (item.wasteLog!.wasteType == WasteType.nonOrganic) {
-          anorg += item.wasteLog!.weightKg;
+          anorg += item.wasteLog!.volumeLiter;
         }
       }
     }
@@ -580,7 +580,7 @@ class _SummaryCard extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.only(bottom: 3),
               child: Text(
-                'kg',
+                'Liter',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ),
@@ -656,7 +656,7 @@ class _RiwayatItem extends ConsumerWidget {
                       ),
                     ),
                     WeightText(
-                      log.weightKg,
+                      log.volumeLiter,
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,

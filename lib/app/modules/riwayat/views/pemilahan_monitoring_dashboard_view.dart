@@ -138,7 +138,7 @@ class _PemilahanMonitoringDashboardViewState
                                   ),
                                   DataColumn(
                                     label: Text(
-                                      'Volume (Kg)',
+                                      'Volume (Liter)',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -220,7 +220,7 @@ class _PemilahanMonitoringDashboardViewState
                                       ),
                                       DataCell(
                                         Text(
-                                          '${item.weightKg.toStringAsFixed(1)} Kg',
+                                          '${item.volumeLiter.toStringAsFixed(1)} L',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,

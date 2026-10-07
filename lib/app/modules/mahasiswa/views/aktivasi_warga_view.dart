@@ -120,9 +120,10 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       }
     }
 
+    StikerQrItem? matchedItem;
     final qrItems = ref.read(kelompokStikerQrProvider).qrData?.items;
     if (qrItems != null && qrItems.isNotEmpty) {
-      final matchedItem = qrItems.cast<StikerQrItem?>().firstWhere(
+      matchedItem = qrItems.cast<StikerQrItem?>().firstWhere(
         (it) => it?.qrCode.trim().toUpperCase() == qr.trim().toUpperCase(),
         orElse: () => null,
       );
@@ -187,31 +188,49 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       }
     }
 
-    // 4. Pola Anorganik
-    final isAnorganicPattern =
-        lower.contains('anorganik') ||
-        lower.contains('anorganic') ||
-        lower.contains('anorg') ||
-        lower.contains('agn') ||
-        lower.contains('ano') ||
-        lower.contains('non') ||
-        lower.contains('an-org') ||
-        lower.contains('non-org') ||
-        lower.contains('an_org') ||
-        lower.contains('plastik') ||
-        lower.contains('kertas') ||
-        lower.contains('logam');
+    // 4. Prioritas Jenis dari Metadata API Kelompok jika stiker terdaftar
+    bool? isMatchedAnorganic;
+    bool? isMatchedOrganic;
+    if (matchedItem != null && matchedItem.jenis.isNotEmpty) {
+      final jenisUpper = matchedItem.jenis.toUpperCase();
+      if (jenisUpper.contains('ANORGANIK') ||
+          jenisUpper.contains('AGN') ||
+          jenisUpper.contains('NON')) {
+        isMatchedAnorganic = true;
+        isMatchedOrganic = false;
+      } else if (jenisUpper.contains('ORGANIK') || jenisUpper.contains('OGN')) {
+        isMatchedOrganic = true;
+        isMatchedAnorganic = false;
+      }
+    }
 
-    // 5. Pola Organik
-    final isOrganicPattern =
-        !isAnorganicPattern &&
-        (lower.contains('organik') ||
-            lower.contains('organic') ||
-            lower.contains('organ') ||
-            lower.contains('ogn') ||
-            lower.contains('org') ||
-            lower.contains('kompos') ||
-            lower.contains('basah'));
+    // 5. Pola Anorganik (Fallback jika metadata API tidak tersedia)
+    final isAnorganicPattern = isMatchedAnorganic ??
+        (lower.contains('anorganik') ||
+            lower.contains('anorganic') ||
+            lower.contains('anorg') ||
+            lower.contains('agn') ||
+            lower.contains('an-org') ||
+            lower.contains('non-org') ||
+            lower.contains('an_org') ||
+            lower.contains('non_org') ||
+            lower.contains('non_organic') ||
+            lower.contains('non organik') ||
+            lower.contains('plastik') ||
+            lower.contains('kertas') ||
+            lower.contains('logam'));
+
+    // 6. Pola Organik (Fallback jika metadata API tidak tersedia)
+    final isOrganicPattern = isMatchedOrganic ??
+        (!isAnorganicPattern &&
+            (lower.contains('organik') ||
+                lower.contains('organic') ||
+                lower.contains('organ') ||
+                lower.contains('ogn') ||
+                lower.contains('org') ||
+                lower.contains('kompos') ||
+                lower.contains('basah') ||
+                lower.startsWith('bsk-member-')));
 
     if (step == 1) {
       // Step 1: Harus Organik

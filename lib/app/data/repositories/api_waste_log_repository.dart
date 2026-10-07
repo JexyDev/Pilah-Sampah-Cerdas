@@ -7,7 +7,6 @@ import 'waste_log_repository.dart';
 import '../../core/utils/app_exceptions.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
-import '../../core/values/app_config.dart';
 
 /// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
 ///
@@ -190,29 +189,38 @@ class ApiWasteLogRepository implements WasteLogRepository {
     final String binQrCode = json['binQrCode']?.toString().toUpperCase() ?? '';
 
     WasteType wasteType;
-    if (binQrCode.contains('ANO') ||
-        binQrCode.contains('ANG') ||
-        binQrCode.contains('ANORG')) {
+    if (binQrCode.contains('AGN') ||
+        binQrCode.contains('ANORGANIK') ||
+        binQrCode.contains('ANORG') ||
+        binQrCode.contains('NON_ORGANIC') ||
+        binQrCode.contains('NON-ORG')) {
       wasteType = WasteType.nonOrganic;
-    } else if (binQrCode.contains('OGN') || binQrCode.contains('ORG')) {
+    } else if (binQrCode.contains('OGN') ||
+        binQrCode.contains('ORGANIK') ||
+        binQrCode.contains('ORG') ||
+        binQrCode.contains('BSK-MEMBER')) {
       wasteType = WasteType.organic;
     } else {
-      // Cek NON/ANORG dulu - 'ORGANIC' adalah substring dari 'ANORGANIK'
-      if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {
+      // Cek ANORGANIK/NON-ORG dulu - 'ORGANIC' adalah substring dari 'ANORGANIK'
+      if (rawKategori.contains('ANORGANIK') ||
+          rawKategori.contains('ANORG') ||
+          rawKategori.contains('NON_ORGANIC') ||
+          rawKategori.contains('NON-ORG')) {
         wasteType = WasteType.nonOrganic;
-      } else if (rawKategori.contains('ORG')) {
+      } else if (rawKategori.contains('ORG') || rawKategori.contains('OGN')) {
         wasteType = WasteType.organic;
       } else {
         wasteType = WasteType.organic; // default organic
       }
     }
 
-    // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
-    final double weightKg =
+    // volume/berat dari backend: coba volumeLiter/volume dulu, fallback ke weightKg/berat
+    final double rawAmount =
         double.tryParse(
-          json['weightKg']?.toString() ??
+          json['volumeLiter']?.toString() ??
+              json['volume']?.toString() ??
+              json['weightKg']?.toString() ??
               json['berat']?.toString() ??
-              json['volumeLiter']?.toString() ??
               '0',
         ) ??
         0.0;
@@ -257,8 +265,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
       userId: userId,
       binId: '',
       wasteType: wasteType,
-      weightKg: weightKg,
-      volumeLiter: weightKg / AppConfig.organicDensityKgPerLiter,
+      weightKg: rawAmount,
+      volumeLiter: rawAmount,
       pointsAwarded: poin,
       createdAt: createdAt,
       kelurahan: binLocation,

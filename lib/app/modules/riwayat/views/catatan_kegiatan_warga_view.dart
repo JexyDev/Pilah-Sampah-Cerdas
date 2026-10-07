@@ -150,13 +150,13 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                           Row(
                             children: [
                               const Icon(
-                                Icons.scale_rounded,
+                                Icons.water_drop_rounded,
                                 size: 16,
                                 color: AppColors.textSecondary,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Volume: ${entry.weightKg.toStringAsFixed(1)} Kg',
+                                'Volume: ${entry.volumeLiter.toStringAsFixed(1)} Liter',
                                 style: const TextStyle(fontSize: 13),
                               ),
                               const SizedBox(width: 16),

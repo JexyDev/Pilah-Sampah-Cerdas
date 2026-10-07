@@ -117,9 +117,11 @@ class ScanResult {
     required this.weightKg,
     required this.pointsAwarded,
     required this.newBinVolumeL,
-  });
+    double? volumeLiter,
+  }) : volumeLiter = volumeLiter ?? weightKg;
 
   final double weightKg;
+  final double volumeLiter;
   final int pointsAwarded;
   final double newBinVolumeL;
 }

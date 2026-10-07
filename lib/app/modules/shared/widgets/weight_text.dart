@@ -5,6 +5,7 @@ class WeightText extends StatelessWidget {
   final int fractionDigits;
   final TextStyle? style;
   final TextStyle? kgStyle;
+  final String unit;
 
   const WeightText(
     this.weight, {
@@ -12,6 +13,7 @@ class WeightText extends StatelessWidget {
     this.fractionDigits = 1,
     this.style,
     this.kgStyle,
+    this.unit = 'Liter',
   });
 
   @override
@@ -25,7 +27,7 @@ class WeightText extends StatelessWidget {
       text: TextSpan(
         text: '${weight.toStringAsFixed(fractionDigits)} ',
         style: baseStyle,
-        children: [TextSpan(text: 'KG', style: boldStyle)],
+        children: [TextSpan(text: unit, style: boldStyle)],
       ),
     );
   }

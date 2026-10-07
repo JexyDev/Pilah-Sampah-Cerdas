@@ -292,17 +292,11 @@ class ApiBinRepository implements BinRepository {
         final detectedType = _parseWasteType(data['detectedType']?.toString());
         final volume = (data['volumeEstimate'] as num?)?.toDouble() ?? 2.5;
 
-        // Pastikan perhitungan berat konsisten dengan jenis sampah & densitas standar:
-        // Organik = 0.4 kg/L, Anorganik = 0.2 kg/L
-        final density = detectedType == WasteType.organic
-            ? AppConfig.organicDensityKgPerLiter
-            : AppConfig.nonOrganicDensityKgPerLiter;
-        final consistentWeight = double.parse((volume * density).toStringAsFixed(2));
-
+        // Role warga menggunakan pure Liter langsung dari hasil estimasi AI tanpa rumus konversi densitas
         return AiDetectionEntity(
           detectedType: detectedType,
           volumeEstimate: volume,
-          weightKg: consistentWeight,
+          weightKg: volume,
           confidence: (data['confidence'] as num?)?.toDouble(),
           organicPercentage: (data['organicPercentage'] as num?)?.toDouble(),
           estimatedPoints: (data['estimatedPoints'] as num?)?.toInt(),
@@ -392,8 +386,13 @@ class ApiBinRepository implements BinRepository {
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
+        final double volumeL = (data['volumeLiter'] as num?)?.toDouble() ??
+            (data['volume'] as num?)?.toDouble() ??
+            (data['weightKg'] as num?)?.toDouble() ??
+            0.0;
         return ScanResult(
-          weightKg: (data['weightKg'] as num).toDouble(),
+          weightKg: volumeL,
+          volumeLiter: volumeL,
           pointsAwarded: (data['pointsAwarded'] as num).toInt(),
           newBinVolumeL: (data['newBinVolume'] as num).toDouble(),
         );
@@ -984,9 +983,21 @@ class ApiBinRepository implements BinRepository {
   WasteType _parseWasteType(String? value) {
     if (value == null) return WasteType.organic;
     final upper = value.toUpperCase();
-    if (upper.contains('NON') || upper.contains('ANORG')) return WasteType.nonOrganic;
-    if (upper.contains('ORG')) return WasteType.organic;
-    return WasteType.nonOrganic; // Default
+    if (upper.contains('AGN') ||
+        upper.contains('ANORGANIK') ||
+        upper.contains('ANORG') ||
+        upper.contains('NON_ORGANIC') ||
+        upper.contains('NON-ORG') ||
+        upper.contains('NON ORGANIK')) {
+      return WasteType.nonOrganic;
+    }
+    if (upper.contains('OGN') ||
+        upper.contains('ORGANIK') ||
+        upper.contains('ORG') ||
+        upper.contains('BSK-MEMBER')) {
+      return WasteType.organic;
+    }
+    return WasteType.organic; // Default to organic
   }
 
   double _parseDouble(dynamic value) {

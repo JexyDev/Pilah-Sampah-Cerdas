@@ -68,23 +68,17 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         _hasAnorganic = existingBins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
       }
 
-      if (args != null && args['targetType'] != null) {
-        _targetType = args['targetType'].toString();
-      } else if (_hasOrganic && !_hasAnorganic) {
-        _targetType = 'non_organic';
-      } else if (!_hasOrganic && _hasAnorganic) {
-        _targetType = 'organic';
-      } else {
-        _targetType = 'both';
-      }
-
-      if (_targetType == 'non_organic' || (_hasOrganic && !_hasAnorganic)) {
+      if (_hasOrganic && !_hasAnorganic) {
         _targetType = 'non_organic';
         _step = 2; // Langsung ke anorganik
-      } else if (_targetType == 'organic' || (!_hasOrganic && _hasAnorganic)) {
+      } else if (!_hasOrganic && _hasAnorganic) {
         _targetType = 'organic';
         _step = 1;
+      } else if (args != null && args['targetType'] != null) {
+        _targetType = args['targetType'].toString();
+        _step = _targetType == 'non_organic' ? 2 : 1;
       } else {
+        _targetType = 'both';
         _step = 1;
       }
       _argsLoaded = true;
@@ -158,11 +152,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         lower.contains('anorganic') ||
         lower.contains('anorg') ||
         lower.contains('agn') ||
-        lower.contains('ano') ||
-        lower.contains('non') ||
         lower.contains('an-org') ||
         lower.contains('non-org') ||
         lower.contains('an_org') ||
+        lower.contains('non_org') ||
+        lower.contains('non_organic') ||
+        lower.contains('non organik') ||
         lower.contains('plastik') ||
         lower.contains('kertas') ||
         lower.contains('logam');
@@ -175,7 +170,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
-            lower.contains('basah'));
+            lower.contains('basah') ||
+            lower.startsWith('bsk-member-'));
 
     if (_targetType == 'organic') {
       if (isAnorganicPattern) {
@@ -186,13 +182,23 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK. Harap scan tempat sampah ANORGANIK (Warna Kuning).';
       }
     } else {
-      // Mode 'both' (Sepasang Tempat Sampah)
-      // Cek duplikasi dengan QR yang sudah terdeteksi sebelumnya
+      // Mode 'both' (Sepasang Tempat Sampah): Smart Flexible Scan
+      // 1. Cek duplikasi dengan QR yang sudah terdeteksi sebelumnya
       if (_qrOrganik.isNotEmpty && qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
-        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ORGANIK. Harap scan Tempat Sampah ANORGANIK.';
+        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ORGANIK. Harap scan Tempat Sampah ANORGANIK (Kuning).';
       }
       if (_qrAnorganik.isNotEmpty && qr.trim().toUpperCase() == _qrAnorganik.trim().toUpperCase()) {
-        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ANORGANIK. Harap scan Tempat Sampah ORGANIK.';
+        return 'QR Code ini sudah dipindai sebagai Tempat Sampah ANORGANIK. Harap scan Tempat Sampah ORGANIK (Hijau).';
+      }
+
+      // 2. Proteksi jika slot Anorganik sudah terisi dan user scan Anorganik lain
+      if (_qrAnorganik.isNotEmpty && isAnorganicPattern) {
+        return 'Tempat Sampah Anorganik sudah dipindai. Harap scan Tempat Sampah ORGANIK (Warna Hijau) untuk melengkapi.';
+      }
+
+      // 3. Proteksi jika slot Organik sudah terisi dan user scan Organik lain
+      if (_qrOrganik.isNotEmpty && isOrganicPattern) {
+        return 'Tempat Sampah Organik sudah dipindai. Harap scan Tempat Sampah ANORGANIK (Warna Kuning) untuk melengkapi.';
       }
     }
 
@@ -223,11 +229,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         lower.contains('anorganic') ||
         lower.contains('anorg') ||
         lower.contains('agn') ||
-        lower.contains('ano') ||
-        lower.contains('non') ||
         lower.contains('an-org') ||
         lower.contains('non-org') ||
         lower.contains('an_org') ||
+        lower.contains('non_org') ||
+        lower.contains('non_organic') ||
+        lower.contains('non organik') ||
         lower.contains('plastik') ||
         lower.contains('kertas') ||
         lower.contains('logam');
@@ -240,7 +247,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
-            lower.contains('basah'));
+            lower.contains('basah') ||
+            lower.startsWith('bsk-member-'));
 
     setState(() {
       if (_targetType == 'organic') {
@@ -250,23 +258,41 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         _qrAnorganik = detected;
         _bothBinsDetected = true;
       } else {
-        // Mode 'both': Dukung pemindaian Organik & Anorganik dalam urutan bebas!
-        if (isAnorganicPattern || (!isOrganicPattern && _step == 2)) {
+        // Mode 'both': Smart Flexible Scan (Auto-Slotting Bebas Urutan)
+        if (isAnorganicPattern) {
           _qrAnorganik = detected;
-          if (_qrOrganik.isNotEmpty || _hasOrganic) {
+          if (_qrOrganik.isNotEmpty) {
             _bothBinsDetected = true;
           } else {
-            _step = 1; // Alihkan otomatis ke tahap Organik
+            _step = 1; // Alihkan otomatis fokus petunjuk ke Organik (Hijau)
+            _lastStepChangeTime = DateTime.now();
+          }
+        } else if (isOrganicPattern) {
+          _qrOrganik = detected;
+          if (_qrAnorganik.isNotEmpty) {
+            _bothBinsDetected = true;
+          } else {
+            _step = 2; // Alihkan otomatis fokus petunjuk ke Anorganik (Kuning)
             _lastStepChangeTime = DateTime.now();
           }
         } else {
-          // isOrganicPattern atau fallback ke step 1
-          _qrOrganik = detected;
-          if (_qrAnorganik.isNotEmpty || _hasAnorganic) {
-            _bothBinsDetected = true;
+          // Fallback bila tidak terdeteksi pola spesifik: simpan sesuai step aktif
+          if (_step == 2) {
+            _qrAnorganik = detected;
+            if (_qrOrganik.isNotEmpty) {
+              _bothBinsDetected = true;
+            } else {
+              _step = 1;
+              _lastStepChangeTime = DateTime.now();
+            }
           } else {
-            _step = 2; // Alihkan otomatis ke tahap Anorganik
-            _lastStepChangeTime = DateTime.now();
+            _qrOrganik = detected;
+            if (_qrAnorganik.isNotEmpty) {
+              _bothBinsDetected = true;
+            } else {
+              _step = 2;
+              _lastStepChangeTime = DateTime.now();
+            }
           }
         }
       }
@@ -341,16 +367,24 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       return;
     }
 
-    if (_qrOrganik.isEmpty && _qrAnorganik.isEmpty) {
-      _showErrorSnackBar('Tidak ada QR Code yang di-scan.');
+    // Pastikan hanya mengirimkan kategori yang belum aktif di akun warga
+    final String? finalQrOrganik = (_hasOrganic || _targetType == 'non_organic')
+        ? null
+        : (_qrOrganik.isNotEmpty ? _qrOrganik : null);
+    final String? finalQrAnorganik = (_hasAnorganic || _targetType == 'organic')
+        ? null
+        : (_qrAnorganik.isNotEmpty ? _qrAnorganik : null);
+
+    if (finalQrOrganik == null && finalQrAnorganik == null) {
+      _showErrorSnackBar('Tidak ada QR Code baru yang di-scan.');
       return;
     }
 
     await ref
         .read(aktivasiBinProvider.notifier)
         .aktivasiBatch(
-          qrOrganik: _qrOrganik.isNotEmpty ? _qrOrganik : null,
-          qrAnorganik: _qrAnorganik.isNotEmpty ? _qrAnorganik : null,
+          qrOrganik: finalQrOrganik,
+          qrAnorganik: finalQrAnorganik,
           userId: user?.id ?? '',
           householdId: user?.householdId ?? '',
           latitude: lat,
@@ -439,17 +473,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         setState(() {
           if (hasOrgInDb && !_hasOrganic) {
             _hasOrganic = true;
-            if (!hasNonOrgInDb && _targetType == 'both' && _qrOrganik.isEmpty) {
-              _targetType = 'non_organic';
-              _step = 2;
-            }
           }
           if (hasNonOrgInDb && !_hasAnorganic) {
             _hasAnorganic = true;
-            if (!hasOrgInDb && _targetType == 'both' && _qrAnorganik.isEmpty) {
-              _targetType = 'organic';
-              _step = 1;
-            }
+          }
+          if (_hasOrganic && !_hasAnorganic && _targetType != 'non_organic') {
+            _targetType = 'non_organic';
+            _step = 2;
+          } else if (!_hasOrganic && _hasAnorganic && _targetType != 'organic') {
+            _targetType = 'organic';
+            _step = 1;
           }
         });
       }
@@ -602,12 +635,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     ),
                     child: QrScannerWidget(
                       key: _qrScannerKey,
-                      hint: _step == 1
-                          ? 'BIN-ORG-EF2072F0'
-                          : 'BIN-NON-EF2072F1',
-                      overlayColor: _step == 1
-                          ? AppColors.organicColor
-                          : AppColors.nonOrganicColor,
+                      hint: _targetType == 'non_organic' || (_qrOrganik.isNotEmpty && _qrAnorganik.isEmpty)
+                          ? 'BSK-AGN-...'
+                          : 'BSK-OGN-...',
+                      overlayColor: _targetType == 'non_organic' || (_qrOrganik.isNotEmpty && _qrAnorganik.isEmpty)
+                          ? AppColors.nonOrganicColor
+                          : AppColors.organicColor,
                       onQrDetected: _onQrDetected,
                     ),
                   ),
@@ -677,13 +710,15 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
               ? 'Scan QR Tempat Sampah Organik'
               : _targetType == 'non_organic'
                   ? 'Scan QR Tempat Sampah Anorganik'
-                  : (_step == 1
-                      ? 'Tahap 1: Scan Tempat Sampah Organik'
-                      : 'Tahap 2: Scan Tempat Sampah Anorganik'),
+                  : (_qrOrganik.isNotEmpty
+                      ? 'Tahap 2: Scan Tempat Sampah Anorganik'
+                      : (_qrAnorganik.isNotEmpty
+                          ? 'Tahap 2: Scan Tempat Sampah Organik'
+                          : 'Pindai Tempat Sampah (Bebas Urutan)')),
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: _targetType == 'non_organic' || (isBoth && _step == 2)
+            color: _targetType == 'non_organic' || (isBoth && _qrOrganik.isNotEmpty && _qrAnorganik.isEmpty)
                 ? AppColors.nonOrganicColor
                 : AppColors.organicColor,
           ),
@@ -695,11 +730,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
               ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Organik (Hijau)'
               : _targetType == 'non_organic'
                   ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Anorganik (Kuning)'
-                  : (_step == 1
-                      ? (_qrAnorganik.isNotEmpty
+                  : (_qrOrganik.isNotEmpty
+                      ? 'Lanjutkan scan barcode Tempat Sampah ANORGANIK (Kuning)'
+                      : (_qrAnorganik.isNotEmpty
                           ? 'Lanjutkan scan barcode Tempat Sampah ORGANIK (Hijau)'
-                          : 'Wajib scan barcode Tempat Sampah ORGANIK (Hijau) terlebih dahulu')
-                      : 'Lanjutkan scan barcode Tempat Sampah ANORGANIK (Kuning)'),
+                          : 'Arahkan kamera ke stiker Organik (Hijau) atau Anorganik (Kuning)')),
           style: const TextStyle(
             fontSize: 12,
             color: AppColors.textSecondary,

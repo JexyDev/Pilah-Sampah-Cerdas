@@ -515,7 +515,7 @@ class _BinCardLargeState extends State<_BinCardLarge> {
                       ),
                     ),
                     Text(
-                      'Kapasitas Maksimal: ${bin.maxCapacityL.toStringAsFixed(0)} Liter (Est. ${bin.maxWeightKg.toStringAsFixed(1)} kg)',
+                      'Kapasitas Maksimal: ${bin.maxCapacityL.toStringAsFixed(0)} Liter',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -564,7 +564,7 @@ class _BinCardLargeState extends State<_BinCardLarge> {
           Text(
             bin.isResetPending
                 ? 'Pengajuan pengosongan sedang diproses'
-                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(0)} / ${bin.maxCapacityL.toStringAsFixed(0)} L (Est. ${bin.currentWeightKg.toStringAsFixed(1)} / ${bin.maxWeightKg.toStringAsFixed(1)} kg)',
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} / ${bin.maxCapacityL.toStringAsFixed(0)} Liter',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),

@@ -2241,7 +2241,7 @@ class _GabungKomunitasCard extends StatelessWidget {
             _buildBenefitItem(
               Icons.qr_code_scanner_rounded,
               'Pindai Sampah Cerdas',
-              'Deteksi jenis & estimasi berat sampah otomatis dengan AI.',
+              'Deteksi jenis & estimasi volume sampah otomatis dengan AI.',
             ),
             const SizedBox(height: 8),
             _buildBenefitItem(

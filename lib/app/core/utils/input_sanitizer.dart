@@ -64,10 +64,16 @@ class InputSanitizer {
         .replaceAll(RegExp(r'tong\s+sampah', caseSensitive: false), 'Tempat Sampah')
         .replaceAll(RegExp(r'\btong\b', caseSensitive: false), 'Tempat Sampah');
 
-    // 7. Bersihkan spasi ganda dan trim
+    // 7. Normalisasi teks setoran sampah warga dari kg ke Liter
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'seberat\s+([0-9.,]+)\s*kg', caseSensitive: false),
+      (match) => 'sebanyak ${match.group(1)} Liter',
+    );
+
+    // 8. Bersihkan spasi ganda dan trim
     cleaned = cleaned.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
 
-    // 8. Pastikan huruf pertama kapital (contoh: "kehadiran KKN" -> "Kehadiran KKN")
+    // 9. Pastikan huruf pertama kapital (contoh: "kehadiran KKN" -> "Kehadiran KKN")
     if (cleaned.isNotEmpty) {
       cleaned = cleaned[0].toUpperCase() + cleaned.substring(1);
     }
