@@ -79,6 +79,10 @@ export class BinService {
       status?: string;
       areaId?: string;
       categoryId?: string;
+      tipeKepemilikan?: string;
+      binType?: string;
+      sortBy?: string;
+      order?: "asc" | "desc";
     }
   ) {
     let whereClause: any = {};
@@ -181,6 +185,21 @@ export class BinService {
           whereClause.OR = searchCondition;
         }
       }
+    }
+
+    if (filters?.sortBy) {
+      const orderDir = filters.order === "asc" ? "asc" : "desc";
+      let orderBy: any = { updatedAt: "desc" };
+      if (filters.sortBy === "currentVolumeLiter" || filters.sortBy === "volume") {
+        orderBy = { currentVolumeLiter: orderDir };
+      } else if (filters.sortBy === "createdAt") {
+        orderBy = { createdAt: orderDir };
+      } else if (filters.sortBy === "updatedAt" || filters.sortBy === "tanggalAktivasi" || filters.sortBy === "verifiedAt") {
+        orderBy = { updatedAt: orderDir };
+      } else if (filters.sortBy === "qrCode") {
+        orderBy = { qrCode: orderDir };
+      }
+      return binRepository.findAll(whereClause, orderBy);
     }
 
     return binRepository.findAll(whereClause);
