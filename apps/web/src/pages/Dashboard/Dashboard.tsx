@@ -2797,7 +2797,7 @@ const Dashboard: React.FC = () => {
                   <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
                   <th className="py-3 px-4">Wilayah &amp; Pemilik</th>
                   <th className="py-3 px-4 min-w-[140px]">Kapasitas Terisi</th>
-                  <th className="py-3 px-4">Waktu</th>
+                  <th className="py-3 px-4 text-center">Waktu</th>
                   <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -2916,7 +2916,7 @@ const Dashboard: React.FC = () => {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
                           {(() => {
                             const rawDate = bin.updatedAt || bin.createdAt || bin.verifiedAt;
                             if (!rawDate) {
@@ -2945,14 +2945,9 @@ const Dashboard: React.FC = () => {
                               const dateFormatted = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
                               const timeFormatted = `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")} WIB`;
                               return (
-                                <div className="flex flex-col min-w-[105px]">
-                                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-[12px]">
-                                    <Calendar size={12} className="text-slate-400 shrink-0" />
-                                    <span>{dateFormatted}</span>
-                                  </div>
-                                  <span className="text-[10.5px] text-slate-400 dark:text-slate-500 pl-4 font-mono">
-                                    {timeFormatted}
-                                  </span>
+                                <div className="inline-flex items-center justify-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                  <Calendar size={13} className="text-slate-400 shrink-0" />
+                                  <span>{dateFormatted}, {timeFormatted}</span>
                                 </div>
                               );
                             } catch {
