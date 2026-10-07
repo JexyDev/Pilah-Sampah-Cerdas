@@ -115,6 +115,9 @@ vi.mock("../lib/prisma.js", () => {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
       },
+      systemConfig: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       $transaction: vi.fn(async (cb) => cb(prisma)),
     },
   };
@@ -2300,6 +2303,139 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       // Test getScheduleTargetDurationMinutes fallback
       const duration = await getScheduleTargetDurationMinutes({ time: null });
       expect(duration).toBeGreaterThanOrEqual(240);
+    });
+  });
+
+  describe("getTimesheetSummary: Approved Leave Dispensation", () => {
+    it("should NOT increment totalHariTidakMemenuhi when student has approved leave request", async () => {
+      const service = new KknAttendanceService();
+
+      (prisma.studentKkn.findMany as any).mockResolvedValue([
+        {
+          id: "student-1",
+          userId: "user-1",
+          nim: "10121001",
+          jurusan: "Teknik Informatika",
+          fakultas: "Teknik",
+          isKetua: false,
+          kelompokId: "kel-1",
+          kelompok: { name: "Kelompok 1", kelurahan: "Dago" },
+          assignedRw: { name: "RW 01" },
+          user: {
+            id: "user-1",
+            name: "Mahasiswa Izin",
+            phone: "08123456789",
+            attendances: [
+              // Hari 1: Hadir memenuhi (300 menit)
+              {
+                id: "att-1",
+                scheduleId: "sch-1",
+                attendedAt: new Date("2026-09-01T01:00:00.000Z"),
+                checkOutAt: new Date("2026-09-01T06:00:00.000Z"),
+                actualInZoneMinutes: 300,
+                status: "HADIR_MEMENUHI",
+                schedule: { id: "sch-1", title: "Kegiatan Hari 1", date: new Date("2026-09-01") },
+              },
+              // Hari 2: Tercatat singkat 30 menit (misal auto checkout) tapi punya izin sakit approved
+              {
+                id: "att-2",
+                scheduleId: "sch-2",
+                attendedAt: new Date("2026-09-02T01:00:00.000Z"),
+                checkOutAt: new Date("2026-09-02T01:30:00.000Z"),
+                actualInZoneMinutes: 30,
+                status: "HADIR_TIDAK_MEMENUHI",
+                schedule: { id: "sch-2", title: "Kegiatan Hari 2", date: new Date("2026-09-02") },
+              },
+            ],
+            studentLeaveRequests: [
+              {
+                id: "leave-1",
+                type: "SAKIT",
+                startDate: new Date("2026-09-02T00:00:00.000Z"),
+                endDate: new Date("2026-09-02T23:59:59.000Z"),
+                status: "APPROVED",
+                reason: "Demam berdarah",
+              },
+            ],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-1" });
+      expect(result.students).toHaveLength(1);
+
+      const st = result.students[0];
+      // Presensi hadir memenuhi tetap 1
+      expect(st.totalHariTerpenuhi).toBe(1);
+      // PENTING: Hari sakit tidak boleh masuk totalHariTidakMemenuhi!
+      expect(st.totalHariTidakMemenuhi).toBe(0);
+      expect(st.totalSakit).toBe(1);
+      expect(st.totalDispensasi).toBe(1);
+    });
+
+    it("should NOT increment totalHariTidakMemenuhi when session is TIDAK_ADA_KEGIATAN or SKIP_KEGIATAN", async () => {
+      const service = new KknAttendanceService();
+
+      (prisma.studentKkn.findMany as any).mockResolvedValue([
+        {
+          id: "student-2",
+          userId: "user-2",
+          nim: "21224064",
+          jurusan: "Administrasi Publik",
+          fakultas: "FISIP",
+          isKetua: false,
+          kelompokId: "kel-2",
+          kelompok: { name: "Kelompok 2 Dago", kelurahan: "Dago" },
+          assignedRw: { name: "RW 02" },
+          user: {
+            id: "user-2",
+            name: "Salma Nur Fadilah",
+            phone: "08123456780",
+            attendances: [
+              // Hari 1: Hadir memenuhi 300 menit
+              {
+                id: "att-1",
+                scheduleId: "sch-1",
+                attendedAt: new Date("2026-09-01T01:00:00.000Z"),
+                checkOutAt: new Date("2026-09-01T06:00:00.000Z"),
+                actualInZoneMinutes: 300,
+                status: "HADIR_MEMENUHI",
+                schedule: { id: "sch-1", title: "Kegiatan Hari 1", date: new Date("2026-09-01") },
+              },
+              // Hari 2: Jadwal libur / non-kegiatan resmi (TIDAK_ADA_KEGIATAN)
+              {
+                id: "att-2",
+                scheduleId: "sch-2",
+                attendedAt: new Date("2026-09-02T01:00:00.000Z"),
+                checkOutAt: new Date("2026-09-02T01:00:00.000Z"),
+                actualInZoneMinutes: 0,
+                status: "TIDAK_ADA_KEGIATAN",
+                schedule: { id: "sch-2", title: "Tidak ada kegiatan lapangan (Jadwal Non-Kegiatan)", date: new Date("2026-09-02") },
+              },
+              // Hari 3: Skip kegiatan resmi
+              {
+                id: "att-3",
+                scheduleId: "sch-3",
+                attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+                checkOutAt: new Date("2026-09-03T01:00:00.000Z"),
+                actualInZoneMinutes: 0,
+                status: "SKIP_KEGIATAN",
+                schedule: { id: "sch-3", title: "Kegiatan Diliburkan", date: new Date("2026-09-03") },
+              },
+            ],
+            studentLeaveRequests: [],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-2" });
+      expect(result.students).toHaveLength(1);
+
+      const st = result.students[0];
+      expect(st.totalHariTerpenuhi).toBe(1);
+      // PENTING: Hari libur resmi TIDAK BOLEH dihitung sebagai hari tidak memenuhi!
+      expect(st.totalHariTidakMemenuhi).toBe(0);
+      expect(st.totalAlpa).toBe(0);
     });
   });
 });
