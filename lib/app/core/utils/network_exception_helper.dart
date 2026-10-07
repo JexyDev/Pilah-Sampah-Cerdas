@@ -8,41 +8,60 @@ class NetworkExceptionHelper {
     if (error is DioException) {
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
-          return 'Gagal terhubung ke server (waktu koneksi habis). Server mungkin sedang offline atau mengalami gangguan.';
         case DioExceptionType.sendTimeout:
-          return 'Pengiriman data ke server timeout. Harap periksa jaringan internet Anda atau coba sesaat lagi.';
         case DioExceptionType.receiveTimeout:
-          return 'Server tidak merespons (waktu tunggu habis). Server sedang sibuk atau mengalami gangguan.';
-
         case DioExceptionType.connectionError:
-          return 'Gagal terhubung ke server. Server sedang offline/gangguan atau periksa koneksi internet Anda.';
+          if (error.requestOptions.path.contains('kkn') ||
+              error.requestOptions.path.contains('presensi') ||
+              error.requestOptions.path.contains('kegiatan')) {
+            return 'Sistem sedang penyesuaian sejenak. Tenang, data presensi Anda tetap aman.';
+          }
+          return 'Gagal terhubung ke server (waktu koneksi habis). Harap periksa jaringan internet Anda atau coba sesaat lagi.';
 
         case DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
           final responseData = error.response?.data;
 
           // Deteksi error 5xx (Server error / VPS down / Bad Gateway)
-          if (statusCode == 502) {
-            return 'Server sedang mengalami gangguan atau dalam proses pemeliharaan (502 Bad Gateway). Silakan coba beberapa saat lagi.';
-          } else if (statusCode == 503) {
-            return 'Layanan server sedang tidak tersedia atau dalam pemeliharaan (503 Service Unavailable). Harap coba beberapa saat lagi.';
-          } else if (statusCode == 504) {
-            return 'Server tidak merespons tepat waktu (504 Gateway Timeout). Harap coba beberapa saat lagi.';
-          } else if (statusCode != null && statusCode >= 500) {
-            // Periksa jika server mengembalikan pesan JSON spesifik, jika HTML gunakan pesan ramah
+          if (statusCode != null && statusCode >= 500) {
+            // Periksa jika server mengembalikan pesan spesifik mengenai geofence / operasional
             if (responseData is Map<String, dynamic> && responseData['message'] != null) {
               final m = responseData['message'].toString().trim();
               if (m.isNotEmpty && !m.startsWith('<!DOCTYPE') && !m.startsWith('<html')) {
-                return m;
+                if (m.contains('OUT_OF_GEOFENCE')) {
+                  final isMulai = error.requestOptions.path.contains('mulai');
+                  return isMulai
+                      ? 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi masuk.'
+                      : 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.';
+                }
+                if (m.contains('OPERATIONAL_HOURS_VIOLATION') || m.contains('05:00')) {
+                  return 'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.';
+                }
               }
             }
-            return 'Server backend sedang mengalami kendala (HTTP $statusCode). Harap coba beberapa saat lagi.';
+            return 'Sistem sedang penyesuaian sejenak. Tenang, data presensi Anda tetap aman.';
           }
 
           // Periksa errorCode spesifik dari backend sebelum pesan generik
           if (responseData is Map<String, dynamic>) {
             final errorCode = responseData['error']?.toString() ?? '';
+            final reqPath = error.requestOptions.path;
             switch (errorCode) {
+              case 'OPERATIONAL_HOURS_VIOLATION':
+                return 'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.';
+              case 'OUT_OF_GEOFENCE':
+              case 'OUT_OF_COBLONG_BOUNDS':
+                final isMulai = reqPath.contains('mulai');
+                return isMulai
+                    ? 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi masuk.'
+                    : 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.';
+              case 'EARLY_CHECKOUT_RESTRICTED':
+                final customMsg = responseData['message']?.toString() ?? '';
+                final match = RegExp(r'(\d{1,2}[:.]\d{2}(?:\s*WIB)?)').firstMatch(customMsg);
+                if (match != null) {
+                  return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (mulai pukul ${match.group(1)!}).';
+                }
+                return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk.';
               case 'BIN_RW_MISMATCH':
                 final customMsg = responseData['message']?.toString();
                 if (customMsg != null && customMsg.isNotEmpty && !RegExp(r'^[A-Z_]+$').hasMatch(customMsg)) {
@@ -57,29 +76,39 @@ class NetworkExceptionHelper {
                 return 'Tempat sampah ini sudah dimiliki oleh warga lain dan tidak dapat diaktivasi ulang.';
               case 'STUDENT_PROFILE_INCOMPLETE':
                 return 'Profil KKN Anda belum lengkap. Hubungi Admin atau DPL untuk melengkapi data NIM dan jurusan sebelum presensi.';
-              case 'OUT_OF_COBLONG_BOUNDS':
-                return 'Koordinat GPS Anda berada di luar wilayah KKN (Kecamatan Coblong). Pastikan GPS aktif dan Anda berada di lokasi yang benar.';
               case 'LOCATION_TELEPORTATION_DETECTED':
                 return 'Perpindahan lokasi terlalu cepat terdeteksi. Pastikan GPS tidak dalam mode simulasi (Fake GPS).';
               case 'INVALID_COORDINATES':
                 return 'Koordinat GPS tidak valid. Aktifkan GPS dan coba lagi.';
-              case 'EARLY_CHECKOUT_RESTRICTED':
-                final customMsg = responseData['message']?.toString();
-                if (customMsg != null && customMsg.isNotEmpty) {
-                  return customMsg.replaceFirst(RegExp(r'^EARLY_CHECKOUT_RESTRICTED:\s*', caseSensitive: false), '');
-                }
-                return 'Presensi pulang belum dapat dilakukan.';
               default:
                 // Fallback ke pesan dari backend jika bukan kode yang dikenal
                 if (responseData['message'] != null) {
                   final msg = responseData['message'].toString().trim();
+                  if (msg.contains('OUT_OF_GEOFENCE')) {
+                    final isMulai = reqPath.contains('mulai');
+                    return isMulai
+                        ? 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi masuk.'
+                        : 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.';
+                  }
+                  if (msg.contains('OPERATIONAL_HOURS_VIOLATION') ||
+                      msg.contains('05:00') ||
+                      msg.toLowerCase().contains('belum bisa diakses')) {
+                    return 'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.';
+                  }
+                  if (msg.contains('EARLY_CHECKOUT_RESTRICTED')) {
+                    final match = RegExp(r'(\d{1,2}[:.]\d{2}(?:\s*WIB)?)').firstMatch(msg);
+                    if (match != null) {
+                      return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (mulai pukul ${match.group(1)!}).';
+                    }
+                    return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk.';
+                  }
                   if (msg == 'BIN_RW_MISMATCH') {
                     return 'Stiker tempat sampah dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.';
                   }
                   if (RegExp(r'^[A-Z_]+$').hasMatch(msg)) {
                     return 'Terjadi kesalahan tidak terduga. Silakan coba lagi.';
                   }
-                  return msg.replaceFirst(RegExp(r'^BIN_RW_MISMATCH:\s*', caseSensitive: false), '');
+                  return msg.replaceFirst(RegExp(r'^[A-Z_]+:\s*'), '');
                 }
             }
           }
@@ -89,6 +118,18 @@ class NetworkExceptionHelper {
           } else if (statusCode == 401) {
             return 'Sesi Anda telah berakhir. Silakan masuk kembali.';
           } else if (statusCode == 403) {
+            if (responseData is Map<String, dynamic> && responseData['message'] != null) {
+              final m = responseData['message'].toString();
+              if (m.contains('OUT_OF_GEOFENCE')) {
+                final isMulai = error.requestOptions.path.contains('mulai');
+                return isMulai
+                    ? 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi masuk.'
+                    : 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.';
+              }
+              if (m.contains('05:00') || m.contains('OPERATIONAL_HOURS')) {
+                return 'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.';
+              }
+            }
             return 'Anda tidak memiliki hak akses untuk tindakan ini.';
           } else if (statusCode == 404) {
             return 'Data atau layanan tidak ditemukan di server.';
@@ -104,11 +145,9 @@ class NetworkExceptionHelper {
         default:
           final raw = '${error.error} ${error.message}';
           if (raw.contains('Connection refused') ||
-              raw.contains('Failed host lookup')) {
-            return 'Gagal terhubung ke server. Server sedang offline atau dalam pemeliharaan.';
-          }
-          if (raw.contains('SocketException')) {
-            return 'Gagal terhubung ke server. Periksa jaringan internet Anda atau server sedang tidak aktif.';
+              raw.contains('Failed host lookup') ||
+              raw.contains('SocketException')) {
+            return 'Sistem sedang penyesuaian sejenak. Tenang, data presensi Anda tetap aman.';
           }
           return 'Gagal terhubung ke server atau terjadi masalah jaringan.';
       }
@@ -116,11 +155,22 @@ class NetworkExceptionHelper {
     if (error is Exception) {
       final str = error.toString();
       if (str.contains('Connection refused') ||
-          str.contains('Failed host lookup')) {
-        return 'Gagal terhubung ke server. Server sedang offline atau dalam pemeliharaan.';
+          str.contains('Failed host lookup') ||
+          str.contains('SocketException')) {
+        return 'Sistem sedang penyesuaian sejenak. Tenang, data presensi Anda tetap aman.';
       }
-      if (str.contains('SocketException')) {
-        return 'Gagal terhubung ke server. Periksa jaringan internet Anda atau server sedang tidak aktif.';
+      if (str.contains('OUT_OF_GEOFENCE')) {
+        return 'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.';
+      }
+      if (str.contains('OPERATIONAL_HOURS_VIOLATION') || str.contains('05:00')) {
+        return 'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.';
+      }
+      if (str.contains('EARLY_CHECKOUT_RESTRICTED')) {
+        final match = RegExp(r'(\d{1,2}[:.]\d{2}(?:\s*WIB)?)').firstMatch(str);
+        if (match != null) {
+          return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (mulai pukul ${match.group(1)!}).';
+        }
+        return 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk.';
       }
       if (str.contains('TimeoutException')) {
         final msgMatch = RegExp(r'TimeoutException: (.+)').firstMatch(str);
@@ -141,5 +191,6 @@ class NetworkExceptionHelper {
       return str;
     }
     return 'Terjadi kesalahan sistem. Harap coba beberapa saat lagi.';
+
   }
 }

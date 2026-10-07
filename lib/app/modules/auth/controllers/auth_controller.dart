@@ -326,31 +326,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Logout — unregister FCM token per-user, hapus token secure storage, reset state & bersihkan system tray.
   Future<void> logout() async {
     try {
-      // 0. Otomatis jeda kegiatan KKN jika sedang BERLANGSUNG saat logout (maksimal 2 detik)
-      try {
-        final kknState = _ref.read(kknLocationProvider);
-        final kknNotifier = _ref.read(kknLocationProvider.notifier);
-        final activeAct = kknState.activeActivity;
-        final statusUpper =
-            (activeAct?['statusKehadiran'] ??
-                    activeAct?['attendanceStatus'] ??
-                    activeAct?['status'] ??
-                    '')
-                .toString()
-                .toUpperCase();
-        final isBerlangsung =
-            kknState.isTracking ||
-            statusUpper == 'BERLANGSUNG' ||
-            statusUpper == 'DI_ZONA' ||
-            statusUpper == 'DALAM_RADIUS' ||
-            statusUpper == 'LAPANGAN';
-        if (isBerlangsung) {
-          await kknNotifier
-              .jedaKegiatan('Pengguna Keluar / Logout Aplikasi')
-              .timeout(const Duration(seconds: 2), onTimeout: () => false);
-        }
-      } catch (_) {}
-
       // 1. Batalkan listener token refresh & unregister FCM dengan timeout maksimal 2 detik
       _tokenRefreshSub?.cancel();
       _tokenRefreshSub = null;
@@ -370,23 +345,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Non-critical — abaikan jika Firebase tidak aktif
       }
 
-      // 2. Jeda kegiatan KKN aktif ke backend sebelum stop service (maksimal 2 detik)
-      // agar backend tidak auto-mark HADIR dari durasi yang sudah terakumulasi
-      try {
-        final kknNotifier = _ref.read(kknLocationProvider.notifier);
-        final kknState = _ref.read(kknLocationProvider);
-        if (kknState.isTracking &&
-            kknState.activeActivity != null &&
-            !kknState.isSuccessAttendance) {
-          await kknNotifier
-              .jedaKegiatan('LOGOUT')
-              .timeout(const Duration(seconds: 2), onTimeout: () => false);
-        }
-      } catch (_) {}
-
-      // 3. Reset TOTAL semua in-memory state KKN + stop GPS service + clear SharedPreferences kkn_*.
+      // 2. Reset TOTAL semua in-memory state KKN + stop GPS service + clear SharedPreferences kkn_*.
       //    WAJIB dipanggil sebelum akun lain bisa login agar durasi akun ini tidak bocor
       //    ke sesi berikutnya (bug: akun kedua mulai presensi dari durasi akun pertama).
+      //    CATATAN: Presensi KKN di backend TIDAK dijeda saat logout — presensi di lapangan
+      //    tetap berjalan sesuai aktivitas riil mahasiswa. Jeda hanya dilakukan secara manual oleh mahasiswa.
       try {
         await _ref.read(kknLocationProvider.notifier).resetForNewUser();
       } catch (_) {}

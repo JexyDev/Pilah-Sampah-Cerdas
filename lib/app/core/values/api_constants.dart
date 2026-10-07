@@ -131,6 +131,7 @@ class ApiEndpoints {
       '/kkn-attendance/kegiatan/$id/check-out';
   static String kknPresensiHistory(String id) =>
       '/kkn/kegiatan/$id/presensi-history';
+  static const String kknLaporanPresensi = '/kkn-attendance/laporan-presensi';
 
   // Schedules
   static const String schedules = '/schedules';

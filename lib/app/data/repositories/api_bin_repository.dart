@@ -1000,8 +1000,7 @@ class ApiBinRepository implements BinRepository {
     }
     if (upper.contains('OGN') ||
         upper.contains('ORGANIK') ||
-        upper.contains('ORG') ||
-        upper.contains('BSK-MEMBER')) {
+        upper.contains('ORG')) {
       return WasteType.organic;
     }
     return WasteType.organic; // Default to organic

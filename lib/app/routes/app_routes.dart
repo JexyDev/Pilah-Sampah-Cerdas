@@ -48,6 +48,8 @@ class AppRoutes {
       '/petugas-pemilahan/aktivasi-tempat-sampah-komunal';
   static const String monitoringDampakKelurahan = '/mahasiswa/dampak-kelurahan';
   static const String riwayatKkn = '/mahasiswa/riwayat';
+  static const String riwayatTidakMemenuhi =
+      '/mahasiswa/riwayat-tidak-memenuhi';
   static const String registerPosko = '/mahasiswa/posko/register';
   static const String registerFasilitas = '/mahasiswa/fasilitas/register';
   static const String pengajuanProgramKerja =

@@ -888,8 +888,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             lower.contains('ogn') ||
                             lower.contains('org') ||
                             lower.contains('kompos') ||
-                            lower.contains('basah') ||
-                            lower.startsWith('bsk-member-'));
+                            lower.contains('basah'));
 
                     if (expectedType == WasteType.organic && isAnorgPattern) {
                       _showThrottledWarning(

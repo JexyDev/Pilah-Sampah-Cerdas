@@ -333,6 +333,34 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           final durasiMenit = state.inZoneDurationSeconds;
 
           Future<void> submit() async {
+            final mapState = ref.read(kknMapProvider);
+            final poskoList = mapState.groupZone?.poskoList ?? [];
+            bool inPosko = state.isInsideRadius;
+            if (!inPosko && state.currentPosition != null && poskoList.isNotEmpty) {
+              final zs = checkStudentInGroupZones(
+                state.currentPosition!.latitude,
+                state.currentPosition!.longitude,
+                poskoList,
+              );
+              if (zs.isInZone) {
+                inPosko = true;
+              }
+            }
+
+            if (!inPosko) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.',
+                  ),
+                  backgroundColor: AppColors.dangerRed,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+
             if (fotoFile == null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1287,6 +1315,37 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   }
                 },
                 onMulai: (id) async {
+                  final nowWib =
+                      DateTime.now().toUtc().add(const Duration(hours: 7));
+                  if (nowWib.hour < 5) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB.',
+                          ),
+                          backgroundColor: AppColors.dangerRed,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                  if (nowWib.hour >= 20) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Presensi kegiatan hari ini telah ditutup (batas maksimal pukul 20:00 WIB).',
+                          ),
+                          backgroundColor: AppColors.dangerRed,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
                   final statusAktifSekarang =
                       (kegiatan['statusKehadiran'] ??
                               kegiatan['attendanceStatus'] ??
@@ -1382,7 +1441,25 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     final act = state.selectedKegiatan ?? state.activeActivity;
     final int minCheckoutMenit =
         (targetMenit > 0 && targetMenit < 30) ? targetMenit : 30;
-    final bool canCheckout = durasiMenit >= minCheckoutMenit;
+    int elapsedSinceCheckInMinutes = durasiMenit;
+    final attendedAtStr =
+        state.attendanceTime ?? act?['attendedAt']?.toString();
+    DateTime? checkInTime;
+    if (attendedAtStr != null && attendedAtStr.isNotEmpty) {
+      final parsed = DateTime.tryParse(attendedAtStr);
+      if (parsed != null) {
+        checkInTime = parsed.isUtc ? parsed.toLocal() : parsed;
+        elapsedSinceCheckInMinutes =
+            DateTime.now().difference(parsed).inMinutes;
+      }
+    }
+    final bool canCheckout =
+        durasiMenit >= minCheckoutMenit ||
+        elapsedSinceCheckInMinutes >= minCheckoutMenit;
+    final DateTime? unlockTime = checkInTime?.add(const Duration(minutes: 30));
+    final String jamUnlock = unlockTime != null
+        ? '${unlockTime.hour.toString().padLeft(2, '0')}:${unlockTime.minute.toString().padLeft(2, '0')} WIB'
+        : '';
     final bool isSessionActive =
         (state.isEligibleForAttendance || act != null) &&
         !isSuccess &&
@@ -1410,6 +1487,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
         poskoList,
       );
     }
+    final bool isInPosko =
+        state.isInsideRadius || (zoneStatus?.isInZone ?? false);
+    final bool canSubmitCheckout = canCheckout && isInPosko;
 
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2108,8 +2188,38 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             width: double.infinity,
             height: 52,
             child: ElevatedButton.icon(
-              onPressed: (isSessionActive && canCheckout)
+              onPressed: (isSessionActive && !isSuccess && !isAlpa)
                   ? () async {
+                      if (!canCheckout) {
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              jamUnlock.isNotEmpty
+                                  ? 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (mulai pukul $jamUnlock).'
+                                  : 'Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk.',
+                            ),
+                            backgroundColor: AppColors.dangerRed,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (!isInPosko) {
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Posisi Anda berada di luar area posko. Silakan mendekat ke lokasi posko KKN untuk presensi pulang.',
+                            ),
+                            backgroundColor: AppColors.dangerRed,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+
                       await _showAbsenDialog(state, notifier);
                     }
                   : null,
@@ -2134,27 +2244,18 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   color: Colors.white,
                 ),
               ),
-              style:
-                  ElevatedButton.styleFrom(
-                    backgroundColor: isSuccess
-                        ? AppColors.primaryGreen
-                        : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-                    disabledBackgroundColor: isSuccess
-                        ? AppColors.primaryGreen
-                        : (isAlpa ? AppColors.dangerRed : Colors.grey[300]),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ).copyWith(
-                    backgroundColor: WidgetStateProperty.resolveWith((states) {
-                      if (isSuccess) return AppColors.primaryGreen;
-                      if (isAlpa) return AppColors.dangerRed;
-                      if (states.contains(WidgetState.disabled)) {
-                        return Colors.grey[300];
-                      }
-                      return AppColors.primaryGreen; // Active color
-                    }),
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isSuccess
+                    ? AppColors.primaryGreen
+                    : (isAlpa
+                          ? AppColors.dangerRed
+                          : (canSubmitCheckout
+                                ? AppColors.primaryGreen
+                                : Colors.grey[400])),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -2164,7 +2265,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: Colors.orange),
             ),
-          if (isSessionActive && canCheckout && durasiMenit < targetMenit)
+          if (isSessionActive && canCheckout && !isInPosko)
+            const Text(
+              'Posisi Anda di luar posko. Silakan mendekat ke area posko untuk presensi pulang.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.orange),
+            ),
+          if (isSessionActive && canCheckout && isInPosko && durasiMenit < targetMenit)
             Text(
               'Target durasi kerja: $targetMenit menit untuk bonus poin penuh (+3 PTS). Minimal durasi presensi pulang: $minCheckoutMenit menit.',
               textAlign: TextAlign.center,
@@ -2185,43 +2292,40 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: state.isInsideRadius
-                    ? () async {
-                        final isSuccess = await notifier.lanjutKegiatan();
-                        if (mounted) {
-                          if (isSuccess) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Sesi berhasil dilanjutkan.'),
-                                backgroundColor: AppColors.primaryGreen,
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Gagal melanjutkan sesi.'),
-                                backgroundColor: AppColors.dangerRed,
-                              ),
-                            );
-                          }
-                        }
-                      }
-                    : null,
+                onPressed: () async {
+                  final isSuccess = await notifier.lanjutKegiatan();
+                  if (mounted) {
+                    if (isSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sesi berhasil dilanjutkan.'),
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                      );
+                    } else {
+                      final err =
+                          ref.read(kknLocationProvider).error ??
+                          'Gagal melanjutkan sesi. Periksa GPS & koneksi internet.';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(err),
+                          backgroundColor: AppColors.dangerRed,
+                        ),
+                      );
+                    }
+                  }
+                },
                 icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-                label: Text(
-                  state.isInsideRadius
-                      ? 'Lanjutkan Sesi'
-                      : 'Masuk Zona untuk Lanjut',
-                  style: const TextStyle(
+                label: const Text(
+                  'Lanjutkan Sesi',
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Colors.white,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: state.isInsideRadius
-                      ? Colors.amber.shade700
-                      : Colors.grey[400],
+                  backgroundColor: Colors.amber.shade700,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

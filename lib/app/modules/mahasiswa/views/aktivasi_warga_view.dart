@@ -229,8 +229,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                 lower.contains('ogn') ||
                 lower.contains('org') ||
                 lower.contains('kompos') ||
-                lower.contains('basah') ||
-                lower.startsWith('bsk-member-')));
+                lower.contains('basah')));
 
     if (step == 1) {
       // Step 1: Harus Organik

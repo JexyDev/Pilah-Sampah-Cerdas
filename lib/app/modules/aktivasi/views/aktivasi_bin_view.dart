@@ -170,8 +170,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
-            lower.contains('basah') ||
-            lower.startsWith('bsk-member-'));
+            lower.contains('basah'));
 
     if (_targetType == 'organic') {
       if (isAnorganicPattern) {
@@ -247,8 +246,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
-            lower.contains('basah') ||
-            lower.startsWith('bsk-member-'));
+            lower.contains('basah'));
 
     setState(() {
       if (_targetType == 'organic') {
@@ -451,7 +449,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return msg ?? 'Kategori Tempat Sampah sudah terdaftar untuk warga ini.';
       case 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY':
         return msg ??
-            'Harap selesaikan aktivasi kategori Tempat Sampah yang belum terdaftar.';
+            'Aktivasi awal wajib sepasang (Tempat Sampah Organik & Anorganik). Pastikan kedua stiker fisik resmi telah dipindai.';
       default:
         if (msg != null && msg.isNotEmpty) {
           return msg;
@@ -501,30 +499,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         );
         ref.read(aktivasiBinProvider.notifier).reset();
 
-        final rawMsg = next.errorMessage ?? '';
-        final isNonOrgNeeded = next.errorCode == 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY' &&
-            (rawMsg.contains('Non-Organik') ||
-             rawMsg.contains('NON_ORGANIC') ||
-             rawMsg.contains('ORGANIC'));
-        final isOrgNeeded = next.errorCode == 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY' &&
-            rawMsg.contains('Organik') &&
-            !rawMsg.contains('Non-Organik');
-
         setState(() {
-          if (isNonOrgNeeded) {
-            _hasOrganic = true;
-            _targetType = 'non_organic';
-            _step = 2;
-          } else if (isOrgNeeded) {
-            _hasAnorganic = true;
-            _targetType = 'organic';
-            _step = 1;
-          } else {
-            _step = _targetType == 'non_organic' ? 2 : 1;
-          }
           _qrOrganik = '';
           _qrAnorganik = '';
           _bothBinsDetected = false;
+          _step = _targetType == 'non_organic' ? 2 : 1;
         });
       }
 

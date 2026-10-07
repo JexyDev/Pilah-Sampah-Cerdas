@@ -251,7 +251,21 @@ abstract class KknRepository {
 
   /// Ambil ringkasan total jam presensi KKN (Timesheet Summary)
   /// GET /api/v1/timesheet/summary
-  Future<Map<String, dynamic>> getTimesheetSummary({String? studentId});
+  Future<Map<String, dynamic>> getTimesheetSummary({
+    String? studentId,
+    String? startDate,
+    String? endDate,
+  });
+
+  /// Ambil laporan presensi KKN (dengan filter status, tanggal, paginasi)
+  /// GET /api/v1/kkn-attendance/laporan-presensi
+  Future<Map<String, dynamic>> getLaporanPresensi({
+    String? status,
+    String? startDate,
+    String? endDate,
+    int? page,
+    int? limit,
+  });
 
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)

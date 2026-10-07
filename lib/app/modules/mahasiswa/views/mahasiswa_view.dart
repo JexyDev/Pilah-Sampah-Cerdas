@@ -1221,7 +1221,27 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
   Widget _buildWargaSection(MahasiswaState state) {
     final kelompokState = ref.watch(kelompokKknProvider);
-    final displayedWarga = state.wargaList.take(3).toList();
+    final user = ref.watch(authProvider).user;
+    final personalWarga = state.wargaList.where((w) {
+      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
+      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
+      final isMyName = w.pendampingName.trim().isNotEmpty &&
+          w.pendampingName.trim().toLowerCase() ==
+              (user?.name ?? '').trim().toLowerCase();
+      final isMyPendamping = (w.pendampingKkn != null &&
+          ((w.pendampingKkn!.id.isNotEmpty && w.pendampingKkn!.id == user?.id) ||
+              (user?.nim.isNotEmpty == true && w.pendampingKkn!.nim == user?.nim) ||
+              (user?.name.isNotEmpty == true &&
+                  w.pendampingKkn!.name.trim().toLowerCase() ==
+                      user?.name.trim().toLowerCase())));
+      return (isMyId || isMyName || isMyPendamping) && w.isActivated;
+    }).toList();
+
+    final displayedWarga = (personalWarga.isNotEmpty
+            ? personalWarga
+            : state.wargaList.where((w) => w.isActivated).toList())
+        .take(3)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1677,6 +1697,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               middleText: '$hariTidakMemenuhi',
                               bottomText: 'Tidak Memenuhi',
                               color: AppColors.warningOrange,
+                              icon: Icons.warning_amber_rounded,
+                              showChevron: true,
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.riwayatTidakMemenuhi,
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -2347,12 +2375,18 @@ class _KknStatCard extends StatelessWidget {
     required this.middleText,
     required this.bottomText,
     required this.color,
+    this.icon,
+    this.onTap,
+    this.showChevron = false,
   });
 
   final String topText;
   final String middleText;
   final String bottomText;
   final Color color;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -2360,62 +2394,98 @@ class _KknStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: onTap != null
+              ? color.withValues(alpha: 0.35)
+              : AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: onTap != null
+                ? color.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              topText,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.bold,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 13, color: color),
+                      const SizedBox(width: 4),
+                    ],
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          topText,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (showChevron && onTap != null) ...[
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 14,
+                        color: color,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    middleText,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    bottomText,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              middleText,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              bottomText,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

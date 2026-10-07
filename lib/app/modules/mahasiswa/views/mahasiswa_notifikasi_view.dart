@@ -379,8 +379,15 @@ class _MahasiswaNotifikasiViewState
                             final typeU = item.type.toUpperCase();
                             final titleL = item.title.toLowerCase();
                             final descL = item.desc.toLowerCase();
-                            // Route by domain type so mahasiswa lands on relevant page
-                            if (typeU.contains('POIN') || typeU == 'PUNISHMENT' || titleL.contains('poin') || titleL.contains('pts') || descL.contains('pts') || descL.contains('poin')) {
+                            if (typeU.contains('PRESENSI_TIDAK_MEMENUHI') ||
+                                typeU.contains('TIDAK_MEMENUHI') ||
+                                titleL.contains('tidak memenuhi') ||
+                                descL.contains('tidak memenuhi')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatTidakMemenuhi,
+                              );
+                            } else if (typeU.contains('POIN') || typeU == 'PUNISHMENT' || titleL.contains('poin') || titleL.contains('pts') || descL.contains('pts') || descL.contains('poin')) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -512,6 +519,12 @@ class _MahasiswaNotificationCard extends StatelessWidget {
       iconAsset = 'assets/icons/submission.png';
       iconColor = AppColors.primaryBlueDark;
       iconBg = AppColors.primaryBlueDark.withValues(alpha: 0.1);
+    } else if (type.contains('PRESENSI_TIDAK_MEMENUHI') ||
+        type.contains('TIDAK_MEMENUHI') ||
+        item.title.toLowerCase().contains('tidak memenuhi')) {
+      iconData = Icons.warning_amber_rounded;
+      iconColor = Colors.orange.shade800;
+      iconBg = Colors.orange.shade50;
     } else if (type.contains('PRESENSI')) {
       iconData = Icons.location_on_rounded;
       iconColor = AppColors.primaryGreen;

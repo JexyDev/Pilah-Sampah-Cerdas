@@ -111,6 +111,12 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
+      // Mode Monitoring: HANYA tampilkan warga yang sudah aktif (sudah punya tempat sampah aktif dan didampingi)
+      if (!isAktivasiBinMode && !w.isActivated) return false;
+
+      // Mode Aktivasi: HANYA tampilkan warga yang belum aktivasi tempat sampah (!w.isActivated)
+      if (isAktivasiBinMode && w.isActivated) return false;
+
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')
           .replaceFirst(RegExp(r'^0+'), '');

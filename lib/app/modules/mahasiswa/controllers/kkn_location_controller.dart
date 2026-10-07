@@ -22,6 +22,8 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../services/kkn_background_task_handler.dart';
 import '../../../core/values/app_config.dart';
 import '../../../data/models/group_zone_models.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart'
+    show calculateValidPauseMinutes;
 import '../../../core/utils/geofence_zone_engine.dart';
 
 class KknLocationState {
@@ -439,6 +441,21 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .ceil();
         }
 
+        // Hitung fallback durasi live berbasis attendedAt & jedaLogs manual (mengabaikan jeda logout otomatis)
+        final attendedAtStr = activeItem['attendedAt']?.toString();
+        if (attendedAtStr != null && attendedAtStr.isNotEmpty) {
+          final attendedAt = DateTime.tryParse(attendedAtStr);
+          if (attendedAt != null) {
+            final grossMinutes = DateTime.now().difference(attendedAt).inMinutes;
+            final jedaLogs = activeItem['jedaLogs'];
+            final pauseMinutes = calculateValidPauseMinutes(jedaLogs);
+            final liveMins = (grossMinutes - pauseMinutes).clamp(0, 900);
+            if (liveMins > _backendDurationMinutes) {
+              _backendDurationMinutes = liveMins;
+            }
+          }
+        }
+
         final durasiWajib =
             int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ??
             120;
@@ -825,8 +842,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         state.activeActivity?['id']?.toString();
     if (scheduleId == null) return false;
 
-    // Ambil posisi saat ini untuk validasi geofence
-    final pos = state.currentPosition;
+    // Ambil posisi saat ini untuk validasi geofence (dengan fallback jika cache posisi kosong)
+    Position? pos = state.currentPosition;
+    pos ??= await LocationService.instance.getCurrentLocation();
     if (pos == null) {
       debugPrint('[KKN] lanjutKegiatan: posisi tidak tersedia');
       return false;
@@ -897,6 +915,22 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       _backendDurationMinutes =
           ((num.tryParse(data['actualInZoneSeconds'].toString()) ?? 0) / 60)
               .ceil();
+    }
+
+    // Hitung fallback durasi live berbasis attendedAt & jedaLogs manual (mengabaikan jeda logout otomatis)
+    final attendedAtStr = data['attendedAt']?.toString() ??
+        state.activeActivity?['attendedAt']?.toString();
+    if (attendedAtStr != null && attendedAtStr.isNotEmpty) {
+      final attendedAt = DateTime.tryParse(attendedAtStr);
+      if (attendedAt != null) {
+        final grossMinutes = DateTime.now().difference(attendedAt).inMinutes;
+        final jedaLogs = data['jedaLogs'] ?? state.activeActivity?['jedaLogs'];
+        final pauseMinutes = calculateValidPauseMinutes(jedaLogs);
+        final liveMins = (grossMinutes - pauseMinutes).clamp(0, 900);
+        if (liveMins > _backendDurationMinutes) {
+          _backendDurationMinutes = liveMins;
+        }
+      }
     }
     state = state.copyWith(inZoneDurationSeconds: _backendDurationMinutes);
 
@@ -1696,18 +1730,26 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     final int durationMinutes = _backendDurationMinutes;
 
     try {
-      const LocationSettings locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      );
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: locationSettings,
-      );
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+      } catch (_) {
+        pos = state.currentPosition;
+      }
+      final double lat =
+          pos?.latitude ?? state.currentPosition?.latitude ?? 0.0;
+      final double lng =
+          pos?.longitude ?? state.currentPosition?.longitude ?? 0.0;
       final repo = ref.read(kknRepositoryProvider);
       final response = await repo.recordAttendance(
         scheduleId: _currentTargetScheduleId!,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
+        latitude: lat,
+        longitude: lng,
         method: method,
         nim: nim,
         namaMahasiswa: namaMahasiswa,
@@ -1762,29 +1804,57 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               _backendDurationMinutes >= state.targetDurationMinutes;
         }
 
-        if (user != null && isMemenuhi) {
-          const notifTitle = 'Selesai Kegiatan KKN Berhasil ✅';
-          final notifDesc =
-              'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).';
-          await FirebaseNotificationService().saveNotification(
-            userId: user.id,
-            role: user.role.name,
-            title: notifTitle,
-            desc: notifDesc,
-            type: 'PRESENSI_KKN_SUKSES',
-          );
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: user.role.name,
-            title: notifTitle,
-            desc: notifDesc,
-            type: 'PRESENSI_KKN_SUKSES',
-          );
-          NotificationEngine().showGenericNotification(
-            id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
-            title: notifTitle,
-            body: notifDesc,
-          );
+        if (user != null) {
+          if (isMemenuhi) {
+            const notifTitle = 'Selesai Kegiatan KKN Berhasil ✅';
+            final notifDesc =
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).';
+            await FirebaseNotificationService().saveNotification(
+              userId: user.id,
+              role: user.role.name,
+              title: notifTitle,
+              desc: notifDesc,
+              type: 'PRESENSI_KKN_SUKSES',
+            );
+            LocalNotificationCacheService().addNotification(
+              userId: user.id,
+              role: user.role.name,
+              title: notifTitle,
+              desc: notifDesc,
+              type: 'PRESENSI_KKN_SUKSES',
+            );
+            NotificationEngine().showGenericNotification(
+              id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
+              title: notifTitle,
+              body: notifDesc,
+            );
+          } else {
+            final targetMenit = state.targetDurationMinutes;
+            final shortage = (targetMenit - durationMinutes).clamp(0, targetMenit);
+            final studentName = user.name.isNotEmpty ? user.name : 'Mahasiswa';
+            const notifTitle = 'Presensi Selesai: Hadir Tidak Memenuhi ⚠️';
+            final notifDesc =
+                'Halo $studentName, kegiatan di $kelurahan ($rw) selesai dengan durasi $durationMinutes menit (target $targetMenit mnt, kurang $shortage mnt). Status kehadiran Anda tercatat Hadir Tidak Memenuhi tanpa bonus +3 PTS.';
+            await FirebaseNotificationService().saveNotification(
+              userId: user.id,
+              role: user.role.name,
+              title: notifTitle,
+              desc: notifDesc,
+              type: 'PRESENSI_TIDAK_MEMENUHI',
+            );
+            LocalNotificationCacheService().addNotification(
+              userId: user.id,
+              role: user.role.name,
+              title: notifTitle,
+              desc: notifDesc,
+              type: 'PRESENSI_TIDAK_MEMENUHI',
+            );
+            NotificationEngine().showGenericNotification(
+              id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
+              title: notifTitle,
+              body: notifDesc,
+            );
+          }
         }
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(pointHistoryProvider);

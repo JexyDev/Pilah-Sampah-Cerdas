@@ -42,6 +42,7 @@ import '../modules/mahasiswa/views/input_laporan_akhir_view.dart';
 import '../modules/mahasiswa/views/input_logbook_kkn_view.dart';
 import '../modules/mahasiswa/views/monitoring_dampak_kelurahan_view.dart';
 import '../modules/mahasiswa/views/riwayat_kkn_view.dart';
+import '../modules/mahasiswa/views/riwayat_tidak_memenuhi_view.dart';
 import '../modules/petugas_pemilahan/views/riwayat_petugas_pemilahan_view.dart';
 import '../modules/petugas_pemilahan/views/ganti_password_petugas_view.dart';
 import '../modules/petugas_pemilahan/views/edit_profil_petugas_view.dart';
@@ -207,6 +208,8 @@ class AppPages {
         return _buildRoute(InputLogbookKknView(initialData: args), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
+      case AppRoutes.riwayatTidakMemenuhi:
+        return _buildRoute(const RiwayatTidakMemenuhiView(), settings);
       case AppRoutes.poin:
         return _buildRoute(
           Consumer(

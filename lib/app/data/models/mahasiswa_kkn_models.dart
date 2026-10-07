@@ -1573,3 +1573,82 @@ class FasilitasTataKelolaSampah extends Equatable {
 }
 
 typedef FasilitasWarga = FasilitasTataKelolaSampah;
+
+/// ═══════════════════════════════════════════════════════════════════════════
+/// JedaLog — Model Riwayat Jeda Presensi KKN & Filter Jeda Otomatis
+/// ═══════════════════════════════════════════════════════════════════════════
+
+class JedaLog extends Equatable {
+  final DateTime waktuJeda;
+  final DateTime? waktuResume;
+  final String? alasan;
+  final bool autoTriggered;
+
+  const JedaLog({
+    required this.waktuJeda,
+    this.waktuResume,
+    this.alasan,
+    this.autoTriggered = false,
+  });
+
+  factory JedaLog.fromJson(Map<String, dynamic> json) {
+    final waktuJedaParsed =
+        DateTime.tryParse(json['waktuJeda']?.toString() ?? '') ??
+        DateTime.now();
+    final waktuResumeParsed = json['waktuResume'] != null
+        ? DateTime.tryParse(json['waktuResume'].toString())
+        : null;
+    final alasanStr = json['alasan']?.toString();
+    final isAuto =
+        json['autoTriggered'] == true ||
+        json['isAuto'] == true ||
+        (alasanStr?.toLowerCase().contains('logout') ?? false);
+
+    return JedaLog(
+      waktuJeda: waktuJedaParsed,
+      waktuResume: waktuResumeParsed,
+      alasan: alasanStr,
+      autoTriggered: isAuto,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'waktuJeda': waktuJeda.toIso8601String(),
+      if (waktuResume != null) 'waktuResume': waktuResume!.toIso8601String(),
+      if (alasan != null) 'alasan': alasan,
+      'autoTriggered': autoTriggered,
+    };
+  }
+
+  @override
+  List<Object?> get props => [waktuJeda, waktuResume, alasan, autoTriggered];
+}
+
+/// Helper: Kalkulasi total menit jeda presensi yang valid dari jedaLogs.
+/// Mengabaikan log jeda yang memiliki flag autoTriggered: true atau alasan yang memuat kata "Logout".
+int calculateValidPauseMinutes(dynamic logs) {
+  if (logs == null || logs is! List) return 0;
+  int totalMinutes = 0;
+  for (var raw in logs) {
+    if (raw == null) continue;
+    final JedaLog log;
+    if (raw is JedaLog) {
+      log = raw;
+    } else if (raw is Map) {
+      log = JedaLog.fromJson(Map<String, dynamic>.from(raw));
+    } else {
+      continue;
+    }
+
+    // Abaikan jeda otomatis dari sistem logout
+    if (log.autoTriggered == true ||
+        (log.alasan?.toLowerCase().contains('logout') ?? false)) {
+      continue;
+    }
+    if (log.waktuResume != null) {
+      totalMinutes += log.waktuResume!.difference(log.waktuJeda).inMinutes;
+    }
+  }
+  return totalMinutes;
+}

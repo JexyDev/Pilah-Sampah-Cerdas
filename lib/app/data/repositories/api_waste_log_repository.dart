@@ -197,8 +197,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       wasteType = WasteType.nonOrganic;
     } else if (binQrCode.contains('OGN') ||
         binQrCode.contains('ORGANIK') ||
-        binQrCode.contains('ORG') ||
-        binQrCode.contains('BSK-MEMBER')) {
+        binQrCode.contains('ORG')) {
       wasteType = WasteType.organic;
     } else {
       // Cek ANORGANIK/NON-ORG dulu - 'ORGANIC' adalah substring dari 'ANORGANIK'
@@ -308,8 +307,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       wasteType = WasteType.nonOrganic;
     } else if (rawWasteType.contains('OGN') ||
         rawWasteType.contains('ORGANIK') ||
-        rawWasteType.contains('ORG') ||
-        rawWasteType.contains('BSK-MEMBER')) {
+        rawWasteType.contains('ORG')) {
       wasteType = WasteType.organic;
     } else {
       // Fallback: deteksi dari description — cek NON/ANORG/AGN dulu sebelum ORG/OGN

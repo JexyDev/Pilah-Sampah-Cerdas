@@ -345,6 +345,8 @@ class ApiKknRepository implements KknRepository {
         alasan: 'Presensi Selesai (Pulang)',
         deskripsiKegiatan: deskripsiKegiatan,
         fotoPath: fotoPath,
+        latitude: latitude,
+        longitude: longitude,
       );
       return response;
     } catch (e) {
@@ -1223,12 +1225,18 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getTimesheetSummary({String? studentId}) async {
+  Future<Map<String, dynamic>> getTimesheetSummary({
+    String? studentId,
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
       final response = await apiClient.dio.get(
         ApiEndpoints.timesheetSummary,
         queryParameters: {
           if (studentId != null && studentId.isNotEmpty) 'studentId': studentId,
+          if (startDate != null && startDate.isNotEmpty) 'startDate': startDate,
+          if (endDate != null && endDate.isNotEmpty) 'endDate': endDate,
         },
       );
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -1238,6 +1246,41 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       debugPrint('[KKN] getTimesheetSummary error: $e');
       return {};
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getLaporanPresensi({
+    String? status,
+    String? startDate,
+    String? endDate,
+    int? page,
+    int? limit,
+  }) async {
+    try {
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknLaporanPresensi,
+        queryParameters: {
+          if (status != null && status.isNotEmpty) 'status': status,
+          if (startDate != null && startDate.isNotEmpty) 'startDate': startDate,
+          if (endDate != null && endDate.isNotEmpty) 'endDate': endDate,
+          if (page != null && page > 0) 'page': page,
+          if (limit != null && limit > 0) 'limit': limit,
+        },
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data is Map<String, dynamic>) {
+          final resData = response.data as Map<String, dynamic>;
+          if (resData['success'] == true && resData['data'] is Map<String, dynamic>) {
+            return resData['data'] as Map<String, dynamic>;
+          }
+          return resData;
+        }
+      }
+      return {};
+    } catch (e) {
+      debugPrint('[KKN] getLaporanPresensi error: $e');
+      rethrow;
     }
   }
 
