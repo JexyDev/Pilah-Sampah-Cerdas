@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import * as XLSX from "xlsx";
 import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
+import { computeTimelineStatus, DEFAULT_TIMELINE_COBLONG } from "./timelineKknService.js";
 
 export interface KknExecutiveFilters {
   kelurahan?: string;
@@ -541,7 +542,7 @@ export const kknExecutiveService = {
       ],
     };
 
-    // 12. Rasio Kehadiran terhadap Target 200 Jam
+    // 12. Rasio Kehadiran terhadap Target 250 Jam
     // Akumulasi jam riil (ActivityAttendance + PresensiMandiri)
     const totalMinutesAgg = await prisma.activityAttendance.aggregate({
       where: attendanceWhere,
@@ -563,7 +564,7 @@ export const kknExecutiveService = {
     const totalActualMinutes = (totalMinutesAgg._sum.actualInZoneMinutes || 0) + (totalMandiriAgg._sum.durasiMenit || 0);
     const totalHoursRaw = totalActualMinutes / 60;
     const currentAvgHours = totalMahasiswa > 0 ? Math.round(totalHoursRaw / totalMahasiswa) : 0;
-    const targetHours = 200;
+    const targetHours = 250;
     const rasioPercentage = Math.round((currentAvgHours / targetHours) * 100);
     const remainingHours = Math.max(0, targetHours - currentAvgHours);
 
@@ -594,7 +595,7 @@ export const kknExecutiveService = {
       return {
         week: w.week,
         avgHours: avgH,
-        target: 200,
+        target: targetHours,
       };
     });
 
@@ -700,22 +701,95 @@ export const kknExecutiveService = {
       chartData: aktivitasChartData,
     };
 
-    // 14. Lini Masa Terkini (Real query dari tabel timeline_kkn)
-    const dbTimelines = await prisma.timelineKkn.findMany({
-      where: {
-        fase: { not: "Pra-Kegiatan" },
-      },
+    // 14. Lini Masa Terkini (Real query dari tabel timeline_kkn dengan sinkronisasi kalender dinamis & smart active windowing)
+    const timelineWhere: any = {
+      fase: { not: "Pra-Kegiatan" },
+    };
+
+    if (isFilteredKelompok && kelompokList.length > 0) {
+      const targetKelompokId = kelompokList[0]?.id;
+      timelineWhere.OR = [
+        { kelompokId: targetKelompokId },
+        { kelompokId: null },
+      ];
+    } else {
+      timelineWhere.kelompokId = null;
+    }
+
+    let allTimelines = await prisma.timelineKkn.findMany({
+      where: timelineWhere,
       orderBy: { startDate: "asc" },
-      take: 4,
     });
 
-    const liniMasaTerkini = dbTimelines.map((t) => {
-      const isActive = t.statusPelaksanaan === "SEDANG_BERJALAN";
-      const isCompleted = t.statusPelaksanaan === "SELESAI";
+    if (allTimelines.length === 0) {
+      allTimelines = await prisma.timelineKkn.findMany({
+        where: { fase: { not: "Pra-Kegiatan" } },
+        orderBy: { startDate: "asc" },
+      });
+    }
+
+    let sourceList: Array<{
+      id?: string;
+      kegiatanUtama: string;
+      tahapMinggu: string;
+      tanggal: string;
+      startDate: Date | string;
+      endDate: Date | string;
+      statusPelaksanaan?: string;
+    }> = allTimelines;
+
+    if (sourceList.length === 0) {
+      sourceList = DEFAULT_TIMELINE_COBLONG.filter((t) => t.fase !== "Pra-Kegiatan");
+    }
+
+    const resolvedTimelines = sourceList.map((t, idx) => {
+      const dynamicStatus = computeTimelineStatus(
+        t.startDate,
+        t.endDate,
+        t.tanggal,
+        t.statusPelaksanaan
+      );
+      return {
+        id: t.id || `default-timeline-${idx}`,
+        title: t.kegiatanUtama,
+        tahapMinggu: t.tahapMinggu,
+        tanggal: t.tanggal,
+        dateRange: `${t.tahapMinggu} • ${t.tanggal}`,
+        computedStatus: dynamicStatus,
+      };
+    });
+
+    // Smart Windowing: Ambil 4 item yang memprioritaskan tahapan aktif saat ini ("SEDANG_BERJALAN")
+    const activeIdx = resolvedTimelines.findIndex((t) => t.computedStatus === "SEDANG_BERJALAN");
+
+    let startIndex = 0;
+    if (activeIdx !== -1) {
+      // Posisikan item aktif di dalam window 4 item: 1 item selesai sebelumnya (jika ada) + item aktif + item mendatang
+      startIndex = Math.max(0, activeIdx - 1);
+      if (startIndex + 4 > resolvedTimelines.length) {
+        startIndex = Math.max(0, resolvedTimelines.length - 4);
+      }
+    } else {
+      const upcomingIdx = resolvedTimelines.findIndex((t) => t.computedStatus === "BELUM_DIMULAI");
+      if (upcomingIdx !== -1) {
+        startIndex = Math.max(0, upcomingIdx - 2);
+        if (startIndex + 4 > resolvedTimelines.length) {
+          startIndex = Math.max(0, resolvedTimelines.length - 4);
+        }
+      } else {
+        startIndex = Math.max(0, resolvedTimelines.length - 4);
+      }
+    }
+
+    const windowedTimelines = resolvedTimelines.slice(startIndex, startIndex + 4);
+
+    const liniMasaTerkini = windowedTimelines.map((t) => {
+      const isActive = t.computedStatus === "SEDANG_BERJALAN";
+      const isCompleted = t.computedStatus === "SELESAI";
       return {
         id: t.id,
-        title: t.kegiatanUtama,
-        dateRange: `${t.tahapMinggu} • ${t.tanggal}`,
+        title: t.title,
+        dateRange: t.dateRange,
         status: isActive ? "Sedang Berlangsung" : isCompleted ? "Selesai" : "Akan Datang",
         badgeType: isActive ? "active" : isCompleted ? "completed" : "upcoming",
       };

@@ -952,10 +952,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
     rasioKehadiran: {
       percentage: 0,
       totalHours: 0,
-      targetHours: 200,
-      remainingHours: 200,
+      targetHours: 250,
+      remainingHours: 250,
       label: "0%",
-      sublabel: "0 dari target 200 jam",
+      sublabel: "0 dari target 250 jam",
     },
   };
 
@@ -1960,7 +1960,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Col 3: Rasio Kehadiran terhadap Target 200 Jam (4 cols) */}
+        {/* Col 3: Rasio Kehadiran terhadap Target 250 Jam (4 cols) */}
         <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
@@ -1968,7 +1968,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <TrendingUp size={16} />
               </div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                Target 200 Jam Kerja
+                Target 250 Jam Kerja
               </h2>
             </div>
             <div className="text-right">
@@ -1976,7 +1976,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 {data?.rasioKehadiranTrend?.percentage ?? 0}%
               </span>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
-                {data?.rasioKehadiranTrend?.remainingHours ?? 200} Jam tersisa
+                {data?.rasioKehadiranTrend?.remainingHours ?? 250} Jam tersisa
               </p>
             </div>
           </div>
@@ -1984,7 +1984,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           <div className="flex items-baseline gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Capaian:</span>
             <span className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              {data?.rasioKehadiranTrend?.currentAvgHours ?? 0} Jam / {data?.rasioKehadiranTrend?.targetHours || 200} Jam
+              {data?.rasioKehadiranTrend?.currentAvgHours ?? 0} Jam / {data?.rasioKehadiranTrend?.targetHours || 250} Jam
             </span>
           </div>
 
@@ -2003,8 +2003,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   label={{ value: "Pekan KKN", position: "insideBottom", offset: -5, fontSize: 11, fontWeight: 700, fill: "#475569" }}
                 />
                 <YAxis
-                  domain={[0, 200]}
-                  ticks={[0, 50, 100, 150, 200]}
+                  domain={[0, 250]}
+                  ticks={[0, 50, 100, 150, 200, 250]}
                   tick={{ fontSize: 11, fontWeight: 600, fill: "#475569" }}
                   tickLine={false}
                   axisLine={false}
@@ -2159,16 +2159,29 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
         {/* Col 2: Linimasa Pelaksanaan KKN (4 cols) */}
         <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3 h-full">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Linimasa Pelaksanaan KKN
-            </h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
+                Linimasa Pelaksanaan KKN
+              </h2>
+            </div>
+            <Link
+              to="/pelaksanaan/linimasa-kegiatan"
+              className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 inline-flex items-center gap-1 transition-colors"
+            >
+              Lihat Semua &gt;
+            </Link>
           </div>
 
           {/* Vertical Timeline List (ISO 9241-11 Usability & Responsive Align) */}
           <div className="space-y-4 my-auto py-1">
-            {(data?.liniMasaTerkini || []).map((item, idx, arr) => {
+            {(data?.liniMasaTerkini || []).length === 0 ? (
+              <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                Belum ada data linimasa pelaksanaan KKN.
+              </div>
+            ) : (
+              (data?.liniMasaTerkini || []).map((item, idx, arr) => {
               const isActive = item.badgeType === "active";
               const isLast = idx === arr.length - 1;
               return (
@@ -2220,7 +2233,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
 

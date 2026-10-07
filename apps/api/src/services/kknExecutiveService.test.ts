@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { kknExecutiveService } from "./kknExecutiveService.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -237,4 +237,176 @@ describe("kknExecutiveService - Status Pelaksanaan Proker (Business Logic Fix)",
     expect(pelaksanaan.belum.percentage).toBe(Math.round((13 / 104) * 100));
   });
 });
+
+describe("kknExecutiveService - Rasio Kehadiran Target 250 Jam", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    (prisma.kelompokKkn.findMany as any).mockResolvedValue([
+      {
+        id: "k1",
+        name: "Kelompok 1 Dago",
+        kelurahan: "Dago",
+        cakupanRw: ["1", "2"],
+        dplId: "dpl1",
+        schedules: [],
+        programKerja: [],
+      },
+    ]);
+
+    (prisma.user.findMany as any).mockResolvedValue([
+      { id: "u1", role: "MAHASISWA" },
+    ]);
+    (prisma.studentKkn.findMany as any).mockResolvedValue([
+      { id: "s1", userId: "u1" },
+    ]);
+    (prisma.programKerjaKkn.findMany as any).mockResolvedValue([]);
+    (prisma.programKerjaKkn.count as any).mockResolvedValue(0);
+    (prisma.activityAttendance.groupBy as any).mockResolvedValue([]);
+    (prisma.activityAttendance.count as any).mockResolvedValue(0);
+    // Mock 125 jam (7500 menit) aktual
+    (prisma.activityAttendance.aggregate as any).mockResolvedValue({
+      _sum: { actualInZoneMinutes: 7500 },
+    });
+    (prisma.presensiMandiri.aggregate as any).mockResolvedValue({
+      _sum: { durasiMenit: 0 },
+    });
+    (prisma.activityAttendance.findMany as any).mockResolvedValue([]);
+    (prisma.logbookKkn.count as any).mockResolvedValue(0);
+    (prisma.logbookKkn.findFirst as any).mockResolvedValue(null);
+    (prisma.logbookKkn.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.count as any).mockResolvedValue(0);
+    (prisma.logbookDpl.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.groupBy as any).mockResolvedValue([]);
+    (prisma.timelineKkn.findMany as any).mockResolvedValue([]);
+    (prisma.kelurahan.count as any).mockResolvedValue(6);
+    (prisma.rw.count as any).mockResolvedValue(84);
+  });
+
+  it("menghitung rasio kehadiran terhadap target 250 jam dengan benar", async () => {
+    const result = await kknExecutiveService.getExecutiveDashboard({});
+
+    // 7500 menit = 125 jam. Total mahasiswa = 1.
+    // 125 jam / 250 jam = 50%
+    expect(result.summary.rasioKehadiran.targetHours).toBe(250);
+    expect(result.summary.rasioKehadiran.totalHours).toBe(125);
+    expect(result.summary.rasioKehadiran.percentage).toBe(50);
+    expect(result.summary.rasioKehadiran.remainingHours).toBe(125);
+    expect(result.summary.rasioKehadiran.sublabel).toBe("125 dari target 250 jam");
+
+    expect(result.rasioKehadiranTrend.targetHours).toBe(250);
+    expect(result.rasioKehadiranTrend.currentAvgHours).toBe(125);
+    expect(result.rasioKehadiranTrend.percentage).toBe(50);
+    expect(result.rasioKehadiranTrend.remainingHours).toBe(125);
+
+    // Semua pekan weeklyTrends targetnya harus 250
+    result.rasioKehadiranTrend.weeklyTrends.forEach((w) => {
+      expect(w.target).toBe(250);
+    });
+  });
+});
+
+describe("kknExecutiveService - Linimasa Terkini Dynamic Calendar & Active Stage Windowing", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-08T10:00:00.000Z")); // 8 Oktober 2026 (Minggu 9)
+
+    (prisma.kelompokKkn.findMany as any).mockResolvedValue([
+      {
+        id: "k1",
+        name: "Kelompok 1 Dago",
+        kelurahan: "Dago",
+        cakupanRw: ["1", "2"],
+        dplId: "dpl1",
+        schedules: [],
+        programKerja: [],
+      },
+    ]);
+
+    (prisma.user.findMany as any).mockResolvedValue([{ id: "u1", role: "MAHASISWA" }]);
+    (prisma.studentKkn.findMany as any).mockResolvedValue([{ id: "s1", userId: "u1" }]);
+    (prisma.programKerjaKkn.findMany as any).mockResolvedValue([]);
+    (prisma.programKerjaKkn.count as any).mockResolvedValue(0);
+    (prisma.activityAttendance.groupBy as any).mockResolvedValue([]);
+    (prisma.activityAttendance.count as any).mockResolvedValue(0);
+    (prisma.activityAttendance.aggregate as any).mockResolvedValue({ _sum: { actualInZoneMinutes: 0 } });
+    (prisma.presensiMandiri.aggregate as any).mockResolvedValue({ _sum: { durasiMenit: 0 } });
+    (prisma.activityAttendance.findMany as any).mockResolvedValue([]);
+    (prisma.logbookKkn.count as any).mockResolvedValue(0);
+    (prisma.logbookKkn.findFirst as any).mockResolvedValue(null);
+    (prisma.logbookKkn.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.count as any).mockResolvedValue(0);
+    (prisma.logbookDpl.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.groupBy as any).mockResolvedValue([]);
+    (prisma.kelurahan.count as any).mockResolvedValue(6);
+    (prisma.rw.count as any).mockResolvedValue(84);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("menampilkan tahapan 'Sedang Berlangsung' pada lini masa eksekutif sesuai kalender riil hari ini (8 Okt 2026 = Minggu 9)", async () => {
+    // Mock database kembalikan daftar 10 pekan KKN (Minggu 1 s/d Minggu 12)
+    const mockDbTimelines = [
+      { id: "t1", tahapMinggu: "Minggu 1", tanggal: "12 - 18 Agustus 2026", startDate: new Date("2026-08-12"), endDate: new Date("2026-08-18"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Kick Off" },
+      { id: "t2", tahapMinggu: "Minggu 2", tanggal: "19 - 25 Agustus 2026", startDate: new Date("2026-08-19"), endDate: new Date("2026-08-25"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Observasi" },
+      { id: "t3", tahapMinggu: "Minggu 3", tanggal: "26 Agustus - 1 September 2026", startDate: new Date("2026-08-26"), endDate: new Date("2026-09-01"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Matriks Proker" },
+      { id: "t4", tahapMinggu: "Minggu 4", tanggal: "2 - 8 September 2026", startDate: new Date("2026-09-02"), endDate: new Date("2026-09-08"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Distribusi Sarana" },
+      { id: "t5", tahapMinggu: "Minggu 5", tanggal: "9 - 15 September 2026", startDate: new Date("2026-09-09"), endDate: new Date("2026-09-15"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Edukasi Warga" },
+      { id: "t6", tahapMinggu: "Minggu 6 dan 7", tanggal: "16 - 29 September 2026", startDate: new Date("2026-09-16"), endDate: new Date("2026-09-29"), statusPelaksanaan: "SELESAI", kegiatanUtama: "Perluasan RW" },
+      { id: "t7", tahapMinggu: "Minggu 8", tanggal: "30 September - 6 Oktober 2026", startDate: new Date("2026-09-30"), endDate: new Date("2026-10-06"), statusPelaksanaan: "SELESAI", kegiatanUtama: "IoT & Kompos" },
+      { id: "t8", tahapMinggu: "Minggu 9", tanggal: "7 - 13 Oktober 2026", startDate: new Date("2026-10-07"), endDate: new Date("2026-10-13"), statusPelaksanaan: "BELUM_DIMULAI", kegiatanUtama: "Bank Sampah & POC" },
+      { id: "t9", tahapMinggu: "Minggu 10 dan 11", tanggal: "14 - 27 Oktober 2026", startDate: new Date("2026-10-14"), endDate: new Date("2026-10-27"), statusPelaksanaan: "BELUM_DIMULAI", kegiatanUtama: "Mitigasi & SOP" },
+      { id: "t10", tahapMinggu: "Minggu 12", tanggal: "28 - 31 Oktober 2026", startDate: new Date("2026-10-28"), endDate: new Date("2026-10-31"), statusPelaksanaan: "BELUM_DIMULAI", kegiatanUtama: "Penutupan" },
+    ];
+
+    (prisma.timelineKkn.findMany as any).mockResolvedValue(mockDbTimelines);
+
+    const result = await kknExecutiveService.getExecutiveDashboard({});
+
+    expect(result.liniMasaTerkini).toBeDefined();
+    expect(result.liniMasaTerkini.length).toBe(4);
+
+    // Pastikan ada item yang berstatus 'Sedang Berlangsung' dengan badgeType 'active'
+    const activeItem = result.liniMasaTerkini.find((item: any) => item.status === "Sedang Berlangsung");
+    expect(activeItem).toBeDefined();
+    expect(activeItem?.badgeType).toBe("active");
+    expect(activeItem?.dateRange).toContain("Minggu 9");
+
+    // Pastikan urutan window 4 item adalah: Minggu 8 (Selesai), Minggu 9 (Sedang Berlangsung), Minggu 10-11 (Akan Datang), Minggu 12 (Akan Datang)
+    expect(result.liniMasaTerkini[0].dateRange).toContain("Minggu 8");
+    expect(result.liniMasaTerkini[0].status).toBe("Selesai");
+    expect(result.liniMasaTerkini[0].badgeType).toBe("completed");
+
+    expect(result.liniMasaTerkini[1].dateRange).toContain("Minggu 9");
+    expect(result.liniMasaTerkini[1].status).toBe("Sedang Berlangsung");
+    expect(result.liniMasaTerkini[1].badgeType).toBe("active");
+
+    expect(result.liniMasaTerkini[2].dateRange).toContain("Minggu 10 dan 11");
+    expect(result.liniMasaTerkini[2].status).toBe("Akan Datang");
+    expect(result.liniMasaTerkini[2].badgeType).toBe("upcoming");
+
+    expect(result.liniMasaTerkini[3].dateRange).toContain("Minggu 12");
+    expect(result.liniMasaTerkini[3].status).toBe("Akan Datang");
+    expect(result.liniMasaTerkini[3].badgeType).toBe("upcoming");
+  });
+
+  it("menggunakan fallback DEFAULT_TIMELINE_COBLONG saat database timeline kosong dan tetap memuat tahapan aktif", async () => {
+    (prisma.timelineKkn.findMany as any).mockResolvedValue([]);
+
+    const result = await kknExecutiveService.getExecutiveDashboard({});
+
+    expect(result.liniMasaTerkini).toBeDefined();
+    expect(result.liniMasaTerkini.length).toBe(4);
+
+    // Di DEFAULT_TIMELINE_COBLONG pada 8 Okt 2026, Minggu 9 aktif
+    const activeItem = result.liniMasaTerkini.find((item: any) => item.status === "Sedang Berlangsung");
+    expect(activeItem).toBeDefined();
+    expect(activeItem?.badgeType).toBe("active");
+    expect(activeItem?.dateRange).toContain("Minggu 9");
+  });
+});
+
 
