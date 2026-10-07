@@ -58,13 +58,17 @@ describe("TransactionController - Sorting Status (is_correct) Response Tests", (
 
       const item = jsonCall.data[0];
       expect(item.id).toBe("dep-1");
+      expect(item.berat).toBe(2.5);
+      expect(item.weightKg).toBe(2.5);
+      expect(item.volume).toBe(2.5);
+      expect(item.volumeLiter).toBe(2.5);
       expect(item.ai_confidence).toBe(0.64);
       expect(item.discrepancy_status).toBe("NONE");
       expect(item.is_correct).toBe(true);
       expect(item.isCorrect).toBe(true);
     });
 
-    it("should return is_correct: false when ai_confidence < 0.50 (e.g. 0.45)", async () => {
+    it("should return volume and volumeLiter equal to berat when volumeEstimate is undefined (not 0)", async () => {
       vi.mocked(transactionService.getMyDeposits).mockResolvedValue([
         {
           id: "dep-2",
@@ -86,6 +90,11 @@ describe("TransactionController - Sorting Status (is_correct) Response Tests", (
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = res.json.mock.calls[0][0];
       const item = jsonCall.data[0];
+      expect(item.berat).toBe(1.0);
+      expect(item.weightKg).toBe(1.0);
+      expect(item.volume).toBe(1.0);
+      expect(item.volumeLiter).toBe(1.0);
+      expect(item.volume).not.toBe(0);
       expect(item.ai_confidence).toBe(0.45);
       expect(item.discrepancy_status).toBe("NONE");
       expect(item.is_correct).toBe(true);
@@ -143,6 +152,10 @@ describe("TransactionController - Sorting Status (is_correct) Response Tests", (
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = res.json.mock.calls[0][0];
+      expect(jsonCall.data.berat).toBe(2.5);
+      expect(jsonCall.data.weightKg).toBe(2.5);
+      expect(jsonCall.data.volume).toBe(2.5);
+      expect(jsonCall.data.volumeLiter).toBe(2.5);
       expect(jsonCall.data.ai_confidence).toBe(0.88);
       expect(jsonCall.data.discrepancy_status).toBe("NONE");
       expect(jsonCall.data.is_correct).toBe(true);
