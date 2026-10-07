@@ -50,6 +50,8 @@ export class BinController {
         categoryId: categoryId as string,
         tipeKepemilikan: tipeKepemilikan as string,
         binType: (binType || jenisWadah) as string,
+        sortBy: sortBy as string,
+        order: order as "asc" | "desc",
       };
 
       const bins = await binService.getAllBins(req.user, filters);

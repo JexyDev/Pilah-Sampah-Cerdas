@@ -46,7 +46,12 @@ import {
   RefreshCw,
   Table as TableIcon,
   MapPin,
-  Trash2
+  Trash2,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  SlidersHorizontal,
+  Calendar
 } from "lucide-react";
 
 import {
@@ -191,6 +196,22 @@ const Monitoring: React.FC = () => {
   // Pagination for Table
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+
+  // Table Sorting States (Standarisasi Berseka: Default Waktu Aktivasi Terbaru / Descending)
+  type TableSortField = "waktuAktivasi" | "kode" | "kategori" | "pemilik" | "kapasitas" | "status";
+  type TableSortOrder = "asc" | "desc";
+  const [tableSortField, setTableSortField] = useState<TableSortField>("waktuAktivasi");
+  const [tableSortOrder, setTableSortOrder] = useState<TableSortOrder>("desc");
+
+  const handleTableSort = (field: TableSortField) => {
+    if (tableSortField === field) {
+      setTableSortOrder(tableSortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setTableSortField(field);
+      setTableSortOrder("desc"); // Default descending saat berganti kolom
+    }
+    setCurrentPage(1);
+  };
 
   // Map Controls
   const [_mapZoom, setMapZoom] = useState<number>(14);
@@ -560,19 +581,96 @@ const Monitoring: React.FC = () => {
     return Object.values(map);
   }, [filteredMapBins]);
 
-  // Table Filtered Items
+  // Helper ekstraksi timestamp aktivasi tempat sampah secara presisi
+  const getBinActivationTimestamp = (b: any): number => {
+    const vAt = b?.verifiedAt;
+    if (vAt && typeof vAt === "string" && vAt !== "Belum Diaktivasi" && vAt !== "Sistem Real-Time") {
+      const match = vAt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,\s*(\d{1,2})[.:](\d{1,2}))?/);
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1;
+        const year = parseInt(match[3], 10);
+        const hour = match[4] ? parseInt(match[4], 10) : 0;
+        const minute = match[5] ? parseInt(match[5], 10) : 0;
+        const parsed = new Date(year, month, day, hour, minute).getTime();
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
+      const t = new Date(vAt).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    if (b?.updatedAt) {
+      const t = new Date(b.updatedAt).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    if (b?.createdAt) {
+      const t = new Date(b.createdAt).getTime();
+      if (!isNaN(t) && t > 0) return t;
+    }
+    return 0;
+  };
+
+  // Table Filtered & Sorted Items (Standarisasi: Default Descending Timestamp Aktivasi)
   const filteredTableBins = useMemo(() => {
     const query = (tableSearchInput || "").trim().toLowerCase();
-    if (!query) return filteredMapBins;
+    let result = filteredMapBins;
 
-    return filteredMapBins.filter((b) => {
-      const code = ((b as any).kode || b.qrCode || b.id || "").toLowerCase();
-      const owner = (b.wargaName || (b as any).user?.name || "").toLowerCase();
-      const phone = ((b as any).user?.phone || (b as any).wargaPhone || "").toLowerCase();
-      const rw = (b.rtRw || (b as any).rw?.name || (typeof b.rw === "string" ? b.rw : "")).toLowerCase();
-      return code.includes(query) || owner.includes(query) || phone.includes(query) || rw.includes(query);
+    if (query) {
+      result = result.filter((b) => {
+        const code = ((b as any).kode || b.qrCode || b.id || "").toLowerCase();
+        const owner = (b.wargaName || (b as any).user?.name || "").toLowerCase();
+        const phone = ((b as any).user?.phone || (b as any).wargaPhone || "").toLowerCase();
+        const rw = (b.rtRw || (b as any).rw?.name || (typeof b.rw === "string" ? b.rw : "")).toLowerCase();
+        return code.includes(query) || owner.includes(query) || phone.includes(query) || rw.includes(query);
+      });
+    }
+
+    // Urutkan (Sorting)
+    return [...result].sort((a, b) => {
+      let comparison = 0;
+
+      if (tableSortField === "waktuAktivasi") {
+        const timeA = getBinActivationTimestamp(a);
+        const timeB = getBinActivationTimestamp(b);
+        comparison = timeA - timeB;
+      } else if (tableSortField === "kode") {
+        const codeA = (a as any).kode || a.qrCode || a.id || "";
+        const codeB = (b as any).kode || b.qrCode || b.id || "";
+        comparison = codeA.localeCompare(codeB, "id", { numeric: true, sensitivity: "base" });
+      } else if (tableSortField === "kategori") {
+        const getCat = (bin: any) => {
+          const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+          const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+          return rawCat.includes("residu") ? "Residu" : rawCat.includes("anorganik") ? "Anorganik" : "Organik";
+        };
+        comparison = getCat(a).localeCompare(getCat(b), "id");
+      } else if (tableSortField === "pemilik") {
+        const ownerA = a.wargaName || (a as any).user?.name || "";
+        const ownerB = b.wargaName || (b as any).user?.name || "";
+        comparison = ownerA.localeCompare(ownerB, "id", { sensitivity: "base" });
+      } else if (tableSortField === "kapasitas") {
+        const volA = Number(a.currentVolumeLiter || 0);
+        const maxA = Number(a.maxCapacityLiter || 25);
+        const pctA = (a as any).kapasitas !== undefined ? (a as any).kapasitas : (maxA > 0 ? (volA / maxA) * 100 : 0);
+        const volB = Number(b.currentVolumeLiter || 0);
+        const maxB = Number(b.maxCapacityLiter || 25);
+        const pctB = (b as any).kapasitas !== undefined ? (b as any).kapasitas : (maxB > 0 ? (volB / maxB) * 100 : 0);
+        comparison = pctA - pctB;
+      } else if (tableSortField === "status") {
+        const getStatusRank = (bin: any) => {
+          const vol = Number(bin.currentVolumeLiter || 0);
+          const max = Number(bin.maxCapacityLiter || 25);
+          const pct = (bin as any).kapasitas !== undefined ? (bin as any).kapasitas : (max > 0 ? (vol / max) * 100 : 0);
+          if (bin.status === "Rusak" || (bin as any).realStatus === "BROKEN") return 4;
+          if (bin.status === "Penuh" || pct >= 90) return 3;
+          if (bin.status === "Sedang" || (pct >= 70 && pct < 90)) return 2;
+          return 1;
+        };
+        comparison = getStatusRank(a) - getStatusRank(b);
+      }
+
+      return tableSortOrder === "asc" ? comparison : -comparison;
     });
-  }, [filteredMapBins, tableSearchInput]);
+  }, [filteredMapBins, tableSearchInput, tableSortField, tableSortOrder]);
 
   // Pagination Slice
   const totalPages = Math.ceil(filteredTableBins.length / itemsPerPage) || 1;
@@ -1521,9 +1619,9 @@ const Monitoring: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Table Search & Limit */}
+            {/* Quick Table Search & Sort & Limit */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-60">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -1544,6 +1642,48 @@ const Monitoring: React.FC = () => {
                     <X size={13} />
                   </button>
                 )}
+              </div>
+
+              {/* Urutan Cepat Standar Berseka */}
+              <div className="flex items-center gap-1.5 bg-slate-50/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs font-semibold">
+                <SlidersHorizontal size={13} className="text-slate-400 shrink-0" />
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">Urutan:</span>
+                <select
+                  value={`${tableSortField}-${tableSortOrder}`}
+                  onChange={(e) => {
+                    const [f, o] = e.target.value.split("-") as [TableSortField, TableSortOrder];
+                    setTableSortField(f);
+                    setTableSortOrder(o);
+                    setCurrentPage(1);
+                  }}
+                  className="bg-transparent outline-none font-bold text-slate-800 dark:text-slate-200 cursor-pointer text-xs"
+                  aria-label="Urutkan Tabel"
+                >
+                  <option value="waktuAktivasi-desc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Aktivasi Terbaru (Desc)
+                  </option>
+                  <option value="waktuAktivasi-asc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Aktivasi Terlama (Asc)
+                  </option>
+                  <option value="kapasitas-desc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Kapasitas Tertinggi (Desc)
+                  </option>
+                  <option value="kapasitas-asc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Kapasitas Terendah (Asc)
+                  </option>
+                  <option value="kode-asc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Kode Tempat Sampah (A - Z)
+                  </option>
+                  <option value="kode-desc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Kode Tempat Sampah (Z - A)
+                  </option>
+                  <option value="pemilik-asc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Pemilik (A - Z)
+                  </option>
+                  <option value="pemilik-desc" className="dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                    Pemilik (Z - A)
+                  </option>
+                </select>
               </div>
 
               <select
@@ -1567,12 +1707,110 @@ const Monitoring: React.FC = () => {
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/60 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
                   <th className="py-3.5 px-4 text-center">QR Code</th>
-                  <th className="py-3.5 px-4">Kode Tempat Sampah</th>
-                  <th className="py-3.5 px-4">Kategori</th>
-                  <th className="py-3.5 px-4">Pemilik</th>
-                  <th className="py-3.5 px-4">Kapasitas &amp; Rasio Keterisian</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4">Waktu Aktivasi</th>
+                  <th
+                    onClick={() => handleTableSort("kode")}
+                    className={`py-3.5 px-4 cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "kode" ? "text-emerald-700 dark:text-emerald-400 font-black" : ""
+                    }`}
+                    title="Urutkan berdasarkan Kode Tempat Sampah"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Kode Tempat Sampah</span>
+                      {tableSortField === "kode" ? (
+                        tableSortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleTableSort("kategori")}
+                    className={`py-3.5 px-4 cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "kategori" ? "text-emerald-700 dark:text-emerald-400 font-black" : ""
+                    }`}
+                    title="Urutkan berdasarkan Kategori"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Kategori</span>
+                      {tableSortField === "kategori" ? (
+                        tableSortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleTableSort("pemilik")}
+                    className={`py-3.5 px-4 cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "pemilik" ? "text-emerald-700 dark:text-emerald-400 font-black" : ""
+                    }`}
+                    title="Urutkan berdasarkan Pemilik"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Pemilik</span>
+                      {tableSortField === "pemilik" ? (
+                        tableSortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleTableSort("kapasitas")}
+                    className={`py-3.5 px-4 cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "kapasitas" ? "text-emerald-700 dark:text-emerald-400 font-black" : ""
+                    }`}
+                    title="Urutkan berdasarkan Kapasitas & Rasio Keterisian"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Kapasitas &amp; Rasio Keterisian</span>
+                      {tableSortField === "kapasitas" ? (
+                        tableSortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleTableSort("status")}
+                    className={`py-3.5 px-4 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "status" ? "text-emerald-700 dark:text-emerald-400 font-black" : ""
+                    }`}
+                    title="Urutkan berdasarkan Status"
+                  >
+                    <div className="inline-flex items-center justify-center gap-1.5">
+                      <span>Status</span>
+                      {tableSortField === "status" ? (
+                        tableSortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleTableSort("waktuAktivasi")}
+                    className={`py-3.5 px-4 cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                      tableSortField === "waktuAktivasi" ? "text-emerald-700 dark:text-emerald-400 font-black bg-emerald-50/40 dark:bg-emerald-950/20" : ""
+                    }`}
+                    title="Urutkan berdasarkan Waktu Aktivasi (Terbaru / Terlama)"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Waktu Aktivasi</span>
+                      {tableSortField === "waktuAktivasi" ? (
+                        tableSortOrder === "desc" ? (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded">
+                            <ArrowDown size={11} /> Baru
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded">
+                            <ArrowUp size={11} /> Lama
+                          </span>
+                        )
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3.5 px-4">GPS / Koordinat</th>
                   <th className="py-3.5 px-4 text-center">Aksi</th>
                 </tr>
