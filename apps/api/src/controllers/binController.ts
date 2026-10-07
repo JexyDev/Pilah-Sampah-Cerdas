@@ -65,15 +65,19 @@ export class BinController {
           : false;
 
         // Resolve the effective owner from direct user or primary/first binOwnerships
+        const primaryOwnership =
+          bin.binOwnerships?.find((bo: any) => bo.type === "UTAMA") ||
+          bin.binOwnerships?.[0] ||
+          null;
         const effectiveOwner =
           bin.user ||
-          bin.binOwnerships?.find((bo: any) => bo.type === "UTAMA")?.user ||
-          bin.binOwnerships?.[0]?.user ||
+          primaryOwnership?.user ||
           null;
 
         const isBound = Boolean(effectiveOwner);
         const effectiveUserId = effectiveOwner?.id || bin.userId || null;
         const isActivated = (bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE") && isBound;
+        const activatedAt = isBound ? (primaryOwnership?.createdAt || bin.createdAt) : null;
 
         let verifiedAtStr = "Belum Diaktivasi";
         if (isActivated && bin.updatedAt) {
@@ -225,6 +229,7 @@ export class BinController {
           realStatus: bin.status,
           needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
           lastActivityLog,
+          activatedAt,
           createdAt: bin.createdAt,
           updatedAt: bin.updatedAt,
         };
