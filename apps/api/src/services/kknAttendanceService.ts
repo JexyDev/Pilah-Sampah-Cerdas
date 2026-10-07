@@ -311,6 +311,11 @@ function calcTotalPauseMs(jedaLogs: any[], sessionEndMs: number): number {
   for (let i = 0; i < jedaLogs.length; i++) {
     const log = jedaLogs[i];
     if (!log || typeof log !== "object" || log.mode === "LOSS_MODE_INFO_ONLY") continue;
+    // Abaikan jeda otomatis yang dipicu logout aplikasi atau event non-manual
+    if (log.autoTriggered === true) continue;
+    const alasanLower = String(log.alasan || "").toLowerCase();
+    if (alasanLower.includes("logout") || alasanLower.includes("keluar aplikasi") || alasanLower.includes("pengguna keluar")) continue;
+
     if (!log.waktuJeda) continue;
     const pStart = new Date(log.waktuJeda).getTime();
     if (isNaN(pStart)) continue;
@@ -2338,11 +2343,22 @@ export class KknAttendanceService {
       }
 
       if (!coIsInside) {
-        const distanceInt = Math.round(coNearestDist);
-        const allowedRadius = coNearestRadius + coBuffer;
-        throw new Error(
-          `OUT_OF_GEOFENCE: Anda harus berada di dalam zona ${coNearestName} untuk melakukan presensi pulang (Jarak: ${distanceInt}m, Radius: ${allowedRadius}m).`
-        );
+        // Toleransi Graceful: Jika mahasiswa sudah melampaui durasi wajib (>= 240 menit) atau waktu checkout sudah melewati jam selesai jadwal kegiatan posko (misal >= 16:00 WIB),
+        // izinkan checkout agar mahasiswa tidak terjebak tanpa bisa menyelesaikan presensi setelah bertugas di posko.
+        const nowWib = new Date(Date.now() + 7 * 3600 * 1000);
+        const currentHoursMins = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
+        const schedRange = coSchedule?.time ? parseScheduleTimeRange(coSchedule.time) : null;
+        const isPastScheduleEnd = schedRange?.endMinutesTotal ? currentHoursMins >= schedRange.endMinutesTotal : currentHoursMins >= 16 * 60;
+        const currentLiveMins = attendance.attendedAt ? calculateLiveInZoneMinutes(attendance) : 0;
+        const isTargetAlreadyMet = currentLiveMins >= 240;
+
+        if (!isPastScheduleEnd && !isTargetAlreadyMet) {
+          const distanceInt = Math.round(coNearestDist);
+          const allowedRadius = coNearestRadius + coBuffer;
+          throw new Error(
+            `OUT_OF_GEOFENCE: Anda harus berada di dalam zona ${coNearestName} untuk melakukan presensi pulang (Jarak: ${distanceInt}m, Radius: ${allowedRadius}m).`
+          );
+        }
       }
     }
 
