@@ -214,15 +214,18 @@ class ApiWasteLogRepository implements WasteLogRepository {
       }
     }
 
-    // volume/berat dari backend: coba volumeLiter/volume dulu, fallback ke weightKg/berat
-    final double rawAmount =
-        double.tryParse(
-          json['volumeLiter']?.toString() ??
-              json['volume']?.toString() ??
-              json['weightKg']?.toString() ??
-              json['berat']?.toString() ??
-              '0',
-        ) ??
+    // volume/berat dari backend: prioritaskan nilai numerik positif (> 0) agar fallback tidak terhambat angka 0
+    double? parsePositiveNum(dynamic val) {
+      if (val == null) return null;
+      final parsed = double.tryParse(val.toString());
+      if (parsed != null && parsed > 0) return parsed;
+      return null;
+    }
+
+    final double rawAmount = parsePositiveNum(json['volumeLiter']) ??
+        parsePositiveNum(json['volume']) ??
+        parsePositiveNum(json['weightKg']) ??
+        parsePositiveNum(json['berat']) ??
         0.0;
 
     // Ambil poin dari pointsAwarded, poin, atau points
@@ -296,20 +299,30 @@ class ApiWasteLogRepository implements WasteLogRepository {
             .toUpperCase();
 
     WasteType wasteType;
-    if (rawWasteType.contains('NON') || rawWasteType.contains('ANORG')) {
+    if (rawWasteType.contains('AGN') ||
+        rawWasteType.contains('ANORGANIK') ||
+        rawWasteType.contains('ANORG') ||
+        rawWasteType.contains('NON_ORGANIC') ||
+        rawWasteType.contains('NON-ORG') ||
+        rawWasteType.contains('NON ORGANIK')) {
       wasteType = WasteType.nonOrganic;
-    } else if (rawWasteType.contains('ORG')) {
+    } else if (rawWasteType.contains('OGN') ||
+        rawWasteType.contains('ORGANIK') ||
+        rawWasteType.contains('ORG') ||
+        rawWasteType.contains('BSK-MEMBER')) {
       wasteType = WasteType.organic;
     } else {
-      // Fallback: deteksi dari description — cek NON/ANORG dulu sebelum ORG
+      // Fallback: deteksi dari description — cek NON/ANORG/AGN dulu sebelum ORG/OGN
       // karena 'ORGANIC' adalah substring dari 'ANORGANIK'
       final descUpper = desc.toUpperCase();
-      if (descUpper.contains('NON_ORGANIC') ||
+      if (descUpper.contains('AGN') ||
+          descUpper.contains('NON_ORGANIC') ||
           descUpper.contains('NON ORGANIC') ||
           descUpper.contains('ANORGANIK') ||
-          descUpper.contains('NON-ORGANIC')) {
+          descUpper.contains('NON-ORG')) {
         wasteType = WasteType.nonOrganic;
-      } else if (descUpper.contains('ORGANIC') ||
+      } else if (descUpper.contains('OGN') ||
+          descUpper.contains('ORGANIC') ||
           descUpper.contains('ORGANIK')) {
         wasteType = WasteType.organic;
       } else {

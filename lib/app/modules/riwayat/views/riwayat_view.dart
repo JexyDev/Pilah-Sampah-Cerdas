@@ -69,12 +69,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       for (var n in notifsAsync.value!) {
         final type = n.type.toUpperCase();
         if (!type.contains('POIN') && !type.contains('PUNISHMENT')) {
-          DateTime dt;
-          try {
-            dt = DateTime.parse(n.time).toLocal();
-          } catch (_) {
-            dt = DateTime.now();
-          }
+          final DateTime dt = n.createdAt.toLocal();
           if (!HiddenHistoryService.isVisibleSync(
             scope: HiddenHistoryService.scopeWargaWaste,
             id: n.id,

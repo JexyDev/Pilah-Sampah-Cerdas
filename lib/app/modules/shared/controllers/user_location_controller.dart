@@ -41,6 +41,15 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
 
   /// Ambil lokasi GPS terkini dan konversi ke nama alamat (reverse geocoding)
 
+  /// Set posisi GPS secara langsung tanpa fetch jaringan (sinkronisasi dari modul scan)
+  void setPositionDirect(Position pos) {
+    state = state.copyWith(
+      position: pos,
+      isFetchingAddress: false,
+      clearError: true,
+    );
+  }
+
   /// Ambil lokasi GPS terkini tanpa reverse geocoding alamat
   Future<void> refreshCoordinatesOnly({BuildContext? context, String? role}) async {
     state = state.copyWith(isFetchingAddress: true, clearError: true);

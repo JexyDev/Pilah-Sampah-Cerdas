@@ -39,6 +39,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   final GlobalKey<QrScannerWidgetState> _qrScannerKey =
       GlobalKey<QrScannerWidgetState>();
   double? _userLng;
+  double? _gpsAccuracy;
+  DateTime? _gpsTimestamp;
   bool _gpsLoading = false;
   bool _isAiSheetOpen = false;
 
@@ -88,7 +90,18 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       ));
   }
 
-  /// Inisialisasi awal GPS — coba last known position terlebih dahulu tanpa menunggu satelit
+  /// Memeriksa apakah koordinat GPS saat ini masih segar (< 60 detik) dan berakurasi tinggi (<= 50m).
+  bool get _isGpsFresh {
+    if (_userLat == null || _userLng == null || _userLat == 0.0 || _userLng == 0.0) {
+      return false;
+    }
+    if (_gpsTimestamp == null) return false;
+    final ageSeconds = DateTime.now().difference(_gpsTimestamp!).inSeconds;
+    // Dianggap segar hanya jika umur < 60 detik DAN akurasi <= 50 meter
+    return ageSeconds < 60 && (_gpsAccuracy == null || _gpsAccuracy! <= 50.0);
+  }
+
+  /// Inisialisasi awal GPS — periksa cache dengan validasi umur & akurasi
   Future<void> _initGps() async {
     if (!PlatformUtils.isMobile) return;
     try {
@@ -97,10 +110,20 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           perm == LocationPermission.always) {
         final lastPos = await Geolocator.getLastKnownPosition();
         if (lastPos != null && mounted) {
-          setState(() {
-            _userLat = lastPos.latitude;
-            _userLng = lastPos.longitude;
-          });
+          final now = DateTime.now();
+          final cacheAge = now.difference(lastPos.timestamp);
+          // Hanya gunakan cache jika usianya di bawah 60 detik DAN akurasinya <= 50 meter
+          if (cacheAge.inSeconds < 60 && lastPos.accuracy <= 50.0) {
+            setState(() {
+              _userLat = lastPos.latitude;
+              _userLng = lastPos.longitude;
+              _gpsAccuracy = lastPos.accuracy;
+              _gpsTimestamp = lastPos.timestamp;
+            });
+            debugPrint('[ScanFlowView] Menggunakan fresh GPS cache (${cacheAge.inSeconds}s, acc: ${lastPos.accuracy}m)');
+          } else {
+            debugPrint('[ScanFlowView] Cache GPS kadaluarsa (${cacheAge.inSeconds}s, acc: ${lastPos.accuracy}m). Wajib refresh realtime.');
+          }
         }
         // Lanjutkan pengambilan GPS presisi realtime di background
         _fetchGps(requestPermissionIfNeeded: false);
@@ -108,8 +131,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     } catch (_) {}
   }
 
-  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang,
-  /// sekaligus menyinkronisasikan (update) dengan Cek Lokasi di Beranda.
+  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang dengan akurasi tinggi.
   Future<Position?> _fetchGps({bool requestPermissionIfNeeded = true}) async {
     if (!PlatformUtils.isMobile) return null;
     if (!mounted) return null;
@@ -117,25 +139,62 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     setState(() => _gpsLoading = true);
 
     try {
-      if (requestPermissionIfNeeded) {
-        // Panggil refreshLocation untuk mengambil GPS dan reverse geocoding, 
-        // sehingga Cek Lokasi di beranda juga ikut ter-update (sinkron)
-        await ref.read(userLocationProvider.notifier).refreshCoordinatesOnly(context: context);
-      } else {
-        await ref.read(userLocationProvider.notifier).refreshCoordinatesOnly();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          _showThrottledWarning('GPS tidak aktif. Mohon aktifkan GPS perangkat Anda.');
+        }
+        return null;
       }
 
-      final pos = ref.read(userLocationProvider).position;
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied && requestPermissionIfNeeded) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        if (mounted) {
+          _showThrottledWarning('Izin lokasi diperlukan untuk memindai Tempat Sampah.');
+        }
+        return null;
+      }
+
+      // Prioritaskan LocationAccuracy.high dengan batas waktu 8 detik
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 0,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+      } catch (_) {
+        // Fallback jika high accuracy timeout di dalam ruangan: coba medium 5 detik
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              distanceFilter: 0,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+        } catch (_) {}
+      }
 
       if (pos != null) {
+        final p = pos;
         if (mounted) {
           setState(() {
-            _userLat = pos.latitude;
-            _userLng = pos.longitude;
+            _userLat = p.latitude;
+            _userLng = p.longitude;
+            _gpsAccuracy = p.accuracy;
+            _gpsTimestamp = p.timestamp;
             _gpsLoading = false;
           });
+          // Update juga userLocationProvider agar sinkron dengan dashboard/beranda
+          ref.read(userLocationProvider.notifier).setPositionDirect(p);
         }
-        return pos;
+        return p;
       }
     } catch (e) {
       debugPrint('[ScanFlowView] GPS fetch error: $e');
@@ -147,14 +206,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     return null;
   }
 
-
-  /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
+  /// Memastikan koordinat GPS realtime valid dan segar sebelum transaksi dikirim ke backend.
   Future<bool> _ensureRealtimeGps() async {
-    // Jika koordinat GPS sudah didapatkan saat warm-up halaman scan, gunakan langsung (instant 0 ms)
-    if (_userLat != null && _userLng != null && _userLat != 0.0 && _userLng != 0.0) {
+    if (_isGpsFresh) {
       return true;
     }
-    // Jika belum ada, baru fetch dengan timeout
     final pos = await _fetchGps(requestPermissionIfNeeded: true);
     return pos != null && _userLat != null && _userLat != 0.0;
   }
@@ -873,11 +929,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     }
                   }
 
-                  // Pastikan koordinat GPS akurat sudah didapatkan
+                  // Pastikan koordinat GPS akurat dan segar sudah didapatkan
                   double? finalLat = _userLat;
                   double? finalLng = _userLng;
 
-                  if (finalLat == null || finalLng == null || finalLat == 0.0) {
+                  if (!_isGpsFresh) {
                     final pos = await _fetchGps(requestPermissionIfNeeded: true);
                     if (pos != null) {
                       finalLat = pos.latitude;
@@ -901,6 +957,13 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         );
                     }
                     return false;
+                  }
+
+                  // Berikan tips jika akurasi GPS sedang melebar (> 50 meter)
+                  if (_gpsAccuracy != null && _gpsAccuracy! > 50.0) {
+                    _showThrottledWarning(
+                      'Akurasi sinyal GPS sedang melebar (~${_gpsAccuracy!.toStringAsFixed(0)}m). Mohon dekatkan HP ke Tempat Sampah.',
+                    );
                   }
 
                   await ref
@@ -1446,19 +1509,20 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFFFED7AA), width: 1),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
                     Text(
-                      'Anda berada di luar jangkauan lokasi tempat sampah yang ingin dipindai.',
+                      message ??
+                          'Anda berada di luar jangkauan lokasi Tempat Sampah yang ingin dipindai.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF92400E),
                         height: 1.5,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Row(
+                    const SizedBox(height: 8),
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
@@ -1469,7 +1533,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            'Harap mendekat ke lokasi tempat sampah Anda.',
+                            'Harap mendekat ke lokasi Tempat Sampah Anda.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 11,
@@ -1481,36 +1545,84 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Tips: Jika Anda berada di dalam rumah atau bawah kanopi, melangkahlah ke teras atau dekat jendela agar sinyal GPS ponsel dapat terhubung langsung ke satelit.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // ── Tombol Coba Lagi ─────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text(
-                    'Coba Lagi',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    ref.read(scanFlowProvider.notifier).clearError();
-                    _fetchGps(); // Segera refresh koordinat GPS realtime
-                    _qrScannerKey.currentState?.resetScanner();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF59E0B),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              // ── Tombol Coba Lagi (Wajib Await + Loading) ─────────────────────
+              StatefulBuilder(
+                builder: (dialogCtx, setBtnState) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: _gpsLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(
+                        _gpsLoading
+                            ? 'Mengunci Lokasi Presisi...'
+                            : 'Coba Lagi',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      onPressed: _gpsLoading
+                          ? null
+                          : () async {
+                              setBtnState(() => _gpsLoading = true);
+                              setState(() => _gpsLoading = true);
+
+                              // WAJIB AWAIT perolehan lokasi realtime baru
+                              final newPos = await _fetchGps(requestPermissionIfNeeded: true);
+
+                              if (dialogCtx.mounted) {
+                                Navigator.of(dialogCtx).pop();
+                              }
+                              ref.read(scanFlowProvider.notifier).clearError();
+
+                              if (mounted) {
+                                setState(() => _gpsLoading = false);
+                                if (newPos != null) {
+                                  _qrScannerKey.currentState?.resetScanner();
+                                } else {
+                                  _showThrottledWarning(
+                                    'Gagal mengunci lokasi presisi. Pastikan GPS aktif dan Anda berada di dekat Tempat Sampah.',
+                                  );
+                                  _qrScannerKey.currentState?.resetScanner();
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
 

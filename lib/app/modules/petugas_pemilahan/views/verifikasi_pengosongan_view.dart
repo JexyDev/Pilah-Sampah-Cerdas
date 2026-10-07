@@ -113,7 +113,10 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
           !cleanScanned.contains('agn');
       final isAnorgScanned = cleanScanned.contains('anorg') ||
           cleanScanned.contains('agn') ||
-          cleanScanned.contains('non');
+          cleanScanned.contains('non-org') ||
+          cleanScanned.contains('non_org') ||
+          cleanScanned.contains('non organik') ||
+          cleanScanned.contains('non_organic');
 
       if ((isOrgTarget && isOrgScanned) || (!isOrgTarget && isAnorgScanned)) {
         isMatch = true;

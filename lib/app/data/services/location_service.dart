@@ -210,27 +210,29 @@ class LocationService {
       } catch (_) {}
     }
 
-    // Fallback: IP Geolocation untuk platform desktop/Linux atau saat hardware GPS tidak tersedia
-    try {
-      final uri = Uri.parse('http://ip-api.com/json');
-      final data = await _httpGetJson(uri);
-      if (data is Map<String, dynamic> && data['status'] == 'success') {
-        final lat = (data['lat'] as num).toDouble();
-        final lon = (data['lon'] as num).toDouble();
-        return Position(
-          longitude: lon,
-          latitude: lat,
-          timestamp: DateTime.now(),
-          accuracy: 100,
-          altitude: 0,
-          altitudeAccuracy: 0,
-          heading: 0,
-          headingAccuracy: 0,
-          speed: 0,
-          speedAccuracy: 0,
-        );
-      }
-    } catch (_) {}
+    // Fallback: IP Geolocation HANYA untuk platform desktop/Linux/Web saat hardware GPS tidak tersedia
+    if (!PlatformUtils.isMobile) {
+      try {
+        final uri = Uri.parse('http://ip-api.com/json');
+        final data = await _httpGetJson(uri);
+        if (data is Map<String, dynamic> && data['status'] == 'success') {
+          final lat = (data['lat'] as num).toDouble();
+          final lon = (data['lon'] as num).toDouble();
+          return Position(
+            longitude: lon,
+            latitude: lat,
+            timestamp: DateTime.now(),
+            accuracy: 100,
+            altitude: 0,
+            altitudeAccuracy: 0,
+            heading: 0,
+            headingAccuracy: 0,
+            speed: 0,
+            speedAccuracy: 0,
+          );
+        }
+      } catch (_) {}
+    }
 
     return null;
   }

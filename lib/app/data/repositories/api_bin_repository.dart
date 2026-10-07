@@ -291,12 +291,12 @@ class ApiBinRepository implements BinRepository {
         final data = response.data['data'] as Map<String, dynamic>;
         final detectedType = _parseWasteType(data['detectedType']?.toString());
         final volume = (data['volumeEstimate'] as num?)?.toDouble() ?? 2.5;
+        final weight = (data['weightKg'] as num?)?.toDouble() ?? volume;
 
-        // Role warga menggunakan pure Liter langsung dari hasil estimasi AI tanpa rumus konversi densitas
         return AiDetectionEntity(
           detectedType: detectedType,
           volumeEstimate: volume,
-          weightKg: volume,
+          weightKg: weight,
           confidence: (data['confidence'] as num?)?.toDouble(),
           organicPercentage: (data['organicPercentage'] as num?)?.toDouble(),
           estimatedPoints: (data['estimatedPoints'] as num?)?.toInt(),
@@ -386,9 +386,16 @@ class ApiBinRepository implements BinRepository {
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
-        final double volumeL = (data['volumeLiter'] as num?)?.toDouble() ??
-            (data['volume'] as num?)?.toDouble() ??
-            (data['weightKg'] as num?)?.toDouble() ??
+        double? parsePositiveNum(dynamic val) {
+          if (val == null) return null;
+          final p = (val as num?)?.toDouble() ?? double.tryParse(val.toString());
+          if (p != null && p > 0) return p;
+          return null;
+        }
+
+        final double volumeL = parsePositiveNum(data['volumeLiter']) ??
+            parsePositiveNum(data['volume']) ??
+            parsePositiveNum(data['weightKg']) ??
             0.0;
         return ScanResult(
           weightKg: volumeL,
@@ -1033,12 +1040,7 @@ class ApiBinRepository implements BinRepository {
         (json['category'] ?? json['type'] ?? json['binType'] ?? 'ORGANIC')
             .toString()
             .toUpperCase();
-    WasteType binType = WasteType.nonOrganic;
-    if (typeStr.contains('NON') || typeStr.contains('ANORG')) {
-      binType = WasteType.nonOrganic;
-    } else if (typeStr.contains('ORG')) {
-      binType = WasteType.organic;
-    }
+    final WasteType binType = _parseWasteType('$typeStr $qrSerial');
 
     final bool isResetPending =
         json['isResetPending'] == true ||
