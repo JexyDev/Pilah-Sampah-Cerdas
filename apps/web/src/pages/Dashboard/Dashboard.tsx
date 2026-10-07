@@ -2797,7 +2797,9 @@ const Dashboard: React.FC = () => {
                   <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
                   <th className="py-3 px-4">Wilayah &amp; Pemilik</th>
                   <th className="py-3 px-4 min-w-[140px]">Kapasitas Terisi</th>
-                  <th className="py-3 px-4 text-center">Waktu</th>
+                  <th className="py-3 px-4 text-center" title="Waktu update operasional, aktivasi warga, atau mutasi status tempat sampah">
+                    Waktu Terkini
+                  </th>
                   <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -2879,10 +2881,18 @@ const Dashboard: React.FC = () => {
                                   );
                                 }
                                 if (ownerName) {
+                                  const isInactive = (bin.realStatus || bin.status || "").toUpperCase() === "INACTIVE";
                                   return (
-                                    <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate max-w-[200px]" title={`Warga Mandiri: ${ownerName}`}>
-                                      Warga Mandiri ({ownerName})
-                                    </span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate max-w-[180px]" title={`Warga Mandiri: ${ownerName}`}>
+                                        Warga Mandiri ({ownerName})
+                                      </span>
+                                      {isInactive && (
+                                        <span className="text-[9.5px] font-extrabold px-1.5 py-0.2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 rounded border border-rose-200 dark:border-rose-800/40" title="Tempat sampah non-aktif otomatis karena tidak ada setoran sampah > 30 hari">
+                                          Non-Aktif (30hr)
+                                        </span>
+                                      )}
+                                    </div>
                                   );
                                 }
                                 return (
@@ -2944,10 +2954,29 @@ const Dashboard: React.FC = () => {
                               ];
                               const dateFormatted = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
                               const timeFormatted = `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")} WIB`;
+                              const isInactive = (bin.realStatus || bin.status || "").toUpperCase() === "INACTIVE";
+                              const tooltipText = isInactive
+                                ? `Non-Aktif Otomatis oleh Sistem: ${dateFormatted}, ${timeFormatted} (Tidak ada aktivitas setoran > 30 hari)`
+                                : bin.wargaName
+                                ? `Update Aktivitas Operasional Warga: ${dateFormatted}, ${timeFormatted}`
+                                : `Pencetakan / Registrasi QR: ${dateFormatted}, ${timeFormatted}`;
+
                               return (
-                                <div className="inline-flex items-center justify-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-xs">
-                                  <Calendar size={13} className="text-slate-400 shrink-0" />
-                                  <span>{dateFormatted}, {timeFormatted}</span>
+                                <div
+                                  className="inline-flex flex-col items-center justify-center cursor-help"
+                                  title={tooltipText}
+                                >
+                                  <div className="inline-flex items-center justify-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                    <Calendar size={13} className="text-slate-400 shrink-0" />
+                                    <span>{dateFormatted}, {timeFormatted}</span>
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                    {isInactive
+                                      ? "Auto-Sync Sistem (Non-Aktif)"
+                                      : bin.wargaName
+                                      ? "Aktivitas Terkini"
+                                      : "Registrasi QR"}
+                                  </span>
                                 </div>
                               );
                             } catch {
