@@ -12,6 +12,7 @@
  */
 
 export type WasteSourceType = "ALL" | "WARGA_APP" | "PETUGAS_LAPANGAN";
+export type WastePeriodMode = "DAILY" | "MONTHLY";
 
 export interface WasteImpactItem {
   id: string;
@@ -23,6 +24,7 @@ export interface WasteImpactItem {
   wargaKg?: number | null;            // bersumber dari WARGA_APP
   petugasKg?: number | null;          // bersumber dari PETUGAS_LAPANGAN
   sourceType?: WasteSourceType;
+  periodMode?: WastePeriodMode;
   hasBaseline?: boolean;
   hasEndline?: boolean;
   status?: string;
@@ -34,6 +36,8 @@ export interface WasteImpactItem {
   totalWarga?: number | null;
   rawAccumulatedKg?: number | null; // Total akumulasi kotor sebelum dinormalisasi per hari
   dailyAverageKg?: number | null;   // Rata-rata per hari (kg/hari) dari standar 30 hari
+  monthlyActualKg?: number | null;  // Total/proyeksi per bulan (kg/bulan = data harian * 30)
+  monthlyBaselineKg?: number | null; // Baseline per bulan (kg/bulan = baseline harian * 30)
 }
 
 export interface WasteImpactAggregation {
@@ -49,6 +53,7 @@ export interface WasteImpactAggregation {
   totalPetugasKg: number;
   totalAccumulatedKg?: number;
   kelurahanCount: number;
+  periodMode?: WastePeriodMode;
 }
 
 /**
@@ -69,6 +74,20 @@ export function calculateDailyAverageKg(
     return 0;
   }
   return Number((accumulatedKg / days).toFixed(2));
+}
+
+/**
+ * Menghitung berat sampah per bulan (asumsi 30 hari) dari rata-rata/baseline harian.
+ * Standar: kg/bulan = kg/hari * 30 hari.
+ */
+export function calculateMonthlyKg(
+  dailyKg: number | null | undefined,
+  days: number = STANDARD_CYCLE_DAYS
+): number | null {
+  if (dailyKg === null || dailyKg === undefined || isNaN(dailyKg)) {
+    return null;
+  }
+  return Number((dailyKg * days).toFixed(2));
 }
 
 /**
@@ -138,9 +157,9 @@ export function calculateComplianceDelta(
  */
 export function formatDeltaKg(
   val: number | null | undefined,
-  options: { showPlusSign?: boolean; fallback?: string } = {}
+  options: { showPlusSign?: boolean; fallback?: string; unit?: string } = {}
 ): string {
-  const { showPlusSign = true, fallback = "—" } = options;
+  const { showPlusSign = true, fallback = "—", unit = "kg" } = options;
   if (val === null || val === undefined || isNaN(val)) return fallback;
 
   const formatted = Math.abs(val).toLocaleString("id-ID", {
@@ -149,11 +168,11 @@ export function formatDeltaKg(
   });
 
   if (val > 0) {
-    return showPlusSign ? `+${formatted} kg` : `${formatted} kg`;
+    return showPlusSign ? `+${formatted} ${unit}` : `${formatted} ${unit}`;
   } else if (val < 0) {
-    return `-${formatted} kg`;
+    return `-${formatted} ${unit}`;
   }
-  return `0,0 kg`;
+  return `0,0 ${unit}`;
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   formatComplianceDelta,
   aggregateKelurahanImpact,
   calculateDailyAverageKg,
+  calculateMonthlyKg,
   STANDARD_CYCLE_DAYS,
   type WasteImpactItem,
 } from "./wasteCalculations.js";
@@ -106,4 +107,33 @@ describe("wasteCalculations", () => {
     expect(agg.weightedDeltaPct).toBe(25.04);
     expect(agg.avgActualCompliance).toBe(70);
   });
+
+  it("should calculate monthly kg (daily * 30) correctly and preserve delta percentage", () => {
+    // Harian: 100 kg/hari -> Bulanan: 3000 kg/bulan
+    expect(calculateMonthlyKg(100)).toBe(3000);
+    expect(calculateMonthlyKg(37)).toBe(1110);
+    expect(calculateMonthlyKg(0)).toBe(0);
+    expect(calculateMonthlyKg(null)).toBeNull();
+    expect(calculateMonthlyKg(undefined)).toBeNull();
+
+    // Delta harian vs bulanan
+    const dailyBaseline = 100;
+    const dailyActual = 37;
+    const monthlyBaseline = calculateMonthlyKg(dailyBaseline)!; // 3000
+    const monthlyActual = calculateMonthlyKg(dailyActual)!;     // 1110
+
+    const dailyDeltaKg = calculateVolumeDeltaKg(dailyBaseline, dailyActual); // 63
+    const monthlyDeltaKg = calculateVolumeDeltaKg(monthlyBaseline, monthlyActual); // 1890
+
+    expect(monthlyDeltaKg).toBe(dailyDeltaKg! * 30);
+
+    // Delta persentase wajib identik antara harian dan bulanan
+    const dailyDeltaPct = calculateVolumeDeltaPct(dailyBaseline, dailyActual);
+    const monthlyDeltaPct = calculateVolumeDeltaPct(monthlyBaseline, monthlyActual);
+
+    expect(dailyDeltaPct).toBe(63);
+    expect(monthlyDeltaPct).toBe(63);
+    expect(monthlyDeltaPct).toBe(dailyDeltaPct);
+  });
 });
+

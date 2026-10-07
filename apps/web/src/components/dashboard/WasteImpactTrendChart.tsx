@@ -32,12 +32,13 @@ import {
   Minus,
   CheckCircle2,
 } from "lucide-react";
-import type { WasteImpactItem, WasteSourceType } from "../../utils/wasteCalculations";
+import type { WasteImpactItem, WasteSourceType, WastePeriodMode } from "../../utils/wasteCalculations";
 import {
   calculateVolumeDeltaKg,
   calculateVolumeDeltaPct,
   calculateComplianceDelta,
   calculateDailyAverageKg,
+  calculateMonthlyKg,
   STANDARD_CYCLE_DAYS,
   formatDeltaKg,
 } from "../../utils/wasteCalculations";
@@ -45,6 +46,7 @@ import {
 export interface WasteImpactTrendChartProps {
   data: WasteImpactItem[];
   selectedSource?: WasteSourceType;
+  periodMode?: WastePeriodMode;
   loading?: boolean;
   className?: string;
   onRefresh?: () => void;
@@ -56,12 +58,16 @@ export type ChartViewMode = "BOTH" | "VOLUME" | "KEPATUHAN";
 export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
   data,
   selectedSource = "WARGA_APP",
+  periodMode = "DAILY",
   loading = false,
   className = "",
   onRefresh,
   lastUpdated,
 }) => {
   const [viewMode, setViewMode] = useState<ChartViewMode>("BOTH");
+
+  // Satuan dinamis berdasarkan mode waktu aktif
+  const unitLabel = periodMode === "DAILY" ? "kg/hari" : "kg/bulan";
 
   // Label sumber data
   const sourceLabel = useMemo(() => {
@@ -85,11 +91,17 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
       }
 
       // Normalisasi rata-rata per hari (kg/hari) = rawAccumulatedKg / STANDARD_CYCLE_DAYS (30 hari)
-      const actualKg = calculateDailyAverageKg(rawAccumulatedKg, STANDARD_CYCLE_DAYS);
+      const dailyAverageKg = calculateDailyAverageKg(rawAccumulatedKg, STANDARD_CYCLE_DAYS);
+      const monthlyActualKg = calculateMonthlyKg(dailyAverageKg, STANDARD_CYCLE_DAYS);
 
-      const baselineKg = item.baselineKg ?? 0;
-      const deltaKg = calculateVolumeDeltaKg(item.baselineKg, actualKg);
-      const deltaPct = calculateVolumeDeltaPct(item.baselineKg, actualKg);
+      const dailyBaselineKg = item.baselineKg ?? 0;
+      const monthlyBaselineKg = calculateMonthlyKg(dailyBaselineKg, STANDARD_CYCLE_DAYS);
+
+      const displayActualKg = periodMode === "DAILY" ? dailyAverageKg : monthlyActualKg;
+      const displayBaselineKg = periodMode === "DAILY" ? dailyBaselineKg : monthlyBaselineKg;
+
+      const deltaKg = calculateVolumeDeltaKg(displayBaselineKg, displayActualKg);
+      const deltaPct = calculateVolumeDeltaPct(displayBaselineKg, displayActualKg);
 
       const baselineCompliance = item.baselineCompliance ?? 0;
       const actualCompliance = item.actualCompliance ?? 0;
@@ -97,9 +109,12 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
 
       return {
         kelurahan: item.kelurahan,
-        baselineKg: Number(baselineKg.toFixed(1)),
-        actualKg: Number(actualKg.toFixed(1)),
+        baselineKg: Number(displayBaselineKg.toFixed(1)),
+        actualKg: Number(displayActualKg.toFixed(1)),
         rawAccumulatedKg,
+        dailyAverageKg,
+        monthlyActualKg,
+        monthlyBaselineKg,
         deltaKg,
         deltaPct,
         baselineCompliance: Number(baselineCompliance.toFixed(1)),
@@ -111,7 +126,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
         totalWarga: item.totalWarga,
       };
     });
-  }, [data, selectedSource]);
+  }, [data, selectedSource, periodMode]);
 
   // Ringkasan Cepat Metrik Berat Sampah
   const volumeSummary = useMemo(() => {
@@ -258,11 +273,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                     <Weight size={15} />
                   </span>
                   <h5 className="font-extrabold text-[15px] text-slate-900 dark:text-slate-100 tracking-tight">
-                    Komparasi Berat Sampah: Baseline vs Aktual Rata-Rata (kg/hari)
+                    Komparasi Berat Sampah: Baseline vs Aktual {periodMode === "DAILY" ? "Rata-Rata (kg/hari)" : "Total (kg/bulan)"}
                   </h5>
                 </div>
                 <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
-                  Rata-rata berat timbulan per hari (kg/hari) dari total akumulasi siklus 30 hari kalender (cut-off setiap tanggal 7).
+                  {periodMode === "DAILY"
+                    ? "Rata-rata berat timbulan per hari (kg/hari) dari total akumulasi siklus 30 hari kalender (cut-off setiap tanggal 7)."
+                    : "Estimasi berat timbulan per bulan (kg/bulan = data harian × 30) dari akumulasi siklus 30 hari kalender (cut-off setiap tanggal 7)."}
                 </p>
               </div>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shrink-0">
@@ -285,9 +302,9 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    width={65}
+                    width={periodMode === "DAILY" ? 65 : 72}
                     tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
-                    tickFormatter={(val) => `${val} kg/h`}
+                    tickFormatter={(val) => `${val} ${periodMode === "DAILY" ? "kg/h" : "kg/b"}`}
                   />
                   <RechartsTooltip
                     cursor={{ fill: "rgba(241, 245, 249, 0.6)" }}
@@ -301,21 +318,29 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                             </p>
                             <div className="space-y-1.5 font-medium">
                               <div className="flex justify-between text-slate-300">
-                                <span>Baseline (kg/hari):</span>
+                                <span>Baseline ({unitLabel}):</span>
                                 <span className="font-bold text-white font-mono">
-                                  {Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari
+                                  {Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                                 </span>
                               </div>
                               <div className="flex justify-between text-blue-300">
-                                <span>Aktual Rata-Rata:</span>
+                                <span>Aktual {periodMode === "DAILY" ? "Rata-Rata" : "Total"}:</span>
                                 <div className="text-right">
                                   <span className="font-bold text-blue-400 font-mono">
-                                    {Number(item.actualKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari
+                                    {Number(item.actualKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                                   </span>
-                                  {item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg > 0 && (
-                                    <span className="block text-[10px] text-slate-400">
-                                      (total: {Number(item.rawAccumulatedKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
-                                    </span>
+                                  {periodMode === "DAILY" ? (
+                                    item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg > 0 && (
+                                      <span className="block text-[10px] text-slate-400">
+                                        (total: {Number(item.rawAccumulatedKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
+                                      </span>
+                                    )
+                                  ) : (
+                                    item.dailyAverageKg !== undefined && item.dailyAverageKg > 0 && (
+                                      <span className="block text-[10px] text-slate-400">
+                                        (rata-rata: {Number(item.dailyAverageKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari)
+                                      </span>
+                                    )
                                   )}
                                 </div>
                               </div>
@@ -332,7 +357,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                       : "text-slate-400"
                                   }`}
                                 >
-                                  {(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} kg/hari ({item.deltaPct ?? 0}%)
+                                  {(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} {unitLabel} ({item.deltaPct ?? 0}%)
                                 </span>
                               </div>
                             </div>
@@ -348,14 +373,14 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   />
                   <Bar
                     dataKey="baselineKg"
-                    name="Baseline (kg/hari)"
+                    name={`Baseline (${unitLabel})`}
                     fill="#94a3b8"
                     radius={[6, 6, 0, 0]}
                     barSize={viewMode === "BOTH" ? 18 : 26}
                   />
                   <Bar
                     dataKey="actualKg"
-                    name={`Aktual Rata-Rata (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (kg/hari)`}
+                    name={`Aktual ${periodMode === "DAILY" ? "Rata-Rata" : "Total"} (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (${unitLabel})`}
                     fill="#3b82f6"
                     radius={[6, 6, 0, 0]}
                     barSize={viewMode === "BOTH" ? 18 : 26}
@@ -364,7 +389,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
               </ResponsiveContainer>
             </div>
             <p className="text-center text-[10.5px] text-slate-400 font-medium -mt-2 mb-1">
-              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Berat Sampah (kg/hari) • Standar 30 Hari Evaluasi Tgl 7
+              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Berat Sampah ({unitLabel}) • {periodMode === "DAILY" ? "Standar 30 Hari Evaluasi Tgl 7" : "Asumsi 30 Hari (Harian × 30)"}
             </p>
 
             {/* Mini Rekapitulasi Berat Sampah */}
@@ -372,13 +397,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase">Total Baseline</span>
                 <span className="font-black text-slate-700 dark:text-slate-200 font-mono">
-                  {volumeSummary.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari
+                  {volumeSummary.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span className="block text-[10px] text-blue-500 font-bold uppercase">Aktual Rata-Rata</span>
+                <span className="block text-[10px] text-blue-500 font-bold uppercase">Aktual {periodMode === "DAILY" ? "Rata-Rata" : "Total"}</span>
                 <span className="font-black text-blue-600 dark:text-blue-400 font-mono">
-                  {volumeSummary.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari
+                  {volumeSummary.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
@@ -386,7 +411,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   Penurunan Berat (Δ)
                 </span>
                 <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false })}/hari ({volumeSummary.totalDeltaPct}%)
+                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false, unit: unitLabel })} ({volumeSummary.totalDeltaPct}%)
                 </span>
               </div>
             </div>
@@ -556,7 +581,9 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="font-semibold">Biru = Aktual Rata-Rata (kg/hari Siklus 30 Hari Cut-off Tgl 7)</span>
+            <span className="font-semibold">
+              Biru = Aktual {periodMode === "DAILY" ? "Rata-Rata (kg/hari" : "Total (kg/bulan"} Siklus 30 Hari Cut-off Tgl 7)
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />

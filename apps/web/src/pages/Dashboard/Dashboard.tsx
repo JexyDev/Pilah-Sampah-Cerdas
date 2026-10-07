@@ -37,7 +37,7 @@ import type { ComplianceMetricsResult } from "../../services/complianceService";
 import { WasteImpactSummaryTable } from "../../components/dashboard/WasteImpactSummaryTable";
 import { WasteImpactTrendChart } from "../../components/dashboard/WasteImpactTrendChart";
 import { BaselineSection } from "../../components/dashboard/BaselineSection";
-import type { WasteImpactItem, WasteSourceType } from "../../utils/wasteCalculations";
+import type { WasteImpactItem, WasteSourceType, WastePeriodMode } from "../../utils/wasteCalculations";
 import { isStagingEnv } from "../../utils/envUtils";
 
 export interface KelurahanBaselineData {
@@ -1782,6 +1782,7 @@ const Dashboard: React.FC = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedWasteSource, setSelectedWasteSource] = useState<WasteSourceType>("ALL");
+  const [wastePeriodMode, setWastePeriodMode] = useState<WastePeriodMode>("DAILY");
 
   // Wilayah selection state (Default: Kecamatan Coblong)
   const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
@@ -2705,11 +2706,14 @@ const Dashboard: React.FC = () => {
         <WasteImpactSummaryTable
           data={wasteImpactItems}
           loading={loading || refreshing}
+          periodMode={wastePeriodMode}
+          onPeriodChange={setWastePeriodMode}
           onSourceChange={(src) => setSelectedWasteSource(src)}
         />
         <WasteImpactTrendChart
           data={wasteImpactItems}
           selectedSource={selectedWasteSource}
+          periodMode={wastePeriodMode}
           loading={loading || refreshing}
           onRefresh={() => fetchStats(false)}
           lastUpdated={formattedLastUpdated}
