@@ -551,47 +551,23 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const fetchRiwayatPresensi = async () => {
     try {
       setIsLoadingHistory(true);
-      const res = await api.get("/presensi/mandiri/saya");
+      const res = await api.get("/timesheet/summary", {
+        params: { studentId: user?.id },
+      });
       const rawData = res.data?.data;
-      const list: any[] = Array.isArray(rawData)
+      const studentList = Array.isArray(rawData)
         ? rawData
-        : Array.isArray(rawData?.items)
-        ? rawData.items
+        : Array.isArray(rawData?.students)
+        ? rawData.students
+        : [];
+      const currentStudent =
+        studentList.find((s: any) => s.studentId === user?.id) ||
+        studentList[0] ||
+        (rawData?.students ? null : rawData);
+      const list: any[] = Array.isArray(currentStudent?.sessions)
+        ? currentStudent.sessions
         : [];
       setHistoryList(list);
-
-      const active = list.find((item: any) => {
-        const st = String(item.statusPresensi || item.status || "").toUpperCase();
-        const isFinished = item.checkOutAt || item.waktuCheckout || item.jamPulang || st === "SELESAI" || st === "HADIR_MEMENUHI" || st === "HADIR";
-        const isIgnored = st === "TIDAK_ADA_KEGIATAN" || st === "SKIP_KEGIATAN" || st === "ALPA" || st === "ALPHA" || st === "IZIN" || st === "SAKIT";
-        return !isFinished && !isIgnored;
-      });
-
-      if (active) {
-        setActiveSession((prev: any) => {
-          if (prev && (prev.status === "BERLANGSUNG" || prev.status === "TERJEDA" || prev.status === "DI_ZONA")) {
-            return prev;
-          }
-          return {
-            id: active.presensiId || active.id,
-            presensiId: active.presensiId || active.id,
-            jamMasuk: active.checkInAt || active.jamMasuk || active.waktuCheckin || active.waktuAbsen,
-            jamPulang: active.checkOutAt || active.jamPulang || active.waktuCheckout,
-            deskripsiKegiatan: active.deskripsiKegiatan,
-            fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
-            status: active.status || active.statusPresensi || "AKTIF",
-            source: active.source || "PRESENSI_MANDIRI",
-            ...active,
-          };
-        });
-      } else {
-        setActiveSession((prev: any) => {
-          if (prev && (prev.status === "BERLANGSUNG" || prev.status === "TERJEDA" || prev.status === "DI_ZONA")) {
-            return prev;
-          }
-          return null;
-        });
-      }
     } catch (err) {
       console.error("Gagal memuat riwayat presensi", err);
       setHistoryList([]);
@@ -706,8 +682,13 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     const finalLng = coords ? coords.longitude : (posko?.lng ?? 107.6107);
 
     setIsSubmitting(true);
-    let checkInSuccess = false;
     try {
+      if (!primaryKegiatan || !primaryKegiatan.id) {
+        showToast.error("Tidak ada jadwal kegiatan KKN aktif untuk kelompok Anda hari ini.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("foto", fotoFile);
       formData.append("deskripsiKegiatan", deskripsi.trim());
@@ -715,35 +696,13 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       formData.append("longitude", String(finalLng));
       formData.append("deviceInfo", "iOS Safari Web");
 
-      // 1. Jika ada jadwal kegiatan KKN resmi aktif, kirim ke endpoint kegiatan resmi
-      if (primaryKegiatan && primaryKegiatan.id) {
-        try {
-          const resOfficial = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/mulai`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          if (resOfficial.data?.success || resOfficial.status === 200 || resOfficial.status === 201) {
-            checkInSuccess = true;
-          }
-        } catch (officialErr: any) {
-          console.warn("[Check-In] Mulai kegiatan resmi KKN warning/fallback:", officialErr?.response?.data || officialErr);
-        }
-      }
+      // Check-in ke jadwal kegiatan resmi kelompok KKN (sesuai mobile app)
+      const resOfficial = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/mulai`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      // 2. Kirim presensi mandiri (auto-bridge & sinkronisasi)
-      try {
-        const resMandiri = await api.post("/presensi/mandiri", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        if (resMandiri.data?.success || resMandiri.status === 200 || resMandiri.status === 201) {
-          checkInSuccess = true;
-        }
-      } catch (mandiriErr: any) {
-        console.warn("[Check-In] Presensi mandiri fallback warning:", mandiriErr?.response?.data || mandiriErr);
-      }
-
-      if (checkInSuccess) {
-        showToast.success("Presensi kehadiran KKN berhasil dicatat & terhubung ke web monitoring!");
+      if (resOfficial.data?.success || resOfficial.status === 200 || resOfficial.status === 201) {
+        showToast.success("Presensi kegiatan KKN kelompok berhasil dicatat!");
         setFotoFile(null);
         setFotoPreview(null);
         setDeskripsi("");
@@ -752,15 +711,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         showToast.error("Gagal melakukan presensi. Pastikan Anda berada dalam jangkauan lokasi posko KKN.");
       }
     } catch (err: any) {
-      if (checkInSuccess) {
-        showToast.success("Presensi kehadiran KKN berhasil dicatat!");
-        setFotoFile(null);
-        setFotoPreview(null);
-        setDeskripsi("");
-        await Promise.all([fetchRiwayatPresensi(), fetchKegiatanAktif()]);
-      } else {
-        showToast.error(err.response?.data?.message || "Gagal melakukan presensi.");
-      }
+      console.error("[Check-In] Error mulai kegiatan KKN:", err);
+      const msg = err.response?.data?.message || err.message;
+      showToast.error(msg || "Gagal melakukan presensi. Periksa sinyal GPS dan coba beberapa saat lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -814,17 +767,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     setShowCheckOutModal(false);
     let checkOutDone = false;
     try {
-      // 1. Selesaikan sesi jadwal kegiatan resmi KKN HANYA jika mahasiswa terdaftar/sedang mengikuti kegiatan resmi ini
-      const isOfficialOngoing =
-        primaryKegiatan &&
-        primaryKegiatan.id &&
-        (primaryKegiatan.statusKehadiran === "BERLANGSUNG" ||
-          primaryKegiatan.statusKehadiran === "TERJEDA" ||
-          primaryKegiatan.statusKehadiran === "DI_ZONA" ||
-          Boolean(primaryKegiatan.attendedAt) ||
-          Boolean(activeSession?.scheduleId));
-
-      if (isOfficialOngoing) {
+      if (primaryKegiatan && primaryKegiatan.id) {
         try {
           const res = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/selesai`, {
             latitude: coords?.latitude,
@@ -836,7 +779,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             checkOutDone = true;
           }
         } catch (officialErr: any) {
-          console.warn("[Check-Out] Selesai kegiatan resmi warning/fallback:", officialErr);
+          console.warn("[Check-Out] Selesai kegiatan resmi error:", officialErr);
           const errResp = officialErr?.response?.data;
           const errCode = errResp?.error || errResp?.code;
           const errMsg = errResp?.message || "";
@@ -867,44 +810,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             return;
           }
 
-          if (errMsg) {
-            showToast.error(errMsg);
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
-
-      // 2. Selesaikan sesi presensi mandiri jika ada
-      if (activeSession) {
-        const targetId = activeSession.presensiId || activeSession.id;
-        if (
-          targetId &&
-          (activeSession.status === "AKTIF" ||
-            activeSession.status === "BERLANGSUNG" ||
-            !activeSession.scheduleId)
-        ) {
-          try {
-            const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
-              deskripsiKegiatan: activeSession.deskripsiKegiatan || deskripsi.trim(),
-            });
-
-            if (res.data?.success || res.status === 200) {
-              checkOutDone = true;
-            }
-          } catch (mandiriErr: any) {
-            console.warn("[Check-Out] Checkout presensi mandiri warning:", mandiriErr);
-            if (
-              mandiriErr?.response?.status === 422 ||
-              mandiriErr?.response?.data?.code === "MINIMUM_DURATION_NOT_MET"
-            ) {
-              showToast.error(
-                mandiriErr.response?.data?.message || "Durasi presensi belum memenuhi batas minimal 30 menit."
-              );
-              setIsSubmitting(false);
-              return;
-            }
-          }
+          showToast.error(errMsg || "Gagal melakukan check-out absensi kegiatan KKN.");
+          setIsSubmitting(false);
+          return;
         }
       }
 

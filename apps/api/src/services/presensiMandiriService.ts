@@ -40,10 +40,11 @@ export class PresensiMandiriService {
 
     if (!student) throw new Error("STUDENT_PROFILE_INCOMPLETE");
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const nowUtc = new Date();
+    const nowWib = new Date(nowUtc.getTime() + 7 * 60 * 60 * 1000);
+    const todayWibStr = nowWib.toISOString().slice(0, 10);
+    const todayStart = new Date(`${todayWibStr}T00:00:00+07:00`);
+    const todayEnd = new Date(`${todayWibStr}T23:59:59.999+07:00`);
 
     const db = prisma as any;
     const existingToday = await db.presensiMandiri.findFirst({
@@ -262,9 +263,12 @@ export class PresensiMandiriService {
 
     // [AUTO-SYNC] Sinkronisasi penyelesaian sesi di ActivityAttendance
     try {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const activeAttendance = await prisma.activityAttendance.findFirst({
+      const nowUtc = new Date();
+      const nowWib = new Date(nowUtc.getTime() + 7 * 60 * 60 * 1000);
+      const todayWibStr = nowWib.toISOString().slice(0, 10);
+      const todayStart = new Date(`${todayWibStr}T00:00:00+07:00`);
+
+      let activeAttendance = await prisma.activityAttendance.findFirst({
         where: {
           studentId,
           attendedAt: { gte: todayStart },
@@ -273,8 +277,9 @@ export class PresensiMandiriService {
         orderBy: { attendedAt: "desc" },
       });
 
+      const finalStatus = durasiMenit >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+
       if (activeAttendance) {
-        const finalStatus = durasiMenit >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
         const syncedFinish = await prisma.activityAttendance.update({
           where: { id: activeAttendance.id },
           data: {
@@ -294,6 +299,57 @@ export class PresensiMandiriService {
           attendedAt: syncedFinish.attendedAt.toISOString(),
           actualInZoneMinutes: durasiMenit,
         });
+      } else {
+        // Fallback: Jika ActivityAttendance belum terbuat saat check-in, hubungkan ke jadwal KKN aktif hari ini
+        const activeSchedule = await prisma.schedule.findFirst({
+          where: {
+            date: { gte: todayStart },
+            isActive: true,
+            ...(record.kelompokId ? { OR: [{ kelompokId: record.kelompokId }, { kelompokId: null }] } : {}),
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        if (activeSchedule) {
+          const syncedFinish = await prisma.activityAttendance.upsert({
+            where: {
+              studentId_scheduleId: {
+                studentId,
+                scheduleId: activeSchedule.id,
+              },
+            },
+            update: {
+              status: finalStatus,
+              checkOutAt,
+              actualInZoneMinutes: durasiMenit,
+              attendedAt: record.checkInAt,
+              ...(updateData.deskripsiKegiatan ? { deskripsiKegiatan: updateData.deskripsiKegiatan } : {}),
+            },
+            create: {
+              studentId,
+              scheduleId: activeSchedule.id,
+              status: finalStatus,
+              attendedAt: record.checkInAt,
+              checkOutAt,
+              actualInZoneMinutes: durasiMenit,
+              latitude: Number(record.latitude) || 0,
+              longitude: Number(record.longitude) || 0,
+              method: "GPS_MANDIRI_SYNC",
+              platformOs: record.platformOs || "IOS_SAFARI_WEB",
+              ...(updateData.deskripsiKegiatan ? { deskripsiKegiatan: updateData.deskripsiKegiatan } : {}),
+            },
+          });
+
+          websocketService.broadcastStudentAttendance({
+            id: syncedFinish.id,
+            studentId,
+            scheduleId: syncedFinish.scheduleId,
+            status: finalStatus,
+            currentStatus: "CHECKED_OUT",
+            attendedAt: syncedFinish.attendedAt.toISOString(),
+            actualInZoneMinutes: durasiMenit,
+          });
+        }
       }
     } catch (finishSyncErr) {
       console.warn("[PresensiMandiri] Auto-sync finish to ActivityAttendance warning:", finishSyncErr);
