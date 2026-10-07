@@ -7,10 +7,26 @@ import {
   formatDeltaPct,
   formatComplianceDelta,
   aggregateKelurahanImpact,
+  calculateDailyAverageKg,
+  STANDARD_CYCLE_DAYS,
   type WasteImpactItem,
 } from "./wasteCalculations.js";
 
 describe("wasteCalculations", () => {
+  it("should calculate daily average kg from accumulated volume correctly", () => {
+    // 1200 kg dalam 30 hari -> 40 kg/hari
+    expect(calculateDailyAverageKg(1200, 30)).toBe(40);
+    // 1110 kg dalam 30 hari -> 37 kg/hari
+    expect(calculateDailyAverageKg(1110, 30)).toBe(37);
+    // Default 30 hari
+    expect(STANDARD_CYCLE_DAYS).toBe(30);
+    expect(calculateDailyAverageKg(90)).toBe(3);
+    // Edge cases
+    expect(calculateDailyAverageKg(0)).toBe(0);
+    expect(calculateDailyAverageKg(null)).toBe(0);
+    expect(calculateDailyAverageKg(undefined)).toBe(0);
+    expect(calculateDailyAverageKg(100, 0)).toBe(0);
+  });
   it("should calculate volume delta kg correctly", () => {
     // Studi kasus Lebakgede: Baseline 250, Aktual 37 -> 213 kg
     expect(calculateVolumeDeltaKg(250, 37)).toBe(213);

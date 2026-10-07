@@ -32,6 +32,8 @@ export interface WasteImpactItem {
   akurasiPilah?: number | null;
   wargaAktif?: number | null;
   totalWarga?: number | null;
+  rawAccumulatedKg?: number | null; // Total akumulasi kotor sebelum dinormalisasi per hari
+  dailyAverageKg?: number | null;   // Rata-rata per hari (kg/hari) dari standar 30 hari
 }
 
 export interface WasteImpactAggregation {
@@ -45,7 +47,28 @@ export interface WasteImpactAggregation {
   deltaCompliance: number;
   totalWargaKg: number;
   totalPetugasKg: number;
+  totalAccumulatedKg?: number;
   kelurahanCount: number;
+}
+
+/**
+ * Standar Siklus Hari Pelaporan: 30 hari kalender.
+ * Rekapitulasi rata-rata harian ditarik berkala setiap tanggal 7 setiap bulannya.
+ */
+export const STANDARD_CYCLE_DAYS = 30;
+
+/**
+ * Menghitung rata-rata berat sampah per hari dari total akumulasi periode.
+ * Standar ISO: kg/hari = Total Akumulasi (kg) / 30 hari.
+ */
+export function calculateDailyAverageKg(
+  accumulatedKg: number | null | undefined,
+  days: number = STANDARD_CYCLE_DAYS
+): number {
+  if (accumulatedKg === null || accumulatedKg === undefined || isNaN(accumulatedKg) || days <= 0) {
+    return 0;
+  }
+  return Number((accumulatedKg / days).toFixed(2));
 }
 
 /**
@@ -207,12 +230,18 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
   let totalSetoranDinilai = 0;
   let totalSetoranPatuh = 0;
 
+  let totalAccumulatedKg = 0;
+
   items.forEach((item) => {
     if (item.baselineKg && item.baselineKg > 0) {
       totalBaselineKg += item.baselineKg;
     }
     const actKg = Number(item.actualKg || 0);
     totalActualKg += actKg;
+
+    if (item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg !== null) {
+      totalAccumulatedKg += Number(item.rawAccumulatedKg);
+    }
 
     if (item.wargaKg !== undefined && item.wargaKg !== null) {
       totalWargaKg += Number(item.wargaKg);
@@ -278,6 +307,7 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
     deltaCompliance,
     totalWargaKg: Number(totalWargaKg.toFixed(2)),
     totalPetugasKg: Number(totalPetugasKg.toFixed(2)),
+    totalAccumulatedKg: Number(totalAccumulatedKg.toFixed(2)),
     kelurahanCount: items.length,
   };
 }

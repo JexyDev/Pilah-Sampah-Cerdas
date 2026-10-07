@@ -33,6 +33,7 @@ import {
   AlertCircle,
   FileSpreadsheet,
   CheckCircle2,
+  Calendar,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
@@ -44,6 +45,8 @@ import {
   formatDeltaPct,
   formatComplianceDelta,
   aggregateKelurahanImpact,
+  calculateDailyAverageKg,
+  STANDARD_CYCLE_DAYS,
   type WasteSourceType,
   type WasteImpactItem,
 } from "../../utils/wasteCalculations";
@@ -84,20 +87,24 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
     }
   };
 
-  // Normalisasi data dengan sumber yang dipilih dan kepatuhan baseline hasil survei
+  // Normalisasi data dengan sumber yang dipilih:
+  // Mengonversi total akumulasi menjadi rata-rata harian (kg/hari) dengan standar siklus 30 hari.
   const displayItems = useMemo(() => {
     return data.map((item) => {
-      let actualKg = item.actualKg ?? 0;
+      let rawAccumulatedKg = item.actualKg ?? 0;
       if (selectedSource === "WARGA_APP") {
-        actualKg = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
+        rawAccumulatedKg = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
       } else if (selectedSource === "PETUGAS_LAPANGAN") {
-        actualKg = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
+        rawAccumulatedKg = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
       } else {
         // ALL
         const w = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
         const p = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
-        actualKg = Number((w + p).toFixed(2));
+        rawAccumulatedKg = Number((w + p).toFixed(2));
       }
+
+      // Rata-rata per hari dari standar 30 hari kalender (standar ISO / SI)
+      const dailyAverageKg = calculateDailyAverageKg(rawAccumulatedKg, STANDARD_CYCLE_DAYS);
 
       const normK = item.kelurahan.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
       const baselineCompliance =
@@ -107,7 +114,9 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
       return {
         ...item,
-        actualKg,
+        rawAccumulatedKg,
+        dailyAverageKg,
+        actualKg: dailyAverageKg, // Disajikan dalam satuan kg/hari
         baselineCompliance,
         sourceType: selectedSource,
       };
@@ -126,46 +135,38 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       return;
     }
 
-    const isWargaApp = selectedSource === "WARGA_APP";
     const headers = [
       "No",
       "Kelurahan",
       "Sumber Data",
-      isWargaApp ? "Baseline Timbulan (kg)" : "Baseline Berat Sampah (kg)",
-      isWargaApp ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)",
-      isWargaApp ? "Sampah Terpilah Mandiri (kg)" : "Reduksi Berat ke TPA (kg)",
-      isWargaApp ? "Tingkat Partisipasi Berat Terpilah (%)" : "Reduksi Berat ke TPA (%)",
+      "Baseline Berat (kg/hari)",
+      "Aktual Rata-Rata (kg/hari)",
+      "Penurunan Berat (Δ kg/hari)",
+      "Penurunan Berat (Δ %)",
       "Baseline Kepatuhan (%)",
       "Aktual Kepatuhan (%)",
-      "Perubahan Kepatuhan (%)",
+      "Perubahan Kepatuhan (Δ %)",
+      "Total Akumulasi 30 Hari (kg)",
       "Status Verifikasi",
     ];
 
-    const rows = displayItems.map((item, idx) => {
+    const rows: (string | number)[][] = displayItems.map((item, idx) => {
       const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
       const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
       const deltaComp = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
-      const adopsiPct =
-        item.baselineKg && item.baselineKg > 0
-          ? Number(((item.actualKg / item.baselineKg) * 100).toFixed(2))
-          : 0;
 
       return [
         idx + 1,
         `Kel. ${item.kelurahan}`,
-        isWargaApp
+        selectedSource === "WARGA_APP"
           ? "Aktivitas Warga (WARGA_APP)"
           : selectedSource === "PETUGAS_LAPANGAN"
           ? "Input Petugas (PETUGAS_LAPANGAN)"
           : "Semua Sumber (Warga + Petugas)",
         item.baselineKg ? Number(item.baselineKg.toFixed(2)) : 0,
         item.actualKg ? Number(item.actualKg.toFixed(2)) : 0,
-        isWargaApp
-          ? (item.actualKg ? Number(item.actualKg.toFixed(2)) : 0)
-          : (deltaKg !== null ? deltaKg : "-"),
-        isWargaApp
-          ? `${adopsiPct}%`
-          : (deltaPct !== null ? `${deltaPct}%` : "-"),
+        deltaKg !== null ? deltaKg : "-",
+        deltaPct !== null ? `${deltaPct}%` : "-",
         item.baselineCompliance !== null && item.baselineCompliance !== undefined
           ? `${item.baselineCompliance}%`
           : "-",
@@ -173,30 +174,33 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           ? `${item.actualCompliance}%`
           : "-",
         deltaComp !== null ? `${deltaComp >= 0 ? "+" : ""}${deltaComp}%` : "-",
+        item.rawAccumulatedKg !== null && item.rawAccumulatedKg !== undefined
+          ? Number(item.rawAccumulatedKg.toFixed(2))
+          : "-",
         item.status || "Terverifikasi Real",
       ];
     });
 
-    const totalAdopsiPct =
-      aggregation.totalBaselineKg > 0
-        ? Number(((aggregation.totalActualKg / aggregation.totalBaselineKg) * 100).toFixed(2))
-        : 0;
-
     // Baris Agregasi Kecamatan
     rows.push([
       "",
-      "TOTAL & RERATA KECAMATAN COBLONG",
+      "TOTAL & RATA-RATA KECAMATAN COBLONG",
       `Filter: ${selectedSource}`,
       aggregation.totalBaselineKg,
       aggregation.totalActualKg,
-      isWargaApp ? aggregation.totalActualKg : aggregation.totalDeltaKg,
-      isWargaApp
-        ? `${totalAdopsiPct}%`
-        : (aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-"),
+      aggregation.totalDeltaKg,
+      aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-",
       `${aggregation.avgBaselineCompliance}%`,
       `${aggregation.avgActualCompliance}%`,
       `${aggregation.deltaCompliance >= 0 ? "+" : ""}${aggregation.deltaCompliance}%`,
+      aggregation.totalAccumulatedKg !== undefined ? aggregation.totalAccumulatedKg : "-",
       "Agregat Terbobot Faktual",
+    ]);
+
+    // Baris Keterangan Resmi ISO di file XLSX
+    rows.push([]);
+    rows.push([
+      "* Catatan Standar ISO: Data aktual disajikan dalam satuan rata-rata per hari (kg/hari) dari total akumulasi standar siklus 30 hari kalender. Rekapitulasi berkala dilakukan setiap tanggal 7 setiap bulannya.",
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -224,11 +228,13 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             <span className="text-[10px] font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               Formula Delta Faktual
             </span>
+            <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Calendar size={11} />
+              <span>Siklus 30 Hari • Cut-off Setiap Tgl 7</span>
+            </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            {selectedSource === "WARGA_APP"
-              ? "Tabel rekapitulasi adopsi pemilahan sampah mandiri oleh warga dan peningkatan kepatuhan pemilahan di 6 Kelurahan Kecamatan Coblong."
-              : "Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan. Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas di 6 Kelurahan Kecamatan Coblong."}
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-3xl">
+            Tabel rekapitulasi capaian penurunan timbulan sampah (rata-rata harian <code className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold">kg/hari</code>) dan peningkatan kepatuhan pemilahan di 6 Kelurahan Kecamatan Coblong. Data dinormalisasi dari total akumulasi dengan standar siklus 30 hari kalender dan dihimpun berkala setiap tanggal 7 setiap bulannya.
           </p>
         </div>
 
@@ -292,7 +298,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         </div>
       </div>
 
-      {/* Banner Pemisahan Sumber Data (Anti Double-Counting) */}
+      {/* Banner Pemisahan Sumber Data & Siklus Pelaporan Tanggal 7 */}
       <div
         className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 transition-colors ${
           selectedSource === "ALL"
@@ -310,30 +316,33 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           )}
         </div>
         <div className="flex-1 space-y-1">
-          <div className="font-extrabold flex items-center gap-2">
+          <div className="font-extrabold flex items-center gap-2 flex-wrap">
             <span>
               {selectedSource === "ALL"
-                ? "Peringatan Tata Kelola Data: Mode Tampilan Gabungan (Semua Sumber)"
+                ? "Tata Kelola Data: Mode Tampilan Gabungan (Semua Sumber)"
                 : selectedSource === "WARGA_APP"
                 ? "Sumber Terisolasi: Aktivitas Pemilahan Warga (WARGA_APP)"
-                : "Sumber Terisolasi: Pencatatan Petugas Lapangan (PETUGAS_LAPANGAN)"}
+                : "Sumber Terisolasi: Pencatatan Penimbangan Petugas (PETUGAS_LAPANGAN)"}
             </span>
             <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/60 border border-current/20 font-bold">
               Tag: {selectedSource}
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/60 border border-current/20 font-bold">
+              Standar 30 Hari • Evaluasi Setiap Tgl 7
             </span>
           </div>
           <p className="text-[11px] leading-relaxed opacity-90">
             {selectedSource === "ALL" ? (
               <>
-                <strong>Perhatian Double-Counting:</strong> Menggabungkan berat sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
+                <strong>Perhatian Double-Counting &amp; Rata-Rata Harian:</strong> Angka berat aktual merefleksikan <strong>rata-rata per hari (kg/hari)</strong> dari akumulasi gabungan seluruh sumber dalam siklus 30 hari kalender. Penggabungan data pemilahan warga via aplikasi mobile dengan pencatatan penimbangan petugas berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi. Rekapitulasi berkala dilakukan setiap <strong>tanggal 7 setiap bulannya</strong>.
               </>
             ) : selectedSource === "WARGA_APP" ? (
               <>
-                Menampilkan berat sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI di 24 RW wilayah binaan KKN. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
+                Menampilkan <strong>rata-rata per hari (kg/hari)</strong> dari sampah yang terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI di wilayah binaan. Nilai dihitung dari total akumulasi dibagi siklus standar 30 hari kalender, dihimpun berkala setiap <strong>tanggal 7 setiap bulannya</strong>.
               </>
             ) : (
               <>
-                Menampilkan berat sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
+                Menampilkan <strong>rata-rata per hari (kg/hari)</strong> dari sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan. Nilai dihitung dari total akumulasi dibagi siklus standar 30 hari kalender, dihimpun berkala setiap <strong>tanggal 7 setiap bulannya</strong>.
               </>
             )}
           </p>
@@ -344,48 +353,41 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            {/* Header Row 1: Kategori Utama */}
+            {/* Header Row 1: Kategori Utama Standar ISO */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-200">
               <th rowSpan={2} className="py-3 px-3 text-center w-12 bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">
                 No
               </th>
-              <th rowSpan={2} className="py-3 px-4 min-w-[150px] font-bold bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">
+              <th rowSpan={2} className="py-3 px-4 min-w-[160px] font-bold bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">
                 Nama Kelurahan
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
-                Berat Sampah
+                Berat Sampah (kg/hari)
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Penurunan Berat Sampah (Δ)"}
+                Penurunan Berat Sampah (Δ)
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
                 Kepatuhan Pemilahan
               </th>
               <th rowSpan={2} className="py-3 px-3 text-center uppercase tracking-wider bg-teal-50/80 dark:bg-teal-950/60 text-teal-900 dark:text-teal-200 min-w-[130px]">
-                Perubahan Kepatuhan (%)
+                Perubahan Kepatuhan (Δ)
               </th>
             </tr>
 
-            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
+            {/* Header Row 2: Sub-Kolom Seragam di Semua Tab */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
-              <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Baseline Timbulan (kg)" : "Baseline (kg)"}
+              <th title="Baseline estimasi timbulan sampah per hari hasil survei lapangan" className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
+                Baseline (kg/hari)
               </th>
-              <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Aktual Terpilah (kg)" : "Aktual Saat Ini (kg)"}
+              <th title="Rata-rata berat sampah per hari dari standar 30 hari kalender (cut-off tanggal 7)" className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
+                Aktual Rata-Rata (kg/hari)
               </th>
-              {/* Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
-              <th
-                title={selectedSource === "WARGA_APP" ? "Total Sampah Terpilah Mandiri Warga" : "Delta Penurunan Berat Sampah (kg)"}
-                className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[100px]"
-              >
-                {selectedSource === "WARGA_APP" ? "Terpilah (kg)" : "Delta (kg)"}
+              <th title="Delta penurunan berat sampah per hari (Baseline - Aktual Rata-Rata)" className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
+                Delta (kg/hari)
               </th>
-              <th
-                title={selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Berat Sampah Terpilah (%)" : "Persentase Penurunan Berat Sampah (%)"}
-                className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[100px]"
-              >
-                {selectedSource === "WARGA_APP" ? "Partisipasi (%)" : "Delta (%)"}
+              <th title="Persentase penurunan berat sampah terhadap baseline" className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[100px]">
+                Delta (%)
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
                 Baseline (%)
@@ -400,61 +402,57 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             {displayItems.map((item, idx) => {
               const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
               const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
-              const isWargaApp = selectedSource === "WARGA_APP";
-              const adopsiPct =
-                item.baselineKg && item.baselineKg > 0
-                  ? Number(((item.actualKg / item.baselineKg) * 100).toFixed(2))
-                  : 0;
               const hasActualCompliance = item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0;
               const deltaCompliance = hasActualCompliance
                 ? calculateComplianceDelta(item.baselineCompliance, item.actualCompliance)
                 : null;
 
               const hasBaselineData = item.hasBaseline && item.baselineKg && item.baselineKg > 0;
-              const hasActualData = (item.actualKg ?? 0) > 0 || (item.actualCompliance ?? 0) > 0;
 
               return (
                 <tr
                   key={item.id || idx}
                   className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs"
                 >
-                  <td className="py-3.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/60 dark:border-slate-800/60">
+                  <td className="py-3.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {idx + 1}
                   </td>
                   <td className="py-3.5 px-4 font-extrabold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60">
                     <span>Kel. {item.kelurahan}</span>
                     {item.kelurahan.toLowerCase().includes("lebakgede") && (
-                      <span className="block text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        *Studi Kasus Meeting
+                      <span className="block text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 font-sans">
+                        *Pilot Project Coblong
                       </span>
                     )}
                   </td>
 
-                  {/* Berat Baseline (kg) */}
-                  <td className="py-3.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
+                  {/* Berat Baseline (kg/hari) */}
+                  <td className="py-3.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {hasBaselineData ? (
-                      <span>{Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
+                      <span>{Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari</span>
                     ) : (
-                      <span className="text-slate-400 italic text-[11px]">Belum ada data</span>
+                      <span className="text-slate-400 italic text-[11px] font-sans">Belum ada data</span>
                     )}
                   </td>
 
-                  {/* Berat Aktual Saat Ini (kg) */}
-                  <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60">
-                    <span>
-                      {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
-                    </span>
+                  {/* Berat Aktual Rata-Rata (kg/hari) */}
+                  <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
+                    <div className="flex flex-col items-center">
+                      <span>
+                        {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari
+                      </span>
+                      {item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg !== null && item.rawAccumulatedKg > 0 && (
+                        <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500 font-sans">
+                          (total: {Number(item.rawAccumulatedKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
+                        </span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* Kolom Berdampingan 1: Penurunan Berat (kg) / Sampah Terpilah Mandiri */}
-                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
-                    {isWargaApp ? (
-                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
-                        <CheckCircle2 size={13} className="text-emerald-600" />
-                        <span>{Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
-                      </span>
-                    ) : deltaKg === null ? (
-                      <span className="text-slate-400 italic">—</span>
+                  {/* Kolom Seragam 1: Penurunan Berat Sampah (Delta kg/hari) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
+                    {deltaKg === null ? (
+                      <span className="text-slate-400 italic font-sans">—</span>
                     ) : (
                       <span
                         className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
@@ -474,21 +472,17 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                         )}
                         <span>
                           {deltaKg < 0
-                            ? `+${Math.abs(deltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
-                            : formatDeltaKg(deltaKg, { showPlusSign: false })}
+                            ? `+${Math.abs(deltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari`
+                            : `${deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari`}
                         </span>
                       </span>
                     )}
                   </td>
 
-                  {/* Kolom Berdampingan 2: Penurunan Berat (%) / Tingkat Partisipasi Berat Terpilah */}
-                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
-                    {isWargaApp ? (
-                      <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/40">
-                        <span>{adopsiPct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%</span>
-                      </span>
-                    ) : deltaPct === null ? (
-                      <span className="text-slate-400 italic">—</span>
+                  {/* Kolom Seragam 2: Penurunan Berat Sampah (Delta %) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
+                    {deltaPct === null ? (
+                      <span className="text-slate-400 italic font-sans">—</span>
                     ) : (
                       <span
                         className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
@@ -509,41 +503,41 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                         <span>
                           {deltaPct < 0
                             ? `+${Math.abs(deltaPct).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
-                            : formatDeltaPct(deltaPct, { showPlusSign: false })}
+                            : `${deltaPct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
                         </span>
                       </span>
                     )}
                   </td>
 
                   {/* Kepatuhan Baseline (%) */}
-                  <td className="py-3.5 px-3 text-center font-semibold text-slate-600 dark:text-slate-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                  <td className="py-3.5 px-3 text-center font-semibold text-slate-600 dark:text-slate-400 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {item.baselineCompliance !== null && item.baselineCompliance !== undefined ? (
                       <span>{Number(item.baselineCompliance).toFixed(1).replace(".", ",")}%</span>
                     ) : (
-                      <span className="text-slate-400 italic text-[11px]">—</span>
+                      <span className="text-slate-400 italic text-[11px] font-sans">—</span>
                     )}
                   </td>
 
                   {/* Kepatuhan Aktual (%) */}
-                  <td className="py-3.5 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                  <td className="py-3.5 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0 ? (
                       <div className="flex flex-col items-center">
                         <span>{Number(item.actualCompliance).toFixed(1).replace(".", ",")}%</span>
                         {item.partisipasiWarga !== undefined && item.partisipasiWarga !== null && (
-                          <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 block">
+                          <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 block font-sans">
                             (Partisipasi: {item.partisipasiWarga}%)
                           </span>
                         )}
                       </div>
                     ) : (
-                      <span className="text-slate-400 font-normal italic">Belum terdata</span>
+                      <span className="text-slate-400 font-normal italic font-sans">Belum terdata</span>
                     )}
                   </td>
 
                   {/* Perubahan Kepatuhan (%) */}
-                  <td className="py-3.5 px-3 text-center font-extrabold">
+                  <td className="py-3.5 px-3 text-center font-extrabold font-mono tabular-nums">
                     {deltaCompliance === null ? (
-                      <span className="text-slate-400 italic">—</span>
+                      <span className="text-slate-400 italic font-sans">—</span>
                     ) : (
                       <span
                         className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
@@ -575,106 +569,97 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 ★
               </td>
               <td className="py-4 px-4 border-r border-slate-200 dark:border-slate-700">
-                <span className="text-slate-900 dark:text-white uppercase tracking-wider block">
+                <span className="text-slate-900 dark:text-white uppercase tracking-wider block font-extrabold">
                   Kecamatan Coblong (Total)
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">
-                  Agregasi Terbobot 6 Kelurahan
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block font-sans">
+                  Agregasi Terbobot 6 Kelurahan (Siklus 30 Hari)
                 </span>
               </td>
 
-              {/* Total Baseline Berat */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+              {/* Total Baseline Berat (kg/hari) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
+                {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari
               </td>
 
-              {/* Total Aktual Berat */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
-                {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
-              </td>
-
-              {/* Total Penurunan Berat (kg) / Total Sampah Terpilah Mandiri */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
-                {selectedSource === "WARGA_APP" ? (
-                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
-                    <CheckCircle2 size={13} className="text-emerald-600" />
-                    <span>{aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
+              {/* Total Aktual Rata-Rata (kg/hari) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
+                <div className="flex flex-col items-center">
+                  <span>
+                    {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari
                   </span>
-                ) : (
-                  <span
-                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                      aggregation.totalDeltaKg > 0
-                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                        : aggregation.totalDeltaKg < 0
-                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                        : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    {aggregation.totalDeltaKg > 0 ? (
-                      <TrendingDown size={13} className="text-emerald-600" />
-                    ) : aggregation.totalDeltaKg < 0 ? (
-                      <TrendingUp size={13} className="text-rose-600" />
-                    ) : (
-                      <Minus size={13} />
-                    )}
-                    <span>
-                      {aggregation.totalDeltaKg < 0
-                        ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
-                        : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false })}
+                  {aggregation.totalAccumulatedKg !== undefined && aggregation.totalAccumulatedKg > 0 && (
+                    <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400 font-sans">
+                      (total: {aggregation.totalAccumulatedKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
                     </span>
-                  </span>
-                )}
+                  )}
+                </div>
               </td>
 
-              {/* Total Penurunan Berat (%) / Tingkat Partisipasi Berat Terpilah */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
-                {selectedSource === "WARGA_APP" ? (
-                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-200 border border-blue-300">
-                    <span>
-                      {(aggregation.totalBaselineKg > 0
-                        ? Number(((aggregation.totalActualKg / aggregation.totalBaselineKg) * 100).toFixed(2))
-                        : 0
-                      ).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%
-                    </span>
+              {/* Total Penurunan Berat (Delta kg/hari) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300 font-mono tabular-nums">
+                <span
+                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                    aggregation.totalDeltaKg > 0
+                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                      : aggregation.totalDeltaKg < 0
+                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {aggregation.totalDeltaKg > 0 ? (
+                    <TrendingDown size={13} className="text-emerald-600" />
+                  ) : aggregation.totalDeltaKg < 0 ? (
+                    <TrendingUp size={13} className="text-rose-600" />
+                  ) : (
+                    <Minus size={13} />
+                  )}
+                  <span>
+                    {aggregation.totalDeltaKg < 0
+                      ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari`
+                      : `${aggregation.totalDeltaKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg/hari`}
                   </span>
-                ) : (
-                  <span
-                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                      (aggregation.weightedDeltaPct || 0) > 0
-                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                        : (aggregation.weightedDeltaPct || 0) < 0
-                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                        : "bg-slate-200 text-slate-700"
-                    }`}
-                  >
-                    {(aggregation.weightedDeltaPct || 0) > 0 ? (
-                      <TrendingDown size={13} className="text-emerald-600" />
-                    ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
-                      <TrendingUp size={13} className="text-rose-600" />
-                    ) : (
-                      <Minus size={13} />
-                    )}
-                    <span>
-                      {(aggregation.weightedDeltaPct || 0) < 0
-                        ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
-                        : formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: false })}
-                    </span>
-                  </span>
-                )}
+                </span>
               </td>
 
-              {/* Rerata Kepatuhan Baseline (%) */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+              {/* Total Penurunan Berat (Delta %) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300 font-mono tabular-nums">
+                <span
+                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                    (aggregation.weightedDeltaPct || 0) > 0
+                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                      : (aggregation.weightedDeltaPct || 0) < 0
+                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {(aggregation.weightedDeltaPct || 0) > 0 ? (
+                    <TrendingDown size={13} className="text-emerald-600" />
+                  ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
+                    <TrendingUp size={13} className="text-rose-600" />
+                  ) : (
+                    <Minus size={13} />
+                  )}
+                  <span>
+                    {(aggregation.weightedDeltaPct || 0) < 0
+                      ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                      : `${(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+                  </span>
+                </span>
+              </td>
+
+              {/* Rata-Rata Kepatuhan Baseline (%) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
                 {aggregation.avgBaselineCompliance.toFixed(1).replace(".", ",")}%
               </td>
 
-              {/* Rerata Kepatuhan Aktual (%) */}
-              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300">
+              {/* Rata-Rata Kepatuhan Aktual (%) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300 font-mono tabular-nums">
                 {aggregation.avgActualCompliance.toFixed(1).replace(".", ",")}%
               </td>
 
-              {/* Rerata Perubahan Kepatuhan (%) */}
-              <td className="py-4 px-3 text-center text-teal-700 dark:text-teal-300">
+              {/* Rata-Rata Perubahan Kepatuhan (%) */}
+              <td className="py-4 px-3 text-center text-teal-700 dark:text-teal-300 font-mono tabular-nums">
                 <span
                   className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
                     aggregation.deltaCompliance > 0
@@ -692,50 +677,40 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         </table>
       </div>
 
-      {/* Footer Catatan Sumber Data */}
-      <div className="flex items-center gap-2 px-1 text-[11.5px] text-slate-500 dark:text-slate-400 italic">
-        <Info size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
-        <span>
-          *Catatan Sumber Data: Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas.
-        </span>
+      {/* Footer Catatan Siklus Pelaporan & Sumber Data */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-[11.5px] text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2">
+          <Info size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
+          <span>
+            *Nilai kepatuhan pemilahan bersumber dari aktivitas warga via BERSEKA Vision AI, sedangkan penimbangan berat sampah bersumber dari pencatatan posko/TPS3R.
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400 shrink-0">
+          <Calendar size={13} className="text-indigo-600 dark:text-indigo-400" />
+          <span>Data dihimpun rata-rata per hari setiap <strong>tanggal 7 setiap bulannya</strong>.</span>
+        </div>
       </div>
 
-      {/* Rangkuman Metodologi & Studi Kasus Lebakgede */}
+      {/* Rangkuman Metodologi Standardisasi ISO */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Box Left: Rumus Penurunan Berat Sampah / Adopsi Sampah Terpilah */}
+        {/* Box Left: Rumus Penurunan Berat Sampah Standar ISO */}
         <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
           <div className="flex items-center justify-between">
             <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               <span className="p-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs">Δ</span>
-              {selectedSource === "WARGA_APP" ? "Rumus Adopsi Sampah Terpilah Mandiri (KPI 1 - Warga)" : "Rumus Penurunan Sampah ke TPA / Residu (KPI 1)"}
+              Rumus Penurunan Berat Sampah (KPI 1 - Satuan Baku kg/hari)
             </h5>
             <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
-              {selectedSource === "WARGA_APP" ? "Rasio Adopsi" : "Matematika SI"}
+              Standar ISO 80000-1
             </span>
           </div>
           <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
-            {selectedSource === "WARGA_APP" ? (
-              <>
-                <p><strong>Sampah Terpilah Mandiri (kg)</strong> = Berat Aktual Setoran Warga via App</p>
-                <p><strong>Tingkat Partisipasi Berat Terpilah (%)</strong> = [Aktual Warga (kg) ÷ Baseline Timbulan (kg)] × 100%</p>
-              </>
-            ) : (
-              <>
-                <p><strong>Δ Berat (kg)</strong> = Berat_Baseline − Berat_Aktual_Petugas</p>
-                <p><strong>Δ Persen (%)</strong> = [(Berat_Baseline − Berat_Aktual_Petugas) ÷ Berat_Baseline] × 100%</p>
-              </>
-            )}
+            <p><strong>Rata-Rata Harian (kg/hari)</strong> = Total Akumulasi (kg) ÷ 30 Hari</p>
+            <p><strong>Δ Berat (kg/hari)</strong> = Baseline (kg/hari) − Aktual Rata-Rata (kg/hari)</p>
+            <p><strong>Δ Persen (%)</strong> = [(Baseline − Aktual Rata-Rata) ÷ Baseline] × 100%</p>
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
-            {selectedSource === "WARGA_APP" ? (
-              <>
-                <strong>Prinsip Anti-Misleading Data:</strong> Pada tab Aktivitas Warga, baseline timbulan (1.670,5 kg/hari) mengacu pada <strong>24 RW Wilayah Binaan KKN</strong>. Angka aktual mencerminkan sampah terpilah mandiri rumah tangga melalui pemindaian QR &amp; BERSEKA Vision AI (menunjukkan tingkat adopsi mandiri dan reduksi sampah langsung di sumbernya).
-              </>
-            ) : (
-              <>
-                <strong>Penurunan Sampah ke TPA / Residu:</strong> Dihitung berdasarkan penimbangan timbulan residu TPS/TPS3R oleh petugas terhadap estimasi timbulan baseline awal.
-              </>
-            )}
+            <strong>Kesesuaian Basis Waktu (Apple-to-Apple):</strong> Baseline survei adalah estimasi timbulan harian (kg/hari). Dengan menormalisasi data aktual menjadi rata-rata per hari berbasis siklus standar 30 hari kalender, kalkulasi delta penurunan berat menjadi sahih dan akuntabel.
           </div>
         </div>
 
@@ -752,10 +727,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           </div>
           <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 font-mono text-[11px] text-emerald-950 dark:text-emerald-200 space-y-1">
             <p><strong>Δ Kepatuhan (%)</strong> = Kepatuhan_Aktual − Kepatuhan_Baseline</p>
-            <p><strong>Satuan Seragam:</strong> Persentase (%) / Percentage Point (pp)</p>
+            <p><strong>Satuan Baku:</strong> Persentase (%) / Percentage Point (pp)</p>
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-emerald-100/50 dark:bg-emerald-900/30 p-2.5 rounded-xl">
-            <strong>Dua KPI Utama Sistem:</strong> (1) Menurunkan tren berat sampah per kelurahan, dan (2) Menaikkan tren kepatuhan pemilahan sampah warga secara terverifikasi AI.
+            <strong>Dua Indikator Kinerja Utama (IKU):</strong> (1) Penurunan laju timbulan sampah per hari di setiap kelurahan, dan (2) Kenaikan indeks kepatuhan pemilahan sampah warga secara terverifikasi kecerdasan buatan (Vision AI).
           </div>
         </div>
       </div>
@@ -765,7 +740,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         <div className="flex items-center justify-between">
           <span className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
             <Info size={14} className="text-indigo-600 dark:text-indigo-400" />
-            Catatan Analisis &amp; Jawaban Pertanyaan Kritis Manajemen
+            Catatan Metodologi &amp; Standardisasi Mutu Data (ISO 80000-1 &amp; Pedoman BPS)
           </span>
           <button
             type="button"
@@ -779,16 +754,16 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         {showFootnoteDetails && (
           <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
             <p>
-              <strong>1. Standarisasi Data Baseline:</strong> Angka baseline menggunakan total berat timbulan sampah resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) untuk memastikan perbandingan yang konsisten dan akuntabel di 6 kelurahan.
+              <strong>1. Standardisasi Siklus Pelaporan (Tanggal 7 Setiap Bulan):</strong> Data transaksi timbulan sampah dan pemilahan dihimpun dalam siklus standar 30 hari kalender, lalu dinormalisasi menjadi rata-rata harian (<code className="font-mono">kg/hari</code>). Penarikan berkala dan evaluasi komparatif resmi diselenggarakan setiap tanggal 7 setiap bulannya.
             </p>
             <p>
-              <strong>2. Konteks Aktual Terkelola:</strong> Angka berat aktual mencerminkan akumulasi sampah terpilah yang tercatat aktif melalui penimbangan warga via aplikasi BERSEKA dan input manual petugas pemilah di wilayah binaan/percontohan.
+              <strong>2. Standardisasi Data Baseline:</strong> Angka baseline menggunakan total berat timbulan sampah harian resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (contoh: 4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) guna memastikan komparasi yang konsisten dan akuntabel di 6 kelurahan.
             </p>
             <p>
-              <strong>3. Formula Agregasi Kecamatan:</strong> Rerata persentase reduksi berat kecamatan dihitung dari <strong>Total Berat Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana persentase 6 kelurahan, untuk menghindari distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
+              <strong>3. Formula Agregasi Terbobot Kecamatan:</strong> Rata-rata persentase penurunan berat kecamatan dihitung dari <strong>Total Pengurangan Berat Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana aritmetika persentase 6 kelurahan, guna meniadakan distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
             </p>
             <p>
-              <strong>4. Taat Asas SI &amp; Terminologi:</strong> Seluruh penulisan massa menggunakan simbol baku <code>kg</code> (huruf kecil). Nilai tanda <code>—</code> menandakan data survei belum selesai diisi atau belum diverifikasi.
+              <strong>4. Taat Asas SI &amp; Pedoman Ejaan Bahasa Indonesia (EYD V):</strong> Seluruh penulisan massa memakai simbol baku internasional <code>kg/hari</code> (huruf kecil). Format bilangan menggunakan koma desimal <code>,</code> dan titik ribuan <code>.</code> sesuai kaidah Bahasa Indonesia baku dan KBBI.
             </p>
           </div>
         )}
