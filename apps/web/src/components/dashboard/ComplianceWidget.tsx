@@ -348,10 +348,10 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-emerald-800 dark:text-emerald-300 font-medium">
               <span>
-                {metrics ? `${metrics.wadahOrganik.aktivitasSesuai} dari ${metrics.wadahOrganik.totalAktivitas} setoran tepat (Sudah sangat bagus)` : "0 setoran tepat"}
+                {metrics ? `${metrics.wadahOrganik.aktivitasSesuai} dari ${metrics.wadahOrganik.totalAktivitas} setoran tepat` : "0 setoran tepat"}
               </span>
               <span>
-                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : "0%"} (Sudah standar industri persampahan)
+                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : "0%"}
               </span>
             </div>
           </div>
@@ -405,7 +405,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-xs">
             <span>Penjelasan Akumulasi Kepatuhan:</span>
             <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300/50 dark:border-emerald-700/50 font-bold">
-              Real Data Warga
+              Data Faktual Warga
             </span>
           </div>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">

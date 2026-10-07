@@ -90,7 +90,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all duration-200 select-none ${
+        className={`flex items-center gap-2 px-3.5 h-10 rounded-xl text-xs font-bold border transition-all duration-200 select-none ${
           disabled ? "opacity-90 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400" : `cursor-pointer ${style.btn}`
         }`}
         aria-haspopup="listbox"

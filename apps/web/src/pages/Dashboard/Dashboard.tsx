@@ -288,10 +288,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama Rukun Warga (RW) atau Kelurahan..."
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 pl-10 pr-8 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 pl-10 pr-8 h-10 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
               />
               {search && (
                 <button
+                  type="button"
                   onClick={() => setSearch("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
@@ -305,7 +306,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
               <select
                 value={kelurahanFilter}
                 onChange={(e) => setKelurahanFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 h-10 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="SEMUA">Semua Kelurahan</option>
                 {uniqueKelurahan.map((kel) => (
@@ -316,7 +317,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 h-10 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="ALL">Semua Partisipasi</option>
                 <option value="HIGH">Tinggi (≥85%)</option>
@@ -328,7 +329,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 py-2 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200 px-3 h-10 rounded-xl outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="HIGHEST">Partisipasi Tertinggi</option>
                 <option value="LOWEST">Partisipasi Terendah</option>
@@ -1674,7 +1675,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           </h4>
         </div>
       </div>
-      {(trend || trendLabel) && (
+      {trend || trendLabel ? (
         <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5">
           {trendUp !== undefined && (
             trendUp ? (
@@ -1689,6 +1690,8 @@ const KpiCard: React.FC<KpiCardProps> = ({
             {trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
           </span>
         </div>
+      ) : (
+        <div className="mt-3 border-t border-transparent pt-2.5 min-h-[26px] hidden sm:block" aria-hidden="true" />
       )}
     </div>
   );
@@ -2140,12 +2143,12 @@ const Dashboard: React.FC = () => {
     if (!canAccessTabs) return null;
 
     return (
-      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit max-w-full overflow-x-auto shadow-2xs">
         {canAccessKknSub && (
           <button
             type="button"
             onClick={() => setSearchParams({ tab: "kkn" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
               activeSubTab === "kkn"
                 ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
@@ -2158,7 +2161,7 @@ const Dashboard: React.FC = () => {
         <button
           type="button"
           onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
             activeSubTab === "tata-kelola-sampah"
               ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
@@ -2171,7 +2174,7 @@ const Dashboard: React.FC = () => {
           <button
             type="button"
             onClick={() => setSearchParams({ tab: "gis" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer ${
               activeSubTab === "gis"
                 ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
@@ -2351,20 +2354,20 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center flex-wrap">
-            <div className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 font-semibold shadow-2xs shrink-0">
+            <div className="flex items-center gap-2 px-3.5 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 font-semibold shadow-2xs shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
               <span>Terakhir diperbarui: {formattedLastUpdated}</span>
               {refreshing && (
-                <RefreshCw size={12} className="animate-spin text-emerald-600 ml-1" />
+                <RefreshCw size={13} className="animate-spin text-emerald-600 ml-1" />
               )}
             </div>
             <button
               type="button"
               onClick={() => fetchStats(false)}
               disabled={refreshing || loading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-[#009966] hover:bg-[#008055] active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 select-none"
             >
-              <RefreshCw size={14} className={refreshing || loading ? "animate-spin" : ""} />
+              <RefreshCw size={15} className={refreshing || loading ? "animate-spin" : ""} />
               <span>Perbarui Data</span>
             </button>
           </div>
@@ -2417,8 +2420,8 @@ const Dashboard: React.FC = () => {
             />
 
             {timeFilter === "custom" && (
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs">
-                <Calendar size={14} className="text-sky-600 shrink-0" />
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3.5 h-10 rounded-xl border border-slate-200/90 dark:border-slate-700 shadow-2xs">
+                <Calendar size={15} className="text-sky-600 shrink-0" />
                 <input
                   type="date"
                   value={startDate}
@@ -2452,8 +2455,9 @@ const Dashboard: React.FC = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => setShowComplianceModal(true)}
-            className="bg-[#009966] hover:bg-[#008055] text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95 ml-auto sm:ml-0"
+            className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-[#009966] hover:bg-[#008055] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 ml-auto sm:ml-0 select-none"
           >
             <LineChart size={15} />
             <span>Indeks Kepatuhan</span>
@@ -2465,11 +2469,11 @@ const Dashboard: React.FC = () => {
       <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Ringkasan Operasional Pemilahan Sampah & Program KKN
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 relative z-10">
         <KpiCard
           iconName="users"
           color="blue"
-          label="Pengguna Kelola Sampah"
+          label="Warga Pengelola Sampah"
           value={stats?.penggunaSampah?.value}
           trend={stats?.penggunaSampah?.trend}
           trendLabel={stats?.penggunaSampah?.trendLabel}
@@ -2479,7 +2483,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           iconName="graduation-cap"
           color="indigo"
-          label="Partisipan Program KKN"
+          label="Partisipan Mahasiswa KKN"
           value={stats?.partisipanKkn?.value}
           trend={stats?.partisipanKkn?.trend}
           trendLabel={stats?.partisipanKkn?.trendLabel}
@@ -2499,7 +2503,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           iconName="location_on"
           color="cyan"
-          label="Lokasi Terdaftar (RW)"
+          label="Rukun Warga Terdaftar"
           value={stats?.lokasiTerdaftar?.value}
           trend={stats?.lokasiTerdaftar?.trend}
           trendLabel={stats?.lokasiTerdaftar?.trendLabel}
@@ -2526,7 +2530,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           iconName="stars"
           color="yellow"
-          label="Total Poin"
+          label="Akumulasi Poin Reward"
           value={stats?.totalPoin?.value}
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
@@ -2557,12 +2561,12 @@ const Dashboard: React.FC = () => {
         />
 
         {/* Right Column (4 cols): Komposisi Sampah Card Kompak & Fokus Nilai */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-start mb-2 gap-2">
             <div>
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-snug">
-                Akumulasi hasil pencatatan dilakukan sejak sistem digunakan, terhitung mulai pekan pertama Agustus 2026 sampai dengan saat ini.
+                Akumulasi hasil pencatatan terhitung sejak pekan pertama Agustus 2026 hingga saat ini.
               </p>
             </div>
             <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
@@ -2590,60 +2594,62 @@ const Dashboard: React.FC = () => {
             }
 
             return (
-              <div className="flex-1 flex flex-col items-center justify-between my-1">
+              <div className="flex-1 flex flex-col md:flex-row lg:flex-col items-center justify-between gap-4 md:gap-8 lg:gap-4 my-2">
                 {/* Donut Chart Ringkas & Proporsional */}
-                <div className="w-28 h-28 relative flex items-center justify-center my-2 group">
-                  <svg className="w-28 h-28 transform -rotate-90">
-                    <circle cx="56" cy="56" r="40" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="10" />
-                    {pctOrg > 0 && (
-                      <circle
-                        cx="56"
-                        cy="56"
-                        r="40"
-                        fill="transparent"
-                        stroke="#34d399"
-                        strokeWidth="10"
-                        strokeDasharray={`${valOrg} ${c}`}
-                        strokeDashoffset={0}
-                        className="transition-all duration-500 hover:stroke-[12]"
-                      />
-                    )}
-                    {pctAnorg > 0 && (
-                      <circle
-                        cx="56"
-                        cy="56"
-                        r="40"
-                        fill="transparent"
-                        stroke="#fbbf24"
-                        strokeWidth="10"
-                        strokeDasharray={`${valAnorg} ${c}`}
-                        strokeDashoffset={-valOrg}
-                        className="transition-all duration-500 hover:stroke-[12]"
-                      />
-                    )}
-                  </svg>
-                  <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
-                    <span className={`block text-xl font-black leading-none ${dominantColor}`}>
-                      {dominantPct}%
+                <div className="flex flex-col items-center justify-center shrink-0">
+                  <div className="w-28 h-28 relative flex items-center justify-center my-1 group">
+                    <svg className="w-28 h-28 transform -rotate-90">
+                      <circle cx="56" cy="56" r="40" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="10" />
+                      {pctOrg > 0 && (
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="40"
+                          fill="transparent"
+                          stroke="#34d399"
+                          strokeWidth="10"
+                          strokeDasharray={`${valOrg} ${c}`}
+                          strokeDashoffset={0}
+                          className="transition-all duration-500 hover:stroke-[12]"
+                        />
+                      )}
+                      {pctAnorg > 0 && (
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="40"
+                          fill="transparent"
+                          stroke="#fbbf24"
+                          strokeWidth="10"
+                          strokeDasharray={`${valAnorg} ${c}`}
+                          strokeDashoffset={-valOrg}
+                          className="transition-all duration-500 hover:stroke-[12]"
+                        />
+                      )}
+                    </svg>
+                    <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
+                      <span className={`block text-xl font-black leading-none ${dominantColor}`}>
+                        {dominantPct}%
+                      </span>
+                      <span className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider mt-0.5 block">
+                        {dominantLabel}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Angka Total Akumulasi Terpilah */}
+                  <div className="text-center mt-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                      Total Sampah Terpilah
                     </span>
-                    <span className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider mt-0.5 block">
-                      {dominantLabel}
+                    <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
+                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                     </span>
                   </div>
                 </div>
 
-                {/* Angka Total Akumulasi Terpilah */}
-                <div className="text-center mb-2">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                    Total Sampah Terpilah
-                  </span>
-                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
-                    {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                  </span>
-                </div>
-
                 {/* Penekanan Informasi pada Angka & Nilai Komposisi (Legend Ringkas tanpa Redundansi Bar) */}
-                <div className="w-full space-y-2 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                <div className="w-full space-y-2.5 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex-1">
                   <div className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
@@ -2655,7 +2661,7 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <div className="flex justify-between items-center text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60">
                     <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
                       Anorganik
@@ -2713,7 +2719,7 @@ const Dashboard: React.FC = () => {
                   Data Tempat Sampah Terbaru
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Monitoring kapasitas realtime dan status aktivasi QR tempat sampah
+                  Pemantauan kapasitas waktu nyata dan status aktivasi QR tempat sampah
                 </p>
               </div>
             </div>
@@ -2735,7 +2741,7 @@ const Dashboard: React.FC = () => {
                 <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
                   <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
                   <th className="py-3 px-4">Wilayah &amp; Pemilik</th>
-                  <th className="py-3 px-4 w-1/3">Kapasitas Terisi</th>
+                  <th className="py-3 px-4 min-w-[140px]">Kapasitas Terisi</th>
                   <th className="py-3 px-4">Waktu</th>
                   <th className="py-3 px-4 text-right">Aksi</th>
                 </tr>
@@ -2896,24 +2902,27 @@ const Dashboard: React.FC = () => {
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex justify-end items-center gap-1.5">
                             <button
+                              type="button"
                               onClick={() => setSelectedBinForDetail(bin)}
-                              className="p-1.5 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors cursor-pointer"
-                              title="Detail Tempat Sampah"
+                              className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-xl transition-all cursor-pointer"
+                              title="Rincian Tempat Sampah"
                             >
                               <Eye size={15} />
                             </button>
                             {isSuperOrDev && (
                               <>
                                 <button
+                                  type="button"
                                   onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
-                                  className="p-1.5 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 rounded-lg transition-colors cursor-pointer"
-                                  title="Edit Tempat Sampah"
+                                  className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/60 rounded-xl transition-all cursor-pointer"
+                                  title="Ubah Tempat Sampah"
                                 >
                                   <Pencil size={15} />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => setDeleteBinConfirm(bin)}
-                                  className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer"
+                                  className="w-8 h-8 inline-flex items-center justify-center text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition-all cursor-pointer"
                                   title="Hapus Tempat Sampah"
                                 >
                                   <Trash2 size={15} />
@@ -2960,8 +2969,8 @@ const Dashboard: React.FC = () => {
                   <Trash2 size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">Detail Tempat Sampah Cerdas</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Kode &amp; data pemantauan real-time</p>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">Rincian Tempat Sampah Cerdas</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Kode identifikasi dan data pemantauan waktu nyata</p>
                 </div>
               </div>
               <button
@@ -3072,7 +3081,7 @@ const Dashboard: React.FC = () => {
                   }
                   return (
                     <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-800 text-sm">
-                      <span className="text-slate-400">Waktu Aktivasi / Update</span>
+                      <span className="text-slate-400">Waktu Aktivasi / Pembaruan</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {displayTime}
                       </span>
@@ -3091,7 +3100,7 @@ const Dashboard: React.FC = () => {
                 onClick={() => setSelectedBinForDetail(null)}
                 className="w-full py-2.5 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
-                Tutup Detail
+                Tutup Rincian
               </button>
             </div>
           </div>
