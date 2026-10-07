@@ -74,23 +74,37 @@ router.delete(
 
 // Konfigurasi sistem IoT & MQTT & Gemini & RBAC Grup IoT
 // GET /config diizinkan bagi pengguna dengan hak iot_konfigurasi atau iot_monitoring (misal Pimpinan) untuk membaca threshold batas normal/bahaya
-router.get("/config", authMiddleware, (req, res, next) => {
-  iotRbacMiddleware("iot_konfigurasi")(req, res, (err) => {
-    if (!err) return iotController.getSystemConfig(req, res);
-    // Fallback: periksa izin iot_monitoring jika belum memiliki izin iot_konfigurasi
-    iotRbacMiddleware("iot_monitoring")(req, res, (err2) => {
-      if (!err2) return iotController.getSystemConfig(req, res);
+router.get("/config", authMiddleware, async (req: any, res: any) => {
+  try {
+    const userRole = String(req.user?.role || "").toUpperCase();
+    if (userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DLH") {
+      return iotController.getSystemConfig(req, res);
+    }
+    const config = await iotService.getOrCreateSystemConfig();
+    const rbac = config.rbacPermissions || {};
+    const allowedKonfig = rbac.iot_konfigurasi || [];
+    const allowedMonitoring = rbac.iot_monitoring || [];
+    const isAllowed =
+      (Array.isArray(allowedKonfig) && allowedKonfig.includes(userRole)) ||
+      (Array.isArray(allowedMonitoring) && allowedMonitoring.includes(userRole)) ||
+      (userRole === "PIMPINAN" && (allowedMonitoring.includes("PEMIMPIN") || allowedMonitoring.includes("PIMPINAN"))) ||
+      (userRole === "PEMIMPIN" && (allowedMonitoring.includes("PIMPINAN") || allowedMonitoring.includes("PEMIMPIN")));
+
+    if (!isAllowed) {
       return res.status(403).json({
         error: "FORBIDDEN",
-        message: `Peran ${String(req.user?.role || "").toUpperCase()} tidak memiliki izin akses untuk membaca konfigurasi IoT.`,
+        message: `Peran ${userRole} tidak memiliki izin akses untuk membaca konfigurasi IoT.`,
       });
-    });
-  });
+    }
+    return iotController.getSystemConfig(req, res);
+  } catch (err: any) {
+    return iotController.getSystemConfig(req, res);
+  }
 });
 router.put(
   "/config",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   (req, res) => iotController.updateSystemConfig(req, res)
 );
 

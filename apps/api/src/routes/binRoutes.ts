@@ -625,7 +625,7 @@ router.get(
 router.put(
   "/:id/approve-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW", "ADMIN_DLH", "DEVELOPER"]),
   binController.approveActivation
 );
 
@@ -663,7 +663,7 @@ router.post(
 router.put(
   "/:id/reject-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW", "ADMIN_DLH", "DEVELOPER"]),
   binController.rejectActivation
 );
 
@@ -738,7 +738,7 @@ router.get(
 router.post(
   "/:id/reactivate",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "RW"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "RW", "ADMIN_DLH"]),
   dataScopeMiddleware,
   binController.reactivateBin
 );

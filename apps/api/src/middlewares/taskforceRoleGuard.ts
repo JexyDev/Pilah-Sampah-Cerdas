@@ -8,8 +8,8 @@ import { Request, Response, NextFunction } from "express";
 export const taskforceRoleGuard = (req: Request, res: Response, next: NextFunction): void => {
   const userRole = String(req.user?.role || "").toUpperCase();
 
-  // SUPER_USER, PEMIMPIN, DEVELOPER — bebas
-  if (["SUPER_USER", "PEMIMPIN", "DEVELOPER"].includes(userRole)) {
+  // SUPER_USER, PEMIMPIN, DEVELOPER, ADMIN_DLH — bebas
+  if (["SUPER_USER", "PEMIMPIN", "DEVELOPER", "ADMIN_DLH", "DLH"].includes(userRole)) {
     return next();
   }
 

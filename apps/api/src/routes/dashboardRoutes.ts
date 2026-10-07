@@ -302,7 +302,7 @@ router.get(
 router.get(
   "/waste-executive-report",
   authMiddleware,
-  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER"]),
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   dashboardController.getWasteExecutiveReport
 );
 
@@ -318,7 +318,7 @@ router.get(
 router.get(
   "/waste-executive-report/export",
   authMiddleware,
-  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER"]),
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   dashboardController.exportWasteExecutiveReport
 );
 

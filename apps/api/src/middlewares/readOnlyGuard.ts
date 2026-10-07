@@ -49,24 +49,16 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
         };
         const role = normalizeRole(decoded.role);
 
-        if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
+        if (role === "CAMAT" || role === "LURAH") {
           const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
           if (writeMethods.includes(req.method)) {
             // Exception: Any user can manage their notification inbox & profile/password settings
-            // Exception: ADMIN_DLH allowed for AI discrepancy resolution, audit corrections, and validation
             const targetUrl = (req.originalUrl || req.url || "").toLowerCase();
             const isUserNotificationAction =
               targetUrl.includes("/notifications") ||
               targetUrl.includes("/auth/profile") ||
               targetUrl.includes("/auth/password") ||
-              targetUrl.includes("/auth/change-password") ||
-              (role === "ADMIN_DLH" &&
-                (targetUrl.includes("/resolve") ||
-                  targetUrl.includes("/discrepanc") ||
-                  targetUrl.includes("/koreksi") ||
-                  targetUrl.includes("/reject") ||
-                  targetUrl.includes("/reassign") ||
-                  targetUrl.includes("/ai/")));
+              targetUrl.includes("/auth/change-password");
 
             if (!isUserNotificationAction) {
               res.status(403).json({

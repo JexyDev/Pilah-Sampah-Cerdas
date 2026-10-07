@@ -316,7 +316,19 @@ export const evaluasiDampakService = {
  * SUPER_USER, PANITIA_TASKFORCE, PEMIMPIN bisa melihat semua.
  */
 async function buildKelurahanScope(userId: string, userRole: string) {
-  if (["SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"].includes(userRole)) {
+  const normRole = (userRole || "").toUpperCase();
+  if (
+    [
+      "SUPER_USER",
+      "DEVELOPER",
+      "ADMIN_DLH",
+      "DLH",
+      "DLH_ADMIN",
+      "PANITIA_TASKFORCE",
+      "PEMIMPIN",
+      "PIMPINAN",
+    ].some((r) => normRole.includes(r))
+  ) {
     return {}; // Semua kelurahan
   }
 
