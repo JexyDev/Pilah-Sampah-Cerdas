@@ -60,14 +60,19 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node))
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (notifRef.current && !notifRef.current.contains(target))
         setShowNotifications(false);
-      if (profileRef.current && !profileRef.current.contains(e.target as Node))
+      if (profileRef.current && !profileRef.current.contains(target))
         setShowProfileDropdown(false);
     };
     document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
   }, []);
 
   // EYD & KBBI Indonesian Standard Page Breadcrumb Titles
@@ -457,11 +462,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         {/* Toggle Sidebar Button (Green Squircle Icon Button) */}
         <button
+          type="button"
           onClick={onToggleSidebar}
           title={isCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
-          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0 touch-manipulation select-none"
         >
-          <LayoutGrid size={18} className="sm:w-[19px] sm:h-[19px]" />
+          <LayoutGrid size={18} className="sm:w-[19px] sm:h-[19px] pointer-events-none" />
         </button>
 
         {breadcrumbItems.map((item, idx) => {
@@ -632,10 +638,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
         {/* User Profile Pill Card with Dropdown (Direct Navigation & Logout) */}
         <div className="relative" ref={profileRef}>
-          <div
+          <button
+            type="button"
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
             title="Menu Akun Pengguna"
-            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
+            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs touch-manipulation text-left"
           >
             <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
               <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
@@ -667,7 +674,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
               )}
             </div>
             <ChevronDown size={14} className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${showProfileDropdown ? "rotate-180" : ""}`} />
-          </div>
+          </button>
 
           {/* Profile Dropdown Menu */}
           {showProfileDropdown && (

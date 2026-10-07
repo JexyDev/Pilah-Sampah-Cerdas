@@ -71,7 +71,7 @@ const PoskoFasilitasSection: React.FC<{ posko?: PoskoData | null; facilities: Fa
           <button
             type="button"
             onClick={() => setTab("posko")}
-            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer touch-manipulation select-none ${
               activeTab === "posko"
                 ? "border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -85,7 +85,7 @@ const PoskoFasilitasSection: React.FC<{ posko?: PoskoData | null; facilities: Fa
           <button
             type="button"
             onClick={() => setTab("fasilitas")}
-            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer touch-manipulation select-none ${
               activeTab === "fasilitas"
                 ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -1849,7 +1849,7 @@ export const DplDashboardPage: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <Link
           to="/manajemen-ekosistem-kkn"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
@@ -1863,7 +1863,7 @@ export const DplDashboardPage: React.FC = () => {
         {isMpl ? (
           <Link
             to="/pelaksanaan/posko"
-            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98]"
           >
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
@@ -1876,7 +1876,7 @@ export const DplDashboardPage: React.FC = () => {
         ) : (
           <Link
             to="/monitoring-absen"
-            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98]"
           >
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
@@ -1890,7 +1890,7 @@ export const DplDashboardPage: React.FC = () => {
 
         <Link
           to="/program-kerja-kkn"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition shrink-0">
@@ -1903,7 +1903,7 @@ export const DplDashboardPage: React.FC = () => {
 
         <Link
           to="/penilaian-kkn/mahasiswa"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer touch-manipulation select-none active:scale-[0.98]"
         >
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition shrink-0">
@@ -2221,7 +2221,7 @@ export const DplDashboardPage: React.FC = () => {
           </div>
           <Link
             to="/manajemen-ekosistem-kkn"
-            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 self-start sm:self-auto"
+            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 self-start sm:self-auto touch-manipulation select-none active:scale-95 cursor-pointer"
           >
             <span>Kelola di Menu Kelompok</span>
             <ChevronRight size={14} />
