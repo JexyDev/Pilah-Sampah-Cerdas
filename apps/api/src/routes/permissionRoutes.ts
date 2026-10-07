@@ -26,8 +26,8 @@ router.get("/me", async (req, res) => {
   try {
     const userRole = String(req.user?.role || "").toUpperCase();
 
-    // If DEVELOPER or SUPER_USER, return full access directly
-    if (userRole === "DEVELOPER" || userRole === "SUPER_USER") {
+    // If DEVELOPER, SUPER_USER, or ADMIN_DLH, return full access directly
+    if (userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DLH") {
       const allPermissions: Record<
         string,
         { canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }

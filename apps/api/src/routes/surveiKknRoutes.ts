@@ -22,7 +22,7 @@ router.use(authMiddleware);
  */
 router.get(
   "/",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "DEVELOPER"]),
   surveiKknController.getAllSurveys
 );
 
@@ -69,7 +69,7 @@ router.get(
  */
 router.get(
   "/template",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "DPL"]),
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "DPL", "ADMIN_DLH"]),
   surveiKknController.downloadTemplate
 );
 
@@ -79,7 +79,7 @@ router.get(
  */
 router.get(
   "/import/history",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"]),
   surveiKknController.getImportHistory
 );
 
@@ -90,7 +90,7 @@ router.get(
  */
 router.post(
   "/import",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"]),
   uploadXlsx.single("file"),
   surveiKknController.importSurveiKkn
 );
@@ -101,7 +101,7 @@ router.post(
  */
 router.get(
   "/:id",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DEVELOPER", "ADMIN_DLH"]),
   surveiKknController.getSurveyById
 );
 
@@ -111,7 +111,7 @@ router.get(
  */
 router.put(
   "/:id",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DPL", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DPL", "DEVELOPER", "ADMIN_DLH"]),
   surveiKknController.updateSurvey
 );
 

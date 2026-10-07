@@ -96,14 +96,14 @@ router.post(
 router.get(
   "/logs/discrepancies",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   aiController.getDiscrepancies
 );
 
 router.put(
   "/logs/:id/resolve",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   aiController.resolveDiscrepancy
 );
 

@@ -29,7 +29,7 @@ router.use(authMiddleware);
  */
 router.get(
   "/baseline",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "DEVELOPER"]),
   evaluasiDampakController.getBaselineData
 );
 
@@ -65,7 +65,7 @@ router.get(
  */
 router.put(
   "/baseline/:kelurahanId/validate",
-  roleMiddleware(["SUPER_USER", "DPL"]),
+  roleMiddleware(["SUPER_USER", "DPL", "ADMIN_DLH", "DEVELOPER"]),
   evaluasiDampakController.validateBaseline
 );
 
@@ -83,7 +83,7 @@ router.put(
  */
 router.get(
   "/endline",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "DEVELOPER"]),
   evaluasiDampakController.getEndlineData
 );
 
@@ -107,7 +107,7 @@ router.get(
  */
 router.put(
   "/endline/:kelurahanId/validate",
-  roleMiddleware(["SUPER_USER", "DPL"]),
+  roleMiddleware(["SUPER_USER", "DPL", "ADMIN_DLH", "DEVELOPER"]),
   evaluasiDampakController.validateEndline
 );
 
@@ -125,7 +125,7 @@ router.put(
  */
 router.get(
   "/komparasi",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "DEVELOPER"]),
   evaluasiDampakController.getKomparasiDampak
 );
 
