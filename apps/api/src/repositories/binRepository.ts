@@ -50,7 +50,7 @@ export class BinRepository {
   /**
    * Find all bins
    */
-  async findAll(where: any = {}): Promise<Bin[]> {
+  async findAll(where: any = {}, orderBy: any = { updatedAt: "desc" }): Promise<Bin[]> {
     return prisma.bin.findMany({
       where,
       include: {
@@ -103,9 +103,7 @@ export class BinRepository {
           },
         },
       },
-      orderBy: {
-        currentVolumeLiter: "desc",
-      },
+      orderBy,
     });
   }
 
