@@ -341,50 +341,8 @@ export class AuthService {
       where: { studentId: userId },
     });
 
-    // Auto-pause unclosed attendance sessions today if still BERLANGSUNG / HADIR (fallback if mobile didn't call /jeda)
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const openAttendances = await prisma.activityAttendance.findMany({
-      where: {
-        studentId: userId,
-        attendedAt: { gte: startOfDay },
-        checkOutAt: null,
-        status: { in: ["BERLANGSUNG", "HADIR"] },
-      },
-    });
-
-    for (const att of openAttendances) {
-      const currentLogs = (att.jedaLogs as any[]) || [];
-      currentLogs.push({
-        alasan: "Logout Aplikasi (Otomatis)",
-        waktuJeda: new Date().toISOString(),
-        durasiSebelumJedaMenit: att.actualInZoneMinutes || 0,
-        autoTriggered: true,
-      });
-
-      const updated = await prisma.activityAttendance
-        .update({
-          where: { id: att.id },
-          data: {
-            status: "TERJEDA",
-            jedaLogs: currentLogs,
-          },
-        })
-        .catch(() => null);
-
-      if (updated) {
-        websocketService.broadcastStudentAttendance({
-          id: updated.id,
-          studentId: userId,
-          scheduleId: updated.scheduleId,
-          status: "TERJEDA",
-          currentStatus: "DI_LUAR_ZONA",
-          actualInZoneMinutes: updated.actualInZoneMinutes || 0,
-          attendedAt: updated.attendedAt.toISOString(),
-        });
-      }
-    }
+    // Presensi KKN tidak di-pause saat logout; status kegiatan lapangan mahasiswa tetap utuh
+    // mengacu pada komitmen waktu di posko fisik bukan status aplikasi/perangkat.
 
     // Broadcast removal via WebSocket
     websocketService.broadcastStudentLogout(userId);
