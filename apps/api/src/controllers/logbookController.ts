@@ -38,6 +38,8 @@ export const logbookController = {
         endDate,
         page,
         limit,
+        sortBy,
+        sortOrder,
       } = req.query;
 
       const pageNum = page ? parseInt(page as string, 10) : undefined;
@@ -54,6 +56,8 @@ export const logbookController = {
         endDate: endDate as string,
         page: pageNum,
         limit: limitNum,
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as string,
       });
 
       const items = Array.isArray(result) ? result : result.items;
