@@ -271,6 +271,7 @@ router.get(
     "RW",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
+    "MAHASISWA_KKN",
   ]),
   kknAttendanceController.getLaporanPresensi
 );

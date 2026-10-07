@@ -536,6 +536,10 @@ export const kknAttendanceController = {
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const dplUserId = isDpl ? currentUserId : undefined;
       const mplUserId = isMpl ? currentUserId : undefined;
+      const isMahasiswa = roleName === "MAHASISWA_KKN";
+      const studentId = isMahasiswa
+        ? currentUserId
+        : (req.query.studentId as string | undefined);
       const kelompokId = req.query.kelompokId as string | undefined;
       const kelurahan = req.query.kelurahan as string | undefined;
       const rw = req.query.rw as string | undefined;
@@ -550,6 +554,7 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.getLaporanPresensi({
         kelompokId,
+        studentId,
         kelurahan,
         rw,
         dplUserId,

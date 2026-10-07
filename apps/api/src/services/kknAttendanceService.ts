@@ -2567,6 +2567,31 @@ export class KknAttendanceService {
           },
         })
         .catch((err) => console.warn("[FCM] Gagal mengirim notif checkout:", err));
+    } else {
+      // Broadcast Notifikasi Lonceng & Push FCM ke Mahasiswa saat Hadir Tidak Memenuhi Target
+      const targetMenit = durasiWajibMenit > 0 ? durasiWajibMenit : 240;
+      const shortageMins = Math.max(0, targetMenit - Math.floor(durationMinutes));
+      const studentName = updated.student?.name || "Mahasiswa";
+
+      notificationIntegrationService
+        .sendToUser({
+          userId: studentId,
+          title: "Presensi Selesai: Hadir Tidak Memenuhi ⚠️",
+          message: `Halo ${studentName}, sesi kegiatan di ${updated.schedule?.title || "posko"} selesai dengan durasi ${Math.floor(durationMinutes)} menit (target ${targetMenit} menit, kurang ${shortageMins} menit). Status kehadiran Anda tercatat Hadir Tidak Memenuhi tanpa bonus +3 PTS.`,
+          triggerType: "CHECKOUT_TIDAK_MEMENUHI",
+          dataPayload: {
+            attendanceId: updated.id,
+            scheduleId: updated.scheduleId,
+            status: "HADIR_TIDAK_MEMENUHI",
+            durationMinutes: String(Math.floor(durationMinutes)),
+            targetMinutes: String(targetMenit),
+            shortageMinutes: String(shortageMins),
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) =>
+          console.warn("[FCM] Gagal mengirim notif checkout tidak memenuhi:", err)
+        );
     }
     websocketService.broadcastStudentCheckout({
       attendanceId: updated.id,
@@ -5628,6 +5653,7 @@ export class KknAttendanceService {
    */
   async getLaporanPresensi(params: {
     kelompokId?: string;
+    studentId?: string;
     kelurahan?: string;
     rw?: string;
     dplUserId?: string;
@@ -5840,6 +5866,17 @@ export class KknAttendanceService {
         where.studentId = { in: where.studentId.in.filter((id: string) => areaIds.includes(id)) };
       } else {
         where.studentId = { in: areaIds };
+      }
+    }
+
+    // 1c. Filter Single Student (e.g. Mahasiswa KKN melihat riwayat sendiri)
+    if (params.studentId) {
+      if (where.studentId?.in) {
+        where.studentId = {
+          in: where.studentId.in.filter((id: string) => id === params.studentId),
+        };
+      } else {
+        where.studentId = params.studentId;
       }
     }
 

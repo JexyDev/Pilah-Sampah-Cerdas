@@ -1995,6 +1995,65 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(report.studentAggregates[0].studentId).toBe("student-real-1");
       expect(report.studentAggregates[0].namaMahasiswa).toBe("Mahasiswa Asli");
     });
+
+    it("should pass studentId directly into where clause for individual student query in getLaporanPresensi", async () => {
+      vi.mocked(configService.getRuleEngineConfigs).mockResolvedValueOnce({
+        attendanceMinDurationHours: 4,
+        attendanceMinDurationMinutes: 0,
+        attendanceMinDurationSeconds: 0,
+      } as any);
+      vi.mocked(prisma.activityAttendance.count).mockResolvedValueOnce(1);
+      const recordItem = {
+        id: "att-single-1",
+        studentId: "student-single-1",
+        scheduleId: "sch-single",
+        status: "HADIR_TIDAK_MEMENUHI",
+        actualInZoneMinutes: 120,
+        attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+        checkOutAt: new Date("2026-09-02T10:00:00+07:00"),
+        jedaLogs: [],
+        schedule: {
+          id: "sch-single",
+          title: "Kegiatan Singkat",
+          time: "08:00 - 12:00 WIB",
+          kelompok: {
+            id: "kel-1",
+            name: "Kelompok 1",
+            kelurahan: "Coblong",
+            dpl: { id: "dpl-1", name: "DPL 1" },
+          },
+        },
+        student: {
+          id: "student-single-1",
+          name: "Mahasiswa Solo",
+          isTestAccount: false,
+          studentProfile: {
+            nim: "130121099",
+            jurusan: "Informatika",
+            kelompokId: "kel-1",
+          },
+        },
+      };
+      vi.mocked(prisma.activityAttendance.findMany)
+        .mockResolvedValueOnce([recordItem as any])
+        .mockResolvedValueOnce([recordItem as any]);
+
+      const report = await service.getLaporanPresensi({
+        studentId: "student-single-1",
+        status: "HADIR_TIDAK_MEMENUHI",
+      });
+
+      expect(prisma.activityAttendance.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            studentId: "student-single-1",
+            status: { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] },
+          }),
+        })
+      );
+      expect(report.items).toHaveLength(1);
+      expect(report.items[0].status).toBe("HADIR_TIDAK_MEMENUHI");
+    });
   });
 
   describe("PRESENSI POSKO UNIKOM - Universal Fallback Integration", () => {
