@@ -60,12 +60,11 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
     try {
       setIsLoading(true);
 
-      const [logbooks, presensiRes, prokerRes, kegiatanRes, timesheetRes] = await Promise.allSettled([
+      const [logbooks, prokerRes, kegiatanRes, timesheetRes] = await Promise.allSettled([
         logbookApiService.getMahasiswaLogbooks(),
-        api.get("/presensi/mandiri/saya"),
         api.get("/kkn/program-kerja"),
         api.get("/kkn/kegiatan-aktif"),
-        api.get("/timesheet/summary"),
+        api.get("/timesheet/summary", { params: { studentId: user?.id } }),
       ]);
 
       let logsList: LogbookMahasiswaItem[] = [];
@@ -74,15 +73,6 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
         setRecentLogbooks(logsList.slice(0, 3));
       }
 
-      let presensiList: any[] = [];
-      if (presensiRes.status === "fulfilled") {
-        const presensiData = presensiRes.value.data?.data;
-        presensiList = Array.isArray(presensiData)
-          ? presensiData
-          : Array.isArray(presensiData?.items)
-          ? presensiData.items
-          : [];
-      }
 
       // Check kegiatan aktif resmi hari ini
       let primaryKegiatan: any = null;
@@ -97,32 +87,36 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
       let tsSummary: any = null;
       if (timesheetRes.status === "fulfilled") {
         const tsData = timesheetRes.value.data?.data;
-        tsSummary = Array.isArray(tsData) ? tsData[0] : (tsData?.students?.[0] || tsData);
+        const studentList = Array.isArray(tsData)
+          ? tsData
+          : Array.isArray(tsData?.students)
+          ? tsData.students
+          : [];
+        tsSummary =
+          studentList.find((s: any) => s.studentId === user?.id) ||
+          studentList[0] ||
+          (tsData?.students ? null : tsData);
       }
 
-      // Hitung sesi hadir yang valid/memenuhi target
+      // Hitung sesi hadir yang valid/memenuhi target (hari unik kalender jadwal resmi yang memenuhi kriteria)
       let attendedCount = 0;
       if (tsSummary && typeof tsSummary.fulfilledTargetDays === "number" && tsSummary.fulfilledTargetDays > 0) {
         attendedCount = tsSummary.fulfilledTargetDays;
       } else if (tsSummary && typeof tsSummary.totalDaysAttended === "number" && tsSummary.totalDaysAttended > 0) {
         attendedCount = tsSummary.totalDaysAttended;
-      } else {
-        const fulfilledFromList = presensiList.filter(
-          (p: any) =>
-            p.status === "HADIR_MEMENUHI" ||
-            p.statusPresensi === "HADIR_MEMENUHI" ||
-            (typeof p.durasiMenit === "number" && p.durasiMenit >= 240)
+      } else if (tsSummary && Array.isArray(tsSummary.sessions)) {
+        attendedCount = tsSummary.sessions.filter(
+          (s: any) => s.status === "HADIR_MEMENUHI" || s.isMinTargetMet
         ).length;
-        attendedCount = fulfilledFromList > 0 ? fulfilledFromList : presensiList.length;
       }
 
-      // Cek apakah ada sesi yang SEDANG AKTIF
-      const active = presensiList.find(
-        (p: any) =>
-          p.status === "AKTIF" ||
-          p.statusPresensi === "AKTIF" ||
-          (!p.checkOutAt && !p.jamPulang && (p.status === "BERLANGSUNG" || p.status === "DI_ZONA"))
-      );
+      // Cek apakah ada sesi kegiatan resmi kelompok yang SEDANG AKTIF
+      const active =
+        primaryKegiatan?.statusKehadiran === "BERLANGSUNG" ||
+        primaryKegiatan?.statusKehadiran === "TERJEDA" ||
+        primaryKegiatan?.statusKehadiran === "DI_ZONA"
+          ? primaryKegiatan
+          : null;
 
       // Cek apakah hari ini SUDAH SELESAI ABSEN
       const isKegiatanCompleted =
