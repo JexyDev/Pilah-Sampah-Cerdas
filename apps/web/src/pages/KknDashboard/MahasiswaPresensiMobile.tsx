@@ -867,7 +867,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             return;
           }
 
-          if (errMsg) {
+          const isNotFound =
+            errCode === "NOT_FOUND" ||
+            errMsg.includes("ATTENDANCE_NOT_FOUND") ||
+            officialErr?.response?.status === 404;
+
+          // Jika bukan error not found (misal error batas waktu minimal 30 menit atau geofence), tampilkan error dan stop
+          // Tapi jika ATTENDANCE_NOT_FOUND, lanjutkan ke langkah presensi mandiri tanpa memblokir
+          if (!isNotFound && errMsg) {
             showToast.error(errMsg);
             setIsSubmitting(false);
             return;
@@ -876,17 +883,26 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       }
 
       // 2. Selesaikan sesi presensi mandiri jika ada
-      if (activeSession) {
-        const targetId = activeSession.presensiId || activeSession.id;
-        if (
-          targetId &&
-          (activeSession.status === "AKTIF" ||
-            activeSession.status === "BERLANGSUNG" ||
-            !activeSession.scheduleId)
-        ) {
+      const targetMandiri =
+        activeSession ||
+        historyList.find((item: any) => {
+          const st = String(item.statusPresensi || item.status || "").toUpperCase();
+          const isFinished =
+            item.checkOutAt ||
+            item.waktuCheckout ||
+            item.jamPulang ||
+            st === "SELESAI" ||
+            st === "HADIR_MEMENUHI" ||
+            st === "HADIR";
+          return !isFinished && (st === "AKTIF" || st === "BERLANGSUNG" || !st);
+        });
+
+      if (targetMandiri && !checkOutDone) {
+        const targetId = targetMandiri.presensiId || targetMandiri.id;
+        if (targetId) {
           try {
             const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
-              deskripsiKegiatan: activeSession.deskripsiKegiatan || deskripsi.trim(),
+              deskripsiKegiatan: targetMandiri.deskripsiKegiatan || deskripsi.trim() || undefined,
             });
 
             if (res.data?.success || res.status === 200) {

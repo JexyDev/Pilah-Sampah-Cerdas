@@ -2157,6 +2157,55 @@ export class KknAttendanceService {
     }
 
     if (!attendance) {
+      // Cross-table Bridge: Jika mahasiswa melakukan check-in via Presensi Mandiri hari ini,
+      // pulihkan sesi dan buatkan ActivityAttendance agar sinkronisasi penuh
+      const activeMandiri = await prisma.presensiMandiri.findFirst({
+        where: {
+          studentId,
+          checkInAt: { gte: startOfDay },
+          status: "AKTIF",
+        },
+        orderBy: { checkInAt: "desc" },
+      });
+
+      if (activeMandiri) {
+        let targetScheduleId = scheduleId;
+        if (!targetScheduleId) {
+          const st = await prisma.studentKkn.findUnique({
+            where: { userId: studentId },
+            select: { kelompokId: true },
+          });
+          const sc = await prisma.schedule.findFirst({
+            where: {
+              date: { gte: startOfDay },
+              isActive: true,
+              ...(st?.kelompokId ? { OR: [{ kelompokId: st.kelompokId }, { kelompokId: null }] } : {}),
+            },
+            orderBy: { createdAt: "desc" },
+          });
+          targetScheduleId = sc?.id;
+        }
+
+        if (targetScheduleId) {
+          attendance = await prisma.activityAttendance.create({
+            data: {
+              studentId,
+              scheduleId: targetScheduleId,
+              status: "BERLANGSUNG",
+              attendedAt: activeMandiri.checkInAt,
+              latitude: Number(activeMandiri.latitude) || (latitude ? Number(latitude) : null),
+              longitude: Number(activeMandiri.longitude) || (longitude ? Number(longitude) : null),
+              deskripsiKegiatan: activeMandiri.deskripsiKegiatan,
+              fotoUrl: activeMandiri.fotoUrl,
+              method: "GPS_MANDIRI_SYNC",
+              platformOs: activeMandiri.platformOs || "IOS_SAFARI_WEB",
+            },
+          });
+        }
+      }
+    }
+
+    if (!attendance) {
       // Final fallback: check if already checked out today
       attendance = await prisma.activityAttendance.findFirst({
         where: {
@@ -2561,6 +2610,30 @@ export class KknAttendanceService {
         nim: updated.student?.studentProfile?.nim,
       })
       .catch((err) => console.warn("[Audit] Presensi pulang log error:", err));
+
+    // Sinkronisasi status PresensiMandiri jika ada sesi aktif hari ini
+    try {
+      const activeMandiri = await prisma.presensiMandiri.findFirst({
+        where: {
+          studentId,
+          checkInAt: { gte: startOfDay },
+          status: "AKTIF",
+        },
+      });
+      if (activeMandiri) {
+        await prisma.presensiMandiri.update({
+          where: { id: activeMandiri.id },
+          data: {
+            status: "SELESAI",
+            checkOutAt: updated.checkOutAt,
+            durasiMenit: Math.max(1, durationMinutes),
+            ...(deskripsiKegiatan?.trim() ? { deskripsiKegiatan: deskripsiKegiatan.trim() } : {}),
+          },
+        });
+      }
+    } catch (mandiriSyncErr) {
+      console.warn("[checkOutAttendance] Auto-sync to PresensiMandiri warning:", mandiriSyncErr);
+    }
 
     // Notifikasi khusus ke Web DPL jika mahasiswa presensi pulang di PRESENSI POSKO UNIKOM (Strict by DPL ID)
     const checkOutLat = updated.latitude ? Number(updated.latitude) : latitude;
