@@ -498,7 +498,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge, onClick
     <Link
       to={to}
       onClick={onClick}
-      className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 ${
+      className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 touch-manipulation cursor-pointer select-none ${
         isCurrentActive
           ? "bg-[#f2f8f4]/90 dark:bg-emerald-950/80 text-[#035941] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
           : "text-slate-600 dark:text-slate-300 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
@@ -552,7 +552,7 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
       to={to}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative w-10 h-10 rounded-xl flex items-center justify-center my-0.5 transition-all duration-200 group cursor-pointer shrink-0 ${
+      className={`relative w-10 h-10 rounded-xl flex items-center justify-center my-0.5 transition-all duration-200 group cursor-pointer shrink-0 touch-manipulation select-none ${
         isCurrentActive
           ? "bg-[#035941] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
           : "text-slate-500 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-[#f2f8f4] dark:hover:bg-slate-800"
@@ -628,7 +628,7 @@ const NavGroupCollapsed: React.FC<{
 
   // Close dropdown if clicked outside
   React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
       if (
         isClickedOpen &&
@@ -642,8 +642,10 @@ const NavGroupCollapsed: React.FC<{
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isClickedOpen]);
 
@@ -659,7 +661,7 @@ const NavGroupCollapsed: React.FC<{
       <button
         type="button"
         onClick={handleIconClick}
-        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer touch-manipulation select-none ${
           isAnySubActive || isVisible
             ? "bg-[#035941] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
             : "text-slate-500 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-[#f2f8f4] dark:hover:bg-slate-800"
@@ -734,7 +736,7 @@ const NavGroupCollapsed: React.FC<{
                   key={sub.to}
                   to={sub.to}
                   onClick={handleSubItemClick}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all touch-manipulation cursor-pointer select-none ${
                     isActive
                       ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold"
                       : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400"
@@ -796,8 +798,9 @@ const NavGroup: React.FC<{
   return (
     <div className="space-y-0.5">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
+        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden touch-manipulation cursor-pointer select-none ${
           isAnySubActive
             ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-semibold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
             : "text-slate-600 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
@@ -862,7 +865,7 @@ const NavGroup: React.FC<{
                           to={child.to}
                           title={child.label}
                           onClick={onItemClick}
-                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11.5px] transition-all duration-200 group ${
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11.5px] transition-all duration-200 group touch-manipulation cursor-pointer select-none ${
                             isChildActive
                               ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
                               : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
@@ -896,7 +899,7 @@ const NavGroup: React.FC<{
                 to={sub.to}
                 title={sub.label}
                 onClick={onItemClick}
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group ${
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group touch-manipulation cursor-pointer select-none ${
                   isActive
                     ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
@@ -961,7 +964,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const handleMobileItemClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      onClose();
+      setTimeout(() => {
+        onClose();
+      }, 50);
     }
   };
 
@@ -2200,7 +2205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       {/* Backdrop for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] lg:hidden touch-manipulation cursor-pointer"
           onClick={onClose}
         />
       )}
@@ -2293,7 +2298,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               <button
                 type="button"
                 onClick={onClose}
-                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20"
+                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20 touch-manipulation"
                 title="Tutup Menu"
               >
                 <X size={18} />

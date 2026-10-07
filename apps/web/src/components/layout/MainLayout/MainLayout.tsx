@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import { ErrorBoundary } from "react-error-boundary";
 import Sidebar from "../Sidebar/Sidebar";
@@ -18,6 +18,7 @@ import { IOSSafariGate } from "../../common/IOSSafariGate";
 
 const MainLayout: React.FC = () => {
   const { user } = useAuthStore();
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -28,6 +29,13 @@ const MainLayout: React.FC = () => {
       useThemeStore.getState().setInsideMainLayout(false);
     };
   }, []);
+
+  // Auto-close mobile drawer on route transition without blocking navigation
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  }, [location.pathname, location.search]);
 
   // For MAHASISWA_KKN, render dedicated mobile shell with strict iOS Safari verification
   if (user?.peran === "MAHASISWA_KKN") {
