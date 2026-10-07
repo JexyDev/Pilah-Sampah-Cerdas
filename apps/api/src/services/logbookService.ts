@@ -133,6 +133,8 @@ export class LogbookService {
       endDate?: string;
       page?: number;
       limit?: number;
+      sortBy?: "tanggalKegiatan" | "createdAt" | string;
+      sortOrder?: "asc" | "desc" | string;
     }
   ) {
     const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole.toUpperCase());
@@ -333,7 +335,16 @@ export class LogbookService {
           disetujuiKetuaOleh: { select: { id: true, name: true } },
           diverifikasiDplOleh: { select: { id: true, name: true } },
         },
-        orderBy: [{ tanggalKegiatan: "desc" }, { createdAt: "desc" }],
+        orderBy:
+          filters.sortBy === "createdAt"
+            ? [
+                { createdAt: (filters.sortOrder === "asc" ? "asc" : "desc") as "asc" | "desc" },
+                { tanggalKegiatan: "desc" as const },
+              ]
+            : [
+                { tanggalKegiatan: (filters.sortOrder === "asc" ? "asc" : "desc") as "asc" | "desc" },
+                { createdAt: "desc" as const },
+              ],
       }),
     ]);
 

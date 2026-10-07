@@ -188,6 +188,8 @@ export interface GetMahasiswaLogbooksParams {
   endDate?: string;
   page?: number;
   limit?: number;
+  sortBy?: "tanggalKegiatan" | "createdAt" | string;
+  sortOrder?: "asc" | "desc" | string;
 }
 
 export const logbookApiService = {

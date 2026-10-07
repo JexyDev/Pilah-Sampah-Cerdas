@@ -351,6 +351,7 @@ export const LogbookKknPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"tanggalKegiatan" | "createdAt">("tanggalKegiatan");
 
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
   const [toleranceDays, setToleranceDays] = useState<number>(1);
@@ -380,6 +381,7 @@ export const LogbookKknPage: React.FC = () => {
     debouncedSearchQuery,
     startDateFilter,
     endDateFilter,
+    sortBy,
   ]);
 
   // KPI Statistics Server-Side
@@ -454,6 +456,7 @@ export const LogbookKknPage: React.FC = () => {
         endDate: endDateFilter || undefined,
         page: currentPage,
         limit: pageSize,
+        sortBy,
       });
 
       const items = mhsData.items || mhsData;
@@ -483,6 +486,7 @@ export const LogbookKknPage: React.FC = () => {
     endDateFilter,
     currentPage,
     pageSize,
+    sortBy,
   ]);
 
   // Sync modal catatan when selected item changes
@@ -1069,6 +1073,20 @@ export const LogbookKknPage: React.FC = () => {
                   <option value="DISETUJUI_DPL">Tervalidasi</option>
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
                   <option value="DITOLAK_DPL">Ditolak DPL</option>
+                </select>
+
+                {/* Filter Urutan (Sort By) */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value as "tanggalKegiatan" | "createdAt");
+                    setCurrentPage(1);
+                  }}
+                  title="Urutan Tampilan Data Logbook"
+                  className="px-3 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+                >
+                  <option value="tanggalKegiatan">Urut: Tanggal Kegiatan (Kalender)</option>
+                  <option value="createdAt">Urut: Terbaru Masuk (Waktu Submit)</option>
                 </select>
 
                 {/* Date Range Inputs (Notulensi Item 12: Filter Tanggal) */}
