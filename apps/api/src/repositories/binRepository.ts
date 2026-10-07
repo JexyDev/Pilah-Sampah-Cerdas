@@ -55,6 +55,7 @@ export class BinRepository {
       where,
       include: {
         category: true,
+        kelurahan: true,
         rw: {
           include: {
             kelurahan: true,

@@ -2032,7 +2032,7 @@ const Dashboard: React.FC = () => {
 
       const [binsSettled, trendSettled, locSettled] =
         await Promise.allSettled([
-          api.get("/bins"),
+          api.get("/bins", { params: { sortBy: "updatedAt", order: "desc" } }),
           api.get("/dashboard/trend", { params: { weeks, wilayah: effectiveWilayah } }),
           api.get("/bins/locations"),
         ]);
@@ -2061,8 +2061,40 @@ const Dashboard: React.FC = () => {
             return binKelName.includes(cleanWil);
           });
         }
-        const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
-        setRecentBins(realBins.slice(0, 5));
+        const realBins = Array.isArray(binsData)
+          ? binsData.filter((b: any) => {
+              const code = (b.qrCode || b.kode || b.id || "").toUpperCase();
+              if (code.includes("TEST") || code.includes("DUMMY")) return false;
+              const rwStr = String(
+                (typeof b.rw === "string" ? b.rw : b.rw?.name) ||
+                b.rwNama ||
+                (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name) ||
+                ""
+              ).toLowerCase();
+              if (rwStr.includes("99") || b.rwId === 99 || Number(b.rwId) === 83 || Number(b.rwId) === 99) return false;
+              const desc = String(b.deskripsiLokasi || "").toLowerCase();
+              if (desc.includes("dummy") || desc.includes("test")) return false;
+              return true;
+            })
+          : [];
+        const sortedBins = [...realBins].sort((a: any, b: any) => {
+          const getBinTime = (item: any): number => {
+            const raw = item.updatedAt || item.createdAt || item.verifiedAt;
+            if (!raw) return 0;
+            if (raw instanceof Date) return isNaN(raw.getTime()) ? 0 : raw.getTime();
+            const parsed = new Date(raw).getTime();
+            if (!isNaN(parsed)) return parsed;
+            const match = String(raw).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2})[.:](\d{1,2}))?/);
+            if (match) {
+              const [, d, m, y, h = "0", min = "0"] = match;
+              const time = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min)).getTime();
+              if (!isNaN(time)) return time;
+            }
+            return 0;
+          };
+          return getBinTime(b) - getBinTime(a);
+        });
+        setRecentBins(sortedBins.slice(0, 5));
       } else {
         setRecentBins([]);
       }
@@ -2891,7 +2923,14 @@ const Dashboard: React.FC = () => {
                               return <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>;
                             }
                             try {
-                              const d = new Date(rawDate);
+                              let d = new Date(rawDate);
+                              if (isNaN(d.getTime())) {
+                                const match = String(rawDate).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2})[.:](\d{1,2}))?/);
+                                if (match) {
+                                  const [, day, mon, yr, hr = "0", mn = "0"] = match;
+                                  d = new Date(Number(yr), Number(mon) - 1, Number(day), Number(hr), Number(mn));
+                                }
+                              }
                               if (isNaN(d.getTime())) {
                                 return (
                                   <span className="text-slate-600 dark:text-slate-400 text-[11px] font-medium">
@@ -3091,7 +3130,14 @@ const Dashboard: React.FC = () => {
                   if (!rawDate) return null;
                   let displayTime = selectedBinForDetail.verifiedAt || selectedBinForDetail.lastUpdate || "-";
                   try {
-                    const d = new Date(rawDate);
+                    let d = new Date(rawDate);
+                    if (isNaN(d.getTime())) {
+                      const match = String(rawDate).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2})[.:](\d{1,2}))?/);
+                      if (match) {
+                        const [, day, mon, yr, hr = "0", mn = "0"] = match;
+                        d = new Date(Number(yr), Number(mon) - 1, Number(day), Number(hr), Number(mn));
+                      }
+                    }
                     if (!isNaN(d.getTime())) {
                       const months = [
                         "Januari", "Februari", "Maret", "April", "Mei", "Juni",

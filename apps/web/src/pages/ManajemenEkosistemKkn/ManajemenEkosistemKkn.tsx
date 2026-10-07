@@ -2051,7 +2051,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-2">
-                    Formula KKN: (50% Supervisi Logbook DPL) + (50% Rerata Kelompok Dampingan)
+                    Formula KKN: (60% Supervisi Logbook DPL) + (40% Rerata Kelompok Dampingan)
                   </p>
                 </div>
 

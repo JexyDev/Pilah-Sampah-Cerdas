@@ -103,6 +103,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     Boolean(primaryKegiatan?.waktuCheckout) ||
     Boolean(todayHistoryItem);
 
+  // State error fetch jadwal posko
+  const [kegiatanError, setKegiatanError] = useState<boolean>(false);
+
   // Skip Modal State
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [selectedKegiatanToSkip, setSelectedKegiatanToSkip] = useState<any | null>(null);
@@ -539,8 +542,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           return isMandiriActive ? prev : null;
         });
       }
+      setKegiatanError(false);
     } catch (err) {
       console.error("Gagal memuat kegiatan aktif", err);
+      setKegiatanError(true);
     } finally {
       if (isMountedRef.current && !isBackground) {
         setIsLoadingKegiatan(false);
@@ -712,8 +717,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       }
     } catch (err: any) {
       console.error("[Check-In] Error mulai kegiatan KKN:", err);
-      const msg = err.response?.data?.message || err.message;
-      showToast.error(msg || "Gagal melakukan presensi. Periksa sinyal GPS dan coba beberapa saat lagi.");
+      const rawMsg = err.response?.data?.message || err.message || "";
+      let cleanMsg = rawMsg;
+      if (cleanMsg.includes("OPERATIONAL_HOURS_VIOLATION")) {
+        cleanMsg = cleanMsg.replace(/^OPERATIONAL_HOURS_VIOLATION:\s*/, "");
+      } else if (cleanMsg.includes("OUT_OF_GEOFENCE")) {
+        cleanMsg = cleanMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
+      } else if (cleanMsg.includes("FORBIDDEN")) {
+        cleanMsg = cleanMsg.replace(/^FORBIDDEN:\s*/, "");
+      } else if (cleanMsg.includes("SCHEDULE_NOT_FOUND")) {
+        cleanMsg = "Jadwal kegiatan posko hari ini belum tersedia.";
+      }
+      showToast.error(cleanMsg || "Gagal melakukan presensi. Periksa sinyal GPS dan coba beberapa saat lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -789,8 +804,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             officialErr?.response?.status === 422 ||
             errCode === "EARLY_CHECKOUT_RESTRICTED"
           ) {
+            const cleanMsg = (errMsg || "").replace(/^EARLY_CHECKOUT_RESTRICTED:\s*/, "");
             showToast.error(
-              errMsg || "Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (check-in)."
+              cleanMsg || "Presensi pulang dapat dilakukan minimal 30 menit setelah jam masuk (check-in)."
             );
             setIsSubmitting(false);
             return;
@@ -984,7 +1000,62 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </button>
           )}
         </div>
-      ) : null}
+      ) : kegiatanError ? (
+        /* Card Server Maintenance / Pemeliharaan Server */
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xs space-y-4 text-center animate-fade-in">
+          <div className="relative mx-auto w-36 h-36 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+            <img
+              src="/image/server-maintenance.jpg"
+              alt="Pemeliharaan Server"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-wider">
+              🛠️ Penyelarasan Sistem
+            </span>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">
+              Sistem Sedang Penyelarasan Sejenak
+            </h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              Tim teknis Berseka sedang melakukan penyelarasan server demi kestabilan data. Tenang, seluruh riwayat presensi Anda tetap aman di sistem.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setKegiatanError(false);
+              fetchKegiatanAktif(false);
+            }}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <RefreshCw size={13} />
+            <span>Muat Ulang Halaman</span>
+          </button>
+        </div>
+      ) : (
+        /* Card Ramah Saat Belum Ada Jadwal / Di Luar Jam Operasional 05:00 - 20:00 WIB */
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xs space-y-4 text-center animate-fade-in">
+          <div className="relative mx-auto w-36 h-36 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+            <img
+              src="/image/presensi-istirahat.jpg"
+              alt="Presensi Istirahat"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+              🕒 Jam Operasional Posko: 05:00 - 20:00 WIB
+            </span>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white">
+              Presensi Posko Sedang Beristirahat
+            </h3>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              Jadwal kegiatan posko KKN dibuka setiap hari mulai pukul <b>05:00 WIB</b> hingga <b>20:00 WIB</b>. Selamat beristirahat dan persiapkan agenda pengabdian Anda berikutnya!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 3. Status Lokasi & Geofence Posko */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
@@ -1648,8 +1719,20 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                   </div>
 
                   {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString && (
-                    <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
-                      ⚠️ Peringatan: Presensi pulang baru dibuka mulai pukul {primaryKegiatan.earliestCheckoutTimeString} (minimal 30 menit setelah jam masuk).
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
+                      <p className="font-bold">⏳ Menunggu Batas Minimal Check-Out:</p>
+                      <p className="leading-relaxed">
+                        Presensi pulang baru dapat dilakukan minimal 30 menit setelah jam masuk (mulai pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b>).
+                      </p>
+                    </div>
+                  )}
+
+                  {nearestPoskoInfo && !nearestPoskoInfo.isInside && (
+                    <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl text-[11px] text-rose-800 dark:text-rose-300 space-y-1">
+                      <p className="font-bold">📍 Di Luar Jangkauan Posko:</p>
+                      <p className="leading-relaxed">
+                        Anda terdeteksi berjarak <b>{nearestPoskoInfo.dist} meter</b> di luar area posko ({nearestPoskoInfo.name}). Presensi pulang wajib dilakukan di dalam zona posko KKN.
+                      </p>
                     </div>
                   )}
 
@@ -1680,8 +1763,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleCheckOut}
-                      disabled={isSubmitting}
-                      className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                      disabled={
+                        isSubmitting ||
+                        primaryKegiatan?.canCheckoutNow === false ||
+                        Boolean(nearestPoskoInfo && !nearestPoskoInfo.isInside)
+                      }
+                      className={`py-2.5 px-3 rounded-xl text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isTargetMet ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                      }`}
                     >
                       {isSubmitting ? (
                         <>

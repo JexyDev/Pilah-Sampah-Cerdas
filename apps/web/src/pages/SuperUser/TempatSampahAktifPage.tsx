@@ -504,6 +504,12 @@ export const TempatSampahAktifPage: React.FC = () => {
         if (!bin.searchTokens.includes(query)) return false;
       }
 
+      // Filter out testing / dummy bins (RW 99)
+      const rwStr = String(bin.rwNama || "").toLowerCase();
+      if (rwStr.includes("99") || Number(bin.rwNumber) === 99) return false;
+      const qCode = (bin.qrCode || "").toUpperCase();
+      if (qCode.includes("TEST") || qCode.includes("DUMMY")) return false;
+
       return true;
     });
 

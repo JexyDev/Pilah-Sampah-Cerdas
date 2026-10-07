@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Resmi Audit & Perbaikan Presensi - Renata Rufaidah</title>
+<style>
+  @page {
+    size: A4;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+  body {
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.45;
+    font-size: 9.5pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page-container {
+    page-break-after: always;
+    position: relative;
+    min-height: 260mm;
+  }
+  .page-container:last-child {
+    page-break-after: avoid;
+  }
+  .header {
+    border-bottom: 2.5px solid #059669;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .header-title {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #065f46;
+    letter-spacing: -0.3px;
+    text-transform: uppercase;
+  }
+  .header-subtitle {
+    font-size: 8.5pt;
+    color: #047857;
+    font-weight: 600;
+  }
+  .header-meta {
+    text-align: right;
+    font-size: 7.5pt;
+    color: #64748b;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 7.5pt;
+    letter-spacing: 0.3px;
+  }
+  .badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+  .badge-info {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+  .section-title {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-left: 3.5px solid #059669;
+    padding-left: 7px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+  .card {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-bottom: 10px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 8.5pt;
+  }
+  .meta-item {
+    display: flex;
+  }
+  .meta-label {
+    width: 140px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .meta-val {
+    color: #0f172a;
+    font-weight: 700;
+    flex: 1;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat-box {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .stat-box.highlight {
+    border-color: #059669;
+    background-color: #f0fdf4;
+  }
+  .stat-num {
+    font-size: 13pt;
+    font-weight: 800;
+    color: #065f46;
+  }
+  .stat-label {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    margin-top: 6px;
+    margin-bottom: 10px;
+  }
+  th {
+    background-color: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 5px 7px;
+    border: 1px solid #cbd5e1;
+  }
+  td {
+    padding: 4.5px 7px;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  tr.highlight-row td {
+    background-color: #ecfdf5 !important;
+    font-weight: 600;
+    color: #065f46;
+  }
+  .quote-box {
+    background-color: #f1f5f9;
+    border-left: 3px solid #64748b;
+    padding: 7px 11px;
+    font-style: italic;
+    color: #334155;
+    font-size: 8.5pt;
+    margin: 6px 0 10px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 7pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  ul, ol {
+    margin: 4px 0 8px 18px;
+    padding: 0;
+    font-size: 8.5pt;
+  }
+  li {
+    margin-bottom: 3px;
+  }
+  .ttd-table {
+    width: 100%;
+    margin-top: 14px;
+    border: none;
+  }
+  .ttd-table td {
+    border: none;
+    background: transparent !important;
+    text-align: center;
+    font-size: 8.5pt;
+    padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HALAMAN 1 -->
+<div class="page-container">
+  <div class="header">
+    <div>
+      <div class="header-title">Berseka • Tata Kelola KKN Tematik</div>
+      <div class="header-subtitle">Berita Acara Rekonsiliasi & Audit Data Presensi Lapangan VPS</div>
+    </div>
+    <div class="header-meta">
+      <div><strong>No. Dokumen:</strong> REP-AUDIT/KKN-ATT/2026-10/020</div>
+      <div><strong>Tanggal:</strong> Rabu, 07 Oktober 2026 • 08:48 WIB</div>
+      <div><span class="badge badge-success">STATUS: TERSINKRONISASI 100%</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">1. Identitas Subjek Mahasiswa & Infrastruktur Server</div>
+  <div class="card">
+    <div class="meta-grid">
+      <div class="meta-item"><span class="meta-label">Nama Mahasiswa</span><span class="meta-val">: Renata Rufaidah</span></div>
+      <div class="meta-item"><span class="meta-label">Nomor Induk (NIM)</span><span class="meta-val">: 44324078</span></div>
+      <div class="meta-item"><span class="meta-label">Kelompok Penempatan</span><span class="meta-val">: Kelompok 6 Sekeloa</span></div>
+      <div class="meta-item"><span class="meta-label">Wilayah Tugas</span><span class="meta-val">: Kelurahan Sekeloa (RW 14, 15, 16)</span></div>
+      <div class="meta-item"><span class="meta-label">Dosen Pembimbing (DPL)</span><span class="meta-val">: Drs. Asep Dani Supriatna, M.Si. (4127.34.02.012)</span></div>
+      <div class="meta-item"><span class="meta-label">Lokasi Posko KKN</span><span class="meta-val">: Posko KKN Kelompok 6 Sekeloa RW 14</span></div>
+      <div class="meta-item"><span class="meta-label">Server Basis Data</span><span class="meta-val">: VPS Production (157.10.252.252 / psc_db)</span></div>
+      <div class="meta-item"><span class="meta-label">Golden Backup Mandatori</span><span class="meta-val">: golden_backup_2026-10-07T01-45-32-157Z.sql (538 MB)</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">2. Latar Belakang Kendala Operasional Lapangan</div>
+  <div class="quote-box">
+    "kmrin tuh aku pas mau pulang di jam 5 gabisa end sesi absen karena apknya masih error. baru inget td pagi jadi ke end di jam 07.52 WIB 😭 renata rufaidah kelompok 6 sekeloa"
+  </div>
+  <p style="font-size: 8.5pt; margin-top: 4px; color: #334155;">
+    <strong>Analisis Forensik Sistem:</strong> Mahasiswa telah melakukan presensi masuk (check-in) secara sah pada hari Selasa, 06 Oktober 2026 pukul <strong>09:12:08 WIB</strong> berbasis verifikasi GPS di Buruan Sae RW 14 Sekeloa. Saat jam kepulangan pukul <strong>17:00:00 WIB</strong>, terjadi kendala teknis pada aplikasi mobile yang menyebabkan penutupan sesi tertunda hingga pagi hari pukul <strong>07:52 WIB</strong> (durasi tercatat abnormal 1.359 menit). Tim Data Governance telah merekonsiliasi record presensi agar jam kepulangan terkunci presisi di pukul 17:00:00 WIB dengan durasi efektif <strong>468 Menit (7 Jam 48 Menit)</strong>.
+  </p>
+
+  <div class="section-title">3. Ringkasan Eksekutif Hasil Rekonsiliasi & Metrik Kinerja</div>
+  <div class="stat-grid">
+    <div class="stat-box highlight">
+      <div class="stat-num">17 Hari</div>
+      <div class="stat-label">Total Hadir Memenuhi</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">142.5 Jam</div>
+      <div class="stat-label">Total Jam KKN (8.548 m)</div>
+    </div>
+    <div class="stat-box highlight">
+      <div class="stat-num">105 PTS</div>
+      <div class="stat-label">Total Saldo Poin (+7 Poin)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">13 Entri</div>
+      <div class="stat-label">Logbook Terverifikasi</div>
+    </div>
+  </div>
+
+  <div class="section-title">4. Rincian Tindakan Penyelarasan Database VPS</div>
+  <ul>
+    <li><strong>Koreksi Tabel PresensiMandiri (`e8c1d9be`):</strong> Waktu kepulangan diperbarui menjadi <strong>17:00:00 WIB (06 Okt 2026)</strong> dan durasi dinormalisasi menjadi <strong>468 Menit</strong> berstatus <strong>SELESAI</strong>.</li>
+    <li><strong>Sinkronisasi Tabel ActivityAttendance:</strong> Menghubungkan sesi ke jadwal resmi Posko KKN Kelompok 6 (`e1f1bf5c`) dengan status <strong>HADIR_MEMENUHI</strong> (durasi 468 menit).</li>
+    <li><strong>Pengkreditan Saldo Poin (+7 PTS):</strong> Menambahkan +4 PTS (`KKN_PRESENSI_HADIR`) dan +3 PTS (`KKN_DURASI_MEMENUHI`) sehingga total saldo menjadi <strong>105 PTS</strong>.</li>
+    <li><strong>Integritas Logbook & Sesi Hari Ini:</strong> Logbook 06 Okt berstatus aman (`MENUNGGU_VERIFIKASI_DPL`), dan sesi check-in 07 Okt (07:53 WIB) tetap aktif berjalan normal.</li>
+    <li><strong>Pembersihan Cache Redis:</strong> Eksekusi flushall pada instance Redis psc-redis telah memastikan sinkronisasi instan ke seluruh antarmuka aplikasi.</li>
+  </ul>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 1 dari 2</div>
+  </div>
+</div>
+
+<!-- HALAMAN 2 -->
+<div class="page-container">
+  <div class="header">
+    <div>
+      <div class="header-title">Berseka • Rekam Jejak Kehadiran KKN</div>
+      <div class="header-subtitle">Daftar Lengkap 17 Sesi Kehadiran Memenuhi Syarat (Live VPS Verified)</div>
+    </div>
+    <div class="header-meta">
+      <div><strong>Mahasiswa:</strong> Renata Rufaidah (44324078)</div>
+      <div><strong>Kelompok:</strong> 6 Sekeloa</div>
+      <div><span class="badge badge-info">AUDIT TRAIL VALID</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">5. Tabel Rincian 17 Sesi Kehadiran Hadir Memenuhi</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25px; text-align: center;">No</th>
+        <th style="width: 105px;">Tanggal</th>
+        <th style="width: 85px;">Check-In</th>
+        <th style="width: 85px;">Check-Out</th>
+        <th style="width: 130px;">Durasi Efektif</th>
+        <th style="width: 100px; text-align: center;">Status</th>
+        <th>Keterangan / Aktivitas</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr class="">
+        <td style="text-align: center;">1</td>
+        <td>Sel, 01 Sep 2026</td>
+        <td>08:30:00 WIB</td>
+        <td>15:30:00 WIB</td>
+        <td>7 Jam 00 Mnt (420 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">2</td>
+        <td>Rab, 02 Sep 2026</td>
+        <td>08:25:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>7 Jam 35 Mnt (455 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">3</td>
+        <td>Kam, 03 Sep 2026</td>
+        <td>08:00:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>8 Jam 00 Mnt (480 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">4</td>
+        <td>Sen, 07 Sep 2026</td>
+        <td>08:30:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>7 Jam 30 Mnt (450 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">5</td>
+        <td>Sel, 08 Sep 2026</td>
+        <td>08:16:37 WIB</td>
+        <td>16:42:42 WIB</td>
+        <td>8 Jam 26 Mnt (506 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">6</td>
+        <td>Rab, 09 Sep 2026</td>
+        <td>07:42:51 WIB</td>
+        <td>13:27:51 WIB</td>
+        <td>5 Jam 45 Mnt (345 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">7</td>
+        <td>Kam, 10 Sep 2026</td>
+        <td>08:00:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>8 Jam 00 Mnt (480 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">8</td>
+        <td>Jum, 11 Sep 2026</td>
+        <td>08:16:48 WIB</td>
+        <td>16:19:48 WIB</td>
+        <td>8 Jam 03 Mnt (483 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">9</td>
+        <td>Sab, 12 Sep 2026</td>
+        <td>07:56:40 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>12 Jam 03 Mnt (723 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">10</td>
+        <td>Sen, 14 Sep 2026</td>
+        <td>07:56:50 WIB</td>
+        <td>16:37:50 WIB</td>
+        <td>8 Jam 41 Mnt (521 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">11</td>
+        <td>Sel, 15 Sep 2026</td>
+        <td>08:16:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>7 Jam 44 Mnt (464 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">12</td>
+        <td>Rab, 16 Sep 2026</td>
+        <td>08:23:19 WIB</td>
+        <td>15:25:19 WIB</td>
+        <td>7 Jam 02 Mnt (422 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">13</td>
+        <td>Sen, 21 Sep 2026</td>
+        <td>08:02:12 WIB</td>
+        <td>14:46:12 WIB</td>
+        <td>6 Jam 44 Mnt (404 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">14</td>
+        <td>Sel, 22 Sep 2026</td>
+        <td>08:00:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>8 Jam 00 Mnt (480 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">15</td>
+        <td>Rab, 23 Sep 2026</td>
+        <td>08:00:00 WIB</td>
+        <td>14:00:00 WIB</td>
+        <td>6 Jam 00 Mnt (360 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="">
+        <td style="text-align: center;">16</td>
+        <td>Sen, 05 Okt 2026</td>
+        <td>08:08:33 WIB</td>
+        <td>17:50:33 WIB</td>
+        <td>9 Jam 42 Mnt (582 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN Kelompok 6</td>
+      </tr>
+      
+      <tr class="highlight-row">
+        <td style="text-align: center;">17</td>
+        <td>Sel, 06 Okt 2026</td>
+        <td>09:12:08 WIB</td>
+        <td>17:00:00 WIB</td>
+        <td>7 Jam 48 Mnt (468 m)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td>menanam buruan sae di rw 14 (Telah Direkonsiliasi)</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <div class="section-title">6. Kesimpulan & Rekomendasi Mahasiswa</div>
+  <ol>
+    <li>Data kehadiran mahasiswa atas nama <strong>Renata Rufaidah</strong> pada tanggal <strong>06 Oktober 2026</strong> telah sah berstatus <strong>HADIR_MEMENUHI</strong> dengan rentang waktu pukul <strong>09:12 – 17:00 WIB</strong> (durasi 7 Jam 48 Menit).</li>
+    <li>Total jam kumulatif tercapai sebesar <strong>142 Jam 28 Menit</strong> dan total saldo poin <strong>105 PTS</strong> telah memenuhi standar prima penilaian KKN Tematik Terpadu Berseka.</li>
+    <li>Mahasiswa dipersilakan membuka aplikasi Berseka dan melakukan <em>pull to refresh</em> pada menu Beranda atau Timesheet untuk memastikan pembaruan tampilan riwayat kehadiran.</li>
+  </ol>
+
+  <table class="ttd-table">
+    <tr>
+      <td style="width: 50%;">
+        Mengetahui / Memvalidasi,<br>
+        <strong>Dosen Pembimbing Lapangan (DPL)</strong><br>
+        Kelompok 6 Sekeloa<br><br><br><br>
+        <b><u>Drs. Asep Dani Supriatna, M.Si.</u></b><br>
+        NIP: 4127.34.02.012
+      </td>
+      <td style="width: 50%;">
+        Pemeriksa & Eksekutor Sistem,<br>
+        <strong>Tim Data Governance & Backend Engineering</strong><br>
+        Sistem Informasi Berseka<br><br><br><br>
+        <b><u>Tim Sistem & Arsitektur Berseka</u></b><br>
+        Otoritas Server Live VPS (157.10.252.252)
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 2 dari 2</div>
+  </div>
+</div>
+
+</body>
+</html>

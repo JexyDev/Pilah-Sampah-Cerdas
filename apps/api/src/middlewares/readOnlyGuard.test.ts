@@ -5,12 +5,15 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import { readOnlyGuard } from "./readOnlyGuard.js";
 import { Request, Response } from "express";
 import { generateAccessToken } from "../utils/jwtUtils.js";
 
 describe("readOnlyGuard middleware tests", () => {
+  beforeAll(() => {
+    process.env.JWT_ACCESS_SECRET = "test-secret-key-1234567890-secure-for-testing";
+  });
   const mockResponse = () => {
     const res = {} as Response;
     res.status = vi.fn().mockReturnValue(res);

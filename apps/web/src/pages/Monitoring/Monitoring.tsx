@@ -53,7 +53,16 @@ import {
   KELURAHAN_GEODATA,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
-import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
+import {
+  fetchMasterWilayah,
+  formatRwLabel,
+  extractRwNumber,
+  isKelurahanMatching,
+  isRwMatching,
+  getRwOptionsForKelurahan,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 interface KPIStats {
   totalWarga: number;
@@ -157,6 +166,7 @@ const Monitoring: React.FC = () => {
   const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
   const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
   const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
 
   // Filter & Search States
   const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>(isLurah ? userKelurahan : "Semua Kelurahan");
@@ -226,8 +236,9 @@ const Monitoring: React.FC = () => {
   }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
   useEffect(() => {
-    fetchMasterWilayah().then(({ kelurahans }) => {
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
       if (kelurahans.length > 0) setMasterKelurahans(kelurahans);
+      if (rws.length > 0) setMasterRwList(rws);
     });
 
     if (isDpl) {
@@ -384,18 +395,26 @@ const Monitoring: React.FC = () => {
 
       // 1. Filter Kelurahan
       if (selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan") {
-        const binRw = (b.rtRw || (b as any).rw?.name || b.lokasi || "").toLowerCase();
+        const binKel = String((b as any).kelurahan?.name || b.kelurahan || "").toLowerCase();
         const selKel = selectedMapKelurahan.toLowerCase();
-        const userAddress = ((b as any).user?.address || b.lokasi || "").toLowerCase();
-        if (!binRw.includes(selKel) && !userAddress.includes(selKel)) {
+        const binRw = String(typeof b.rw === "string" ? b.rw : (b as any).rw?.name || b.rtRw || b.lokasi || "").toLowerCase();
+        const userAddress = String((b as any).user?.address || b.lokasi || "").toLowerCase();
+        const matchesKel =
+          binKel.includes(selKel) ||
+          binRw.includes(selKel) ||
+          userAddress.includes(selKel) ||
+          isKelurahanMatching(b.kelurahan as any, selectedMapKelurahan);
+        if (!matchesKel) {
           return false;
         }
       }
 
       // 2. Filter Rukun Warga
-      if (selectedRukunWarga !== "Semua Rukun Warga") {
-        const binRw = (b.rtRw || (b as any).rw?.name || "").toLowerCase();
-        if (!binRw.includes(selectedRukunWarga.toLowerCase())) return false;
+      if (selectedRukunWarga !== "Semua Rukun Warga" && selectedRukunWarga !== "ALL" && selectedRukunWarga !== "Semua RW") {
+        const rawRw = typeof b.rw === "string" ? b.rw : (b as any).rw?.name || b.rtRw || "";
+        const userAddress = (b as any).user?.address || b.lokasi || "";
+        const matchesRw = isRwMatching(rawRw, selectedRukunWarga) || isRwMatching(userAddress, selectedRukunWarga);
+        if (!matchesRw) return false;
       }
 
       // 3. Category Filter
@@ -550,7 +569,7 @@ const Monitoring: React.FC = () => {
       const code = ((b as any).kode || b.qrCode || b.id || "").toLowerCase();
       const owner = (b.wargaName || (b as any).user?.name || "").toLowerCase();
       const phone = ((b as any).user?.phone || (b as any).wargaPhone || "").toLowerCase();
-      const rw = (b.rtRw || (b as any).rw?.name || "").toLowerCase();
+      const rw = (b.rtRw || (b as any).rw?.name || (typeof b.rw === "string" ? b.rw : "")).toLowerCase();
       return code.includes(query) || owner.includes(query) || phone.includes(query) || rw.includes(query);
     });
   }, [filteredMapBins, tableSearchInput]);
@@ -575,19 +594,50 @@ const Monitoring: React.FC = () => {
       .slice(0, 5);
   }, [verifiedMapBins, mapSearchInput]);
 
-  // Unique Rukun Warga list directly from real database bins
+  // Unique Rukun Warga list dynamically derived from Master Wilayah & verified bins
   const uniqueRwOptions = useMemo(() => {
-    const set = new Set<string>();
+    // 1. Ambil opsi RW dari Master Wilayah sesuai kelurahan terpilih (jika ada)
+    const masterOptions = getRwOptionsForKelurahan(selectedMapKelurahan, masterRwList);
+    const rwMap = new Map<number, string>();
+
+    masterOptions.forEach((opt) => {
+      const num = extractRwNumber(opt);
+      if (num !== null) {
+        rwMap.set(num, formatRwLabel(num));
+      }
+    });
+
+    // 2. Tambahkan RW dari database bins (agar selalu sinkron dengan data riil)
+    const targetKelLower = selectedMapKelurahan.toLowerCase();
+    const isKelFiltered =
+      selectedMapKelurahan !== "Semua Kelurahan" &&
+      selectedMapKelurahan !== "Semua Kelurahan Binaan" &&
+      selectedMapKelurahan !== "Semua";
+
     verifiedMapBins.forEach((b) => {
-      const rwName = b.rtRw || (b as any).rw?.name;
-      if (rwName) set.add(rwName);
+      if (isKelFiltered) {
+        const binKel = String((b as any).kelurahan?.name || b.kelurahan || "").toLowerCase();
+        const binRwStr = String(typeof b.rw === "string" ? b.rw : (b as any).rw?.name || b.rtRw || "").toLowerCase();
+        const userAddr = String((b as any).user?.address || b.lokasi || "").toLowerCase();
+        const matchesKel =
+          binKel.includes(targetKelLower) ||
+          binRwStr.includes(targetKelLower) ||
+          userAddr.includes(targetKelLower) ||
+          isKelurahanMatching(b.kelurahan as any, selectedMapKelurahan);
+        if (!matchesKel) return;
+      }
+
+      const rawRw = typeof b.rw === "string" ? b.rw : (b as any).rw?.name || b.rtRw;
+      const num = extractRwNumber(rawRw);
+      if (num !== null && num > 0 && num < 90) {
+        rwMap.set(num, formatRwLabel(num));
+      }
     });
-    return Array.from(set).sort((a, b) => {
-      const numA = parseInt(a.replace(/\D/g, "") || "0", 10);
-      const numB = parseInt(b.replace(/\D/g, "") || "0", 10);
-      return numA - numB;
-    });
-  }, [verifiedMapBins]);
+
+    return Array.from(rwMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, label]) => label);
+  }, [selectedMapKelurahan, masterRwList, verifiedMapBins]);
 
   const handleFlyToBin = (bin: any) => {
     if (bin.latitude && bin.longitude) {
@@ -847,6 +897,7 @@ const Monitoring: React.FC = () => {
                       if (isKelurahanLocked) return;
                       const val = e.target.value;
                       setSelectedMapKelurahan(val);
+                      if (!isRwLocked) setSelectedRukunWarga("Semua Rukun Warga");
                       if (val !== "Semua Kelurahan" && val !== "Semua Kelurahan Binaan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
                         const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
                         setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
@@ -1817,7 +1868,7 @@ const Monitoring: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Wilayah:</span>
                     <span className="font-bold text-slate-800 dark:text-slate-100">
-                      {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || "Wilayah Dampingan"}
+                      {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || (typeof selectedBinDetail.rw === "string" ? selectedBinDetail.rw : null) || "Wilayah Dampingan"}
                     </span>
                   </div>
                   <div className="flex justify-between">

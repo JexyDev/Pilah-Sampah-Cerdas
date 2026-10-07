@@ -4,7 +4,19 @@
  * Centralized Prisma Client Singleton to prevent connection pool exhaustion.
  */
 
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure env is loaded before initializing Prisma Client
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config();
 
 declare global {
   var prismaGlobal: PrismaClient | undefined;

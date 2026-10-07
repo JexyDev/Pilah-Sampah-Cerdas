@@ -42,7 +42,7 @@ export class BinController {
    */
   async getAllBins(req: Request, res: Response): Promise<void> {
     try {
-      const { search, status, areaId, categoryId, tipeKepemilikan, binType, jenisWadah } = req.query;
+      const { search, status, areaId, categoryId, tipeKepemilikan, binType, jenisWadah, sortBy, order } = req.query;
       const filters = {
         search: search as string,
         status: status as string,
@@ -183,7 +183,8 @@ export class BinController {
           statusDisplay,
           wargaAddress: effectiveOwner?.address || effectiveOwner?.households?.[0]?.address || null,
           rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
-          kelurahan: bin.rw?.kelurahan?.name || null,
+          rtRw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
+          kelurahan: bin.rw?.kelurahan?.name || (bin.kelurahan as any)?.name || null,
           user: effectiveOwner
             ? {
                 id: effectiveOwner.id,
@@ -222,6 +223,8 @@ export class BinController {
           realStatus: bin.status,
           needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
           lastActivityLog,
+          createdAt: bin.createdAt,
+          updatedAt: bin.updatedAt,
         };
       });
 
@@ -298,6 +301,40 @@ export class BinController {
           const jw = (b.jenisWadah || b.binType || "").toLowerCase();
           return jw.includes(targetType) || targetType.includes(jw);
         });
+      }
+
+      // Filter out testing/dummy bins (RW 99 or dummy/test keywords) unless explicitly searched or requested
+      const isExplicitRw99Search =
+        String(filters.areaId || filters.search || "").includes("99") ||
+        (req.query.includeTest as string) === "true";
+      if (!isExplicitRw99Search) {
+        mappedBins = mappedBins.filter((b: any) => {
+          const rwStr = String(b.rw || "").toLowerCase();
+          const isRw99 = rwStr.includes("99") || Number(b.rwId) === 83 || Number(b.rwId) === 99;
+          const isTestCode = (b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST");
+          const isDummyDesc =
+            String(b.deskripsiLokasi || "").toLowerCase().includes("dummy") ||
+            String(b.deskripsiLokasi || "").toLowerCase().includes("test");
+          return !isRw99 && !isTestCode && !isDummyDesc;
+        });
+      }
+
+      if (sortBy) {
+        const isDesc = String(order || "desc").toLowerCase() !== "asc";
+        const sb = String(sortBy).toLowerCase();
+        if (sb === "updatedat" || sb === "terbaru" || sb === "latest" || sb === "waktu") {
+          mappedBins.sort((a: any, b: any) => {
+            const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return isDesc ? timeB - timeA : timeA - timeB;
+          });
+        } else if (sb === "createdat") {
+          mappedBins.sort((a: any, b: any) => {
+            const timeA = new Date(a.createdAt || 0).getTime();
+            const timeB = new Date(b.createdAt || 0).getTime();
+            return isDesc ? timeB - timeA : timeA - timeB;
+          });
+        }
       }
 
       res.status(200).json({

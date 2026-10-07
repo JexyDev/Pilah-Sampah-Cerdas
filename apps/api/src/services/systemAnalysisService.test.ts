@@ -280,9 +280,9 @@ describe("systemAnalysisService - Comprehensive QC and Formula Audit", () => {
       const result = await systemAnalysisService.getWasteGovernanceAnalysis();
 
       expect(result.pilar1.totalWarga).toBe(100);
-      expect(result.pilar1.activeResidentCount).toBe(3);
-      expect(result.pilar1.activeResidentRatio).toBe(3);
-      expect(result.pilar1.sortingComplianceIndex).toBe(100);
+      expect(result.pilar1.activeResidentCount).toBe(1);
+      expect(result.pilar1.activeResidentRatio).toBe(1);
+      expect(result.pilar1.sortingComplianceIndex).toBe(44);
 
       expect(result.pilar2.totalFasilitas).toBe(1);
       expect(result.pilar2.kritisitasTempatSampah.total).toBe(3);

@@ -1339,6 +1339,37 @@ export class SuperUserService {
   }
 
   /**
+   * Scan dan bersihkan tempat sampah virtual / dummy (BSK-MEMBER-*) yang terbentuk secara anomalistis.
+   */
+  async purgeGhostBins(adminUserId: string) {
+    const ghostBins = await prisma.bin.findMany({
+      where: {
+        qrCode: { startsWith: "BSK-MEMBER-" },
+      },
+      select: { id: true, qrCode: true, userId: true },
+    });
+
+    if (ghostBins.length === 0) {
+      return { purgedCount: 0, purgedBinIds: [] };
+    }
+
+    const ids = ghostBins.map((b) => b.id);
+    await prisma.binOwnership.deleteMany({ where: { binId: { in: ids } } });
+    await prisma.binResetRequest.deleteMany({ where: { binId: { in: ids } } });
+    const result = await prisma.bin.deleteMany({ where: { id: { in: ids } } });
+
+    await prisma.auditTrail.create({
+      data: {
+        action: "PURGE_GHOST_BINS",
+        userId: adminUserId,
+        newValue: { purgedCount: result.count, binIds: ids },
+      },
+    });
+
+    return { purgedCount: result.count, purgedBinIds: ids };
+  }
+
+  /**
    * Get aggregate Circular Economy utilization report (Pakan Maggot, Kompos Organik, Buruan Sae / Hidroponik)
    */
   async getCircularEconomyReport() {

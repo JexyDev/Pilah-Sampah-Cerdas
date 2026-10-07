@@ -457,6 +457,7 @@ const AppRoutes: React.FC = () => {
                 "DEVELOPER",
                 "DPL",
                 "DOSEN_PEMBIMBING",
+                "MPL",
               ]}
             >
               <Leaderboard />
@@ -481,6 +482,7 @@ const AppRoutes: React.FC = () => {
                 "DEVELOPER",
                 "DPL",
                 "DOSEN_PEMBIMBING",
+                "MPL",
               ]}
             >
               <Leaderboard />

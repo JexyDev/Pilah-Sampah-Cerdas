@@ -135,6 +135,7 @@ export function canAccessSidebarRoute(
       "MAHASISWA_KKN",
       "PANITIA_TASKFORCE",
       "WARGA",
+      "MPL",
     ];
     return allowed.includes(role) || canView("poin_warga");
   }
@@ -252,7 +253,6 @@ export function canAccessSidebarRoute(
       "CAMAT",
       "LURAH",
       "PANITIA_TASKFORCE",
-      "MPL",
     ];
     return allowedLaporan.includes(role);
   }

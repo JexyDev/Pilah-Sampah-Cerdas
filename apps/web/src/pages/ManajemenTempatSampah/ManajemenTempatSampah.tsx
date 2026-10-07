@@ -32,6 +32,7 @@ import {
   KELURAHAN_GEODATA,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 // Fix default Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -144,7 +145,14 @@ const ManajemenTempatSampah: React.FC = () => {
   void setMapCenter;
   const [mapZoom, setMapZoom] = useState<number>(15);
   const [selectedMapKelurahan, setSelectedMapKelurahan] = useState("Semua Kelurahan");
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
+
+  useEffect(() => {
+    fetchMasterWilayah().then(({ kelurahans }) => {
+      if (kelurahans.length > 0) setMasterKelurahans(kelurahans);
+    });
+  }, []);
 
   // Map settings
   // QC-17b: Default basemap Satelit untuk semua role (khususnya Pimpinan, Super User, dll.)
@@ -1057,12 +1065,25 @@ const ManajemenTempatSampah: React.FC = () => {
                     className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-all focus:outline-none"
                   >
                     <option value="Semua Kelurahan">Semua Kelurahan</option>
-                    <option value="Dago">Kel. Dago</option>
-                    <option value="Sadang Serang">Kel. Sadang Serang</option>
-                    <option value="Sekeloa">Kel. Sekeloa</option>
-                    <option value="Lebak Gede">Kel. Lebak Gede</option>
-                    <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-                    <option value="Cipaganti">Kel. Cipaganti</option>
+                    {masterKelurahans.length > 0 ? (
+                      masterKelurahans.map((kel) => {
+                        const valName = kel.name || kel.nama;
+                        return (
+                          <option key={kel.id || valName} value={valName}>
+                            Kel. {valName}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="Dago">Kel. Dago</option>
+                        <option value="Sadang Serang">Kel. Sadang Serang</option>
+                        <option value="Sekeloa">Kel. Sekeloa</option>
+                        <option value="Lebak Gede">Kel. Lebak Gede</option>
+                        <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                        <option value="Cipaganti">Kel. Cipaganti</option>
+                      </>
+                    )}
                   </select>
 
                   {/* 2. Kategori Filter */}

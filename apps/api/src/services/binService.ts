@@ -206,7 +206,42 @@ export class BinService {
         where: { binId: bin.id },
       });
 
-      // 2. Update bin to PRINTED state with cleared owner & coordinates
+      // 🛡️ Jika tempat sampah adalah ghost bin virtual (BSK-MEMBER-), hapus permanen dari sistem
+      if (bin.qrCode.startsWith("BSK-MEMBER-")) {
+        await tx.bin.delete({
+          where: { id: bin.id },
+        });
+
+        if (bin.userId) {
+          const remainingBins = await tx.bin.count({
+            where: {
+              userId: bin.userId,
+              status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+            },
+          });
+          if (remainingBins === 0) {
+            await tx.user.update({
+              where: { id: bin.userId },
+              data: { lifecycleState: "COMMUNITY_ACTIVE_NO_BIN" },
+            });
+          }
+        }
+
+        if (adminUserId) {
+          await tx.auditTrail.create({
+            data: {
+              action: "DELETE_GHOST_BIN_ON_RESET",
+              userId: adminUserId,
+              oldValue: JSON.parse(JSON.stringify(bin)),
+              newValue: { status: "DELETED", isGhostBin: true },
+            },
+          });
+        }
+
+        return { ...bin, status: "DELETED", isGhostBin: true };
+      }
+
+      // 2. Update real physical bin to PRINTED state with cleared owner & coordinates
       const updatedBin = await tx.bin.update({
         where: { id: bin.id },
         data: {
@@ -913,12 +948,21 @@ export class BinService {
           bin.rwId = user.rwId;
         }
 
+        // 🛡️ Auto-sanitize: Bersihkan tempat sampah virtual / dummy (BSK-MEMBER-) jika sebelumnya ada pada akun warga ini
+        await tx.bin.deleteMany({
+          where: {
+            userId: user.id,
+            qrCode: { startsWith: "BSK-MEMBER-" },
+          },
+        });
+
         if (bin.categoryId) {
-          // 1. Get user's current bins to check onboarding status
+          // 1. Get user's current bins to check onboarding status (abaikan ghost bins virtual)
           const currentBins = await tx.bin.findMany({
             where: {
               OR: [{ userId: user.id }, { binOwnerships: { some: { userId: user.id } } }],
               status: "ACTIVE_BOUND",
+              NOT: { qrCode: { startsWith: "BSK-MEMBER-" } },
             },
             include: { category: true },
           });

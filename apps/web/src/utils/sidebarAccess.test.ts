@@ -106,4 +106,19 @@ describe("sidebarAccess utility", () => {
       canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=dpl", dpl)
     ).toBe(false);
   });
+
+  it("allows MPL to access Leaderboard/peringkat routes and hides Laporan KKN", () => {
+    const mpl = createMockUser("MPL");
+    expect(canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga", mpl)).toBe(true);
+    expect(
+      canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=students", mpl)
+    ).toBe(true);
+    expect(
+      canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=groups", mpl)
+    ).toBe(true);
+    expect(canAccessSidebarRoute("/peringkat", mpl)).toBe(true);
+    expect(canAccessSidebarRoute("/laporan/kkn", mpl)).toBe(false);
+    expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", mpl)).toBe(false);
+  });
 });
+

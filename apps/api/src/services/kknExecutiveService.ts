@@ -1309,6 +1309,20 @@ export const kknExecutiveService = {
           };
         }
       }
+    } else {
+      // Exclude dummy testing RW 99 by default
+      binWhere.OR = [
+        { rwId: null },
+        {
+          rw: {
+            NOT: [
+              { name: { contains: "99", mode: "insensitive" as const } },
+              { name: { contains: "dummy", mode: "insensitive" as const } },
+              { name: { contains: "test", mode: "insensitive" as const } },
+            ],
+          },
+        },
+      ];
     }
 
     const bins = await prisma.bin.findMany({

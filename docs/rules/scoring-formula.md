@@ -17,7 +17,7 @@
 
 1. [Aturan 3-Step Program Kerja (Proker)](#1-aturan-3-step-program-kerja-proker)
 2. [Formula Poin Kelompok — Bobot 60% : 40%](#2-formula-poin-kelompok--bobot-60--40)
-3. [Formula Poin DPL — Bobot 50% : 50%](#3-formula-poin-dpl--bobot-50--50)
+3. [Formula Poin DPL — Bobot 60% : 40%](#3-formula-poin-dpl--bobot-60--40)
 4. [Batasan & Guardrail Teknis](#4-batasan--guardrail-teknis)
 5. [Catatan Revisi](#5-catatan-revisi)
 
@@ -76,28 +76,24 @@ rataRataPoinAnggota = Math.round(Math.min(rawRataRata, MAX_AVERAGE_CAP) * 10) / 
 
 ---
 
-## 3. Formula Poin DPL — Bobot 50% : 50%
+## 3. Formula Poin DPL — Bobot 60% : 40%
 
-$$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook DPL} \times 0{,}5) + (\text{Poin Kelompok} \times 0{,}5)$$
+$$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook DPL} \times 0{,}6) + (\text{Poin Kelompok} \times 0{,}4)$$
 
 ### Komponen:
 
-| Komponen | Kondisi | Nilai |
-|:---|:---|:---:|
-| **Poin Logbook DPL** | Tersedia (≥ 1 entri) | **6 Poin** |
-| **Poin Logbook DPL** | Tidak tersedia (0 entri) | **0 Poin** |
-| **Poin Kelompok** | Nilai terbobot dari kelompok dampingan | (dari §2) |
-
-> [!IMPORTANT]
-> Logbook DPL bersifat **biner** (6 atau 0). Bukan akumulasi per-entri. Bukan `5 × n`.
+| Komponen | Definisi & Bobot Nilai | Catatan |
+|:---|:---|:---|
+| **Poin Logbook DPL** (`poinLogbookDpl`) | Akumulasi aktivitas supervisi riil DPL | - Kunjungan / Lapangan: **+5 PTS** / kegiatan<br>- Koordinasi Kampus / Bimbingan: **+2 PTS** / kegiatan |
+| **Poin Kelompok** (`poinKelompok`) | Rerata skor terbobot kelompok dampingan DPL | Dihitung dari Formula Poin Kelompok (§2) |
 
 ### Contoh Perhitungan Resmi:
 
-**Skenario A** (DPL sudah isi logbook, Poin Kelompok = 11,8):
-$$\text{Poin DPL} = (6 \times 0{,}5) + (11{,}8 \times 0{,}5) = 3{,}0 + 5{,}9 = \mathbf{8{,}9 \text{ Poin}}$$
+**Skenario A** (DPL memiliki 3 kegiatan lapangan [15 PTS] dan 5 koordinasi kampus [10 PTS] = 25 PTS, Poin Kelompok = 114,1):
+$$\text{Poin DPL} = (25 \times 0{,}6) + (114{,}1 \times 0{,}4) = 15{,}0 + 45{,}64 = \mathbf{60{,}64 \text{ Poin}}$$
 
-**Skenario B** (DPL belum isi logbook, Poin Kelompok = 11,8):
-$$\text{Poin DPL} = (0 \times 0{,}5) + (11{,}8 \times 0{,}5) = 0 + 5{,}9 = \mathbf{5{,}9 \text{ Poin}}$$
+**Skenario B** (DPL belum mengisi logbook sama sekali [0 PTS], Poin Kelompok = 16,0):
+$$\text{Poin DPL} = (0 \times 0{,}6) + (16{,}0 \times 0{,}4) = 0 + 6{,}4 = \mathbf{6{,}4 \text{ Poin}}$$
 
 ---
 
@@ -117,6 +113,7 @@ $$\text{Poin DPL} = (0 \times 0{,}5) + (11{,}8 \times 0{,}5) = 0 + 5{,}9 = \math
 |:---|:---|:---|
 | 16 Sep 2026 | Rilis awal formula: Poin Proker 3-step, Kelompok 60:40, DPL 50:50 | Backend Engineering |
 | 17 Sep 2026 | **Revisi PO**: Basis `rataRataPoinAnggota` diubah dari presensi murni → Total Saldo tim. Safety cap 1.000 PTS ditambahkan. Field `pure*` dipertahankan untuk audit DPL. | Product Owner |
+| 06 Okt 2026 | **Konstitusi Paten DPL**: Poin DPL diperbarui berbasis aktivitas lapangan (5 PTS) & kampus (2 PTS) dengan rasio resmi **60% Logbook : 40% Kelompok**. Teks UI dan dokumentasi diselaraskan secara penuh. | Lead Architect & Developer |
 
 ---
 

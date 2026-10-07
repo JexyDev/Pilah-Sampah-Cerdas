@@ -65,17 +65,17 @@ describe("AiController - Waste Baseline & Actual Trends", () => {
       const jsonResponse = res.json.mock.calls[0][0];
       expect(jsonResponse.success).toBe(true);
       expect(jsonResponse.data.periode).toBe("Juli 2026");
-      expect(jsonResponse.data.cakupanSampel).toBe("6 Kelurahan (Coblong)");
-      expect(jsonResponse.data.summary.avgKepatuhanBaseline).toBe(40.0);
+      expect(jsonResponse.data.cakupanSampel).toBe("24 RW Binaan KKN (Coblong)");
+      expect(jsonResponse.data.summary.avgKepatuhanBaseline).toBe(17.1);
       expect(jsonResponse.data.summary.avgKepatuhanGrafik).toBe(17.8);
       expect(jsonResponse.data.summary.rwKepatuhanTinggi).toBe(24);
       expect(jsonResponse.data.summary.totalKelurahan).toBe(6);
-      expect(jsonResponse.data.summary.totalVolumeBaselineKg).toBe(38361.32);
+      expect(jsonResponse.data.summary.totalVolumeBaselineKg).toBe(1670.5);
 
       const sekeloa = jsonResponse.data.kelurahan.find((k: any) => k.kelurahan === "Sekeloa");
       expect(sekeloa).toBeDefined();
       expect(sekeloa.kepatuhanBaseline).toBe(17.8);
-      expect(sekeloa.volumeBaselineKg).toBe(10803.78);
+      expect(sekeloa.volumeBaselineKg).toBe(421);
       expect(sekeloa.rwKepatuhanTinggi).toBe(5);
 
       // Pastikan ada catatan kaki anti-miskomunikasi

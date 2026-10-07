@@ -15,6 +15,12 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { wsClient } from "../../utils/websocket";
 import { sortChronologicalList } from "../../utils/sortUtils";
 import {
+  fetchMasterWilayah,
+  getRwOptionsForKelurahan,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
+import {
   Scale,
   Sparkles,
   ShieldCheck,
@@ -85,6 +91,16 @@ export default function SetorSampah() {
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
+
+  useEffect(() => {
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      if (kelurahans.length > 0) setMasterKelurahans(kelurahans);
+      if (rws.length > 0) setMasterRwList(rws);
+    });
+  }, []);
 
   useEffect(() => {
     if (isLurah && userKelurahan) {
@@ -183,12 +199,16 @@ export default function SetorSampah() {
 
   const kelurahanOptions = useMemo(() => {
     if (isLurah && userKelurahan) return [userKelurahan];
+    if (masterKelurahans.length > 0) {
+      return masterKelurahans.map((k) => k.name || k.nama);
+    }
     return COBLONG_6_KELURAHAN;
-  }, [isLurah, userKelurahan]);
+  }, [isLurah, userKelurahan, masterKelurahans]);
 
   const rwOptions = useMemo(() => {
     const targetKel = isLurah ? userKelurahan : filterKelurahan;
-    const set = new Set<string>();
+    const dynamicMasterRws = getRwOptionsForKelurahan(targetKel, masterRwList);
+    const set = new Set<string>(dynamicMasterRws);
 
     logs.forEach((log) => {
       if (targetKel === "ALL" || (log.kelurahan || "").toLowerCase().includes(targetKel.toLowerCase())) {
@@ -197,15 +217,8 @@ export default function SetorSampah() {
       }
     });
 
-    if (set.size === 0 && targetKel !== "ALL") {
-      const rwCount = targetKel.toLowerCase().includes("cipaganti") ? 18 : 13;
-      for (let i = 1; i <= rwCount; i++) {
-        set.add(`RW ${String(i).padStart(2, "0")}`);
-      }
-    }
-
     return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  }, [logs, isLurah, userKelurahan, filterKelurahan]);
+  }, [logs, isLurah, userKelurahan, filterKelurahan, masterRwList]);
 
   // Filtered dataset
   const filteredLogs = useMemo(() => {

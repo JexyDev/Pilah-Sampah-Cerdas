@@ -605,17 +605,13 @@ export const mplService = {
       skorMitraInisiatif: clamp(opts.skorMitraInisiatif),
     };
 
-    // ── Kalkulasi subtotalMitra (weighted sum, maks 100) ──────────────────
+    // ── Kalkulasi subtotalMitra (weighted sum 4 aspek lapangan @25%, maks 100) ──
     const subtotalMitra = Number(
       (
-        calculateAspectScore(s.skorMitraKehadiran, 15) +
-        calculateAspectScore(s.skorMitraWargaBinaan, 15) +
-        calculateAspectScore(s.skorMitraProker, 15) +
-        calculateAspectScore(s.skorMitraKomunikasi, 10) +
-        calculateAspectScore(s.skorMitraTanggungJawab, 10) +
-        calculateAspectScore(s.skorMitraBuktiKegiatan, 10) +
-        calculateAspectScore(s.skorMitraDampak, 15) +
-        calculateAspectScore(s.skorMitraInisiatif, 10)
+        calculateAspectScore(s.skorMitraKehadiran, 25) +
+        calculateAspectScore(s.skorMitraTanggungJawab, 25) +
+        calculateAspectScore(s.skorMitraWargaBinaan, 25) +
+        calculateAspectScore(s.skorMitraProker, 25)
       ).toFixed(2)
     );
 

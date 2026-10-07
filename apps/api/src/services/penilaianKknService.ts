@@ -402,15 +402,12 @@ export const penilaianKknService = {
         };
 
     // Calculate dynamic subtotal from actual aspect scores (Skala 0-100 per aspek)
+    // 4 Aspek Utama Lapangan Mitra / MPL (@25% = 100%)
     const subMitra =
-      calculateAspectScore(assessment.skorMitraKehadiran, 15) +
-      calculateAspectScore(assessment.skorMitraWargaBinaan, 15) +
-      calculateAspectScore(assessment.skorMitraProker, 15) +
-      calculateAspectScore(assessment.skorMitraKomunikasi, 10) +
-      calculateAspectScore(assessment.skorMitraTanggungJawab, 10) +
-      calculateAspectScore(assessment.skorMitraBuktiKegiatan, 10) +
-      calculateAspectScore(assessment.skorMitraDampak, 15) +
-      calculateAspectScore(assessment.skorMitraInisiatif, 10);
+      calculateAspectScore(assessment.skorMitraKehadiran, 25) +
+      calculateAspectScore(assessment.skorMitraTanggungJawab, 25) +
+      calculateAspectScore(assessment.skorMitraWargaBinaan, 25) +
+      calculateAspectScore(assessment.skorMitraProker, 25);
 
     // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, LaporanAkhir 10%)
     // Selaras dengan ASPEK_DPL_CONFIG di frontend PenilaianKknMahasiswaPage.tsx
@@ -432,13 +429,9 @@ export const penilaianKknService = {
 
     const hasMitraAny =
       assessment.skorMitraKehadiran > 0 ||
-      assessment.skorMitraWargaBinaan > 0 ||
-      assessment.skorMitraProker > 0 ||
-      assessment.skorMitraKomunikasi > 0 ||
       assessment.skorMitraTanggungJawab > 0 ||
-      assessment.skorMitraBuktiKegiatan > 0 ||
-      assessment.skorMitraDampak > 0 ||
-      assessment.skorMitraInisiatif > 0;
+      assessment.skorMitraWargaBinaan > 0 ||
+      assessment.skorMitraProker > 0;
 
     const isComplete = (subDpl > 0 || hasDplAny) && (subMitra > 0 || hasMitraAny);
     const isFinalized = Boolean(assessment.isFinalized);
@@ -732,17 +725,13 @@ export const penilaianKknService = {
         ? Number(payload.skorDplLaporanAkhir)
         : (prev?.skorDplLaporanAkhir ?? 0);
 
-    // 2. Kalkulasi Subtotal Mitra (Max 100)
+    // 2. Kalkulasi Subtotal Mitra (Max 100) — 4 Aspek Lapangan Utama (@25% = 100%)
     const subtotalMitra = Number(
       (
-        calculateAspectScore(skorMitraKehadiran, 15) +
-        calculateAspectScore(skorMitraWargaBinaan, 15) +
-        calculateAspectScore(skorMitraProker, 15) +
-        calculateAspectScore(skorMitraKomunikasi, 10) +
-        calculateAspectScore(skorMitraTanggungJawab, 10) +
-        calculateAspectScore(skorMitraBuktiKegiatan, 10) +
-        calculateAspectScore(skorMitraDampak, 15) +
-        calculateAspectScore(skorMitraInisiatif, 10)
+        calculateAspectScore(skorMitraKehadiran, 25) +
+        calculateAspectScore(skorMitraTanggungJawab, 25) +
+        calculateAspectScore(skorMitraWargaBinaan, 25) +
+        calculateAspectScore(skorMitraProker, 25)
       ).toFixed(2)
     );
 
@@ -1108,14 +1097,10 @@ export const penilaianKknService = {
           ? Number(p.subtotalMitra)
           : Number(
               (
-                calculateAspectScore(skorMitraKehadiran, 15) +
-                calculateAspectScore(skorMitraWargaBinaan, 15) +
-                calculateAspectScore(skorMitraProker, 15) +
-                calculateAspectScore(skorMitraKomunikasi, 10) +
-                calculateAspectScore(skorMitraTanggungJawab, 10) +
-                calculateAspectScore(skorMitraBuktiKegiatan, 10) +
-                calculateAspectScore(skorMitraDampak, 15) +
-                calculateAspectScore(skorMitraInisiatif, 10)
+                calculateAspectScore(skorMitraKehadiran, 25) +
+                calculateAspectScore(skorMitraTanggungJawab, 25) +
+                calculateAspectScore(skorMitraWargaBinaan, 25) +
+                calculateAspectScore(skorMitraProker, 25)
               ).toFixed(2)
             );
 
@@ -2251,14 +2236,10 @@ export const penilaianKknService = {
       ];
 
       const mitraAspects = [
-        { score: resolvedSkorMitraKehadiran, weight: 15 },
-        { score: currentSkorMitraWargaBinaan, weight: 15 },
-        { score: currentSkorMitraProker, weight: 15 },
-        { score: currentSkorMitraKomunikasi, weight: 10 },
-        { score: currentSkorMitraTanggungJawab, weight: 10 },
-        { score: currentSkorMitraBuktiKegiatan, weight: 10 },
-        { score: currentSkorMitraDampak, weight: 15 },
-        { score: currentSkorMitraInisiatif, weight: 10 },
+        { score: resolvedSkorMitraKehadiran, weight: 25 },
+        { score: currentSkorMitraTanggungJawab, weight: 25 },
+        { score: currentSkorMitraWargaBinaan, weight: 25 },
+        { score: currentSkorMitraProker, weight: 25 },
       ];
 
       const dplCalc = calculateProgressiveAspectSubtotal(dplAspects);
@@ -2280,13 +2261,9 @@ export const penilaianKknService = {
 
       const hasMitraAll =
         resolvedSkorMitraKehadiran > 0 &&
-        currentSkorMitraWargaBinaan > 0 &&
-        currentSkorMitraProker > 0 &&
-        currentSkorMitraKomunikasi > 0 &&
         currentSkorMitraTanggungJawab > 0 &&
-        currentSkorMitraBuktiKegiatan > 0 &&
-        currentSkorMitraDampak > 0 &&
-        currentSkorMitraInisiatif > 0;
+        currentSkorMitraWargaBinaan > 0 &&
+        currentSkorMitraProker > 0;
 
       const isComplete = hasDplAll && hasMitraAll;
       const isFinalized = Boolean(existing?.isFinalized && isComplete);

@@ -88,65 +88,39 @@ const ASPEK_DPL_CONFIG = [
   },
 ];
 
-// 8 Aspek Lapangan Mitra / MPL (Total Bobot 100% -> Kontribusi 50% Nilai Akhir)
+// 4 Aspek Lapangan Mitra / MPL (Total Bobot 100% -> Kontribusi 50% Nilai Akhir)
 const ASPEK_MITRA_CONFIG = [
   {
     key: "skorMitraKehadiran" as const,
     no: 1,
-    title: "Kehadiran & Kedisiplinan",
-    bobot: 15,
-    deskripsi: "Tingkat kehadiran fisik, ketepatan waktu, dan kepatuhan jam kerja di lokasi KKN",
-  },
-  {
-    key: "skorMitraWargaBinaan" as const,
-    no: 2,
-    title: "Hubungan & Komunikasi Warga Binaan",
-    bobot: 15,
-    deskripsi: "Pendekatan sosial, kesantunan, dan keakraban dalam memotivasi warga memilah sampah",
-  },
-  {
-    key: "skorMitraProker" as const,
-    no: 3,
-    title: "Realisasi Program Kerja Lapangan",
-    bobot: 15,
+    title: "Kedisiplinan & Integritas Lapangan",
+    bobot: 25,
     deskripsi:
-      "Kinerja eksekusi kegiatan tata kelola sampah, posko, dan program kerja di tingkat RW",
-  },
-  {
-    key: "skorMitraKomunikasi" as const,
-    no: 4,
-    title: "Koordinasi Pihak Kelurahan / RW",
-    bobot: 10,
-    deskripsi: "Komunikasi berkala, proaktif, dan koordinasi yang baik dengan aparat kelurahan/RW",
+      "Tingkat kehadiran fisik, kepatuhan jam kerja riil di lokasi KKN, dan ketepatan waktu",
   },
   {
     key: "skorMitraTanggungJawab" as const,
-    no: 5,
-    title: "Tanggung Jawab & Etika Kerja",
-    bobot: 10,
-    deskripsi: "Komitmen menyelesaikan tugas, etika kerja, kesopanan, dan kepatuhan norma lokal",
-  },
-  {
-    key: "skorMitraBuktiKegiatan" as const,
-    no: 6,
-    title: "Dokumentasi & Bukti Kegiatan",
-    bobot: 10,
-    deskripsi: "Kerapian pelaporan dokumentasi kegiatan riil lapangan dan verifikasi presensi",
-  },
-  {
-    key: "skorMitraDampak" as const,
-    no: 7,
-    title: "Dampak & Kemanfaatan Nyata",
-    bobot: 15,
-    deskripsi: "Manfaat nyata bagi kebersihan lingkungan, reduksi sampah, dan kemandirian RW",
-  },
-  {
-    key: "skorMitraInisiatif" as const,
-    no: 8,
-    title: "Inisiatif & Kreativitas Solutif",
-    bobot: 10,
+    no: 2,
+    title: "Etika Kerja, Sikap & Tanggung Jawab",
+    bobot: 25,
     deskripsi:
-      "Kemampuan mencari solusi kreatif dan inisiatif tanggap saat menghadapi kendala lapangan",
+      "Sopan santun, ketaatan norma sosial warga RW/Kelurahan, dedikasi, dan inisiatif solutif",
+  },
+  {
+    key: "skorMitraWargaBinaan" as const,
+    no: 3,
+    title: "Komunikasi & Pendampingan Warga Binaan",
+    bobot: 25,
+    deskripsi:
+      "Pendekatan sosial dalam memotivasi warga memilah sampah serta koordinasi berkala dengan aparat RW/Kelurahan",
+  },
+  {
+    key: "skorMitraProker" as const,
+    no: 4,
+    title: "Kontribusi Nyata & Eksekusi Program Kerja",
+    bobot: 25,
+    deskripsi:
+      "Kinerja eksekusi kegiatan pengelolaan sampah di tingkat RW, posko KKN, dan dampak kebersihan lingkungan",
   },
 ];
 
@@ -405,27 +379,17 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const dpl6 = Number(((d6 * 10) / 100).toFixed(2));
     const subtotalDpl = Number((dpl1 + dpl2 + dpl3 + dpl4 + dpl5 + dpl6).toFixed(2));
 
-    // MPL (8 Aspek)
+    // MPL (4 Aspek Utama Lapangan: @25% = 100%)
     const m1 = parseNum(formScores.skorMitraKehadiran);
-    const m2 = parseNum(formScores.skorMitraWargaBinaan);
-    const m3 = parseNum(formScores.skorMitraProker);
-    const m4 = parseNum(formScores.skorMitraKomunikasi);
-    const m5 = parseNum(formScores.skorMitraTanggungJawab);
-    const m6 = parseNum(formScores.skorMitraBuktiKegiatan);
-    const m7 = parseNum(formScores.skorMitraDampak);
-    const m8 = parseNum(formScores.skorMitraInisiatif);
+    const m2 = parseNum(formScores.skorMitraTanggungJawab);
+    const m3 = parseNum(formScores.skorMitraWargaBinaan);
+    const m4 = parseNum(formScores.skorMitraProker);
 
-    const mpl1 = Number(((m1 * 15) / 100).toFixed(2));
-    const mpl2 = Number(((m2 * 15) / 100).toFixed(2));
-    const mpl3 = Number(((m3 * 15) / 100).toFixed(2));
-    const mpl4 = Number(((m4 * 10) / 100).toFixed(2));
-    const mpl5 = Number(((m5 * 10) / 100).toFixed(2));
-    const mpl6 = Number(((m6 * 10) / 100).toFixed(2));
-    const mpl7 = Number(((m7 * 15) / 100).toFixed(2));
-    const mpl8 = Number(((m8 * 10) / 100).toFixed(2));
-    const subtotalMitra = Number(
-      (mpl1 + mpl2 + mpl3 + mpl4 + mpl5 + mpl6 + mpl7 + mpl8).toFixed(2)
-    );
+    const mpl1 = Number(((m1 * 25) / 100).toFixed(2));
+    const mpl2 = Number(((m2 * 25) / 100).toFixed(2));
+    const mpl3 = Number(((m3 * 25) / 100).toFixed(2));
+    const mpl4 = Number(((m4 * 25) / 100).toFixed(2));
+    const subtotalMitra = Number((mpl1 + mpl2 + mpl3 + mpl4).toFixed(2));
 
     // Kontribusi Murni DPL 50% & MPL 50% (Sesuai Arahan Pak Agus Mulyana)
     const wDpl = 0.5;
@@ -446,7 +410,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       dplScores: [dpl1, dpl2, dpl3, dpl4, dpl5, dpl6],
       subtotalDpl,
       kontribusiDpl,
-      mplScores: [mpl1, mpl2, mpl3, mpl4, mpl5, mpl6, mpl7, mpl8],
+      mplScores: [mpl1, mpl2, mpl3, mpl4],
       subtotalMitra,
       kontribusiMitra,
       composite,
@@ -1033,13 +997,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
               {/* Rubric Section based on Active Tab */}
               {evaluatorTab === "MPL" || isMplUser ? (
-                /* === ASPEK PENILAIAN MITRA / MPL (8 ASPEK) === */
+                /* === ASPEK PENILAIAN MITRA / MPL (4 ASPEK) === */
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                         <Building2 size={14} className="text-sky-600" />
-                        <span>8 Aspek Penilaian Mitra Pembimbing Lapangan (MPL)</span>
+                        <span>4 Aspek Penilaian Mitra Pembimbing Lapangan (MPL)</span>
                       </h4>
                       <p className="text-[11px] text-slate-500">
                         Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)

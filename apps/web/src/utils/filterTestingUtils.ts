@@ -367,3 +367,44 @@ export function filterNonTestProker<T>(list: T[]): T[] {
   if (!shouldHideTestAccounts()) return list;
   return list.filter((p) => !isTestProker(p as any, false));
 }
+
+/**
+ * Memeriksa apakah data Tempat Sampah (Bin) merupakan data uji coba/dummy (misal: kode TEST atau RW 99)
+ */
+export function isTestBin(
+  bin?: {
+    id?: string | null;
+    qrCode?: string | null;
+    kode?: string | null;
+    rw?: any;
+    rwNama?: string | null;
+    rwId?: any;
+    rtRw?: any;
+    deskripsiLokasi?: string | null;
+    [key: string]: any;
+  } | null,
+  respectToggle = true
+): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
+  if (!bin) return false;
+  const code = (bin.qrCode || bin.kode || bin.id || "").toUpperCase();
+  if (code.includes("TEST") || code.includes("DUMMY")) return true;
+  const rwStr = String(
+    (typeof bin.rw === "string" ? bin.rw : bin.rw?.name) ||
+    bin.rwNama ||
+    (typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name) ||
+    ""
+  ).toLowerCase();
+  if (rwStr.includes("99") || bin.rwId === 99 || Number(bin.rwId) === 83 || Number(bin.rwId) === 99) return true;
+  const desc = String(bin.deskripsiLokasi || "").toLowerCase();
+  if (desc.includes("dummy") || desc.includes("test")) return true;
+  return false;
+}
+
+export const isActuallyTestBin = (bin?: any) => isTestBin(bin, false);
+
+export function filterNonTestBins<T>(list: T[]): T[] {
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((b) => !isTestBin(b as any, false));
+}
+

@@ -976,6 +976,32 @@ export const dashboardService = {
       totalWargaByKel[key] = (totalWargaByKel[key] || 0) + (r._count?.users || 0);
     });
 
+    // Durasi pelaksanaan giat KKN lapangan (dimulai sejak Kick-off Penerjunan 12 Agustus 2026)
+    // Sesuai arahan Direksi: Pembanding baseline (kg/hari) adalah aktual timbulan per hari (kg/hari),
+    // bukan akumulasi berat sampah dari awal s.d. saat ini.
+    const KKN_OFFICIAL_START_DATE = new Date("2026-08-12T00:00:00.000Z");
+    let kknDurationDays = 1;
+
+    if (startDate && endDate) {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      const diffMs = Math.abs(e.getTime() - s.getTime());
+      kknDurationDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    } else if (period === "harian") {
+      kknDurationDays = 1;
+    } else if (period === "mingguan") {
+      kknDurationDays = 7;
+    } else if (period === "bulanan") {
+      kknDurationDays = 30;
+    } else if (period === "tahunan") {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      kknDurationDays = Math.max(1, Math.ceil((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)));
+    } else {
+      // Default "semua" (Selama giat KKN berlangsung)
+      const diffMs = Math.max(0, now.getTime() - KKN_OFFICIAL_START_DATE.getTime());
+      kknDurationDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
     const baselineComparison = allKelurahanCoblong.map((k) => {
       const normK = k.name.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
       const b = surveyBaselines.find((s) => {
@@ -1064,6 +1090,16 @@ export const dashboardService = {
         totalKg = wargaKg; // default WARGA_APP
       }
 
+      // Simpan nilai akumulasi total berat riil (kg) untuk audit dan transparansi
+      const rawTotalKg = totalKg;
+      const rawWargaKg = wargaKg;
+      const rawPetugasKg = petugasKg;
+
+      // Standarisasi Aktual Berat Sampah per Hari (kg/hari) sesuai arahan Direksi
+      const wargaKgPerHari = Number((wargaKg / kknDurationDays).toFixed(2));
+      const petugasKgPerHari = Number((petugasKg / kknDurationDays).toFixed(2));
+      const totalKgPerHari = Number((totalKg / kknDurationDays).toFixed(2));
+
       // Jumlah setoran yang benar-benar dapat dinilai di kelurahan ini.
       let kelDinilai = 0;
       let kelPatuh = 0;
@@ -1132,9 +1168,19 @@ export const dashboardService = {
         akurasiPilah: Number(akurasiRate.toFixed(1)),
         wargaAktif,
         totalWarga,
-        totalKg,
-        wargaKg,
-        petugasKg,
+        // Standarisasi unit: totalKg, wargaKg, petugasKg mengembalikan laju harian (kg/hari) untuk konsistensi komparasi delta
+        totalKg: totalKgPerHari,
+        wargaKg: wargaKgPerHari,
+        petugasKg: petugasKgPerHari,
+        totalKgPerHari,
+        wargaKgPerHari,
+        petugasKgPerHari,
+        // Tetap sertakan data akumulasi dan durasi hari untuk audit & transparansi
+        totalKgAccumulated: rawTotalKg,
+        wargaKgAccumulated: rawWargaKg,
+        petugasKgAccumulated: rawPetugasKg,
+        durasiHariKkn: kknDurationDays,
+        durationDays: kknDurationDays,
         sourceType: normSource,
         hasEndline,
         status,

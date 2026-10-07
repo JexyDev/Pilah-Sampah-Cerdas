@@ -1788,42 +1788,32 @@ export class KknAttendanceService {
       }
     }
 
-    // 0. Validate operational hours berdasarkan jam jadwal (bukan hardcoded)
+    // 0. Validate operational hours: Presensi kegiatan dibuka mulai pukul 05:00 WIB dan ditutup pukul 20:00 WIB
     if (!isAutoAlpa) {
       const nowMs = Date.now();
       const wibHours = (new Date(nowMs).getUTCHours() + 7) % 24;
       const wibMinutes = new Date(nowMs).getUTCMinutes();
       const currentWibTotal = wibHours * 60 + wibMinutes;
 
-      // Ambil jam jadwal dari DB untuk menentukan window yang valid
-      let scheduleStartTotal = 0; // default: 00:00
-      let scheduleEndTotal = 24 * 60; // default: 24:00 (allow all day)
-      let sched: any = null;
-      try {
-        sched = await prisma.schedule.findUnique({
-          where: { id: scheduleId },
-          select: { time: true },
-        });
-        if (sched?.time) {
-          const range = parseScheduleTimeRange(sched.time);
-          scheduleStartTotal = range.startMinutesTotal;
-          scheduleEndTotal = range.endMinutesTotal;
-        }
-      } catch {
-        /* keep defaults */
+      const EARLIEST_START_MINS = 5 * 60; // 05:00 WIB
+      const LATEST_CUTOFF_MINS = 20 * 60; // 20:00 WIB
+
+      if (currentWibTotal < EARLIEST_START_MINS) {
+        const err: any = new Error(
+          `OPERATIONAL_HOURS_VIOLATION: Presensi kegiatan belum dibuka. Jam masuk posko dimulai pukul 05:00 WIB. Selamat beristirahat dan persiapkan aktivitas hari ini!`
+        );
+        err.code = "OPERATIONAL_HOURS_VIOLATION";
+        err.statusCode = 422;
+        throw err;
       }
 
-      // Beri toleransi ±60 menit sebelum/sesudah jam jadwal
-      const tolerance = 60;
-      const windowStart = Math.max(0, scheduleStartTotal - tolerance);
-      const windowEnd = Math.min(24 * 60, scheduleEndTotal + tolerance);
-
-      if (currentWibTotal < windowStart || currentWibTotal > windowEnd) {
-        const fmtStart = `${String(Math.floor(scheduleStartTotal / 60)).padStart(2, "0")}:${String(scheduleStartTotal % 60).padStart(2, "0")}`;
-        const fmtEnd = `${String(Math.floor(scheduleEndTotal / 60)).padStart(2, "0")}:${String(scheduleEndTotal % 60).padStart(2, "0")}`;
-        throw new Error(
-          `OPERATIONAL_HOURS_VIOLATION: Absensi untuk kegiatan '${sched?.time || ""}' hanya dapat dilakukan pada rentang operasional jadwal (${fmtStart} - ${fmtEnd} WIB). Jam saat ini: ${String(wibHours).padStart(2, "0")}:${String(wibMinutes).padStart(2, "0")} WIB.`
+      if (currentWibTotal >= LATEST_CUTOFF_MINS) {
+        const err: any = new Error(
+          `OPERATIONAL_HOURS_VIOLATION: Presensi posko hari ini telah ditutup pada pukul 20:00 WIB. Sesi aktif telah dirapikan secara otomatis oleh sistem. Sampai jumpa besok pagi!`
         );
+        err.code = "OPERATIONAL_HOURS_VIOLATION";
+        err.statusCode = 422;
+        throw err;
       }
     }
 
@@ -2343,22 +2333,14 @@ export class KknAttendanceService {
       }
 
       if (!coIsInside) {
-        // Toleransi Graceful: Jika mahasiswa sudah melampaui durasi wajib (>= 240 menit) atau waktu checkout sudah melewati jam selesai jadwal kegiatan posko (misal >= 16:00 WIB),
-        // izinkan checkout agar mahasiswa tidak terjebak tanpa bisa menyelesaikan presensi setelah bertugas di posko.
-        const nowWib = new Date(Date.now() + 7 * 3600 * 1000);
-        const currentHoursMins = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
-        const schedRange = coSchedule?.time ? parseScheduleTimeRange(coSchedule.time) : null;
-        const isPastScheduleEnd = schedRange?.endMinutesTotal ? currentHoursMins >= schedRange.endMinutesTotal : currentHoursMins >= 16 * 60;
-        const currentLiveMins = attendance.attendedAt ? calculateLiveInZoneMinutes(attendance) : 0;
-        const isTargetAlreadyMet = currentLiveMins >= 240;
-
-        if (!isPastScheduleEnd && !isTargetAlreadyMet) {
-          const distanceInt = Math.round(coNearestDist);
-          const allowedRadius = coNearestRadius + coBuffer;
-          throw new Error(
-            `OUT_OF_GEOFENCE: Anda harus berada di dalam zona ${coNearestName} untuk melakukan presensi pulang (Jarak: ${distanceInt}m, Radius: ${allowedRadius}m).`
-          );
-        }
+        const distanceInt = Math.round(coNearestDist);
+        const allowedRadius = coNearestRadius + coBuffer;
+        const err: any = new Error(
+          `OUT_OF_GEOFENCE: Posisi Anda terdeteksi berjarak ${distanceInt} meter di luar area posko (${coNearestName}). Presensi pulang wajib dilakukan di dalam zona posko KKN.`
+        );
+        err.code = "OUT_OF_GEOFENCE";
+        err.statusCode = 422;
+        throw err;
       }
     }
 
@@ -4567,9 +4549,9 @@ export class KknAttendanceService {
       }
     } else {
       if (isSchedDateToday) {
-        // Toleransi persiapan presensi mulai jam 05:00 WIB pagi, batas maksimal jam 20:00 WIB
-        const earliestStart = Math.min(5 * 60, startMinutesTotal - 60);
-        const maxCutoff = Math.max(20 * 60, endMinutesTotal);
+        // Presensi kegiatan posko resmi dibuka mulai jam 05:00 WIB pagi dan ditutup pukul 20:00 WIB
+        const earliestStart = 5 * 60; // 05:00 WIB
+        const maxCutoff = 20 * 60; // 20:00 WIB
 
         if (currentMinutesTotal < earliestStart) {
           scheduleStatus = "AKAN_DATANG";
@@ -4586,13 +4568,19 @@ export class KknAttendanceService {
     }
 
     if (scheduleStatus === "AKAN_DATANG") {
-      throw new Error(
-        "FORBIDDEN: Jam mulai kegiatan belum bisa diakses (Presensi dibuka mulai 05:00 WIB)."
+      const err: any = new Error(
+        "OPERATIONAL_HOURS_VIOLATION: Presensi kegiatan belum dibuka (Presensi dibuka mulai 05:00 WIB). Jam masuk posko dimulai pukul 05:00 WIB. Selamat beristirahat dan persiapkan aktivitas hari ini!"
       );
+      err.code = "OPERATIONAL_HOURS_VIOLATION";
+      err.statusCode = 422;
+      throw err;
     } else if (scheduleStatus === "SELESAI") {
-      throw new Error(
-        "FORBIDDEN: Kegiatan ini sudah selesai (Batas maksimal presensi jam 20:00 WIB)."
+      const err: any = new Error(
+        "OPERATIONAL_HOURS_VIOLATION: Presensi posko hari ini telah ditutup (Batas maksimal presensi jam 20:00 WIB). Sesi aktif telah dirapikan secara otomatis oleh sistem. Sampai jumpa besok pagi!"
       );
+      err.code = "OPERATIONAL_HOURS_VIOLATION";
+      err.statusCode = 422;
+      throw err;
     }
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam radius zona kegiatan / posko KKN saat memulai presensi
@@ -4767,6 +4755,14 @@ export class KknAttendanceService {
       }
     }
 
+    const isEarlyCheckIn = currentHour < 7;
+    const earlyFlag = isEarlyCheckIn
+      ? `[Early Check-In Pagi ${String(currentHour).padStart(2, "0")}:${String(currentMinute).padStart(2, "0")} WIB - Menunggu Verifikasi DPL]`
+      : "";
+    const mergedDeskripsi = deskripsiKegiatan
+      ? (earlyFlag ? `${earlyFlag} ${deskripsiKegiatan}` : deskripsiKegiatan)
+      : (earlyFlag || undefined);
+
     // Upsert session di activityAttendance
     let attendance;
     if (existingSession && existingSession.status === "BERLANGSUNG") {
@@ -4778,7 +4774,7 @@ export class KknAttendanceService {
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
-          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(mergedDeskripsi ? { deskripsiKegiatan: mergedDeskripsi } : {}),
           ...(fotoUrl ? { fotoUrl } : {}),
         },
       });
@@ -4822,7 +4818,7 @@ export class KknAttendanceService {
           checkOutAt: null,
           actualInZoneMinutes: existingSession?.actualInZoneMinutes || 0,
           jedaLogs: currentLogs,
-          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(mergedDeskripsi ? { deskripsiKegiatan: mergedDeskripsi } : {}),
           ...(fotoUrl ? { fotoUrl } : {}),
         },
         create: {
@@ -4834,7 +4830,7 @@ export class KknAttendanceService {
           longitude,
           method: "GPS_ACTIVITY",
           jedaLogs: currentLogs,
-          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(mergedDeskripsi ? { deskripsiKegiatan: mergedDeskripsi } : {}),
           ...(fotoUrl ? { fotoUrl } : {}),
         },
       });
@@ -5425,128 +5421,153 @@ export class KknAttendanceService {
       const todayWibStr = nowWib.toISOString().slice(0, 10);
 
       for (const att of activeAttendances) {
-        if (!att.schedule || !att.schedule.time) continue;
+        try {
+          if (!att.schedule) continue;
 
-        // Guard 1: Jangan auto-checkout sesi yang baru saja dimulai (< 15 menit)
-        if (att.attendedAt) {
-          const sessionStartMs = new Date(att.attendedAt).getTime();
-          const elapsedMins = (nowUtc.getTime() - sessionStartMs) / (60 * 1000);
-          if (elapsedMins < 15) {
-            continue;
+          // Guard 1: Periksa tanggal jadwal terhadap hari ini
+          let isPastDate = false;
+          if (att.schedule.date) {
+            const schedWibStr = new Date(new Date(att.schedule.date).getTime() + 7 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10);
+            if (schedWibStr > todayWibStr) {
+              // Jadwal untuk hari depan, abaikan
+              continue;
+            }
+            if (schedWibStr < todayWibStr) {
+              isPastDate = true;
+            }
           }
-        }
 
-        const timeRange = parseScheduleTimeRange(att.schedule.time);
-        const endMins = timeRange.endMinutesTotal;
-
-        // Guard 2: Jika format jam overnight atau rentang tidak valid (end <= start), jangan auto checkout di siang hari
-        if (timeRange.isOvernight || endMins <= timeRange.startMinutesTotal) {
-          continue;
-        }
-
-        // Guard 3: Periksa tanggal jadwal terhadap hari ini
-        let isPastDate = false;
-        if (att.schedule.date) {
-          const schedWibStr = new Date(new Date(att.schedule.date).getTime() + 7 * 60 * 60 * 1000)
-            .toISOString()
-            .slice(0, 10);
-          if (schedWibStr > todayWibStr) {
-            // Jadwal untuk hari depan, abaikan
-            continue;
+          // Guard 2: Jangan auto-checkout sesi hari ini yang baru saja dimulai (< 15 menit)
+          if (!isPastDate && att.attendedAt) {
+            const sessionStartMs = new Date(att.attendedAt).getTime();
+            const elapsedMins = (nowUtc.getTime() - sessionStartMs) / (60 * 1000);
+            if (elapsedMins < 15) {
+              continue;
+            }
           }
-          if (schedWibStr < todayWibStr) {
-            isPastDate = true;
-          }
-        }
 
-        // Kebijakan Fleksibilitas Jam Pulang (Hold s.d. 20:00 WIB):
-        // Jam pulang tidak diputus di jam 16:00 (di-hold agar mahasiswa fleksibel berkegiatan di lapangan).
-        // Begitu mencapai batas maksimal malam jam 20:00 WIB (1200 menit) atau endMins (jika jadwal selesai setelah 20:00),
-        // atau sesi tersangkut dari hari sebelumnya (isPastDate), sistem menyelesaikan presensi secara otomatis
-        // dengan status HADIR (HADIR_MEMENUHI).
-        const eveningCutoffMins = Math.max(20 * 60, endMins);
-        const isEveningCutoff = currentMins >= eveningCutoffMins;
+          // Batas maksimal malam jam 20:00 WIB (1200 menit)
+          const isEveningCutoff = currentMins >= 20 * 60;
 
-        if (isPastDate || isEveningCutoff) {
-          console.log(
-            `[AutoCheckout] Melakukan checkout otomatis batas jam 20:00 (Hadir) untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
-          );
+          if (isPastDate || isEveningCutoff) {
+            console.log(
+              `[AutoCheckout] Melakukan checkout otomatis batas jam 20:00 (Hadir Memenuhi) untuk Mahasiswa ${att.student?.name || att.studentId} pada jadwal ${att.schedule.title}`
+            );
 
-          // Hitung waktu checkout di-clamp ke batas 20:00:00 WIB tanggal kegiatan
-          const attendedDate = att.attendedAt ? new Date(att.attendedAt) : nowUtc;
-          const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
-          const cutoff20Wib = new Date(
-            Date.UTC(
-              attendedWib.getUTCFullYear(),
-              attendedWib.getUTCMonth(),
-              attendedWib.getUTCDate(),
-              13, // 20:00 WIB = 13:00 UTC
-              0,
-              0,
-              0
-            )
-          );
-          const checkOutTime = isPastDate
-            ? cutoff20Wib
-            : nowUtc.getTime() > cutoff20Wib.getTime()
+            // Hitung waktu checkout di-clamp ke batas 20:00:00 WIB tanggal kegiatan
+            const attendedDate = att.attendedAt ? new Date(att.attendedAt) : nowUtc;
+            const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+            const cutoff20Wib = new Date(
+              Date.UTC(
+                attendedWib.getUTCFullYear(),
+                attendedWib.getUTCMonth(),
+                attendedWib.getUTCDate(),
+                13, // 20:00 WIB = 13:00 UTC
+                0,
+                0,
+                0
+              )
+            );
+            const checkOutTime = isPastDate
               ? cutoff20Wib
-              : nowUtc;
+              : nowUtc.getTime() > cutoff20Wib.getTime()
+                ? cutoff20Wib
+                : nowUtc;
 
-          await this.checkOutAttendance({
-            studentId: att.studentId,
-            scheduleId: att.scheduleId,
-            deskripsiKegiatan:
-              att.deskripsiKegiatan ||
-              "Diselesaikan otomatis oleh sistem (Batas maksimal 20:00 WIB)",
-            isAutoCheckout: true,
-            checkOutTime,
-          });
+            const autoCutNote = "Diselesaikan otomatis oleh sistem (Batas maksimal 20:00 WIB) - Perlu Review DPL";
+            const updatedDeskripsi = att.deskripsiKegiatan
+              ? `${att.deskripsiKegiatan} (${autoCutNote})`
+              : autoCutNote;
 
-          // Tutup juga presensi mandiri yang masih aktif hari ini jika ada
-          try {
-            const db = prisma as any;
-            if (db.presensiMandiri) {
-              await db.presensiMandiri.updateMany({
-                where: {
-                  studentId: att.studentId,
-                  status: "AKTIF",
-                  checkOutAt: null,
-                },
+            await this.checkOutAttendance({
+              studentId: att.studentId,
+              scheduleId: att.scheduleId,
+              deskripsiKegiatan: updatedDeskripsi,
+              isAutoCheckout: true,
+              checkOutTime,
+            });
+
+            // Tutup juga presensi mandiri yang masih aktif hari ini jika ada
+            try {
+              const db = prisma as any;
+              if (db.presensiMandiri) {
+                await db.presensiMandiri.updateMany({
+                  where: {
+                    studentId: att.studentId,
+                    status: "AKTIF",
+                    checkOutAt: null,
+                  },
+                  data: {
+                    status: "SELESAI",
+                    checkOutAt: checkOutTime,
+                    durasiMenit: Math.max(
+                      1,
+                      Math.floor((checkOutTime.getTime() - attendedDate.getTime()) / 60000)
+                    ),
+                  },
+                });
+              }
+            } catch {}
+
+            // Notifikasi Database
+            try {
+              await prisma.notification?.create?.({
                 data: {
-                  status: "SELESAI",
-                  checkOutAt: checkOutTime,
-                  durasiMenit: Math.max(
-                    1,
-                    Math.floor((checkOutTime.getTime() - attendedDate.getTime()) / 60000)
-                  ),
+                  userId: att.studentId,
+                  title: "Kegiatan Selesai Otomatis (Hadir) ✅",
+                  message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 20:00 WIB. Sistem telah menyelesaikan presensi Anda secara otomatis dengan status Hadir.`,
                 },
               });
+            } catch {}
+
+            // Notifikasi Push FCM
+            if (att.student?.fcmToken) {
+              try {
+                await notificationIntegrationService?.sendPushNotification?.(
+                  att.student.fcmToken,
+                  "Kegiatan Selesai Otomatis (Hadir) ✅",
+                  `Kegiatan ${att.schedule.title} selesai otomatis pada jam 20:00 WIB. Status kehadiran Anda tercatat Hadir.`
+                );
+              } catch {}
             }
-          } catch {}
+          }
+        } catch (studentErr) {
+          console.error(`[AutoCheckout] Gagal auto-checkout mahasiswa ${att.studentId}:`, studentErr);
+        }
+      }
 
-          // Notifikasi Database
-          try {
-            await prisma.notification?.create?.({
-              data: {
-                userId: att.studentId,
-                title: "Kegiatan Selesai Otomatis (Hadir) ✅",
-                message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 20:00 WIB. Sistem telah mencatat presensi Anda secara otomatis dengan status Hadir.`,
-              },
-            });
-          } catch {}
-
-          // Notifikasi Push FCM
-          if (att.student?.fcmToken) {
+      // Safeguard: Tutup presensi mandiri liar menggantung yang tidak terikat jadwal posko
+      try {
+        const db = prisma as any;
+        if (db.presensiMandiri) {
+          const hangingMandiri = await db.presensiMandiri.findMany({
+            where: {
+              status: "AKTIF",
+              checkOutAt: null,
+            },
+          });
+          for (const pm of hangingMandiri) {
             try {
-              await notificationIntegrationService?.sendPushNotification?.(
-                att.student.fcmToken,
-                "Kegiatan Selesai Otomatis (Hadir) ✅",
-                `Kegiatan ${att.schedule.title} selesai otomatis pada jam 20:00 WIB. Status kehadiran Anda tercatat Hadir.`
+              const pmDate = pm.checkInAt ? new Date(pm.checkInAt) : nowUtc;
+              const pmWib = new Date(pmDate.getTime() + 7 * 3600000);
+              const pmCutoff = new Date(
+                Date.UTC(pmWib.getUTCFullYear(), pmWib.getUTCMonth(), pmWib.getUTCDate(), 13, 0, 0, 0)
               );
+              const coTime = nowUtc.getTime() > pmCutoff.getTime() ? pmCutoff : nowUtc;
+              await db.presensiMandiri.update({
+                where: { id: pm.id },
+                data: {
+                  status: "SELESAI",
+                  checkOutAt: coTime,
+                  durasiMenit: Math.max(1, Math.floor((coTime.getTime() - pmDate.getTime()) / 60000)),
+                },
+              });
             } catch {}
           }
         }
-      }
+      } catch {}
     } catch (e) {
       console.error("[AutoCheckout] Error pada autoCheckOutEndedSchedules:", e);
     }

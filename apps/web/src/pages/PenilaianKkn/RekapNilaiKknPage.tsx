@@ -623,35 +623,47 @@ export const RekapNilaiKknPage: React.FC = () => {
                   </th>
 
                   {/* Kehadiran Sistem Pillar (25%) */}
-                  <th className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Kehadiran Sistem</div>
-                    <span className="text-[10px] font-normal text-blue-600 dark:text-blue-400">
-                      Bobot 25%
-                    </span>
+                  <th className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 text-[11px] min-w-[130px]">
+                    <div className="font-extrabold text-xs text-blue-900 dark:text-blue-200 tracking-tight">Kehadiran</div>
+                    <div className="text-[10px] font-semibold text-blue-700/80 dark:text-blue-300/80 mt-0.5">Oleh Sistem</div>
+                    <div className="mt-1">
+                      <span className="inline-block bg-blue-100 dark:bg-blue-900/80 text-blue-700 dark:text-blue-300 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-blue-200/80 dark:border-blue-700/50">
+                        Bobot 25%
+                      </span>
+                    </div>
                   </th>
 
                   {/* Nilai Individu Pillar (25%) */}
-                  <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai Individu</div>
-                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
-                      Bobot 25%
-                    </span>
+                  <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 text-[11px] min-w-[130px]">
+                    <div className="font-extrabold text-xs text-emerald-900 dark:text-emerald-200 tracking-tight">Nilai Individu</div>
+                    <div className="text-[10px] font-semibold text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">Dari DPL &amp; MPL</div>
+                    <div className="mt-1">
+                      <span className="inline-block bg-emerald-100 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-700/50">
+                        Bobot 25%
+                      </span>
+                    </div>
                   </th>
 
                   {/* Nilai Kelompok / Proker Pillar (25%) */}
-                  <th className="py-2.5 px-3 bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
-                    <div>Nilai Kelompok (Proker)</div>
-                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400">
-                      Rerata Proker &rarr; Bobot 25%
-                    </span>
+                  <th className="py-2.5 px-3 bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border-r border-slate-200 dark:border-slate-800 text-[11px] min-w-[130px]">
+                    <div className="font-extrabold text-xs text-amber-900 dark:text-amber-200 tracking-tight">Nilai Kelompok</div>
+                    <div className="text-[10px] font-semibold text-amber-700/80 dark:text-amber-300/80 mt-0.5">Proker Dari DPL</div>
+                    <div className="mt-1">
+                      <span className="inline-block bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-300 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-amber-200/80 dark:border-amber-700/50">
+                        Bobot 25%
+                      </span>
+                    </div>
                   </th>
 
                   {/* Laporan Akhir Pillar (25%) */}
-                  <th className="py-2.5 px-3 bg-[#f5f3ff] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
-                    <div>Laporan Akhir</div>
-                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">
-                      Bobot 25%
-                    </span>
+                  <th className="py-2.5 px-3 bg-[#f5f3ff] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800 text-[11px] min-w-[130px]">
+                    <div className="font-extrabold text-xs text-indigo-900 dark:text-indigo-200 tracking-tight">Laporan Akhir</div>
+                    <div className="text-[10px] font-semibold text-indigo-700/80 dark:text-indigo-300/80 mt-0.5">Oleh DPL</div>
+                    <div className="mt-1">
+                      <span className="inline-block bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 text-[9.5px] font-black px-2 py-0.5 rounded-full border border-indigo-200/80 dark:border-indigo-700/50">
+                        Bobot 25%
+                      </span>
+                    </div>
                   </th>
 
                   {/* Nilai Akhir */}

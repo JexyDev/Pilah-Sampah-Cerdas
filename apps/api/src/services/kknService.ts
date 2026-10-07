@@ -722,47 +722,7 @@ export class KknService {
       }
     });
 
-    // EXTRA FETCH FOR WARGA WITHOUT BINS
-    const orConditionsUser = [];
-    if (targetRwIds.length > 0) {
-      orConditionsUser.push(
-        { rwId: { in: targetRwIds } },
-        { households: { some: { rwId: { in: targetRwIds } } } }
-      );
-    }
-    const groupStudentUserIds =
-      studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
-    if (!groupStudentUserIds.includes(kknUserId)) groupStudentUserIds.push(kknUserId);
-    
-    if (groupStudentUserIds.length > 0) {
-      orConditionsUser.push(
-        { bins: { some: { registeredByStudentId: { in: groupStudentUserIds } } } },
-        { binOwnerships: { some: { bin: { registeredByStudentId: { in: groupStudentUserIds } } } } }
-      );
-    }
-    
-    if (orConditionsUser.length > 0) {
-      const extraUsers = await prisma.user.findMany({
-        where: { role: { name: "WARGA" }, OR: orConditionsUser },
-        include: {
-          rw: { include: { kelurahan: true } },
-          households: true,
-          pointHistory: true,
-          wargaViolations: true,
-          setoranOtomatis: {
-            orderBy: { createdAt: "desc" },
-            include: { bin: { include: { category: true } } },
-          },
-          bins: { include: { category: true } },
-          binOwnerships: { include: { bin: { include: { category: true } } } },
-        },
-      });
-      extraUsers.forEach(u => {
-        if (!uniqueUsers.has(u.id)) {
-          uniqueUsers.set(u.id, { u, bins: [] });
-        }
-      });
-    }
+
 
     let list = Array.from(uniqueUsers.values()).map(({ u, bins: userBins }) => {
       const household = u.households?.[0];
@@ -1948,6 +1908,14 @@ export class KknService {
       // SINKRONISASI RW OTOMATIS: Tentukan RW final warga/tempat sampah
       const resolvedTargetRwId =
         targetWarga.rwId || studentAssignedRwId || bins.find((b) => b.rwId)?.rwId || null;
+
+      // 🛡️ Auto-sanitize: Bersihkan tempat sampah virtual / dummy (BSK-MEMBER-) jika sebelumnya ada pada akun warga ini
+      await tx.bin.deleteMany({
+        where: {
+          userId: wargaId,
+          qrCode: { startsWith: "BSK-MEMBER-" },
+        },
+      });
 
       for (const bin of bins) {
         // Guard: reject if bin already owned by a different warga
@@ -6713,7 +6681,18 @@ export class KknService {
         previousStudentName = prevUser?.name || "-";
       }
 
-      // 5. Update Tempat Sampah Warga
+      // 5. Update Tempat Sampah Warga & Bersihkan Ghost Bin jika ada
+      // Bersihkan ghost bin virtual (BSK-MEMBER-) jika sebelumnya sempat terbentuk
+      await tx.bin.deleteMany({
+        where: {
+          OR: [
+            { userId: cleanWargaId },
+            { binOwnerships: { some: { userId: cleanWargaId } } },
+          ],
+          qrCode: { startsWith: "BSK-MEMBER-" },
+        },
+      });
+
       const binUpdate = await tx.bin.updateMany({
         where: {
           OR: [
@@ -6727,20 +6706,8 @@ export class KknService {
         },
       });
 
-      if (binUpdate.count === 0 && allBins.length === 0) {
-        const defaultCategory = await tx.wasteCategory.findFirst();
-        await tx.bin.create({
-          data: {
-            qrCode: `BSK-MEMBER-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-            status: "ACTIVE_BOUND",
-            userId: cleanWargaId,
-            registeredByStudentId: targetStudent.userId,
-            kelompokId: targetStudent.kelompokId,
-            categoryId: defaultCategory?.id,
-            rwId: warga.rwId,
-          },
-        });
-      }
+      // Catatan: Jika warga belum memiliki tempat sampah, jangan buat ghost bin otomatis.
+      // Warga/mahasiswa akan melakukan aktivasi stiker fisik QR resmi secara mandiri.
 
       // 6. Nama Aktor Pemohon
       const requesterUser = await tx.user.findUnique({
