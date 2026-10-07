@@ -27,7 +27,7 @@ import { useMonitoringStore } from "../../store/useMonitoringStore";
 import MasterQrManager from "../SuperUser/MasterQrManager";
 import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
 import { 
-  Map, 
+  Map as MapIcon, 
   Search, 
   X, 
   Maximize2, 
@@ -853,7 +853,7 @@ const Monitoring: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
-                  <Map size={20} />
+                  <MapIcon size={20} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
