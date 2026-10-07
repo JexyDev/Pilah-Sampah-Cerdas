@@ -1029,24 +1029,18 @@ export class KknAttendanceService {
       }
     }
 
-    const orConditions: any[] = [];
-    if (targetRwIds.length > 0) {
-      orConditions.push(
-        { rwId: { in: targetRwIds } },
-        { households: { some: { rwId: { in: targetRwIds } } } }
-      );
-    }
+    const binConditions: any[] = [];
     if (groupStudentIds.length > 0) {
-      orConditions.push(
-        { bins: { some: { registeredByStudentId: { in: groupStudentIds } } } },
-        { binOwnerships: { some: { bin: { registeredByStudentId: { in: groupStudentIds } } } } },
+      binConditions.push(
+        { bins: { some: { status: "ACTIVE_BOUND", registeredByStudentId: { in: groupStudentIds } } } },
+        { binOwnerships: { some: { bin: { status: "ACTIVE_BOUND", registeredByStudentId: { in: groupStudentIds } } } } }
       );
     }
 
     const wargaList = await prisma.user.findMany({
       where: {
         role: { name: "WARGA" },
-        OR: orConditions.length > 0 ? orConditions : undefined,
+        OR: binConditions.length > 0 ? binConditions : undefined,
       },
       include: {
         rw: { include: { kelurahan: true } },
@@ -3207,15 +3201,16 @@ export class KknAttendanceService {
             });
           } else if (
             existingLeaveAtt.status !== attStatus &&
-            existingLeaveAtt.status !== "HADIR" &&
-            existingLeaveAtt.status !== "SELESAI" &&
-            existingLeaveAtt.status !== "SELESAI_TELAT" &&
-            existingLeaveAtt.status !== "HADIR_MEMENUHI" &&
-            existingLeaveAtt.status !== "HADIR_TIDAK_MEMENUHI"
+            existingLeaveAtt.status !== "HADIR_MEMENUHI"
           ) {
             await prisma.activityAttendance.update({
               where: { id: existingLeaveAtt.id },
-              data: { status: attStatus, method: "IZIN_DPL" },
+              data: {
+                status: attStatus,
+                method: "IZIN_DPL",
+                actualInZoneMinutes: 240,
+                deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${leave.reason || "-"}`,
+              },
             });
           }
         } catch {
@@ -3496,6 +3491,17 @@ export class KknAttendanceService {
             id: true,
             name: true,
             phone: true,
+            studentLeaveRequests: {
+              where: { status: "APPROVED" },
+              select: {
+                id: true,
+                type: true,
+                startDate: true,
+                endDate: true,
+                status: true,
+                reason: true,
+              },
+            },
             attendances: {
               where: attendanceDateFilter ? { attendedAt: attendanceDateFilter } : undefined,
               include: {
@@ -3534,8 +3540,31 @@ export class KknAttendanceService {
       let totalHariTerpenuhi = 0;
       let totalHariTidakMemenuhi = 0;
       let totalAlpa = 0;
+      let totalIzin = 0;
+      let totalSakit = 0;
+      let totalDispensasi = 0;
 
-      const sessionDetails = s.user.attendances.map((att) => {
+      // Kumpulkan tanggal-tanggal izin/sakit resmi yang telah disetujui (APPROVED) oleh DPL
+      const approvedLeaveDays = new Map<string, { type: string; reason?: string }>();
+      const userLeaves = (s.user as any)?.studentLeaveRequests || [];
+      for (const leave of userLeaves) {
+        if (leave.status !== "APPROVED") continue;
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate || leave.startDate);
+        const cur = new Date(start.getTime());
+        let daySafety = 0;
+        while (cur <= end && daySafety < 60) {
+          daySafety++;
+          const curWib = new Date(cur.getTime() + 7 * 60 * 60 * 1000);
+          const dateKey = curWib.toISOString().slice(0, 10);
+          const leaveType = String(leave.type || "").toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN";
+          approvedLeaveDays.set(dateKey, { type: leaveType, reason: leave.reason });
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+
+      // 1. Hitung durasi dan detail tiap sesi mentah
+      const rawSessions = s.user.attendances.map((att) => {
         let durationMins = 0;
         let storedMins = 0;
         if (
@@ -3557,42 +3586,162 @@ export class KknAttendanceService {
           }
         }
 
-        if (
-          att.status === "BERLANGSUNG" ||
-          att.status === "DI_ZONA" ||
-          att.status === "DALAM_RADIUS"
-        ) {
-          durationMins = storedMins > 0 ? storedMins : timeDiffMins;
-        } else {
-          durationMins = storedMins > 0 ? storedMins : timeDiffMins;
-        }
-        totalMinutes += durationMins;
-        if (durationMins >= TARGET_HARIAN_MINUTES) fulfilledTargetDays++;
+        durationMins = storedMins > 0 ? storedMins : timeDiffMins;
 
-        if (att.status === "ALPA") {
+        const checkInDate = new Date(att.attendedAt);
+        const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
+        const dateKey = wibDate.toISOString().slice(0, 10);
+
+        const isLeaveDate = approvedLeaveDays.has(dateKey);
+        const leaveInfo = approvedLeaveDays.get(dateKey);
+        const isLeaveStatus = att.status === "SAKIT" || att.status === "IZIN" || att.status === "IZIN_DPL";
+        const isApprovedLeave = isLeaveDate || isLeaveStatus;
+        const leaveType = leaveInfo?.type || (String(att.status).toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN");
+
+        return {
+          id: att.id,
+          scheduleId: att.scheduleId,
+          scheduleTitle: att.schedule?.title || (isApprovedLeave ? `Izin/Sakit Resmi: ${leaveInfo?.reason || "-"}` : "Kegiatan KKN"),
+          attendedAt: att.attendedAt,
+          checkOutAt: att.checkOutAt,
+          durationMinutes: durationMins,
+          durationFormatted: isApprovedLeave && durationMins === 0 ? "0 Jam (Dispensasi)" : `${Math.floor(durationMins / 60)} Jam ${durationMins % 60} Menit`,
+          isMinTargetMet: isApprovedLeave ? true : durationMins >= TARGET_HARIAN_MINUTES,
+          status: isApprovedLeave ? leaveType : att.status,
+          dateKey,
+          isApprovedLeave,
+          leaveType,
+        };
+      });
+
+      // Tambahkan sesi sintetis untuk hari izin resmi yang tidak memiliki record attendance sama sekali
+      for (const [dateKey, leaveInfo] of approvedLeaveDays.entries()) {
+        const hasSession = rawSessions.some((sess) => sess.dateKey === dateKey);
+        if (!hasSession) {
+          rawSessions.push({
+            id: `leave-${s.userId}-${dateKey}`,
+            scheduleId: null,
+            scheduleTitle: `Dispensasi DPL: ${leaveInfo.type === "SAKIT" ? "Sakit" : "Izin"} (${leaveInfo.reason || "-"})`,
+            attendedAt: new Date(`${dateKey}T08:00:00+07:00`),
+            checkOutAt: new Date(`${dateKey}T16:00:00+07:00`),
+            durationMinutes: 0,
+            durationFormatted: "0 Jam (Dispensasi)",
+            isMinTargetMet: true,
+            status: leaveInfo.type,
+            dateKey,
+            isApprovedLeave: true,
+            leaveType: leaveInfo.type,
+          });
+        }
+      }
+
+      // 2. Deduplikasi cerdas per hari kalender (WIB: UTC+7)
+      // Mencegah record duplikat (misal bridging/sync GPS vs Mandiri) melipatgandakan hitungan hari hadir maupun jam kerja mahasiswa.
+      const dailyMap = new Map<string, {
+        dateKey: string;
+        primarySession: typeof rawSessions[0];
+        effectiveDuration: number;
+        effectiveStatus: string;
+        isTargetMet: boolean;
+        isAlpa: boolean;
+        isApprovedLeave: boolean;
+        leaveType?: string;
+      }>();
+
+      for (const sess of rawSessions) {
+        if (!dailyMap.has(sess.dateKey)) {
+          const isTargetMet = sess.isApprovedLeave || sess.durationMinutes >= TARGET_HARIAN_MINUTES || sess.status === "HADIR_MEMENUHI";
+          dailyMap.set(sess.dateKey, {
+            dateKey: sess.dateKey,
+            primarySession: sess,
+            effectiveDuration: sess.durationMinutes,
+            effectiveStatus: sess.status,
+            isTargetMet,
+            isAlpa: sess.status === "ALPA" && sess.durationMinutes === 0 && !sess.isApprovedLeave,
+            isApprovedLeave: !!sess.isApprovedLeave,
+            leaveType: sess.leaveType,
+          });
+        } else {
+          const day = dailyMap.get(sess.dateKey)!;
+          // Ambil durasi tertinggi untuk hari tersebut jika ada record duplikat/tumpang tindih
+          day.effectiveDuration = Math.max(day.effectiveDuration, sess.durationMinutes);
+
+          if (sess.isApprovedLeave) {
+            day.isApprovedLeave = true;
+            day.leaveType = sess.leaveType;
+            day.isAlpa = false;
+            // Jika hari ini izin resmi, ganti status ke SAKIT/IZIN kecuali jika mahasiswa benar-benar HADIR_MEMENUHI
+            if (day.effectiveStatus !== "HADIR_MEMENUHI") {
+              day.effectiveStatus = sess.leaveType || sess.status;
+              day.primarySession = sess;
+            }
+          } else if (sess.status === "HADIR_MEMENUHI" || day.effectiveStatus === "ALPA") {
+            day.effectiveStatus = sess.status;
+            day.primarySession = sess;
+          }
+
+          if (day.isApprovedLeave || day.effectiveDuration >= TARGET_HARIAN_MINUTES || day.effectiveStatus === "HADIR_MEMENUHI") {
+            day.isTargetMet = true;
+          }
+          if (day.effectiveDuration > 0 || day.effectiveStatus !== "ALPA" || day.isApprovedLeave) {
+            day.isAlpa = false;
+          }
+        }
+      }
+
+      // 3. Akumulasi metrik berdasarkan hari kalender unik
+      let uniqueDaysAttended = 0;
+      for (const day of dailyMap.values()) {
+        if (day.isApprovedLeave) {
+          totalDispensasi++;
+          if (day.leaveType === "SAKIT") {
+            totalSakit++;
+          } else {
+            totalIzin++;
+          }
+          // PENTING: Hari izin/sakit resmi yang disetujui DPL adalah DISPENSASI KKN.
+          // JANGAN dimasukkan ke totalHariTidakMemenuhi dan JANGAN dimasukkan ke totalAlpa!
+          continue;
+        }
+
+        // PENTING: Jadwal libur resmi / skip kegiatan lapangan (TIDAK_ADA_KEGIATAN / SKIP_KEGIATAN)
+        // BUKAN presensi yang gagal/kurang jam, sehingga TIDAK BOLEH dikenakan penalti totalHariTidakMemenuhi.
+        const effectiveStatusUpper = String(day.effectiveStatus || "").toUpperCase();
+        if (
+          effectiveStatusUpper === "TIDAK_ADA_KEGIATAN" ||
+          effectiveStatusUpper === "SKIP_KEGIATAN"
+        ) {
+          continue;
+        }
+
+        totalMinutes += day.effectiveDuration;
+
+        if (day.isAlpa) {
           totalAlpa++;
-        } else if (att.status === "HADIR_MEMENUHI") {
-          totalHariTerpenuhi++;
-        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
-          totalHariTidakMemenuhi++;
-        } else if (att.status === "HADIR" || att.status === "SELESAI") {
-          if (durationMins >= TARGET_HARIAN_MINUTES) {
+        } else {
+          uniqueDaysAttended++;
+          if (day.isTargetMet) {
+            fulfilledTargetDays++;
             totalHariTerpenuhi++;
           } else {
             totalHariTidakMemenuhi++;
           }
         }
+      }
 
+      const sessionDetails = Array.from(dailyMap.values()).map((day) => {
+        const prim = day.primarySession;
         return {
-          id: att.id,
-          scheduleId: att.scheduleId,
-          scheduleTitle: att.schedule?.title || "Kegiatan KKN",
-          attendedAt: att.attendedAt,
-          checkOutAt: att.checkOutAt,
-          durationMinutes: durationMins,
-          durationFormatted: `${Math.floor(durationMins / 60)} Jam ${durationMins % 60} Menit`,
-          isMinTargetMet: durationMins >= TARGET_HARIAN_MINUTES,
-          status: att.status,
+          id: prim.id,
+          scheduleId: prim.scheduleId,
+          scheduleTitle: prim.scheduleTitle,
+          attendedAt: prim.attendedAt,
+          checkOutAt: prim.checkOutAt,
+          durationMinutes: day.effectiveDuration,
+          durationFormatted: `${Math.floor(day.effectiveDuration / 60)} Jam ${day.effectiveDuration % 60} Menit`,
+          isMinTargetMet: day.isApprovedLeave ? true : day.isTargetMet,
+          status: day.isApprovedLeave ? (day.leaveType || "IZIN") : day.effectiveStatus,
+          isDispensasi: day.isApprovedLeave,
         };
       });
 
@@ -3620,11 +3769,14 @@ export class KknAttendanceService {
         targetTotalHours: TARGET_TOTAL_HOURS,
         targetHarianHours: TARGET_HARIAN_HOURS,
         progressPercentage,
-        totalDaysAttended: sessionDetails.length,
+        totalDaysAttended: uniqueDaysAttended,
         fulfilledTargetDays,
         totalHariTerpenuhi,
         totalHariTidakMemenuhi,
         totalAlpa,
+        totalIzin,
+        totalSakit,
+        totalDispensasi,
         isTargetFulfilled: totalMinutes >= TARGET_TOTAL_MINUTES,
         sessions: sessionDetails,
       };
