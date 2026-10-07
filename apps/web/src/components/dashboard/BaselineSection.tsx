@@ -319,7 +319,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
 
         {/* Pojok Kanan Atas: Badge/Tag Statis & Tombol Dokumen Sumber */}
         <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-2.5 shrink-0">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3.5 h-9 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
             <span>Periode Survei: <strong>Juli 2026</strong></span>
             <span className="text-slate-300 dark:text-slate-600">|</span>
@@ -330,20 +330,20 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
             <button
               type="button"
               onClick={handleExportRawData}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors shadow-2xs cursor-pointer"
               title="Unduh Berkas Data Mentah Excel Survei Baseline KKN Juli 2026"
             >
-              <FileSpreadsheet size={13} />
-              <span>Unduh Raw Data (.xlsx)</span>
+              <FileSpreadsheet size={14} />
+              <span>Unduh Data Mentah (.xlsx)</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowVerifyModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors shadow-2xs cursor-pointer"
               title="Lihat Berita Acara & Lembar Verifikasi Data DLH"
             >
-              <ShieldCheck size={13} />
+              <ShieldCheck size={14} />
               <span>Verifikasi Dokumen Sumber</span>
             </button>
 
@@ -351,10 +351,10 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
               type="button"
               onClick={() => fetchBaseline(true)}
               disabled={refreshing || loading}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+              className="w-9 h-9 inline-flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
               title="Perbarui Sinkronisasi Baseline"
             >
-              <RefreshCw size={13} className={refreshing ? "animate-spin text-emerald-600" : ""} />
+              <RefreshCw size={14} className={refreshing ? "animate-spin text-emerald-600" : ""} />
             </button>
           </div>
         </div>

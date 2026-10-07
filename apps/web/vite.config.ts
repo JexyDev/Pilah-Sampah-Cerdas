@@ -20,15 +20,15 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
       '/uploads': {
-        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
       '/downloads': {
-        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:3001',
         changeOrigin: true,
       },
     },

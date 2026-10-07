@@ -7,10 +7,27 @@ import {
   formatDeltaPct,
   formatComplianceDelta,
   aggregateKelurahanImpact,
+  calculateDailyAverageKg,
+  calculateMonthlyKg,
+  STANDARD_CYCLE_DAYS,
   type WasteImpactItem,
 } from "./wasteCalculations.js";
 
 describe("wasteCalculations", () => {
+  it("should calculate daily average kg from accumulated volume correctly", () => {
+    // 1200 kg dalam 30 hari -> 40 kg/hari
+    expect(calculateDailyAverageKg(1200, 30)).toBe(40);
+    // 1110 kg dalam 30 hari -> 37 kg/hari
+    expect(calculateDailyAverageKg(1110, 30)).toBe(37);
+    // Default 30 hari
+    expect(STANDARD_CYCLE_DAYS).toBe(30);
+    expect(calculateDailyAverageKg(90)).toBe(3);
+    // Edge cases
+    expect(calculateDailyAverageKg(0)).toBe(0);
+    expect(calculateDailyAverageKg(null)).toBe(0);
+    expect(calculateDailyAverageKg(undefined)).toBe(0);
+    expect(calculateDailyAverageKg(100, 0)).toBe(0);
+  });
   it("should calculate volume delta kg correctly", () => {
     // Studi kasus Lebakgede: Baseline 250, Aktual 37 -> 213 kg
     expect(calculateVolumeDeltaKg(250, 37)).toBe(213);
@@ -90,4 +107,33 @@ describe("wasteCalculations", () => {
     expect(agg.weightedDeltaPct).toBe(25.04);
     expect(agg.avgActualCompliance).toBe(70);
   });
+
+  it("should calculate monthly kg (daily * 30) correctly and preserve delta percentage", () => {
+    // Harian: 100 kg/hari -> Bulanan: 3000 kg/bulan
+    expect(calculateMonthlyKg(100)).toBe(3000);
+    expect(calculateMonthlyKg(37)).toBe(1110);
+    expect(calculateMonthlyKg(0)).toBe(0);
+    expect(calculateMonthlyKg(null)).toBeNull();
+    expect(calculateMonthlyKg(undefined)).toBeNull();
+
+    // Delta harian vs bulanan
+    const dailyBaseline = 100;
+    const dailyActual = 37;
+    const monthlyBaseline = calculateMonthlyKg(dailyBaseline)!; // 3000
+    const monthlyActual = calculateMonthlyKg(dailyActual)!;     // 1110
+
+    const dailyDeltaKg = calculateVolumeDeltaKg(dailyBaseline, dailyActual); // 63
+    const monthlyDeltaKg = calculateVolumeDeltaKg(monthlyBaseline, monthlyActual); // 1890
+
+    expect(monthlyDeltaKg).toBe(dailyDeltaKg! * 30);
+
+    // Delta persentase wajib identik antara harian dan bulanan
+    const dailyDeltaPct = calculateVolumeDeltaPct(dailyBaseline, dailyActual);
+    const monthlyDeltaPct = calculateVolumeDeltaPct(monthlyBaseline, monthlyActual);
+
+    expect(dailyDeltaPct).toBe(63);
+    expect(monthlyDeltaPct).toBe(63);
+    expect(monthlyDeltaPct).toBe(dailyDeltaPct);
+  });
 });
+
