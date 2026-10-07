@@ -1661,29 +1661,34 @@ const KpiCard: React.FC<KpiCardProps> = ({
           : "cursor-default"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div
-          className={`w-10 h-10 sm:w-11 sm:h-11 ${styles.icon} text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs mt-0.5`}
-        >
-          {renderKpiIcon(iconName)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p 
-            title={label}
-            className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-normal leading-snug line-clamp-2 min-h-[2.2rem] block break-words"
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div
+            className={`w-9 h-9 sm:w-10 sm:h-10 ${styles.icon} text-white rounded-xl flex items-center justify-center shrink-0 shadow-2xs`}
           >
-            {label}
-          </p>
-          <div className="mt-1 flex items-baseline gap-1 flex-wrap">
-            <h4 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight truncate">
-              {displayVal}
-            </h4>
-            {isKg && (
-              <span className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-                kg
-              </span>
-            )}
+            {renderKpiIcon(iconName)}
           </div>
+          {isClickable && (
+            <span className="text-slate-400 group-hover:text-emerald-600 transition-colors">
+              <ChevronRight size={15} />
+            </span>
+          )}
+        </div>
+        <p 
+          title={label}
+          className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider leading-snug line-clamp-2 min-h-[2.2rem] block break-words"
+        >
+          {label}
+        </p>
+        <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+          <h4 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+            {displayVal}
+          </h4>
+          {isKg && (
+            <span className="text-xs sm:text-sm font-extrabold text-slate-500 dark:text-slate-400">
+              kg
+            </span>
+          )}
         </div>
       </div>
       {trend || trendLabel ? (
@@ -1697,7 +1702,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           )}
           <span
             title={trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
-            className={`text-[10px] sm:text-[11px] font-semibold leading-tight line-clamp-1 truncate ${trendUp === true ? "text-emerald-600 dark:text-emerald-400" : trendUp === false ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
+            className={`text-[10.5px] sm:text-[11px] font-semibold leading-snug break-words ${trendUp === true ? "text-emerald-600 dark:text-emerald-400" : trendUp === false ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`}
           >
             {trend && trendLabel ? `${trend} • ${trendLabel}` : trend || trendLabel}
           </span>
@@ -2386,7 +2391,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Bottom Tier: Filter Controls & Action Button */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
             <CustomSelect
               value={
@@ -2466,14 +2471,16 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowComplianceModal(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-[#009966] hover:bg-[#008055] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 ml-auto sm:ml-0 select-none"
-          >
-            <LineChart size={15} />
-            <span>Indeks Kepatuhan</span>
-          </button>
+          <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowComplianceModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-[#009966] hover:bg-[#008055] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 select-none"
+            >
+              <LineChart size={15} />
+              <span>Indeks Kepatuhan</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2573,12 +2580,12 @@ const Dashboard: React.FC = () => {
         />
 
         {/* Right Column (4 cols): Komposisi Sampah Card Kompak & Fokus Nilai */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2 gap-2">
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between h-full min-h-[460px] relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2 gap-2 shrink-0">
             <div>
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-snug">
-                Akumulasi hasil pencatatan terhitung sejak pekan pertama Agustus 2026 hingga saat ini.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-tight">
+                Akumulasi terpilah sejak pekan pertama Agustus 2026.
               </p>
             </div>
             <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
@@ -2606,7 +2613,7 @@ const Dashboard: React.FC = () => {
             }
 
             return (
-              <div className="flex-1 flex flex-col md:flex-row lg:flex-col items-center justify-between gap-4 md:gap-8 lg:gap-4 my-2">
+              <div className="flex-1 flex flex-col md:flex-row lg:flex-col items-center justify-center gap-5 md:gap-8 lg:gap-5 my-auto py-2">
                 {/* Donut Chart Ringkas & Proporsional */}
                 <div className="flex flex-col items-center justify-center shrink-0">
                   <div className="w-28 h-28 relative flex items-center justify-center my-1 group">
@@ -2721,9 +2728,9 @@ const Dashboard: React.FC = () => {
       <div className="w-full relative z-10">
         {/* Data Tempat Sampah Terbaru */}
         <div className="w-full bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
-          <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
                 <Trash2 size={18} />
               </div>
               <div>
@@ -2741,7 +2748,7 @@ const Dashboard: React.FC = () => {
                 setSearchParams({ tab: "tata-kelola-sampah", view: "bins" });
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20"
+              className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors inline-flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20 self-start sm:self-auto shrink-0"
             >
               Lihat Tempat Sampah Teraktivasi <ChevronRight size={14} />
             </Link>

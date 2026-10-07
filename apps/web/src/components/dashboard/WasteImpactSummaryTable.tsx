@@ -210,7 +210,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-6 ${className}`}>
       {/* Header & Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
         <div className="space-y-1.5">
@@ -372,14 +372,20 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 {selectedSource === "WARGA_APP" ? "Baseline Timbulan (kg)" : "Baseline (kg)"}
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                {selectedSource === "WARGA_APP" ? "Aktual Terpilah Warga (kg)" : "Aktual Saat Ini (kg)"}
+                {selectedSource === "WARGA_APP" ? "Aktual Terpilah (kg)" : "Aktual Saat Ini (kg)"}
               </th>
               {/* Dua Kolom Berdampingan untuk Delta Berat atau Adopsi Terpilah */}
-              <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
-                {selectedSource === "WARGA_APP" ? "Sampah Terpilah Mandiri" : "Delta (kg)"}
+              <th
+                title={selectedSource === "WARGA_APP" ? "Total Sampah Terpilah Mandiri Warga" : "Delta Penurunan Berat Sampah (kg)"}
+                className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[100px]"
+              >
+                {selectedSource === "WARGA_APP" ? "Terpilah (kg)" : "Delta (kg)"}
               </th>
-              <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[105px]">
-                {selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Berat Terpilah" : "Delta (%)"}
+              <th
+                title={selectedSource === "WARGA_APP" ? "Tingkat Partisipasi Berat Sampah Terpilah (%)" : "Persentase Penurunan Berat Sampah (%)"}
+                className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[100px]"
+              >
+                {selectedSource === "WARGA_APP" ? "Partisipasi (%)" : "Delta (%)"}
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
                 Baseline (%)

@@ -267,17 +267,19 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
             {/* Kanvas BarChart Berat Sampah */}
             <div className="h-[320px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 15, left: -10, bottom: 5 }}>
+                <BarChart data={chartData} margin={{ top: 20, right: 15, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.6} />
                   <XAxis
                     dataKey="kelurahan"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: "#64748b", fontWeight: 700 }}
+                    interval={0}
+                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 700 }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
+                    width={55}
                     tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
                     tickFormatter={(val) => `${val} kg`}
                   />
@@ -412,17 +414,19 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
             {/* Kanvas BarChart Kepatuhan */}
             <div className="h-[320px] w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 15, left: -10, bottom: 5 }}>
+                <BarChart data={chartData} margin={{ top: 20, right: 15, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.6} />
                   <XAxis
                     dataKey="kelurahan"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: "#64748b", fontWeight: 700 }}
+                    interval={0}
+                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 700 }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
+                    width={45}
                     domain={[0, 100]}
                     tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
                     tickFormatter={(val) => `${val}%`}
