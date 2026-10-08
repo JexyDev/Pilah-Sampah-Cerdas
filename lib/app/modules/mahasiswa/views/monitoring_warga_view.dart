@@ -412,8 +412,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         ? aktivasiState?.errorMessage
         : (state.errorMessage ?? aktivasiState?.errorMessage);
     final isEmpty = filteredWarga.isEmpty;
-    final isInitialLoading =
-        (isLoading || (aktivasiState?.hasFetched != true)) && isEmpty;
+    final isInitialLoading = isLoading || (aktivasiState?.hasFetched != true);
 
     if (isInitialLoading) {
       return const Center(

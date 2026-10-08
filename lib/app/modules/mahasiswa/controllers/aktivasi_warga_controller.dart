@@ -65,15 +65,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     String search = '',
     bool force = false,
   }) async {
-    final isSameRegion = state.selectedKelurahan == kelurahan &&
-        state.selectedRtRw == rw &&
-        state.searchQuery == search;
-    final hasExistingData = state.wargaList.isNotEmpty && isSameRegion;
-
-    // Stale-While-Revalidate: Jika data sudah ada di memori, tampilkan langsung (tanpa spinner),
-    // sambil tetap otomatis mengambil data terbaru dari server di latar belakang.
     state = state.copyWith(
-      isLoading: !hasExistingData || force,
+      isLoading: true,
       clearError: true,
       selectedKelurahan: kelurahan,
       selectedRtRw: rw,
