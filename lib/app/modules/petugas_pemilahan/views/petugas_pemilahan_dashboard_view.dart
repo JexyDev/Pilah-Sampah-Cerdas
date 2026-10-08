@@ -600,7 +600,6 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
@@ -613,101 +612,162 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: categoryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            isOrganik ? Icons.eco_rounded : Icons.recycling_rounded,
-                            color: categoryColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () async {
+                      await Navigator.pushNamed(
+                        context,
+                        AppRoutes.timbanganPemilahan,
+                        arguments: {
+                          'binId': item.binId,
+                          'binCode': item.binCode,
+                          'category': item.wasteCategory,
+                          'wargaName': item.wargaName,
+                        },
+                      );
+                      ref
+                          .read(petugasPemilahanControllerProvider.notifier)
+                          .refreshAll();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                item.wargaName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${item.binCode} • ${item.wasteCategory.toUpperCase() == "NON_ORGANIC" ? "Anorganik" : item.wasteCategory.toUpperCase() == "ORGANIC" ? "Organik" : item.wasteCategory}',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: categoryColor),
-                              ),
-                              if (item.address.isNotEmpty || item.rw.isNotEmpty) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  item.address.isNotEmpty
-                                      ? (item.rw.isNotEmpty && !item.address.contains(item.rw)
-                                          ? '${item.address} (${item.rw})'
-                                          : item.address)
-                                      : item.rw,
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: categoryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ],
+                                child: Icon(
+                                  isOrganik ? Icons.eco_rounded : Icons.recycling_rounded,
+                                  color: categoryColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.wargaName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${item.binCode} • ${item.wasteCategory.toUpperCase() == "NON_ORGANIC" ? "Anorganik" : item.wasteCategory.toUpperCase() == "ORGANIC" ? "Organik" : item.wasteCategory}',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: categoryColor),
+                                    ),
+                                    if (item.address.isNotEmpty || item.rw.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        item.address.isNotEmpty
+                                            ? (item.rw.isNotEmpty && !item.address.contains(item.rw)
+                                                ? '${item.address} (${item.rw})'
+                                                : item.address)
+                                            : item.rw,
+                                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (pct >= 70)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: statusColor.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    pct >= 100 ? 'Penuh' : 'Kritis',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
-                        ),
-                        if (pct >= 70)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: statusColor.withValues(alpha: 0.3),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: pct / 100,
+                                    backgroundColor: Colors.grey.shade200,
+                                    valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                                    minHeight: 6,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${pct.toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (pct >= 70) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  await Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.timbanganPemilahan,
+                                    arguments: {
+                                      'binId': item.binId,
+                                      'binCode': item.binCode,
+                                      'category': item.wasteCategory,
+                                      'wargaName': item.wargaName,
+                                    },
+                                  );
+                                  ref
+                                      .read(petugasPemilahanControllerProvider.notifier)
+                                      .refreshAll();
+                                },
+                                icon: const Icon(Icons.scale_rounded, size: 16),
+                                label: const Text(
+                                  'Kosongkan & Timbang',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: statusColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 9),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 0,
+                                ),
                               ),
                             ),
-                            child: Text(
-                              pct >= 100 ? 'Penuh' : 'Kritis',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
-                              ),
-                            ),
-                          ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: pct / 100,
-                              backgroundColor: Colors.grey.shade200,
-                              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                              minHeight: 6,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${pct.toStringAsFixed(0)}%',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               );
             }).toList(),

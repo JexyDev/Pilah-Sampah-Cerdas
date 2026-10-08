@@ -67,9 +67,13 @@ class _TimbanganPemilahanViewState
   @override
   void initState() {
     super.initState();
-    if (widget.initialCategory != null &&
-        _classifications.contains(widget.initialCategory)) {
-      _selectedClassification = widget.initialCategory!;
+    if (widget.initialCategory != null) {
+      final cat = widget.initialCategory!.trim().toUpperCase();
+      if (cat.contains('ANORGANIK') || cat == 'ANORGANIC') {
+        _selectedClassification = 'Anorganik';
+      } else if (cat.contains('ORGANIK') || cat == 'ORGANIC') {
+        _selectedClassification = 'Organik';
+      }
     }
     _weightController.addListener(_calculatePoints);
     _weightController.addListener(_onWeightManualEdit);
@@ -273,13 +277,19 @@ class _TimbanganPemilahanViewState
       return;
     }
 
+    final targetBinId = (widget.initialBinId != null && widget.initialBinId!.isNotEmpty)
+        ? widget.initialBinId!
+        : ((widget.initialBinCode != null && widget.initialBinCode!.isNotEmpty)
+            ? widget.initialBinCode!
+            : 'GLOBAL_BIN_RT_RW');
+
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
       final user = ref.read(authProvider).user;
       await OfflineQueueService.enqueue({
         'transaction_id': 'TRX-${DateTime.now().millisecondsSinceEpoch}',
         'collector_id': user?.id ?? '',
-        'bin_id': 'GLOBAL_BIN_RT_RW',
+        'bin_id': targetBinId,
         'weight_kg': weight,
         'input_method': _inputMethod,
         'evidence_photo_path': _photoTimbanganPath,
@@ -306,7 +316,7 @@ class _TimbanganPemilahanViewState
     final success = await ref
         .read(petugasPemilahanControllerProvider.notifier)
         .submitLog(
-          binId: 'GLOBAL_BIN_RT_RW',
+          binId: targetBinId,
           actualWeightKg: weight,
           classification: _selectedClassification,
           photoPath: _photoPath!,
@@ -494,10 +504,12 @@ class _TimbanganPemilahanViewState
                 const SizedBox(height: 8),
 
                 // 3. Subjudul
-                const Text(
-                  'Data pemilahan fisik telah tercatat\ndi Tempat Sampah Pemilahan Global RW.',
+                Text(
+                  widget.initialBinCode != null
+                      ? 'Data pemilahan fisik tercatat dan tempat sampah ${widget.initialBinCode} berhasil dikosongkan.'
+                      : 'Data pemilahan fisik telah tercatat\ndi Tempat Sampah Pemilahan Global RW.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
                     color: AppColors.textSecondary,
@@ -772,22 +784,26 @@ class _TimbanganPemilahanViewState
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
-                    SizedBox(width: 12),
+                    const Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tempat Sampah Pemilahan Global RW',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            widget.initialBinCode != null
+                                ? 'Pengosongan ${widget.initialWargaName != null ? '${widget.initialWargaName!} (${widget.initialBinCode!})' : widget.initialBinCode!}'
+                                : 'Tempat Sampah Pemilahan Global RW',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke audit trail RW & DLH.',
-                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            widget.initialBinCode != null
+                                ? 'Input timbangan untuk mencatat pemilahan sekaligus reset volume tempat sampah ke 0%.'
+                                : 'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke audit trail RW & DLH.',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
