@@ -185,7 +185,6 @@ export const kknExecutiveService = {
 
     const totalKelurahanDb = await prisma.kelurahan.count();
     // Kondisi Prisma untuk mengecualikan RW dummy/test (nama mengandung "99", "dummy", atau "test")
-    // Selaras dengan logika filter frontend di DashboardEksekutifKkn.tsx (num < 90)
     const nonTestRwWhere = {
       NOT: [
         { name: { contains: "99", mode: "insensitive" as const } },
@@ -194,6 +193,15 @@ export const kknExecutiveService = {
       ],
     };
     const totalRwKecamatan = await prisma.rw.count({ where: nonTestRwWhere });
+
+    // Definisi RW Binaan Aktif KKN (100% Real & Sinkron dengan 75 RW Binaan KKN):
+    // Memiliki penugasan resmi petugas pemilah residu KKN non-test & kelompok binaan mahasiswa
+    // Mengecualikan 10 RW non-binaan (Hutan Kota Baksil/Sabuga/ITB, Kampus Unpad, Komersial Cihampelas, dan RW 99 test)
+    const activeKknRwWhere = {
+      petugasResiduId: { not: null },
+      ...nonTestRwWhere,
+    };
+    const totalRwBinaanKkn = await prisma.rw.count({ where: activeKknRwWhere });
 
     let kelurahanCount = totalKelurahanDb;
     if (isFilteredKel) {
@@ -210,28 +218,62 @@ export const kknExecutiveService = {
       // Jika difilter per kelompok spesifik, ambil RW cakupan kelompok tersebut
       rwCount = distinctRws.size;
     } else if (isFilteredKel) {
-      // Jika difilter per kelurahan, ambil total RW riil kelurahan tersebut dari tabel rw (kecualikan dummy/test)
+      // Jika difilter per kelurahan, ambil total RW binaan riil KKN kelurahan tersebut dari tabel rw
       const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
       rwCount = await prisma.rw.count({
         where: isLebakGede
           ? {
-              ...nonTestRwWhere,
+              ...activeKknRwWhere,
               OR: [
                 { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
                 { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
               ],
             }
           : {
-              ...nonTestRwWhere,
+              ...activeKknRwWhere,
               kelurahan: {
                 name: { contains: kelFilterNormalized, mode: "insensitive" },
               },
             },
       });
     } else {
-      // Kondisi default (Semua Kelurahan): Total seluruh RW riil terdaftar di kecamatan dari tabel rw
-      rwCount = totalRwKecamatan; // sudah bersih karena totalRwKecamatan kini menggunakan nonTestRwWhere
+      // Kondisi default (Semua Kelurahan): Total seluruh RW binaan aktif KKN se-Coblong (75 RW)
+      rwCount = totalRwBinaanKkn;
     }
+
+    // Query daftar RW Binaan Aktif KKN untuk opsi filter (hanya RW yang digunakan KKN, sisanya di-hide)
+    const activeRwListDb = (await prisma.rw.findMany?.({
+      where: isFilteredKel
+        ? (kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede"
+            ? {
+                ...activeKknRwWhere,
+                OR: [
+                  { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
+                  { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
+                ],
+              }
+            : {
+                ...activeKknRwWhere,
+                kelurahan: {
+                  name: { contains: kelFilterNormalized, mode: "insensitive" },
+                },
+              })
+        : activeKknRwWhere,
+      select: {
+        name: true,
+      },
+      orderBy: { name: "asc" },
+    })) || [];
+
+    const activeRwNumbers = new Set<number>();
+    activeRwListDb.forEach((r: any) => {
+      const num = parseInt((r.name || "").replace(/\D/g, ""), 10);
+      if (!isNaN(num) && num > 0) activeRwNumbers.add(num);
+    });
+    const sortedRwOptions = Array.from(activeRwNumbers)
+      .sort((a, b) => a - b)
+      .map((num) => `RW ${String(num).padStart(2, "0")}`);
+    const rwOptionsList = ["Semua RW", ...sortedRwOptions];
 
     // 6. Sebaran Program Studi Mahasiswa
     const prodiMap = new Map<string, number>();
@@ -1104,6 +1146,7 @@ export const kknExecutiveService = {
           kelurahanCount,
           rwCount,
           totalRwKecamatan,
+          totalRwBinaan: totalRwBinaanKkn,
           label: `${kelurahanCount} Kelurahan • ${rwCount} RW`,
         },
         totalKelompok: {
@@ -1148,6 +1191,7 @@ export const kknExecutiveService = {
           { value: "Semua Kelurahan", label: "Semua Kelurahan" },
           ...allKelurahans.map((k) => ({ value: k, label: `Kel. ${k}` })),
         ],
+        rwOptions: rwOptionsList,
         kelompokOptions: [
           { value: "Semua Kelompok", label: "Semua Kelompok" },
           ...kelompokList.map((k) => ({ value: k.name, label: k.name, kelurahan: k.kelurahan || "" })),

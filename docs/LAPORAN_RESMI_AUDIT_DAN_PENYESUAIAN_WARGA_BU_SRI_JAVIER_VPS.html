@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Laporan Resmi Audit & Penyesuaian Data Warga Bu Sri - Berseka VPS</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 15mm 14mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.45;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .page-container {
+      width: 100%;
+      min-height: 100%;
+      position: relative;
+    }
+    .header-box {
+      border-bottom: 2.5px solid #059669;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-left {
+      flex: 1;
+    }
+    .brand-title {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #047857;
+      letter-spacing: 0.5px;
+      margin: 0 0 2px 0;
+    }
+    .brand-subtitle {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #475569;
+      margin: 0 0 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .doc-title {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 4px 0 0 0;
+    }
+    .header-right {
+      text-align: right;
+      font-size: 8pt;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    .badge-status {
+      display: inline-block;
+      background-color: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 8pt;
+      margin-top: 4px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 8.5pt;
+    }
+    .meta-item {
+      display: flex;
+    }
+    .meta-label {
+      width: 150px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .meta-value {
+      flex: 1;
+      color: #0f172a;
+      font-weight: 500;
+    }
+    h3 {
+      font-size: 10.5pt;
+      color: #065f46;
+      border-left: 3.5px solid #059669;
+      padding-left: 8px;
+      margin: 14px 0 8px 0;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    p {
+      margin: 0 0 8px 0;
+      text-align: justify;
+      font-size: 9pt;
+      color: #334155;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px 0;
+      font-size: 8.5pt;
+    }
+    .table-custom th {
+      background-color: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #cbd5e1;
+    }
+    .table-custom td {
+      padding: 6px 8px;
+      border: 1px solid #e2e8f0;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+    .table-custom tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .tag-success {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 7.5pt;
+      display: inline-block;
+    }
+    .tag-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 7.5pt;
+      display: inline-block;
+    }
+    .tag-neutral {
+      background: #e2e8f0;
+      color: #475569;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 7.5pt;
+      display: inline-block;
+    }
+    .audit-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: 8.5pt;
+    }
+    .audit-box ul {
+      margin: 4px 0 0 16px;
+      padding: 0;
+    }
+    .audit-box li {
+      margin-bottom: 4px;
+    }
+    .sig-table {
+      width: 100%;
+      margin-top: 24px;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+    }
+    .sig-table td {
+      width: 50%;
+      vertical-align: top;
+      text-align: center;
+      padding: 0 16px;
+    }
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-container">
+  <!-- HEADER -->
+  <div class="header-box">
+    <div class="header-left">
+      <div class="brand-title">BERSEKA • SISTEM TATA KELOLA KKN</div>
+      <div class="brand-subtitle">BERSIH, SEHAT, KAMPUNG ASRI — UNIVERSITAS KOMPUTER INDONESIA</div>
+      <div class="doc-title">LAPORAN RESMI AUDIT & PENYESUAIAN PENDAMPING SERTA WILAYAH WARGA BINAAN</div>
+    </div>
+    <div class="header-right">
+      <div><b>No. Dokumen:</b> REP-AUDIT/KKN-WARGA/2026-10/022</div>
+      <div><b>Tanggal:</b> 08 Oktober 2026</div>
+      <div><b>Server Target:</b> 157.10.252.252 (Live VPS)</div>
+      <div class="badge-status">🟢 TERVERIFIKASI & SELESAI 100%</div>
+    </div>
+  </div>
+
+  <!-- META GRID -->
+  <div class="meta-grid">
+    <div class="meta-item">
+      <div class="meta-label">Subjek Warga Binaan:</div>
+      <div class="meta-value"><b>BU SRI</b> (+62817569058)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Kelompok Penempatan:</div>
+      <div class="meta-value"><b>Kelompok 10 Sadang Serang</b></div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Alamat / Domisili Riil:</div>
+      <div class="meta-value">KP Cibenying 1 (RW 14, Sadang Serang)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Dosen Pembimbing (DPL):</div>
+      <div class="meta-value">Arif Try Cahyadi, S.Ds., M.Ds.</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Pendamping Semula:</div>
+      <div class="meta-value">Ernest Tristan Rafael Siringoringo (NIM: 10124469)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Pendamping Sah Baru:</div>
+      <div class="meta-value"><b>Javiersa Naufal Algani</b> (NIM: 10524127)</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Kode QR Tempat Sampah:</div>
+      <div class="meta-value">BSK-OGN-060926-0472 & BSK-AGN-060926-0482</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Golden Backup VPS:</div>
+      <div class="meta-value">golden_backup_pre_bu_sri_javier_08okt.sql (542 MB)</div>
+    </div>
+  </div>
+
+  <!-- SEKSI 1: ANALISIS MASALAH -->
+  <h3>1. Analisis Akar Masalah (Root Cause Analysis)</h3>
+  <p>
+    Berdasarkan laporan visual dari aplikasi mobile <i>Berseka Mahasiswa KKN</i>, terdapat anomali di mana data warga binaan <b>BU SRI</b> tertahan dengan data wilayah <b>RW 15</b> dan mahasiswa pendamping tertulis <b>Ernest Tristan Rafael Siringoringo</b>. Pemeriksaan audit langsung pada basis data PostgreSQL VPS menghasilkan temuan berikut:
+  </p>
+  <div class="card" style="font-size: 8.5pt; line-height: 1.5;">
+    <b>1. Ketidaksinkronan Wilayah Penugasan (RW 15 vs RW 14):</b> Rumah tangga Bu Sri berlokasi faktual di <b>KP Cibenying 1</b>. Di Kelurahan Sadang Serang, KP Cibenying 1 secara administratif berada di bawah <b>RW 14</b> (id: 75), lokasi yang sama dengan warga dampingan Javiersa Naufal Algani lainnya (spt. Tisna Senjaya di RT 04 RW 14). Saat aktivasi awal, data Bu Sri terisi dengan default RW 15 (id: 76) yang berada di luar cakupan SK Kelompok 10 (hanya mencakup RW 14 dan RW 17).<br>
+    <b>2. Pendaftaran Wadah Pemilahan:</b> Tempat sampah fisik Bu Sri diaktivasi oleh Ernest Tristan Rafael Siringoringo, sehingga relasi <code>id_mahasiswa_pendaftar</code> terikat padanya.<br>
+    <b>3. Pembatasan Hak Mutasi pada Aplikasi (RBAC):</b> Tombol <i>"Alihkan Mahasiswa Pendamping"</i> diproteksi khusus Ketua Kelompok (<code>is_ketua: true</code>). Anggota biasa tidak memiliki hak akses mutasi. Selain itu, mutasi via aplikasi hanya mengganti pendamping wadah dan tidak memutasi data wilayah RW warga.
+  </div>
+
+  <!-- SEKSI 2: REKONSILIASI DATA -->
+  <h3>2. Rekonsiliasi & Eksekusi Perbaikan pada Database VPS Live</h3>
+  <p>
+    Intervensi dilakukan secara atomik dengan standar keamanan data tertinggi (setelah penciptaan Golden Backup Snapshot mandatori):
+  </p>
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Tabel Target</th>
+        <th style="width: 25%;">Kolom / Atribut</th>
+        <th style="width: 25%;">Nilai Lama</th>
+        <th style="width: 25%;">Nilai Baru (Telah Diterapkan)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>pengguna</b><br><small>6b1af5ef-0098...</small></td>
+        <td><code>id_rw</code><br><code>alamat</code></td>
+        <td><span class="tag-danger">76 (RW 15)</span><br><small>Pasir Kaliki RT 01 RW 15</small></td>
+        <td><span class="tag-success">75 (RW 14)</span><br><small>KP Cibenying 1, RW.14, Sadang Serang</small></td>
+      </tr>
+      <tr>
+        <td><b>rumah_tangga</b><br><small>0e0db759-8560...</small></td>
+        <td><code>id_rw</code></td>
+        <td><span class="tag-danger">76 (RW 15)</span></td>
+        <td><span class="tag-success">75 (RW 14)</span></td>
+      </tr>
+      <tr>
+        <td><b>tempat_sampah</b><br><small>BSK-OGN-060926-0472<br>BSK-AGN-060926-0482</small></td>
+        <td><code>id_mahasiswa_pendaftar</code><br><code>id_rw</code></td>
+        <td><span class="tag-danger">Ernest Tristan Rafael S.</span><br><span class="tag-danger">76 (RW 15)</span></td>
+        <td><span class="tag-success">Javiersa Naufal Algani</span><br><span class="tag-success">75 (RW 14)</span></td>
+      </tr>
+      <tr>
+        <td><b>riwayat_serah_terima_kkn</b><br><small>Audit Trail Log</small></td>
+        <td><code>dari &rarr; ke</code><br><code>id_rw</code></td>
+        <td><span class="tag-neutral">Belum tercatat</span></td>
+        <td><span class="tag-success">Ernest &rarr; Javier (RW 14)</span><br><small>05fe1258-37d5-42ab-9201-aee418a2dab2</small></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SEKSI 3: VERIFIKASI LIVE API -->
+  <h3>3. Hasil Uji Verifikasi Endpoint API VPS (Live Engine)</h3>
+  <div class="audit-box">
+    <b>Hasil Pemanggilan <code>kknService.getWargaDetail</code> Live VPS:</b>
+    <ul>
+      <li><b>Nama Warga:</b> BU SRI • <b>Status:</b> AKTIF (UTAMA)</li>
+      <li><b>Alamat & RW:</b> KP Cibenying 1, RW.14, Sadang Serang, Kec. Coblong &rarr; <b>Tampil: RW 14</b> ✅</li>
+      <li><b>Mahasiswa Pendamping:</b> <b>Javiersa Naufal Algani</b> (ID: <code>00d32445-b82a-45b6-a49e-2112a69095fd</code>) ✅</li>
+      <li><b>Diaktivasi Oleh:</b> <b>Javiersa Naufal Algani</b> ✅</li>
+      <li><b>Integritas Setoran & Sampah:</b> 6 Setoran (4.9 kg) • Akurasi Pemilahan: 100% (6 Benar, 0 Salah) &rarr; <b>Utuh Sempurna</b> ✅</li>
+    </ul>
+  </div>
+
+  <!-- TANDA TANGAN -->
+  <table class="sig-table">
+    <tr>
+      <td>
+        Mengetahui & Menyetujui,<br>
+        <b>Dosen Pembimbing Lapangan (DPL)</b><br>
+        <div style="height: 42px;"></div>
+        <b><u>Arif Try Cahyadi, S.Ds., M.Ds.</u></b><br>
+        DPL Kelompok 10 Sadang Serang
+      </td>
+      <td>
+        Diverifikasi & Dieksekusi oleh,<br>
+        <b>Tim Data Governance & Backend Berseka</b><br>
+        <div style="height: 42px;"></div>
+        <b><u>Tim Engineering Berseka</u></b><br>
+        Otoritas Database Server VPS (157.10.252.252)
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Rekonsiliasi Wilayah & Pendamping VPS</div>
+    <div>Halaman 1 dari 1</div>
+  </div>
+</div>
+
+</body>
+</html>

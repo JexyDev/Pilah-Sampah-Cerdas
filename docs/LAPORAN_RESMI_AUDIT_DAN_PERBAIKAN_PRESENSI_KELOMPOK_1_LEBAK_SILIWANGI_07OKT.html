@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Resmi Rekonsiliasi Presensi Kelompok 1 Lebak Siliwangi</title>
+<style>
+  @page {
+    size: A4;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+  body {
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.45;
+    font-size: 9pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page-container {
+    page-break-after: always;
+    position: relative;
+    min-height: 260mm;
+  }
+  .page-container:last-child {
+    page-break-after: avoid;
+  }
+  .header {
+    border-bottom: 2.5px solid #059669;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .header-title {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #065f46;
+    letter-spacing: -0.3px;
+    text-transform: uppercase;
+  }
+  .header-subtitle {
+    font-size: 8.5pt;
+    color: #047857;
+    font-weight: 600;
+  }
+  .header-meta {
+    text-align: right;
+    font-size: 7.5pt;
+    color: #64748b;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 7.5pt;
+    letter-spacing: 0.3px;
+  }
+  .badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+  .badge-info {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+  .section-title {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-left: 3.5px solid #059669;
+    padding-left: 7px;
+    margin-top: 13px;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+  .card {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 9px 12px;
+    margin-bottom: 10px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    font-size: 8.5pt;
+  }
+  .meta-item {
+    display: flex;
+  }
+  .meta-label {
+    width: 140px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .meta-val {
+    color: #0f172a;
+    font-weight: 700;
+    flex: 1;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .stat-box {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .stat-box.highlight {
+    border-color: #059669;
+    background-color: #f0fdf4;
+  }
+  .stat-num {
+    font-size: 12pt;
+    font-weight: 800;
+    color: #065f46;
+  }
+  .stat-label {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    margin-top: 6px;
+    margin-bottom: 10px;
+  }
+  th {
+    background-color: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 5px 7px;
+    border: 1px solid #cbd5e1;
+  }
+  td {
+    padding: 4.5px 7px;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+  }
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  .quote-box {
+    background-color: #f1f5f9;
+    border-left: 3px solid #64748b;
+    padding: 7px 11px;
+    font-style: italic;
+    color: #334155;
+    font-size: 8pt;
+    margin: 5px 0 8px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 7pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+  ul, ol {
+    margin: 4px 0 8px 18px;
+    padding: 0;
+    font-size: 8.5pt;
+  }
+  li {
+    margin-bottom: 2.5px;
+  }
+  .ttd-table {
+    width: 100%;
+    margin-top: 14px;
+    border: none;
+  }
+  .ttd-table td {
+    border: none;
+    background: transparent !important;
+    text-align: center;
+    font-size: 8.5pt;
+    padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HALAMAN 1 -->
+<div class="page-container">
+  <div class="header">
+    <div>
+      <div class="header-title">Berseka • Tata Kelola KKN Tematik</div>
+      <div class="header-subtitle">Berita Acara Rekonsiliasi & Audit Data Presensi Lapangan VPS</div>
+    </div>
+    <div class="header-meta">
+      <div><strong>No. Dokumen:</strong> REP-AUDIT/KKN-ATT/2026-10/025</div>
+      <div><strong>Tanggal:</strong> Kamis, 08 Oktober 2026 • 06:25 WIB</div>
+      <div><span class="badge badge-success">STATUS: TERSINKRONISASI 100%</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">1. Identitas Kelompok & Infrastruktur Server Live</div>
+  <div class="card">
+    <div class="meta-grid">
+      <div class="meta-item"><span class="meta-label">Kelompok Penempatan</span><span class="meta-val">: Kelompok 1 Lebak Siliwangi</span></div>
+      <div class="meta-item"><span class="meta-label">Wilayah Tugas</span><span class="meta-val">: Kelurahan Lebak Siliwangi (RW 07)</span></div>
+      <div class="meta-item"><span class="meta-label">Dosen Pembimbing (DPL)</span><span class="meta-val">: Fenny Febrianty, S.S., M.Pd.</span></div>
+      <div class="meta-item"><span class="meta-label">Lokasi Posko KKN</span><span class="meta-val">: Posko KKN Kelompok 1 Lebak Siliwangi</span></div>
+      <div class="meta-item"><span class="meta-label">Program Kerja Utama</span><span class="meta-val">: "Dari Kita Untuk Lingkungan" (RW 07)</span></div>
+      <div class="meta-item"><span class="meta-label">Server Basis Data</span><span class="meta-val">: VPS Production (157.10.252.252 / psc_db)</span></div>
+      <div class="meta-item"><span class="meta-label">Golden Backup Mandatori</span><span class="meta-val">: golden_backup_pre_k1_ls_07okt.sql</span></div>
+      <div class="meta-item"><span class="meta-label">Waktu Kegiatan Resmi</span><span class="meta-val">: Rabu, 07 Okt 2026 (09.00 - 16.00 WIB)</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">2. Latar Belakang Laporan Sekretaris Kelompok 1</div>
+  <div class="quote-box">
+    "Permisi admin berseka, Saya sekretaris dari kelompok 1 Lebak siliwangi mau melaporkan Daftar Nama anggota yang mengalami masalah presensi hari ini : 1. Fitri Najla Salsabila 31624005, 2. Putri Andini 41824048, 3. Aulia Zahwa Putri 63824024. Rincian Kegiatan : Edukasi & Sosialisasi Pemilahan Sampah serta apk Berseka ke warga RW 7 dengan Reward 2 Keranjang sampah (Organik dan Anorganik) per warga yang Instal, kemudian mencari titik penempelan Brosur Edukasi di RW 07. Waktu kegiatan : 09.00 - 16.00 WIB."
+  </div>
+
+  <div class="section-title">3. Ringkasan Eksekutif Hasil Rekonsiliasi 3 Mahasiswa</div>
+  <div class="stat-grid">
+    <div class="stat-box highlight">
+      <div class="stat-num">3 Mahasiswa</div>
+      <div class="stat-label">Hadir Memenuhi (420 Menit)</div>
+    </div>
+    <div class="stat-box highlight">
+      <div class="stat-num">+10 Poin / Org</div>
+      <div class="stat-label">Poin Lengkap Terkreditasi</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">3 Entri</div>
+      <div class="stat-label">Logbook ke Portal DPL</div>
+    </div>
+  </div>
+
+  <div class="section-title">4. Tabel Audit Hasil Rekonsiliasi Live VPS</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25px; text-align: center;">No</th>
+        <th style="width: 140px;">Nama Mahasiswa</th>
+        <th style="width: 75px;">NIM</th>
+        <th style="width: 105px;">Jam Kegiatan</th>
+        <th style="width: 110px;">Durasi Sah</th>
+        <th style="width: 100px; text-align: center;">Status Presensi</th>
+        <th style="width: 70px; text-align: center;">Total Poin</th>
+        <th>Total Jam KKN</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td style="text-align: center;">1</td>
+        <td><strong>Fitri Najla Salsabila</strong></td>
+        <td><code>31624005</code></td>
+        <td>09:00 - 16:00 WIB</td>
+        <td>420 Menit (7 Jam)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td style="text-align: center;"><strong>236 PTS</strong></td>
+        <td>174 Jam 54 Menit (10.494 m) (26 Hari)</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">2</td>
+        <td><strong>Putri Andini</strong></td>
+        <td><code>41824048</code></td>
+        <td>09:00 - 16:00 WIB</td>
+        <td>420 Menit (7 Jam)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td style="text-align: center;"><strong>248 PTS</strong></td>
+        <td>223 Jam 40 Menit (13.420 m) (31 Hari)</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">3</td>
+        <td><strong>Aulia Zahwa Putri</strong></td>
+        <td><code>63824024</code></td>
+        <td>09:00 - 16:00 WIB</td>
+        <td>420 Menit (7 Jam)</td>
+        <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+        <td style="text-align: center;"><strong>172 PTS</strong></td>
+        <td>145 Jam 44 Menit (8.744 m) (19 Hari)</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <div class="section-title">5. Tindakan Penyelarasan Sistem Berseka</div>
+  <ul>
+    <li><strong>Koreksi Tabel ActivityAttendance:</strong> Menyelaraskan record kehadiran ketiga mahasiswa ke jadwal posko resmi (<code>1c9fb933</code>) dengan rentang waktu <strong>09:00 – 16:00 WIB</strong>, status <strong>HADIR_MEMENUHI</strong>, dan durasi sah <strong>420 Menit</strong>.</li>
+    <li><strong>Normalisasi PresensiMandiri:</strong> Memperbarui dan membentuk record mandiri status <strong>SELESAI</strong> (420 Menit).</li>
+    <li><strong>Sinkronisasi Logbook KKN:</strong> Membentuk dan menyelaraskan entri logbook resmi bertaut ke Program Kerja <em>"Dari Kita Untuk Lingkungan"</em> berstatus <strong>MENUNGGU_VERIFIKASI_DPL</strong> untuk DPL <strong>Fenny Febrianty, S.S., M.Pd.</strong></li>
+    <li><strong>Pengkreditan Poin Harian (+10 PTS):</strong> Mengkreditkan poin check-in (+4 PTS), poin durasi terpenuhi (+3 PTS), dan poin logbook (+3 PTS).</li>
+    <li><strong>Distribusi Cache:</strong> Seluruh cache Redis VPS telah di-flush (<code>docker exec psc-redis redis-cli flushall</code>).</li>
+  </ul>
+
+  <table class="ttd-table">
+    <tr>
+      <td style="width: 50%;">
+        Mengetahui / Memvalidasi,<br>
+        <strong>Dosen Pembimbing Lapangan (DPL)</strong><br>
+        Kelompok 1 Lebak Siliwangi<br><br><br><br>
+        <b><u>Fenny Febrianty, S.S., M.Pd.</u></b><br>
+        DPL Kelompok 1 Lebak Siliwangi
+      </td>
+      <td style="width: 50%;">
+        Pemeriksa & Eksekutor Sistem,<br>
+        <strong>Tim Data Governance & Backend Engineering</strong><br>
+        Sistem Informasi Berseka<br><br><br><br>
+        <b><u>Tim Sistem & Arsitektur Berseka</u></b><br>
+        Otoritas Server Live VPS (157.10.252.252)
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 1 dari 1</div>
+  </div>
+</div>
+
+</body>
+</html>

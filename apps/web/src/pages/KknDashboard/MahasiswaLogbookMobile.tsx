@@ -25,6 +25,7 @@ import {
 import { logbookApiService, type LogbookMahasiswaItem } from "../../services/logbookService";
 import showToast from "../../utils/showToast";
 import { safeFormatDateShort, safeFormatDateLong } from "../../utils/safeDateUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
 
 interface MahasiswaLogbookMobileProps {
   onOpenCreateModal: () => void;
@@ -200,7 +201,12 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
 
               {log.fotoBuktiUrl && (
                 <div className="h-32 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800">
-                  <img src={log.fotoBuktiUrl} alt="Bukti Foto" className="w-full h-full object-cover" />
+                  <img
+                    src={resolveImageUrl(log.fotoBuktiUrl)}
+                    alt="Bukti Foto"
+                    onError={(e) => handleDokumentasiImageError(e, "Bukti Foto Kegiatan")}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               )}
 
@@ -262,7 +268,12 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
                 <div className="space-y-1 pt-2">
                   <span className="font-bold text-slate-400 uppercase text-[10px]">Foto Bukti Lapangan:</span>
                   <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
-                    <img src={selectedLogbook.fotoBuktiUrl} alt="Foto Bukti" className="w-full h-auto object-contain" />
+                    <img
+                      src={resolveImageUrl(selectedLogbook.fotoBuktiUrl)}
+                      alt="Foto Bukti"
+                      onError={(e) => handleDokumentasiImageError(e, "Foto Bukti Lapangan")}
+                      className="w-full h-auto object-contain"
+                    />
                   </div>
                 </div>
               )}

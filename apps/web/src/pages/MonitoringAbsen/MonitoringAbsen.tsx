@@ -91,6 +91,7 @@ import {
   type MasterKelurahanItem,
   type MasterRwItem,
 } from "../../utils/areaFilterUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
 
 // Fix Leaflet default icon issues in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -5608,8 +5609,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       {rec.fotoUrl && (
                         <div className="pt-1">
                           <img
-                            src={rec.fotoUrl}
+                            src={resolveImageUrl(rec.fotoUrl)}
                             alt="Bukti Presensi Lapangan"
+                            onError={(e) => handleDokumentasiImageError(e, "Bukti Presensi Lapangan")}
                             className="max-h-48 rounded-xl object-cover border border-slate-200 shadow-2xs"
                           />
                         </div>
