@@ -40,7 +40,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     with WidgetsBindingObserver {
   bool _isTimelineVisible = true;
   bool _isStatsVisible = true;
-  bool _isCheckingLocation = false;
   @override
   void initState() {
     super.initState();
@@ -136,6 +135,41 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       } else if (wasGlitching && !isGlitching) {
         // GPS kembali normal — tutup snackbar peringatan jika masih tampil
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+
+      final wasRejected = previous?.isHighAccuracyRejected ?? false;
+      final isRejected = next.isHighAccuracyRejected;
+      if (!wasRejected && isRejected) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              title: const Text(
+                'Akurasi Lokasi Ditolak',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Jika anda memilih "Lain kali", maka fungsi gps untuk presensi tidak akan berjalan. "Aktifkan" sekarang.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ref.read(locationPingControllerProvider.notifier).resetRejected();
+                    Geolocator.openLocationSettings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Aktifkan GPS'),
+                ),
+              ],
+            ),
+          ),
+        );
       }
     });
 
