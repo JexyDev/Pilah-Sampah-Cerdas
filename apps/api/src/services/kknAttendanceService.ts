@@ -2402,9 +2402,14 @@ export class KknAttendanceService {
 
         let isScheduleEnded = false;
         if (coSchedule) {
-          if (coSchedule.endTime) {
-            const [endH, endM] = coSchedule.endTime.split(":").map(Number);
+          if ((coSchedule as any)?.endTime) {
+            const [endH, endM] = String((coSchedule as any).endTime).split(":").map(Number);
             if (!isNaN(endH) && !isNaN(endM) && timeInMinsWib >= endH * 60 + endM) {
+              isScheduleEnded = true;
+            }
+          } else if (coSchedule.time) {
+            const range = parseScheduleTimeRange(coSchedule.time);
+            if (range.endMinutesTotal > 0 && timeInMinsWib >= range.endMinutesTotal) {
               isScheduleEnded = true;
             }
           }
