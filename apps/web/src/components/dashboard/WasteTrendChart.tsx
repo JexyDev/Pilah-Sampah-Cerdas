@@ -441,16 +441,50 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
     );
   }, [normalizedChartData]);
 
+  // Kalkulasi data komposisi sampah terpilah
+  const totalCompositionKg = (rawOrg || 0) + (rawAnorg || 0);
+  const pctOrg = totalCompositionKg > 0 ? Math.round(((rawOrg || 0) / totalCompositionKg) * 100) : 0;
+  const pctAnorg = totalCompositionKg > 0 ? 100 - pctOrg : 0;
+
+  const donutCircumference = 2 * Math.PI * 40;
+  const valOrg = (pctOrg / 100) * donutCircumference;
+  const valAnorg = (pctAnorg / 100) * donutCircumference;
+
+  let dominantLabel = "Organik";
+  let dominantPct = pctOrg;
+  let dominantColor = "text-emerald-600 dark:text-emerald-400";
+
+  if (pctAnorg > pctOrg) {
+    dominantLabel = "Anorganik";
+    dominantPct = pctAnorg;
+    dominantColor = "text-amber-600 dark:text-amber-400";
+  }
+
+  // Label unit sumbu X dinamis berdasarkan tipe rentang waktu aktif
+  const xAxisUnitLabel = useMemo(() => {
+    switch (currentRangeConfig.periodType) {
+      case "hourly":
+        return "(per jam)";
+      case "daily":
+        return "(per hari)";
+      case "monthly":
+        return "(per bulan)";
+      case "weekly":
+      default:
+        return "(per minggu)";
+    }
+  }, [currentRangeConfig.periodType]);
+
   return (
     <div
-      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4 ${className}`}
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col space-y-6 ${className}`}
     >
-      {/* Header Bar: Refaktor Naming (Eliminasi Waktu Nyata) & Filter Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
+      {/* 1. Header Bar Gabungan: Judul & Terpilah di Kiri, Filter Tahun & Rentang di Kanan Atas */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight">
-              Tren Pemilahan Sampah
+              Tren Pemilahan & Komposisi Sampah
             </h4>
             <span className="text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
               Terpilah: {totalTerpilahKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
@@ -459,22 +493,10 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
           <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             Pemantauan tren berat sampah (kg) dan evaluasi capaian penurunan timbulan sampah sesuai target program KKN
           </p>
-
-          {/* Data Series Legends: HANYA 2 Kategori (Organik & Anorganik), Residu Ditiadakan */}
-          <div className="flex gap-4 text-[11px] font-bold pt-0.5">
-            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
-              Organik
-            </span>
-            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]" />
-              Anorganik
-            </span>
-          </div>
         </div>
 
-        {/* Dropdown Selectors: Filter Tahun & Filter Rentang Waktu Bersanding */}
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+        {/* Dropdown Selectors: Filter Tahun & Filter Rentang Waktu di Kanan Atas Card */}
+        <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
           {/* Dropdown Selector: Filter Tahun */}
           <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-2xs hover:border-emerald-500/50 transition-all">
             <Calendar size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -525,107 +547,236 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
         </div>
       </div>
 
-      {/* Banner Informatif: Ketika data dalam 24 jam terakhir / rentang aktif adalah 0 kg */}
-      {isAllZeroActivity && !loading && (
-        <div className="flex items-center gap-2 px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/40 rounded-xl text-[11px] font-bold text-amber-800 dark:text-amber-300 animate-in fade-in duration-200">
-          <AlertCircle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
-          <span>
-            Belum ada data setoran sampah pada rentang waktu ini (0 kg).
-          </span>
+      {/* 2. Body Grid: 2 Kolom (Kiri: Grafik Tren Pemilahan & Kanan: Komposisi Sampah) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        {/* Kolom Kiri: Tren Pemilahan Sampah Chart (8 Kolom) */}
+        <div className="lg:col-span-8 flex flex-col justify-between space-y-3">
+          {/* Header Sub-seksi Grafik & Legenda Organik/Anorganik */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div className="flex gap-4 text-[11px] font-bold">
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
+                Organik
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]" />
+                Anorganik
+              </span>
+            </div>
+          </div>
+
+          {/* Banner Informatif: Ketika data dalam rentang aktif adalah 0 kg */}
+          {isAllZeroActivity && !loading && (
+            <div className="flex items-center gap-2 px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/40 rounded-xl text-[11px] font-bold text-amber-800 dark:text-amber-300 animate-in fade-in duration-200">
+              <AlertCircle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                Belum ada data setoran sampah pada rentang waktu ini (0 kg).
+              </span>
+            </div>
+          )}
+
+          {/* Area Grafik Tren Pemilahan Recharts */}
+          <div className="h-[350px] w-full relative pt-1 flex flex-col justify-between">
+            {/* Label Satuan Sumbu Y (Kiri): Cukup (kg) */}
+            <div className="flex items-center justify-between px-2 pb-0.5">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 font-sans tracking-wide select-none">
+                (kg)
+              </span>
+            </div>
+
+            <div className="flex-1 w-full h-[300px]">
+              {loading ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold">Memuat tren pemilahan sampah...</span>
+                </div>
+              ) : normalizedChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={normalizedChartData}
+                    margin={{ top: 10, right: 15, left: 0, bottom: 5 }}
+                  >
+                    <defs>
+                      <linearGradient id="wasteOrgGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="wasteInorgGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.25} vertical={false} />
+
+                    {/* Sumbu X: Format Presisi dd/MM, HH:mm, atau W{week_number} */}
+                    <XAxis
+                      dataKey="formattedLabel"
+                      tick={{ fill: "#94a3b8", fontSize: 10.5, fontWeight: "bold" }}
+                      stroke="#475569"
+                      tickLine={false}
+                      dy={6}
+                    />
+
+                    {/* Sumbu Y: Taat Asas SI, domain selalu mulai dari 0, di kiri cukup (kg) */}
+                    <YAxis
+                      domain={[0, "auto"]}
+                      tickFormatter={(val: number) => Math.round(val).toLocaleString("id-ID")}
+                      tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: "bold" }}
+                      stroke="#475569"
+                      tickLine={false}
+                      width={55}
+                    />
+
+                    {/* Formatter Tooltip Sesuai Standar Pelaporan */}
+                    <Tooltip
+                      content={<CustomTooltip selectedYear={selectedYear} />}
+                      formatter={(value: any, name: any) => [
+                        `${Number(value || 0).toLocaleString("id-ID")} kg`,
+                        name === "organic" || name === "Sampah Organik" ? "Sampah Organik" : "Sampah Anorganik",
+                      ]}
+                    />
+
+                    {/* Series 1: Sampah Organik (Hijau) */}
+                    <Area
+                      type="monotone"
+                      dataKey="organic"
+                      name="Sampah Organik"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#wasteOrgGrad)"
+                      dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#ffffff" }}
+                      activeDot={{ r: 6, fill: "#10b981", strokeWidth: 2, stroke: "#ffffff" }}
+                    />
+
+                    {/* Series 2: Sampah Anorganik (Kuning/Amber) */}
+                    <Area
+                      type="monotone"
+                      dataKey="inorganic"
+                      name="Sampah Anorganik"
+                      stroke="#f59e0b"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#wasteInorgGrad)"
+                      dot={{ r: 4, fill: "#f59e0b", strokeWidth: 2, stroke: "#ffffff" }}
+                      activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "#ffffff" }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-xs text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center">
+                  <p className="font-bold text-slate-600 dark:text-slate-400">
+                    Belum ada aktivitas pemilahan tercatat (0 kg)
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Tidak ada berat sampah organik maupun anorganik pada periode tahun {selectedYear} ({currentRangeConfig.label}).
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Label Satuan Sumbu X (Bawah): (per minggu) */}
+            <div className="text-center text-[11px] font-bold text-slate-400 dark:text-slate-500 pt-2 tracking-wide select-none">
+              {xAxisUnitLabel}
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Area Grafik Tren Pemilahan Recharts */}
-      <div className="h-[340px] w-full relative pt-2">
-        {loading ? (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-xs text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-600 dark:text-emerald-400" />
-            <span className="font-semibold">Memuat tren pemilahan sampah...</span>
+        {/* Kolom Kanan: Panel Komposisi Sampah (4 Kolom) */}
+        <div className="lg:col-span-4 bg-slate-50/70 dark:bg-slate-800/40 shadow-2xs rounded-2xl p-5 border border-slate-200/70 dark:border-slate-700/60 flex flex-col justify-between h-full min-h-[440px] relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2 gap-2 shrink-0">
+            <div>
+              <h5 className="font-bold text-[17px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h5>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-tight">
+                Akumulasi terpilah sejak pekan pertama Agustus 2026.
+              </p>
+            </div>
+            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+              Massa (kg)
+            </span>
           </div>
-        ) : normalizedChartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={normalizedChartData}
-              margin={{ top: 15, right: 15, left: 10, bottom: 20 }}
-            >
-              <defs>
-                <linearGradient id="wasteOrgGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                </linearGradient>
-                <linearGradient id="wasteInorgGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
 
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.25} vertical={false} />
+          <div className="flex-1 flex flex-col md:flex-row lg:flex-col items-center justify-center gap-5 my-auto py-2">
+            {/* Donut Chart Ringkas & Proporsional */}
+            <div className="flex flex-col items-center justify-center shrink-0">
+              <div className="w-28 h-28 relative flex items-center justify-center my-1 group">
+                <svg className="w-28 h-28 transform -rotate-90">
+                  <circle cx="56" cy="56" r="40" fill="transparent" stroke="#e2e8f0" className="dark:stroke-slate-700/60" strokeWidth="10" />
+                  {pctOrg > 0 && (
+                    <circle
+                      cx="56"
+                      cy="56"
+                      r="40"
+                      fill="transparent"
+                      stroke="#34d399"
+                      strokeWidth="10"
+                      strokeDasharray={`${valOrg} ${donutCircumference}`}
+                      strokeDashoffset={0}
+                      className="transition-all duration-500 hover:stroke-[12]"
+                    />
+                  )}
+                  {pctAnorg > 0 && (
+                    <circle
+                      cx="56"
+                      cy="56"
+                      r="40"
+                      fill="transparent"
+                      stroke="#fbbf24"
+                      strokeWidth="10"
+                      strokeDasharray={`${valAnorg} ${donutCircumference}`}
+                      strokeDashoffset={-valOrg}
+                      className="transition-all duration-500 hover:stroke-[12]"
+                    />
+                  )}
+                </svg>
+                <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
+                  <span className={`block text-xl font-black leading-none ${dominantColor}`}>
+                    {dominantPct}%
+                  </span>
+                  <span className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider mt-0.5 block">
+                    {dominantLabel}
+                  </span>
+                </div>
+              </div>
 
-              {/* Sumbu X: Format Presisi dd/MM, HH:mm, atau W{week_number} */}
-              <XAxis
-                dataKey="formattedLabel"
-                tick={{ fill: "#94a3b8", fontSize: 10.5, fontWeight: "bold" }}
-                stroke="#475569"
-                tickLine={false}
-                dy={8}
-              />
+              {/* Angka Total Akumulasi Terpilah */}
+              <div className="text-center mt-1">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  Total Sampah Terpilah
+                </span>
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
+                  {totalCompositionKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                </span>
+              </div>
+            </div>
 
-              {/* Sumbu Y: Taat Asas SI, domain selalu mulai dari 0, HANYA gunakan 'kg' */}
-              <YAxis
-                domain={[0, "auto"]}
-                tickFormatter={(val: number) => `${Math.round(val).toLocaleString("id-ID")} kg`}
-                tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: "bold" }}
-                stroke="#475569"
-                tickLine={false}
-                width={70}
-              />
+            {/* Penekanan Informasi pada Angka & Nilai Komposisi */}
+            <div className="w-full space-y-2.5 bg-white dark:bg-slate-900/90 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex-1">
+              <div className="flex justify-between items-center text-xs">
+                <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
+                  Organik
+                </div>
+                <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
+                  {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
+                </div>
+              </div>
 
-              {/* Formatter Tooltip Sesuai Standar Pelaporan */}
-              <Tooltip
-                content={<CustomTooltip selectedYear={selectedYear} />}
-                formatter={(value: any, name: any) => [
-                  `${Number(value || 0).toLocaleString("id-ID")} kg`,
-                  name === "organic" || name === "Sampah Organik" ? "Sampah Organik" : "Sampah Anorganik",
-                ]}
-              />
-
-              {/* Series 1: Sampah Organik (Hijau) */}
-              <Area
-                type="monotone"
-                dataKey="organic"
-                name="Sampah Organik"
-                stroke="#10b981"
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#wasteOrgGrad)"
-                dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#ffffff" }}
-                activeDot={{ r: 6, fill: "#10b981", strokeWidth: 2, stroke: "#ffffff" }}
-              />
-
-              {/* Series 2: Sampah Anorganik (Kuning/Amber) */}
-              <Area
-                type="monotone"
-                dataKey="inorganic"
-                name="Sampah Anorganik"
-                stroke="#f59e0b"
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#wasteInorgGrad)"
-                dot={{ r: 4, fill: "#f59e0b", strokeWidth: 2, stroke: "#ffffff" }}
-                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "#ffffff" }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-xs text-slate-500 italic bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center">
-            <p className="font-bold text-slate-600 dark:text-slate-400">
-              Belum ada aktivitas pemilahan tercatat (0 kg)
-            </p>
-            <p className="text-[11px] text-slate-400">
-              Tidak ada berat sampah organik maupun anorganik pada periode tahun {selectedYear} ({currentRangeConfig.label}).
-            </p>
+              <div className="flex justify-between items-center text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
+                  Anorganik
+                </div>
+                <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
+                  {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                  <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

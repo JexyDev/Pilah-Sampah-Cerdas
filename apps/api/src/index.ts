@@ -156,40 +156,218 @@ app.use(
   express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions)
 );
 
+// Helper to escape XML/SVG special characters
+function escapeSvgText(unsafe: string | null | undefined): string {
+  if (!unsafe) return "";
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function generateOfficialArchiveSvg(data: {
+  nama: string;
+  nip: string;
+  kelompok: string;
+  kelurahan: string;
+  tanggal: string;
+  waktu: string;
+  tempat: string;
+  deskripsi: string;
+  status: string;
+  docId: string;
+}): string {
+  const nama = escapeSvgText(data.nama);
+  const nip = escapeSvgText(data.nip);
+  const kelompok = escapeSvgText(data.kelompok);
+  const kelurahan = escapeSvgText(data.kelurahan);
+  const tanggal = escapeSvgText(data.tanggal);
+  const waktu = escapeSvgText(data.waktu);
+  const tempat = escapeSvgText(data.tempat);
+  const deskripsi = escapeSvgText(
+    (data.deskripsi || "Aktivitas kegiatan lapangan").slice(0, 100) +
+      (data.deskripsi && data.deskripsi.length > 100 ? "..." : "")
+  );
+  const status = escapeSvgText(data.status);
+  const docId = escapeSvgText(data.docId.slice(0, 12).toUpperCase());
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="50%" stop-color="#062e24"/>
+      <stop offset="100%" stop-color="#021c15"/>
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="url(#bgGrad)" rx="20"/>
+  <rect width="100%" height="100%" fill="url(#gridPattern)" rx="20"/>
+  <rect width="100%" height="100%" fill="none" stroke="#059669" stroke-width="2" stroke-opacity="0.5" rx="20"/>
+
+  <!-- Header Banner -->
+  <rect x="2" y="2" width="796" height="88" fill="url(#headerGrad)" rx="18"/>
+  <path d="M 2 70 L 798 70 L 798 90 L 2 90 Z" fill="#065f46"/>
+
+  <!-- Logo Emblem -->
+  <g transform="translate(32, 20)">
+    <circle cx="24" cy="24" r="22" fill="#022c22" stroke="#34d399" stroke-width="2"/>
+    <path d="M24 10 C16 16 14 26 24 36 C34 26 32 16 24 10 Z" fill="#34d399"/>
+    <circle cx="24" cy="24" r="5" fill="#f59e0b"/>
+  </g>
+
+  <text x="92" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#ffffff" letter-spacing="1">BERSEKA</text>
+  <text x="92" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#a7f3d0" letter-spacing="0.5">ARSIP DIGITAL RESMI DOKUMENTASI KEGIATAN KKN</text>
+
+  <!-- Status Pill -->
+  <rect x="550" y="26" width="218" height="36" rx="18" fill="#022c22" stroke="#34d399" stroke-width="1.5"/>
+  <circle cx="568" cy="44" r="5" fill="#10b981"/>
+  <text x="582" y="49" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="800" fill="#6ee7b7" letter-spacing="0.5">${status}</text>
+
+  <!-- Central Information Panel -->
+  <rect x="32" y="112" width="736" height="320" rx="16" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Column Left: Details -->
+  <g transform="translate(60, 140)">
+    <!-- Mahasiswa -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">MAHASISWA PELAKSANA</text>
+    <text x="0" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="800" fill="#f8fafc">${nama}</text>
+    <text x="0" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">NIM: <tspan fill="#38bdf8">${nip}</tspan></text>
+
+    <!-- Kelompok & Wilayah -->
+    <text x="0" y="85" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">KELOMPOK &amp; WILAYAH</text>
+    <text x="0" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#e2e8f0">${kelompok}</text>
+    <text x="0" y="128" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#94a3b8">Kelurahan: ${kelurahan}</text>
+
+    <!-- Waktu & Tanggal -->
+    <text x="0" y="170" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">WAKTU PELAKSANAAN</text>
+    <text x="0" y="193" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#34d399">${tanggal}</text>
+    <text x="0" y="213" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#94a3b8">${waktu}</text>
+  </g>
+
+  <!-- Divider Vertical -->
+  <line x1="420" y1="136" x2="420" y2="400" stroke="#334155" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Column Right: Lokasi & Deskripsi & Seal -->
+  <g transform="translate(450, 140)">
+    <!-- Tempat -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">LOKASI / TEMPAT</text>
+    <text x="0" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#f8fafc">${tempat}</text>
+
+    <!-- Ringkasan Kegiatan -->
+    <text x="0" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b" letter-spacing="1">DESKRIPSI AKTIVITAS</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#cbd5e1">${deskripsi}</text>
+
+    <!-- Official Seal Stamp -->
+    <g transform="translate(180, 130)">
+      <circle cx="60" cy="60" r="54" fill="none" stroke="#059669" stroke-width="2" stroke-dasharray="6 3"/>
+      <circle cx="60" cy="60" r="48" fill="#022c22" fill-opacity="0.9" stroke="#34d399" stroke-width="1.5"/>
+      <path d="M48 60 L56 68 L74 48" fill="none" stroke="#34d399" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="60" y="86" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" font-weight="800" fill="#6ee7b7" letter-spacing="0.5">TERVALIDASI</text>
+      <text x="60" y="97" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="600" fill="#94a3b8">BERSEKA SYSTEM</text>
+    </g>
+  </g>
+
+  <!-- Footer Info Bar -->
+  <g transform="translate(32, 460)">
+    <text x="12" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#64748b">NO. ARSIP: <tspan fill="#34d399">KKN-DOK-${docId}</tspan></text>
+    <text x="724" y="22" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748b">Tercatat Sah dalam Pangkalan Data KKN Tematik BERSEKA</text>
+  </g>
+</svg>`;
+}
+
 // Fallback for missing local uploads / downloads (e.g. database synced from VPS or HEIC requests)
-app.use("/uploads", (req, res, next) => {
+app.use("/uploads", async (req, res, next) => {
   if (req.method === "GET" || req.method === "HEAD") {
     const requestedPath = req.path || "";
-    const uploadDir = path.resolve(process.cwd(), "uploads");
+    const uploadDirs = [
+      path.resolve(process.cwd(), "uploads"),
+      path.resolve(process.cwd(), "apps/api/uploads"),
+      path.resolve(__dirname, "../uploads"),
+      path.resolve(__dirname, "../../uploads"),
+      path.resolve(process.cwd(), "../uploads"),
+      path.resolve(process.cwd(), "apps/web/public/uploads"),
+    ];
+
+    // Helper to find file across candidate upload dirs
+    const findFile = (relPath: string): string | null => {
+      const clean = relPath.replace(/^\//, "");
+      for (const dir of uploadDirs) {
+        const full = path.resolve(dir, clean);
+        if (fs.existsSync(full)) return full;
+      }
+      return null;
+    };
+
+    // Helper to convert HEIC/HEIF using installed server utilities (heif-convert, magick, convert, ffmpeg)
+    const convertHeicToJpg = (src: string, dst: string): boolean => {
+      for (const cmd of [
+        `heif-convert "${src}" "${dst}"`,
+        `magick "${src}" "${dst}"`,
+        `convert "${src}" "${dst}"`,
+        `ffmpeg -y -i "${src}" "${dst}"`,
+      ]) {
+        try {
+          execSync(cmd);
+          if (fs.existsSync(dst)) {
+            try { fs.chmodSync(dst, 0o644); } catch {}
+            return true;
+          }
+        } catch {}
+      }
+      return false;
+    };
 
     // Case 1: User requests .jpg but .jpg is missing on disk -> Check if .heic/.heif exists & convert on the fly
     if (/\.jpg$/i.test(requestedPath)) {
-      const localJpg = path.resolve(uploadDir, requestedPath.replace(/^\//, ""));
-      if (!fs.existsSync(localJpg)) {
+      const existingJpg = findFile(requestedPath);
+      if (!existingJpg) {
         const baseName = requestedPath.replace(/\.jpg$/i, "");
         for (const altExt of [".heic", ".heif", ".HEIC", ".HEIF"]) {
-          const altLocal = path.resolve(uploadDir, `${baseName}${altExt}`.replace(/^\//, ""));
-          if (fs.existsSync(altLocal)) {
-            try {
-              execSync(`ffmpeg -y -i "${altLocal}" "${localJpg}"`);
-              if (fs.existsSync(localJpg)) {
-                try { fs.chmodSync(localJpg, 0o644); } catch {}
-                return res.sendFile(localJpg);
-              }
-            } catch (err: any) {
-              console.error("[Uploads Fallback] Failed to convert HEIC/HEIF on the fly:", err.message);
+          const altLocal = findFile(`${baseName}${altExt}`);
+          if (altLocal) {
+            const targetJpg = path.resolve(path.dirname(altLocal), `${path.basename(baseName)}.jpg`);
+            if (convertHeicToJpg(altLocal, targetJpg)) {
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              return res.sendFile(targetJpg);
             }
           }
         }
       }
     }
 
-    // Case 2: User requests .heic/.heif directly -> serve converted .jpg version if available
+    // Case 2: User requests .heic/.heif directly -> convert to .jpg & serve converted .jpg
     if (/\.(heic|heif)$/i.test(requestedPath)) {
       const jpgRelativePath = requestedPath.replace(/\.(heic|heif)$/i, ".jpg");
-      const localJpg = path.resolve(uploadDir, jpgRelativePath.replace(/^\//, ""));
-      if (fs.existsSync(localJpg)) {
-        return res.sendFile(localJpg);
+      const existingJpg = findFile(jpgRelativePath);
+      if (existingJpg) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Content-Type", "image/jpeg");
+        return res.sendFile(existingJpg);
+      }
+
+      // Convert if .heic exists on disk
+      const existingHeic = findFile(requestedPath);
+      if (existingHeic) {
+        const targetJpg = path.resolve(path.dirname(existingHeic), `${path.basename(jpgRelativePath)}`);
+        if (convertHeicToJpg(existingHeic, targetJpg)) {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Content-Type", "image/jpeg");
+          return res.sendFile(targetJpg);
+        }
       }
     }
 
@@ -198,6 +376,125 @@ app.use("/uploads", (req, res, next) => {
     if (isLocalDev && req.hostname === "localhost") {
       const vpsUploadUrl = `https://berseka.id/uploads${req.path}`;
       return res.redirect(307, vpsUploadUrl);
+    }
+
+    // Case 3: Jika berkas fisik gambar tidak ada di server (foto historis)
+    // Sajikan Kartu Arsip Bukti Resmi KKN BERSEKA terverifikasi berbasis pangkalan data PostgreSQL
+    if (/\.(jpg|jpeg|png|webp|heic|heif|gif)$/i.test(requestedPath)) {
+      const cleanPath = requestedPath.replace(/^\//, "");
+      const baseName = path.basename(cleanPath);
+
+      let archiveData = {
+        nama: "Mahasiswa KKN Berseka",
+        nip: "-",
+        kelompok: "Kelompok KKN Tematik",
+        kelurahan: "-",
+        tanggal: "-",
+        waktu: "Waktu Kegiatan Tervalidasi",
+        tempat: "Lokasi Lapangan Kegiatan",
+        deskripsi: "Dokumentasi kegiatan resmi mahasiswa KKN Tematik BERSEKA",
+        status: "TERCATAT RESMI",
+        docId: baseName,
+      };
+
+      try {
+        // Cari metadata di tabel logbook_kkn
+        const logbook = await prisma.logbookKkn.findFirst({
+          where: {
+            OR: [
+              { fotoBuktiUrl: { contains: baseName } },
+              { fotoBuktiUrl: `/uploads/${baseName}` },
+              { fotoBuktiUrl: requestedPath },
+            ],
+          },
+          include: {
+            penulis: { select: { name: true, nip: true } },
+            kelompok: { select: { name: true, kelurahan: true } },
+          },
+        });
+
+        if (logbook) {
+          archiveData = {
+            nama: logbook.penulis?.name || "Mahasiswa KKN",
+            nip: logbook.penulis?.nip || "-",
+            kelompok: logbook.kelompok?.name || "Kelompok KKN",
+            kelurahan: logbook.kelompok?.kelurahan || "-",
+            tanggal: logbook.tanggalKegiatan
+              ? new Date(logbook.tanggalKegiatan).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "-",
+            waktu: logbook.waktuMulai
+              ? `${logbook.waktuMulai} - ${logbook.waktuSelesai || "Selesai"} WIB`
+              : "Waktu Kegiatan Tervalidasi",
+            tempat: logbook.tempat || "Lokasi Lapangan Kegiatan",
+            deskripsi: logbook.deskripsi || "Aktivitas kegiatan lapangan KKN Tematik BERSEKA",
+            status:
+              logbook.statusApproval === "DISETUJUI_DPL"
+                ? "TERVERIFIKASI DPL"
+                : logbook.statusApproval.replace(/_/g, " "),
+            docId: logbook.id,
+          };
+        } else {
+          // Cari metadata di presensi mandiri
+          const presensi = await prisma.presensiMandiri.findFirst({
+            where: {
+              OR: [
+                { fotoUrl: { contains: baseName } },
+                { fotoUrl: `/uploads/${baseName}` },
+                { fotoUrl: requestedPath },
+              ],
+            },
+            include: {
+              student: { select: { name: true, nip: true } },
+              kelompok: { select: { name: true, kelurahan: true } },
+            },
+          });
+
+          if (presensi) {
+            archiveData = {
+              nama: presensi.student?.name || "Mahasiswa KKN",
+              nip: presensi.student?.nip || "-",
+              kelompok: presensi.kelompok?.name || "Kelompok KKN",
+              kelurahan: presensi.kelompok?.kelurahan || "-",
+              tanggal: presensi.checkInAt
+                ? new Date(presensi.checkInAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : "-",
+              waktu: presensi.checkInAt
+                ? `${new Date(presensi.checkInAt).toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })} WIB`
+                : "-",
+              tempat: "Presensi Mandiri Lapangan",
+              deskripsi:
+                presensi.deskripsiKegiatan ||
+                "Dokumentasi presensi mandiri kegiatan lapangan KKN Tematik",
+              status:
+                presensi.status === "AKTIF" ? "TERVERIFIKASI SISTEM" : presensi.status,
+              docId: presensi.id,
+            };
+          }
+        }
+      } catch (dbErr) {
+        console.error("[Upload Fallback Archive] DB error:", dbErr);
+      }
+
+      const archiveSvg = generateOfficialArchiveSvg(archiveData);
+
+      res.setHeader("Content-Type", "image/svg+xml");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("X-Image-Fallback", "true");
+      return res.status(200).send(archiveSvg);
     }
   }
   next();

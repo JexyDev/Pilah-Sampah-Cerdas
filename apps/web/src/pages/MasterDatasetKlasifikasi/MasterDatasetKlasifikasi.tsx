@@ -28,6 +28,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 
@@ -653,12 +654,13 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                     {/* Foto Sampah Thumbnail */}
                     <td className="py-4 px-4">
                       <div
-                        onClick={() => setPreviewImageUrl(item.fotoSampahUrl)}
+                        onClick={() => setPreviewImageUrl(resolveImageUrl(item.fotoSampahUrl) || item.fotoSampahUrl)}
                         className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xs relative group cursor-pointer"
                       >
                         <img
-                          src={item.fotoSampahUrl}
+                          src={resolveImageUrl(item.fotoSampahUrl)}
                           alt="Sampah"
+                          onError={(e) => handleDokumentasiImageError(e, "Foto Sampah")}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
@@ -777,8 +779,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               {/* Image Preview & Timestamp */}
               <div className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs bg-slate-950 flex items-center justify-center">
                 <img
-                  src={selectedItemForDetail.fotoSampahUrl}
+                  src={resolveImageUrl(selectedItemForDetail.fotoSampahUrl)}
                   alt="Foto Sampah Mobile"
+                  onError={(e) => handleDokumentasiImageError(e, "Foto Sampah")}
                   className="max-w-full max-h-full object-contain"
                 />
                 <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold border border-white/10">
@@ -859,8 +862,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
         >
           <div className="relative max-w-3xl w-full max-h-[90vh] flex items-center justify-center">
             <img
-              src={previewImageUrl}
+              src={resolveImageUrl(previewImageUrl)}
               alt="Preview Sampah"
+              onError={(e) => handleDokumentasiImageError(e, "Foto Sampah")}
               className="max-w-full max-h-[85vh] rounded-3xl object-contain shadow-2xl border border-white/20"
             />
             <button

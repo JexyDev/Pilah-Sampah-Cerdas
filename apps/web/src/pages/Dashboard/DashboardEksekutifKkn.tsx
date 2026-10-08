@@ -229,6 +229,7 @@ interface KknExecutiveData {
     selectedRw: string;
     selectedKelompok?: string;
     selectedPeriode: string;
+    rwOptions?: string[];
   };
 }
 
@@ -445,8 +446,25 @@ export const DashboardEksekutifKkn: React.FC = () => {
     selectedKelurahan !== "ALL"
   );
 
+  // Daftar RW non-binaan KKN yang sengaja di-hide (hutan baksil/sabuga/ITB, kampus Unpad, komersial Cihampelas, RW 99 dummy)
+  const UNUSED_KKN_RW: Record<string, number[]> = {
+    "lebaksiliwangi": [1, 2, 3, 4],
+    "lebak siliwangi": [1, 2, 3, 4],
+    "lebakgede": [5, 6],
+    "lebak gede": [5, 6],
+    "cipaganti": [9, 10, 11, 99],
+  };
+
   const rwOptions = useMemo(() => {
-    if (!isKelurahanSelected || !masterRwList || masterRwList.length === 0) {
+    if (!isKelurahanSelected) {
+      return ["Semua RW"];
+    }
+
+    if (data?.filterOptions?.rwOptions && data.filterOptions.rwOptions.length > 0) {
+      return data.filterOptions.rwOptions;
+    }
+
+    if (!masterRwList || masterRwList.length === 0) {
       return ["Semua RW"];
     }
 
@@ -456,12 +474,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
       return kName.includes(targetKel) || targetKel.includes(kName);
     });
 
-    // Ekstrak nomor RW, filter data dummy/test (seperti 99), dan standardisasi jadi "RW XX" yang seragam
+    const unusedNums = UNUSED_KKN_RW[targetKel] || UNUSED_KKN_RW[selectedKelurahan.toLowerCase()] || [];
+
+    // Ekstrak nomor RW, filter data dummy/test dan RW non-binaan KKN (hide unused RWs)
     const rwMap = new Map<number, string>();
     filtered.forEach((r) => {
       const num = parseInt(r.name.replace(/\D/g, ""), 10);
-      if (!isNaN(num) && num > 0 && num < 90) {
-        // Abaikan nomor test / dummy seperti RW 99
+      if (!isNaN(num) && num > 0 && num < 90 && !unusedNums.includes(num)) {
+        // Abaikan nomor test / dummy seperti RW 99 serta RW yang tidak digunakan KKN
         const standardLabel = `RW ${String(num).padStart(2, "0")}`;
         rwMap.set(num, standardLabel);
       }
@@ -472,7 +492,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       .map(([, label]) => label);
 
     return ["Semua RW", ...sortedRw];
-  }, [masterRwList, selectedKelurahan, isKelurahanSelected]);
+  }, [data?.filterOptions?.rwOptions, masterRwList, selectedKelurahan, isKelurahanSelected]);
 
   // Reset selectedRw jika RW terpilih tidak valid untuk kelurahan baru, atau jika kembali ke "Semua Kelurahan"
   useEffect(() => {

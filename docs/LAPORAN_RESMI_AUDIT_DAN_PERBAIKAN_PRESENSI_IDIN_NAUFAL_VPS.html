@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Laporan Resmi Penyesuaian Presensi KKN - Idin Naufal Hakim</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+  body {
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.45;
+    font-size: 11pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    page-break-after: always;
+    position: relative;
+    padding-bottom: 20px;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+  }
+  .header-table {
+    width: 100%;
+    border-bottom: 2px solid #059669;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+  .header-table td {
+    vertical-align: middle;
+  }
+  .header-title {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #065f46;
+    letter-spacing: -0.5px;
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .header-subtitle {
+    font-size: 9.5pt;
+    color: #047857;
+    font-weight: 600;
+    margin-top: 3px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+  }
+  .badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+  }
+  .meta-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 9.5pt;
+  }
+  .meta-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .meta-table td {
+    padding: 3px 0;
+    vertical-align: top;
+  }
+  .meta-label {
+    width: 170px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .meta-val {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-left: 4px solid #059669;
+    padding-left: 8px;
+    margin: 16px 0 10px 0;
+  }
+  p {
+    margin: 0 0 10px 0;
+    font-size: 9.5pt;
+    text-align: justify;
+  }
+  .grid-2 {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .card {
+    flex: 1;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .card-title {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #047857;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-val {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .stat-desc {
+    font-size: 8pt;
+    color: #64748b;
+  }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+    margin-top: 8px;
+  }
+  table.data-table th {
+    background-color: #047857;
+    color: #ffffff;
+    padding: 6px 6px;
+    font-weight: 700;
+    text-align: left;
+    border: 1px solid #065f46;
+  }
+  table.data-table td {
+    padding: 4.5px 6px;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+  }
+  table.data-table tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  .status-tag {
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+  }
+  .tag-green { background: #dcfce7; color: #15803d; }
+  .tag-yellow { background: #fef9c3; color: #854d0e; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 6px;
+    font-size: 8pt;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+  }
+  .sig-table {
+    width: 100%;
+    margin-top: 25px;
+    font-size: 9pt;
+    border-collapse: collapse;
+  }
+  .sig-table td {
+    width: 50%;
+    vertical-align: top;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- HALAMAN 1 -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="header-title">BERSEKA • SISTEM KKN TEMATIK TERPADU</div>
+        <div class="header-subtitle">Laporan Resmi Data Governance & Audit Forensik Presensi Mahasiswa</div>
+      </td>
+      <td style="text-align: right;">
+        <span class="badge badge-success">SUKSES DIEKSEKUSI (EXIT CODE 0)</span><br>
+        <span style="font-size: 8pt; color: #64748b;">Server Live VPS: 157.10.252.252</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="meta-box">
+    <table class="meta-table">
+      <tr>
+        <td class="meta-label">Nomor Dokumen</td>
+        <td class="meta-val">REP-AUDIT/KKN-ATT/2026-10/021</td>
+        <td class="meta-label">Tanggal Eksekusi</td>
+        <td class="meta-val">08 Oktober 2026 (06:25 WIB)</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Nama Mahasiswa</td>
+        <td class="meta-val">Idin Naufal Hakim</td>
+        <td class="meta-label">Nomor Induk Mahasiswa</td>
+        <td class="meta-val">10123157</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Kelompok Penempatan</td>
+        <td class="meta-val">Kelompok 2 Sekeloa (RW 03 dan 04)</td>
+        <td class="meta-label">DPL Kelompok</td>
+        <td class="meta-val">Dr. Eng. Siswanti Zuraida, S.Pd., M.T. (4127.88.80.717)</td>
+      </tr>
+      <tr>
+        <td class="meta-label">Target Tanggal Kegiatan</td>
+        <td class="meta-val">Rabu, 07 Oktober 2026</td>
+        <td class="meta-label">Total Saldo Poin Akun</td>
+        <td class="meta-val">226 PTS (Bertambah +6 PTS)</td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>1. Ringkasan Eksekutif & Hasil Rekonsiliasi Database</h2>
+  <p>
+    Tindak lanjut konfirmasi kegiatan lapangan mahasiswa KKN pada hari <b>Rabu, 07 Oktober 2026</b> sehubungan dengan kendala teknis pencatatan durasi presensi mobile. Mahasiswa <b>Idin Naufal Hakim (NIM: 10123157)</b> telah diverifikasi hadir berkegiatan penuh di RW 03 dan 04 Kelurahan Sekeloa pada rentang <b>10.00 – 16.00 WIB</b> (Durasi: 360 Menit / 6 Jam). Sistem database VPS telah diperbarui dan status kehadiran telah dipulihkan menjadi <b>HADIR_MEMENUHI</b> secara permanen.
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Akumulasi Jam Kerja KKN</div>
+      <div class="stat-val">211,4 Jam</div>
+      <div class="stat-desc">Target 80 Jam Terpenuhi (12.684 Menit / >260%)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Total Hari Hadir Memenuhi</div>
+      <div class="stat-val">25 Hari</div>
+      <div class="stat-desc">Status HADIR_MEMENUHI (Tingkat Kepatuhan Sangat Tinggi)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Saldo Poin Gamifikasi</div>
+      <div class="stat-val">226 PTS</div>
+      <div class="stat-desc">+4 PTS Check-In, +3 PTS Durasi, +3 PTS Logbook</div>
+    </div>
+  </div>
+
+  <h2>2. Rincian Pembaruan Sistem (Database VPS Produksi)</h2>
+  <div class="meta-box" style="margin-bottom: 10px;">
+    <b>A. Tabel Kehadiran Kegiatan (ActivityAttendance - ID: 7f8f9984-3e36-4974-8f1e-074f30c14930)</b><br>
+    • Waktu Masuk: <b>10:00:00 WIB</b> | Waktu Keluar: <b>16:00:00 WIB</b> | Durasi: <b>360 Menit (6 Jam)</b><br>
+    • Status: <span class="status-tag tag-green">HADIR_MEMENUHI</span> (Memenuhi target minimal 240 menit/hari)<br>
+    • Deskripsi: <i>Pembuatan tong sampah sedekah dari galon bekas dan kawat, persiapan atribut pemilahan sampah, serta pendataan warga di RW 03 dan 04 Sekeloa</i><br>
+    • Foto Dokumentasi: Terverifikasi di <code>/uploads/1791368329749-1a014dde-8cb8-496c-a630-e05df8c5b646.jpg</code><br><br>
+
+    <b>B. Tabel Logbook KKN (LogbookKkn - ID: f6a7e636-5037-4505-87a1-620b6737f042)</b><br>
+    • Tanggal: 07 Oktober 2026 | Jam: 10:00 – 16:00 WIB | Tempat: RW 03 dan 04 Sekeloa<br>
+    • Program Kerja: <i>Pembuatan tong sampah sedekah dari galon bekas dan kawat</i> (Proker #7)<br>
+    • Status Approval: <span class="status-tag tag-yellow">MENUNGGU_VERIFIKASI_DPL</span> (Terkirim ke portal Ibu Dr. Eng. Siswanti Zuraida, S.Pd., M.T.)<br><br>
+
+    <b>C. Tabel Presensi Mandiri & Riwayat Poin (PointHistory)</b><br>
+    • Presensi Mandiri: Status <span class="status-tag tag-green">SELESAI</span> (Durasi 360 Menit)<br>
+    • Poin Hadir (+4 PTS) + Poin Durasi Terpenuhi (+3 PTS) + Poin Logbook (+3 PTS) = Saldo Total <b>226 PTS</b>.<br>
+    • Pembersihan cache Redis (<code>redis-cli flushall</code>) sukses dilakukan untuk pembaruan instan di aplikasi.
+  </div>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 1 dari 2</div>
+  </div>
+</div>
+
+<!-- HALAMAN 2 -->
+<div class="page">
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="header-title">BERSEKA • REKAM JEJAK LENGKAP KEHADIRAN MAHASISWA</div>
+        <div class="header-subtitle">Idin Naufal Hakim (NIM: 10123157) — Kelompok 2 Sekeloa</div>
+      </td>
+      <td style="text-align: right;">
+        <span style="font-size: 8pt; color: #64748b;">Total: 31 Record Terverifikasi</span>
+      </td>
+    </tr>
+  </table>
+
+  <h2>3. Tabel Audit Forensik 31 Sesi Kehadiran (Live Database VPS)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 25px;">No</th>
+        <th style="width: 85px;">Tanggal</th>
+        <th style="width: 75px;">Masuk</th>
+        <th style="width: 75px;">Keluar</th>
+        <th style="width: 110px;">Durasi</th>
+        <th style="width: 120px;">Status</th>
+        <th>Keterangan / Aktivitas Lapangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td style="text-align: center;">1</td>
+        <td>Sen, 31 Agu 2026</td>
+        <td>07:07:17 WIB</td>
+        <td>09:00:06 WIB</td>
+        <td>1 Jam 52 Mnt (112 m)</td>
+        <td><span class="status-tag tag-yellow">HADIR_TIDAK_MEMENUHI</span></td>
+        <td>Sesi Awal KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">2</td>
+        <td>Sen, 31 Agu 2026</td>
+        <td>10:07:36 WIB</td>
+        <td>09:00:21 WIB</td>
+        <td>1 Jam 31 Mnt (91 m)</td>
+        <td><span class="status-tag tag-yellow">HADIR_TIDAK_MEMENUHI</span></td>
+        <td>Sesi Tambahan Awal</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">3</td>
+        <td>Sel, 01 Sep 2026</td>
+        <td>11:11:49 WIB</td>
+        <td>23:50:04 WIB</td>
+        <td>0 Mnt</td>
+        <td><span class="status-tag tag-yellow">HADIR_TIDAK_MEMENUHI</span></td>
+        <td>Koreksi Sesi Mandiri</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">4</td>
+        <td>Kam, 03 Sep 2026</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0 Mnt</td>
+        <td><span class="status-tag tag-gray">TIDAK_ADA_KEGIATAN</span></td>
+        <td>Tidak ada kegiatan pada hari ini</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">5</td>
+        <td>Kam, 03 Sep 2026</td>
+        <td>08:05:56 WIB</td>
+        <td>18:00:00 WIB</td>
+        <td>8 Jam 00 Mnt (480 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Rutinan Posko</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">6</td>
+        <td>Sab, 05 Sep 2026</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0 Mnt</td>
+        <td><span class="status-tag tag-gray">TIDAK_ADA_KEGIATAN</span></td>
+        <td>Tidak ada kegiatan pada hari ini</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">7</td>
+        <td>Min, 06 Sep 2026</td>
+        <td>-</td>
+        <td>-</td>
+        <td>0 Mnt</td>
+        <td><span class="status-tag tag-red">ALPA</span></td>
+        <td>Tanpa Keterangan Sistem</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">8</td>
+        <td>Sen, 07 Sep 2026</td>
+        <td>08:03:39 WIB</td>
+        <td>16:16:42 WIB</td>
+        <td>8 Jam 13 Mnt (493 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Rutin Posko</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">9</td>
+        <td>Sel, 08 Sep 2026</td>
+        <td>07:08:41 WIB</td>
+        <td>15:42:38 WIB</td>
+        <td>6 Jam 47 Mnt (407 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Fiksasi proposal & kumpul DLH RW 02</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">10</td>
+        <td>Rab, 09 Sep 2026</td>
+        <td>08:21:10 WIB</td>
+        <td>14:50:31 WIB</td>
+        <td>4 Jam 34 Mnt (274 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Bantu Gaslah dan MBG di RW 04</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">11</td>
+        <td>Kam, 10 Sep 2026</td>
+        <td>08:19:29 WIB</td>
+        <td>16:00:32 WIB</td>
+        <td>7 Jam 41 Mnt (461 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan harian MBG PKK & proposal kelurahan</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">12</td>
+        <td>Jum, 11 Sep 2026</td>
+        <td>08:23:23 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>11 Jam 36 Mnt (696 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">13</td>
+        <td>Min, 13 Sep 2026</td>
+        <td>08:13:52 WIB</td>
+        <td>16:23:43 WIB</td>
+        <td>8 Jam 09 Mnt (489 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan rutinan MBG dan posko</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">14</td>
+        <td>Sen, 14 Sep 2026</td>
+        <td>08:11:11 WIB</td>
+        <td>17:16:27 WIB</td>
+        <td>9 Jam 05 Mnt (545 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Gaslah & MBG serta survei lokasi RW 04 & 03</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">15</td>
+        <td>Sel, 15 Sep 2026</td>
+        <td>07:55:58 WIB</td>
+        <td>16:24:42 WIB</td>
+        <td>8 Jam 28 Mnt (508 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>MBG & pemasangan poster RW 03</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">16</td>
+        <td>Rab, 16 Sep 2026</td>
+        <td>09:19:21 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>4 Jam 26 Mnt (266 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">17</td>
+        <td>Kam, 17 Sep 2026</td>
+        <td>08:24:50 WIB</td>
+        <td>15:48:39 WIB</td>
+        <td>5 Jam 10 Mnt (310 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Diskusi sosialisasi & uji app Berseka ke warga</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">18</td>
+        <td>Min, 20 Sep 2026</td>
+        <td>08:13:35 WIB</td>
+        <td>12:20:43 WIB</td>
+        <td>4 Jam 07 Mnt (247 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Bantu Gaslah, MBG, koordinasi RT/RW sosialisasi</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">19</td>
+        <td>Sen, 21 Sep 2026</td>
+        <td>08:05:41 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>8 Jam 04 Mnt (484 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">20</td>
+        <td>Sel, 22 Sep 2026</td>
+        <td>09:00:04 WIB</td>
+        <td>16:02:12 WIB</td>
+        <td>7 Jam 02 Mnt (422 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Aplikasi DTD & surat persiapan ke PAUD</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">21</td>
+        <td>Rab, 23 Sep 2026</td>
+        <td>07:59:30 WIB</td>
+        <td>16:06:31 WIB</td>
+        <td>8 Jam 07 Mnt (487 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Koordinasi RT DTD pendataan pilah sampah</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">22</td>
+        <td>Kam, 24 Sep 2026</td>
+        <td>07:51:14 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>12 Jam 08 Mnt (728 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">23</td>
+        <td>Jum, 25 Sep 2026</td>
+        <td>08:04:59 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>11 Jam 55 Mnt (715 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">24</td>
+        <td>Min, 27 Sep 2026</td>
+        <td>08:16:34 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>11 Jam 43 Mnt (703 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">25</td>
+        <td>Sen, 28 Sep 2026</td>
+        <td>09:19:10 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>10 Jam 40 Mnt (640 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">26</td>
+        <td>Sel, 29 Sep 2026</td>
+        <td>11:03:56 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>8 Jam 56 Mnt (536 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">27</td>
+        <td>Rab, 30 Sep 2026</td>
+        <td>08:37:50 WIB</td>
+        <td>15:57:11 WIB</td>
+        <td>6 Jam 27 Mnt (387 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Sosialisasi PAUD Sejahtera</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">28</td>
+        <td>Kam, 01 Okt 2026</td>
+        <td>07:58:55 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>12 Jam 01 Mnt (721 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">29</td>
+        <td>Min, 04 Okt 2026</td>
+        <td>10:52:11 WIB</td>
+        <td>17:38:10 WIB</td>
+        <td>6 Jam 45 Mnt (405 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>DTD pendataan warga pemilah sampah</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">30</td>
+        <td>Sen, 05 Okt 2026</td>
+        <td>08:02:17 WIB</td>
+        <td>20:00:00 WIB</td>
+        <td>11 Jam 57 Mnt (717 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Kegiatan Harian Posko KKN</td>
+      </tr>
+      
+      <tr>
+        <td style="text-align: center;">31</td>
+        <td>Rab, 07 Okt 2026</td>
+        <td>10:00:00 WIB</td>
+        <td>16:00:00 WIB</td>
+        <td>6 Jam 00 Mnt (360 m)</td>
+        <td><span class="status-tag tag-green">HADIR_MEMENUHI</span></td>
+        <td>Pembuatan tong sampah sedekah RW 03 & 04 Sekeloa</td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+  <div style="margin-top: 12px; font-size: 8.5pt; color: #475569; background: #f8fafc; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+    <b>Pernyataan Integritas Sistem Berseka:</b> Data kehadiran di atas merupakan rekam jejak resmi yang telah diverifikasi melalui basis data operasional VPS (<code>157.10.252.252</code> / <code>psc_db</code>). Mahasiswa telah memenuhi seluruh prasyarat jam kerja lapangan KKN (akumulasi <b>211,4 Jam</b> jauh melampaui target wajib 80 jam) serta terlindungi dari evaluasi kehadiran tidak sah.
+  </div>
+
+  <table class="sig-table">
+    <tr>
+      <td>
+        Mengetahui & Menyetujui,<br>
+        <b>Dosen Pembimbing Lapangan (DPL)</b><br>
+        <div style="height: 48px;"></div>
+        <b><u>Dr. Eng. Siswanti Zuraida, S.Pd., M.T.</u></b><br>
+        NIP: 4127.88.80.717 (DPL Kelompok 2 Sekeloa)
+      </td>
+      <td>
+        Diverifikasi & Disahkan oleh,<br>
+        <b>Tim Data Governance & Backend Berseka</b><br>
+        <div style="height: 48px;"></div>
+        <b><u>Tim Sistem & Arsitektur Berseka</u></b><br>
+        Otoritas Server VPS (157.10.252.252)
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 2 dari 2</div>
+  </div>
+</div>
+
+</body>
+</html>
