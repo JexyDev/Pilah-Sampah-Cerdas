@@ -142,6 +142,19 @@ export const HasilPemanfaatan: React.FC = () => {
     }
   }, [filterKelurahan, availableRws, filterRw]);
 
+  // Dynamic available Luaran options based on active category (Organik vs Anorganik)
+  const availableLuaranOptions = useMemo(() => {
+    if (!masterLuaranList || masterLuaranList.length === 0) return [];
+    const kat = (filterKategori || "").toUpperCase();
+    if (kat === "ORGANIK" || kat === "ORGANIC") {
+      return masterLuaranList.filter((m) => (m.kategori || "").toUpperCase() === "ORGANIK");
+    }
+    if (kat === "ANORGANIK" || kat === "NON_ORGANIC") {
+      return masterLuaranList.filter((m) => (m.kategori || "").toUpperCase() === "ANORGANIK");
+    }
+    return masterLuaranList;
+  }, [masterLuaranList, filterKategori]);
+
   // Filtered Programs Calculation
   const filteredPrograms = useMemo(() => {
     const result = programs.filter((p) => {
@@ -177,26 +190,54 @@ export const HasilPemanfaatan: React.FC = () => {
         }
       }
 
-      // 4. Filter Kategori Bahan (ORGANIK, ANORGANIK, RESIDU)
+      // 4. Filter Kategori Bahan (ORGANIK, ANORGANIK, RESIDU) dengan Strict Olahan Isolation
       if (filterKategori !== "ALL") {
         const isOrgFilter = filterKategori === "ORGANIK" || filterKategori === "ORGANIC";
         const isAnorgFilter = filterKategori === "ANORGANIK" || filterKategori === "NON_ORGANIC";
         const isResFilter = filterKategori === "RESIDU";
 
-        const itemIsAnorg =
-          kategoriBahan.toUpperCase().includes("ANORGANIK") ||
-          jenisOlahan.toLowerCase().includes("bank") ||
-          jenisOlahan.toLowerCase().includes("plastik");
+        const olahanLower = (jenisOlahan || "").toLowerCase();
 
-        const itemIsRes =
-          kategoriBahan.toUpperCase().includes("RESIDU") ||
-          jenisOlahan.toLowerCase().includes("residu");
+        // Olahan definitif ORGANIK (Kompos, Maggot, POC, Loseda, Bata Terawang, Takakura)
+        const isOlahanOrganik =
+          olahanLower.includes("kompos") ||
+          olahanLower.includes("maggot") ||
+          olahanLower.includes("bsf") ||
+          olahanLower.includes("poc") ||
+          olahanLower.includes("pupuk") ||
+          olahanLower.includes("loseda") ||
+          olahanLower.includes("bata terawang") ||
+          olahanLower.includes("takakura");
 
-        const itemIsOrg = !itemIsAnorg && !itemIsRes;
+        // Olahan definitif ANORGANIK (Bank Sampah, Plastik, Kertas, Logam, Daur Ulang, Ecobrick)
+        const isOlahanAnorganik =
+          olahanLower.includes("bank") ||
+          olahanLower.includes("anorganik") ||
+          olahanLower.includes("plastik") ||
+          olahanLower.includes("daur ulang") ||
+          olahanLower.includes("ecobrick") ||
+          olahanLower.includes("kertas") ||
+          olahanLower.includes("logam");
 
-        if (isOrgFilter && !itemIsOrg) return false;
-        if (isAnorgFilter && !itemIsAnorg) return false;
-        if (isResFilter && !itemIsRes) return false;
+        const isOlahanResidu =
+          olahanLower.includes("residu") ||
+          (kategoriBahan || "").toUpperCase().includes("RESIDU");
+
+        // Penentuan kategori tegas: Karakteristik produk olahan diutamakan di atas teks bebas bahanBaku
+        let itemFinalCategory = "ORGANIK";
+        if (isOlahanResidu) {
+          itemFinalCategory = "RESIDU";
+        } else if (isOlahanOrganik) {
+          itemFinalCategory = "ORGANIK";
+        } else if (isOlahanAnorganik) {
+          itemFinalCategory = "ANORGANIK";
+        } else if ((kategoriBahan || "").toUpperCase().includes("ANORGANIK")) {
+          itemFinalCategory = "ANORGANIK";
+        }
+
+        if (isOrgFilter && itemFinalCategory !== "ORGANIK") return false;
+        if (isAnorgFilter && itemFinalCategory !== "ANORGANIK") return false;
+        if (isResFilter && itemFinalCategory !== "RESIDU") return false;
       }
 
       // 5. Filter Produk Luaran (Master Luaran / Jenis)
@@ -556,18 +597,23 @@ export const HasilPemanfaatan: React.FC = () => {
               className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
             >
               <option value="ALL">Semua Jenis Olahan</option>
-              {masterLuaranList.length > 0 ? (
-                masterLuaranList.map((m) => (
+              {availableLuaranOptions.length > 0 ? (
+                availableLuaranOptions.map((m) => (
                   <option key={m.id} value={m.nama}>
                     {m.nama}
                   </option>
                 ))
+              ) : filterKategori === "ANORGANIK" || filterKategori === "NON_ORGANIC" ? (
+                <>
+                  <option value="Bank Sampah">Bank Sampah Anorganik</option>
+                  <option value="Daur Ulang">Daur Ulang Anorganik / Plastik</option>
+                  <option value="Ecobrick">Ecobrick</option>
+                </>
               ) : (
                 <>
                   <option value="Kompos">Kompos Organik (Buruan Sae)</option>
                   <option value="Maggot">Maggot BSF</option>
                   <option value="POC">Pupuk Organik Cair (POC)</option>
-                  <option value="Bank Sampah">Bank Sampah Anorganik</option>
                   <option value="Loseda">Loseda</option>
                   <option value="Bata Terawang">Bata Terawang</option>
                 </>
