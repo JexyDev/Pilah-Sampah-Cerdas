@@ -446,13 +446,16 @@ export const DashboardEksekutifKkn: React.FC = () => {
     selectedKelurahan !== "ALL"
   );
 
-  // Daftar RW non-binaan KKN yang sengaja di-hide (hutan baksil/sabuga/ITB, kampus Unpad, komersial Cihampelas, RW 99 dummy)
+  // Daftar RW non-binaan KKN yang sengaja di-hide (tidak ada kelompoknya):
+  // 1. Kel. Cipaganti: RW 08, RW 09, RW 10, RW 11, RW 99
+  // 2. Kel. Lebak Gede: RW 05, RW 06
+  // 3. Kel. Lebak Siliwangi: RW 01, RW 02, RW 03, RW 04
   const UNUSED_KKN_RW: Record<string, number[]> = {
     "lebaksiliwangi": [1, 2, 3, 4],
     "lebak siliwangi": [1, 2, 3, 4],
     "lebakgede": [5, 6],
     "lebak gede": [5, 6],
-    "cipaganti": [9, 10, 11, 99],
+    "cipaganti": [8, 9, 10, 11, 99],
   };
 
   const rwOptions = useMemo(() => {
