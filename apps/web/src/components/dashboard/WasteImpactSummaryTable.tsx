@@ -8,17 +8,19 @@
  * 1. Judul Komponen: "Aktivitas Pemilahan oleh Warga dan Penimbangan oleh Petugas"
  * 2. Skema Kolom:
  *    - Nama Kelurahan
- *    - Berat Baseline (kg)
- *    - Berat Aktual Saat Ini (kg)
- *    - Penurunan Berat (kg) [Delta kg]
- *    - Penurunan Berat (%) [Delta %]
- *    - Kepatuhan Baseline (%)
- *    - Kepatuhan Aktual (%)
- *    - Perubahan Kepatuhan (%) [Delta kepatuhan]
- * 3. Dua kolom berdampingan untuk delta sampah: "Delta (kg)" dan "Delta (%)"
- * 4. Pemisahan Sumber Data: Toggle [Semua], [Aktivitas Warga] (WARGA_APP), [Input Petugas] (PETUGAS_LAPANGAN)
- *    mencegah penggandaan (double-counting) berat sampah.
- * 5. Agregasi Terbobot (Weighted Aggregation) untuk baris total/kecamatan.
+ *    - Berat Pembanding (Baseline KKN atau Periode Sebelumnya)
+ *    - Berat Aktual Terpilih (kg)
+ *    - Penurunan / Perubahan Berat (Delta kg) [B₀ - B₁]
+ *    - Penurunan / Perubahan Berat (%) [Delta %]
+ *    - Kepatuhan Pembanding (%)
+ *    - Kepatuhan Aktual Terpilih (%)
+ *    - Perubahan Kepatuhan (Δ pp) [Poin Persentase]
+ * 3. Filter Interaktif Lengkap:
+ *    - Mode Harian: Hari Ini, Kemarin, Input Kalender Spesifik
+ *    - Mode Bulanan: Bulan Ini, Bulan Lalu, Dropdown Pilihan Bulan Jan-Des 2026
+ *    - Target Komparasi: vs Baseline KKN (Standar) atau vs Periode Sebelumnya (H-1 / M-1)
+ *    - Isolasi Sumber Data: [Semua], [Aktivitas Warga], [Input Petugas]
+ * 4. Agregasi Terbobot (Weighted Aggregation) untuk baris total/kecamatan.
  */
 
 import React, { useState, useMemo } from "react";
@@ -36,6 +38,10 @@ import {
   Calendar,
   CalendarDays,
   Clock,
+  ArrowRightLeft,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
@@ -43,12 +49,12 @@ import {
   calculateVolumeDeltaKg,
   calculateVolumeDeltaPct,
   calculateComplianceDelta,
-  formatDeltaKg,
-  formatDeltaPct,
   formatComplianceDelta,
   aggregateKelurahanImpact,
   calculateDailyAverageKg,
   calculateMonthlyKg,
+  getDateRangeForDay,
+  getDateRangeForMonth,
   STANDARD_CYCLE_DAYS,
   type WasteSourceType,
   type WastePeriodMode,
@@ -68,64 +74,217 @@ export const SURVEY_BASELINE_COMPLIANCE: Record<string, number> = {
   sekeloa: 17.8,
 };
 
+export const SURVEY_BASELINE_DAILY_KG: Record<string, number> = {
+  cipaganti: 96.0,
+  dago: 122.0,
+  lebakgede: 100.0,
+  lebaksiliwangi: 96.5,
+  sadangserang: 835.0,
+  sekeloa: 421.0,
+};
+
+export const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+export type WasteComparisonTarget = "BASELINE" | "PREVIOUS_PERIOD";
+
+export interface WasteImpactFilterState {
+  periodMode: WastePeriodMode;
+  selectedSource: WasteSourceType;
+  datePreset: "TODAY" | "YESTERDAY" | "CUSTOM";
+  selectedDate: string; // YYYY-MM-DD
+  monthPreset: "CURRENT" | "PREVIOUS" | "CUSTOM";
+  selectedYear: number;
+  selectedMonth: number; // 1-12
+  comparisonTarget: WasteComparisonTarget;
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface WasteImpactSummaryTableProps {
   data: WasteImpactItem[];
+  previousPeriodData?: WasteImpactItem[] | null;
   loading?: boolean;
   className?: string;
   onSourceChange?: (source: WasteSourceType) => void;
   periodMode?: WastePeriodMode;
   onPeriodChange?: (period: WastePeriodMode) => void;
+  filterState?: WasteImpactFilterState;
+  onFilterChange?: (filter: WasteImpactFilterState) => void;
 }
 
 export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = ({
   data,
+  previousPeriodData = null,
   loading = false,
   className = "",
   onSourceChange,
   periodMode: periodModeProp,
   onPeriodChange,
+  filterState: externalFilterState,
+  onFilterChange,
 }) => {
-  const [selectedSource, setSelectedSource] = useState<WasteSourceType>("WARGA_APP");
+  // Tanggal acuan dinamis sistem
+  const today = useMemo(() => new Date(), []);
+  const todayStr = useMemo(() => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  }, [today]);
+
+  const yesterdayStr = useMemo(() => {
+    const y = new Date(today);
+    y.setDate(y.getDate() - 1);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${y.getFullYear()}-${pad(y.getMonth() + 1)}-${pad(y.getDate())}`;
+  }, [today]);
+
+  // Internal state jika tidak dikontrol penuh oleh parent
+  const [internalSource, setInternalSource] = useState<WasteSourceType>("ALL");
   const [internalPeriod, setInternalPeriod] = useState<WastePeriodMode>("DAILY");
+  const [datePreset, setDatePreset] = useState<"TODAY" | "YESTERDAY" | "CUSTOM">("YESTERDAY");
+  const [selectedDate, setSelectedDate] = useState<string>(yesterdayStr);
+  const [monthPreset, setMonthPreset] = useState<"CURRENT" | "PREVIOUS" | "CUSTOM">("CURRENT");
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [comparisonTarget, setComparisonTarget] = useState<WasteComparisonTarget>("BASELINE");
   const [showFootnoteDetails, setShowFootnoteDetails] = useState<boolean>(false);
 
-  const currentPeriod = periodModeProp ?? internalPeriod;
-  const unitLabel = currentPeriod === "DAILY" ? "kg/hari" : "kg/bulan";
+  const activeSource = externalFilterState?.selectedSource ?? internalSource;
+  const activePeriod = externalFilterState?.periodMode ?? periodModeProp ?? internalPeriod;
+  const activeComparison = externalFilterState?.comparisonTarget ?? comparisonTarget;
+  const activeDate = externalFilterState?.selectedDate ?? selectedDate;
+  const activeDatePreset = externalFilterState?.datePreset ?? datePreset;
+  const activeMonth = externalFilterState?.selectedMonth ?? selectedMonth;
+  const activeYear = externalFilterState?.selectedYear ?? selectedYear;
+  const activeMonthPreset = externalFilterState?.monthPreset ?? monthPreset;
 
-  const handleSourceChange = (src: WasteSourceType) => {
-    setSelectedSource(src);
-    if (onSourceChange) {
-      onSourceChange(src);
+  const unitLabel = activePeriod === "DAILY" ? "kg/hari" : "kg/bulan";
+
+  // Trigger sinkronisasi ke parent
+  const notifyFilterChange = (updates: Partial<WasteImpactFilterState>) => {
+    const updated: WasteImpactFilterState = {
+      periodMode: activePeriod,
+      selectedSource: activeSource,
+      datePreset: activeDatePreset,
+      selectedDate: activeDate,
+      monthPreset: activeMonthPreset,
+      selectedYear: activeYear,
+      selectedMonth: activeMonth,
+      comparisonTarget: activeComparison,
+      ...updates,
+    };
+
+    if (updated.periodMode === "DAILY") {
+      const range = getDateRangeForDay(updated.selectedDate);
+      updated.startDate = `${range.startDate}T00:00:00.000Z`;
+      updated.endDate = `${range.endDate}T23:59:59.999Z`;
+    } else {
+      const range = getDateRangeForMonth(updated.selectedYear, updated.selectedMonth);
+      updated.startDate = `${range.startDate}T00:00:00.000Z`;
+      updated.endDate = `${range.endDate}T23:59:59.999Z`;
+    }
+
+    if (onFilterChange) {
+      onFilterChange(updated);
     }
   };
 
-  const handlePeriodChange = (period: WastePeriodMode) => {
+  const handleSourceSelect = (src: WasteSourceType) => {
+    setInternalSource(src);
+    if (onSourceChange) onSourceChange(src);
+    notifyFilterChange({ selectedSource: src });
+  };
+
+  const handlePeriodSelect = (period: WastePeriodMode) => {
     setInternalPeriod(period);
-    if (onPeriodChange) {
-      onPeriodChange(period);
-    }
+    if (onPeriodChange) onPeriodChange(period);
+    notifyFilterChange({ periodMode: period });
   };
 
-  // Normalisasi data dengan sumber dan mode periode yang dipilih:
-  // - Mode DAILY: Disajikan dalam rata-rata harian (kg/hari) dari standar siklus 30 hari kalender.
-  // - Mode MONTHLY: Disajikan dalam akumulasi/proyeksi bulanan (kg/bulan = data harian * 30 hari).
+  const handleDatePresetSelect = (preset: "TODAY" | "YESTERDAY") => {
+    setDatePreset(preset);
+    const targetDate = preset === "TODAY" ? todayStr : yesterdayStr;
+    setSelectedDate(targetDate);
+    notifyFilterChange({ datePreset: preset, selectedDate: targetDate });
+  };
+
+  const handleCustomDateChange = (val: string) => {
+    if (!val) return;
+    setDatePreset("CUSTOM");
+    setSelectedDate(val);
+    notifyFilterChange({ datePreset: "CUSTOM", selectedDate: val });
+  };
+
+  const handleMonthPresetSelect = (preset: "CURRENT" | "PREVIOUS") => {
+    setMonthPreset(preset);
+    let m = today.getMonth() + 1;
+    let y = today.getFullYear();
+    if (preset === "PREVIOUS") {
+      m = m - 1;
+      if (m === 0) {
+        m = 12;
+        y = y - 1;
+      }
+    }
+    setSelectedMonth(m);
+    setSelectedYear(y);
+    notifyFilterChange({ monthPreset: preset, selectedMonth: m, selectedYear: y });
+  };
+
+  const handleSpecificMonthChange = (mIndex: number) => {
+    setMonthPreset("CUSTOM");
+    setSelectedMonth(mIndex);
+    notifyFilterChange({ monthPreset: "CUSTOM", selectedMonth: mIndex });
+  };
+
+  // Label periode aktif untuk keterangan UI
+  const activePeriodLabel = useMemo(() => {
+    if (activePeriod === "DAILY") {
+      const parts = activeDate.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      }
+      return activeDate;
+    } else {
+      return `${MONTH_NAMES[activeMonth - 1]} ${activeYear}`;
+    }
+  }, [activePeriod, activeDate, activeMonth, activeYear]);
+
+  // Label acuan perbandingan konstan
+  const comparisonLabel = "Baseline Survei KKN Juli 2026";
+
+  // Normalisasi data dengan sumber, mode periode, dan target komparasi yang dipilih
   const displayItems = useMemo(() => {
     return data.map((item) => {
       let rawAccumulatedKg = item.actualKg ?? 0;
-      if (selectedSource === "WARGA_APP") {
+      if (activeSource === "WARGA_APP") {
         rawAccumulatedKg = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
-      } else if (selectedSource === "PETUGAS_LAPANGAN") {
+      } else if (activeSource === "PETUGAS_LAPANGAN") {
         rawAccumulatedKg = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
       } else {
-        // ALL
         const w = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
         const p = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
         rawAccumulatedKg = Number((w + p).toFixed(2));
       }
 
-      // Rata-rata per hari dari standar 30 hari kalender (standar ISO / SI)
+      // Mode DAILY: Nilai aktual adalah berat timbulan transaksi pada hari terpilih (rawAccumulatedKg)
+      // Mode MONTHLY: Nilai aktual adalah total berat timbulan transaksi pada bulan terpilih (rawAccumulatedKg)
+      const displayActualKg = rawAccumulatedKg;
       const dailyAverageKg = calculateDailyAverageKg(rawAccumulatedKg, STANDARD_CYCLE_DAYS);
-      const monthlyActualKg = calculateMonthlyKg(dailyAverageKg, STANDARD_CYCLE_DAYS) ?? rawAccumulatedKg;
+      const monthlyActualKg = rawAccumulatedKg;
 
       const normK = item.kelurahan.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
       const baselineCompliance =
@@ -133,12 +292,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           ? item.baselineCompliance
           : (SURVEY_BASELINE_COMPLIANCE[normK] ?? item.baselineCompliance ?? null);
 
-      const dailyBaselineKg = item.baselineKg ?? null;
+      const dailyBaselineKg =
+        item.baselineKg !== undefined && item.baselineKg !== null && item.baselineKg > 0
+          ? item.baselineKg
+          : (SURVEY_BASELINE_DAILY_KG[normK] ?? null);
       const monthlyBaselineKg = calculateMonthlyKg(dailyBaselineKg, STANDARD_CYCLE_DAYS);
 
-      // Angka aktual dan baseline yang disajikan disesuaikan dengan mode periode aktif
-      const displayActualKg = currentPeriod === "DAILY" ? dailyAverageKg : monthlyActualKg;
-      const displayBaselineKg = currentPeriod === "DAILY" ? dailyBaselineKg : monthlyBaselineKg;
+      const displayBaselineKg = activePeriod === "DAILY" ? dailyBaselineKg : monthlyBaselineKg;
+      const displayBaselineCompliance = baselineCompliance;
 
       return {
         ...item,
@@ -148,12 +309,12 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         monthlyBaselineKg,
         actualKg: displayActualKg,
         baselineKg: displayBaselineKg,
-        baselineCompliance,
-        sourceType: selectedSource,
-        periodMode: currentPeriod,
+        baselineCompliance: displayBaselineCompliance,
+        sourceType: activeSource,
+        periodMode: activePeriod,
       };
     });
-  }, [data, selectedSource, currentPeriod]);
+  }, [data, activeSource, activePeriod]);
 
   // Agregasi terbobot tingkat Kecamatan
   const aggregation = useMemo(() => {
@@ -167,18 +328,22 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       return;
     }
 
+    const col1Title = `Baseline KKN (${unitLabel})`;
+    const col2Title = `Aktual Terpilih (${activePeriodLabel}) (${unitLabel})`;
+    const col3Title = `Penurunan Berat Sampah (B0 - B1) (${unitLabel})`;
+
     const headers = [
       "No",
       "Kelurahan",
       "Sumber Data",
-      `Baseline Berat (${unitLabel})`,
-      `Aktual ${currentPeriod === "DAILY" ? "Rata-Rata" : "Total"} (${unitLabel})`,
-      `Penurunan Berat (Δ ${unitLabel})`,
-      "Penurunan Berat (Δ %)",
+      col1Title,
+      col2Title,
+      col3Title,
+      "Penurunan (%)",
       "Baseline Kepatuhan (%)",
-      "Aktual Kepatuhan (%)",
-      "Perubahan Kepatuhan (Δ %)",
-      currentPeriod === "DAILY" ? "Total Akumulasi 30 Hari (kg)" : "Rata-Rata Harian (kg/hari)",
+      "Kepatuhan Aktual (%)",
+      "Perubahan Kepatuhan (Δ pp)",
+      activePeriod === "DAILY" ? "Total Akumulasi Transaksi (kg)" : "Rata-Rata Harian (kg/hari)",
       "Status Verifikasi",
     ];
 
@@ -190,9 +355,9 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       return [
         idx + 1,
         `Kel. ${item.kelurahan}`,
-        selectedSource === "WARGA_APP"
+        activeSource === "WARGA_APP"
           ? "Aktivitas Warga (WARGA_APP)"
-          : selectedSource === "PETUGAS_LAPANGAN"
+          : activeSource === "PETUGAS_LAPANGAN"
           ? "Input Petugas (PETUGAS_LAPANGAN)"
           : "Semua Sumber (Warga + Petugas)",
         item.baselineKg ? Number(item.baselineKg.toFixed(2)) : 0,
@@ -205,8 +370,8 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         item.actualCompliance !== null && item.actualCompliance !== undefined
           ? `${item.actualCompliance}%`
           : "-",
-        deltaComp !== null ? `${deltaComp >= 0 ? "+" : ""}${deltaComp}%` : "-",
-        currentPeriod === "DAILY"
+        deltaComp !== null ? formatComplianceDelta(deltaComp, { unit: "pp" }) : "-",
+        activePeriod === "DAILY"
           ? (item.rawAccumulatedKg !== null && item.rawAccumulatedKg !== undefined ? Number(item.rawAccumulatedKg.toFixed(2)) : "-")
           : (item.dailyAverageKg !== null && item.dailyAverageKg !== undefined ? Number(item.dailyAverageKg.toFixed(2)) : "-"),
         item.status || "Terverifikasi Real",
@@ -217,26 +382,24 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
     rows.push([
       "",
       "TOTAL & RATA-RATA KECAMATAN COBLONG",
-      `Filter: ${selectedSource} • Mode: ${currentPeriod === "DAILY" ? "Harian" : "Bulanan (30 Hari)"}`,
+      `Filter: ${activeSource} • Mode: ${activePeriod} • Acuan: Baseline KKN (B0)`,
       aggregation.totalBaselineKg,
       aggregation.totalActualKg,
-      aggregation.totalDeltaKg,
+      aggregation.totalDeltaKg !== null ? aggregation.totalDeltaKg : "-",
       aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-",
       `${aggregation.avgBaselineCompliance}%`,
-      `${aggregation.avgActualCompliance}%`,
-      `${aggregation.deltaCompliance >= 0 ? "+" : ""}${aggregation.deltaCompliance}%`,
-      currentPeriod === "DAILY"
+      aggregation.avgActualCompliance !== null ? `${aggregation.avgActualCompliance}%` : "-",
+      aggregation.deltaCompliance !== null ? formatComplianceDelta(aggregation.deltaCompliance, { unit: "pp" }) : "-",
+      activePeriod === "DAILY"
         ? (aggregation.totalAccumulatedKg !== undefined ? aggregation.totalAccumulatedKg : "-")
         : Number((aggregation.totalActualKg / STANDARD_CYCLE_DAYS).toFixed(2)),
       "Agregat Terbobot Faktual",
     ]);
 
-    // Baris Keterangan Resmi ISO di file XLSX
+    // Baris Catatan Metodologi
     rows.push([]);
     rows.push([
-      currentPeriod === "DAILY"
-        ? "* Catatan Standar ISO: Data aktual disajikan dalam satuan rata-rata per hari (kg/hari) dari total akumulasi standar siklus 30 hari kalender. Rekapitulasi berkala dilakukan setiap tanggal 7 setiap bulannya."
-        : "* Catatan Standar: Data disajikan dalam estimasi/proyeksi per bulan (kg/bulan) berbasis akumulasi siklus 30 hari kalender (data harian × 30). Rekapitulasi berkala dilakukan setiap tanggal 7 setiap bulannya.",
+      `* Catatan Metodologi: Evaluasi dampak membandingkan Baseline KKN Juli 2026 (B0) dengan data aktual capture rate BERSEKA di ${activePeriodLabel} (B1). Perubahan kepatuhan dinyatakan dalam satuan baku poin persentase (pp).`,
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -244,111 +407,221 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
     XLSX.utils.book_append_sheet(wb, ws, "Rekap_Dampak_Sampah");
     XLSX.writeFile(
       wb,
-      `Rekap_Evaluasi_Dampak_Sampah_Coblong_${selectedSource}_${currentPeriod}_${new Date().toISOString().split("T")[0]}.xlsx`
+      `Rekap_Evaluasi_Dampak_Sampah_Coblong_${activeSource}_${activePeriod}_${activeDate}.xlsx`
     );
     toast.success("Data rekapitulasi dampak sampah berhasil diekspor!");
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-5 ${className}`}>
-      {/* 1. Header Title & Ringkasan */}
-      <div className="flex flex-col gap-1.5 pb-1">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-700/40 flex items-center justify-center shadow-2xs shrink-0">
-            <ClipboardList size={18} />
-          </span>
-          <h3 className="font-extrabold text-[17px] sm:text-[18px] text-slate-900 dark:text-slate-100 tracking-tight">
-            Aktivitas Pemilahan oleh Warga dan Penimbangan oleh Petugas
-          </h3>
-          <span className="text-[10px] font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-            Formula Delta Faktual
-          </span>
-          <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <Calendar size={11} />
-            <span>Siklus 30 Hari • Cut-off Tgl 7</span>
-          </span>
+    <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-6 ${className}`}>
+      {/* 1. Header: Judul, Deskripsi & Tombol Aksi */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800/60">
+        <div className="space-y-1.5 max-w-3xl">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-700/40 flex items-center justify-center shadow-xs shrink-0">
+              <ClipboardList size={18} />
+            </span>
+            <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
+              Aktivitas Pemilahan oleh Warga dan Penimbangan oleh Petugas
+            </h3>
+            <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Sparkles size={11} />
+              <span>Formula B₀ − B₁</span>
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Rekapitulasi perbandingan timbulan sampah aktual terhadap Baseline Survei KKN Juli 2026 (B₀) dan indeks kepatuhan pemilahan di 6 Kelurahan Kecamatan Coblong.
+          </p>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-4xl">
-          Tabel rekapitulasi capaian penurunan timbulan sampah (
-          <code className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold">{unitLabel}</code>
-          {currentPeriod === "MONTHLY" ? " • asumsi 30 hari kalender" : " • rata-rata harian"}
-          ) dan peningkatan kepatuhan pemilahan di 6 Kelurahan Kecamatan Coblong.{" "}
-          {currentPeriod === "DAILY"
-            ? "Data dinormalisasi dari total akumulasi dengan standar siklus 30 hari kalender dan dihimpun berkala setiap tanggal 7 setiap bulannya."
-            : "Angka bulanan dihitung dari data harian × 30 hari kalender dan dihimpun berkala setiap tanggal 7 setiap bulannya."}
-        </p>
+
+        {/* Ekspor XLSX Action */}
+        <div className="shrink-0 self-start sm:self-center">
+          <button
+            type="button"
+            onClick={handleExportXLSX}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+            title="Ekspor tabel rekapitulasi ke file Excel"
+          >
+            <FileSpreadsheet size={15} />
+            <span>Ekspor XLSX</span>
+          </button>
+        </div>
       </div>
 
-      {/* 2. Structured Filter & Export Toolbar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2.5 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Mode Periode */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
-              Periode:
-            </span>
-            <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => handlePeriodChange("DAILY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  currentPeriod === "DAILY"
-                    ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 shadow-2xs font-extrabold border border-emerald-200/70 dark:border-emerald-800/40"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-                title="Mode Per Hari (kg/hari)"
-              >
-                <Clock size={13} />
-                <span>Per Hari</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePeriodChange("MONTHLY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  currentPeriod === "MONTHLY"
-                    ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 shadow-2xs font-extrabold border border-indigo-200/70 dark:border-indigo-800/40"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                }`}
-                title="Mode Per Bulan (kg/bulan = data harian × 30)"
-              >
-                <CalendarDays size={13} />
-                <span>Per Bulan (30 Hari)</span>
-              </button>
+      {/* 2. Symmetrical Filter Toolbar */}
+      <div className="p-3.5 sm:p-4 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+        {/* Row 1: Rentang Waktu (Mode + Presets + Date/Month Picker) */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-700/50">
+          {/* Sisi Kiri: Mode & Filter Waktu */}
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            {/* Mode Switcher */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
+                Mode:
+              </span>
+              <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => handlePeriodSelect("DAILY")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePeriod === "DAILY"
+                      ? "bg-emerald-600 text-white shadow-xs font-extrabold"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <Clock size={13} />
+                  <span>Per Hari</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePeriodSelect("MONTHLY")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activePeriod === "MONTHLY"
+                      ? "bg-indigo-600 text-white shadow-xs font-extrabold"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <CalendarDays size={13} />
+                  <span>Per Bulan</span>
+                </button>
+              </div>
             </div>
+
+            <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-slate-700" />
+
+            {/* Pemilih Waktu */}
+            {activePeriod === "DAILY" ? (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  Tanggal:
+                </span>
+                <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleDatePresetSelect("YESTERDAY")}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeDatePreset === "YESTERDAY"
+                        ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200/80 dark:border-emerald-800/60"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Kemarin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDatePresetSelect("TODAY")}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeDatePreset === "TODAY"
+                        ? "bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-200/80 dark:border-emerald-800/60"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Hari Ini
+                  </button>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+                  <Calendar size={13} className="text-slate-400 shrink-0" />
+                  <input
+                    type="date"
+                    value={activeDate}
+                    onChange={(e) => handleCustomDateChange(e.target.value)}
+                    className="text-xs font-bold text-slate-700 dark:text-slate-200 bg-transparent border-none outline-none cursor-pointer"
+                    title="Pilih tanggal spesifik"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  Bulan:
+                </span>
+                <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleMonthPresetSelect("CURRENT")}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeMonthPreset === "CURRENT"
+                        ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-extrabold border border-indigo-200/80 dark:border-indigo-800/60"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Bulan Ini
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMonthPresetSelect("PREVIOUS")}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeMonthPreset === "PREVIOUS"
+                        ? "bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-extrabold border border-indigo-200/80 dark:border-indigo-800/60"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    Bulan Lalu
+                  </button>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+                  <CalendarDays size={13} className="text-slate-400 shrink-0" />
+                  <select
+                    value={activeMonth}
+                    onChange={(e) => handleSpecificMonthChange(parseInt(e.target.value, 10))}
+                    className="text-xs font-bold text-slate-700 dark:text-slate-200 bg-transparent border-none outline-none cursor-pointer pr-1"
+                    title="Pilih bulan spesifik"
+                  >
+                    {MONTH_NAMES.map((name, idx) => (
+                      <option key={idx + 1} value={idx + 1} className="dark:bg-slate-900">
+                        {name} {activeYear}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="hidden sm:block h-5 w-px bg-slate-200 dark:bg-slate-700" />
+          {/* Sisi Kanan: Badge Periode Aktif */}
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 self-start md:self-center">
+            <span className="font-semibold text-slate-400 dark:text-slate-500 uppercase text-[10.5px] tracking-wider">
+              Periode Aktif:
+            </span>
+            <span className="font-extrabold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+              {activePeriodLabel}
+            </span>
+          </div>
+        </div>
 
-          {/* Sumber Data */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10.5px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
+        {/* Row 2: Sumber Data & Acuan Konstan Tetap */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Sumber Data Toggle */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
               Sumber:
             </span>
-            <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+            <div className="inline-flex items-center bg-white dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
               <button
                 type="button"
-                onClick={() => handleSourceChange("ALL")}
+                onClick={() => handleSourceSelect("ALL")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  selectedSource === "ALL"
-                    ? "bg-indigo-600 text-white shadow-2xs font-extrabold"
+                  activeSource === "ALL"
+                    ? "bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-xs font-extrabold"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Gabungan seluruh data (Warga + Petugas)"
               >
                 <Layers size={13} />
-                <span>Semua</span>
+                <span>Semua Sumber</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleSourceChange("WARGA_APP")}
+                onClick={() => handleSourceSelect("WARGA_APP")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  selectedSource === "WARGA_APP"
-                    ? "bg-emerald-600 text-white shadow-2xs font-extrabold"
+                  activeSource === "WARGA_APP"
+                    ? "bg-emerald-600 text-white shadow-xs font-extrabold"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
-                title="Hanya data pemilahan mandiri warga via aplikasi mobile / AI"
+                title="Hanya data pemilahan mandiri warga via aplikasi mobile"
               >
                 <Smartphone size={13} />
                 <span>Aktivitas Warga</span>
@@ -356,10 +629,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
               <button
                 type="button"
-                onClick={() => handleSourceChange("PETUGAS_LAPANGAN")}
+                onClick={() => handleSourceSelect("PETUGAS_LAPANGAN")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  selectedSource === "PETUGAS_LAPANGAN"
-                    ? "bg-indigo-600 text-white shadow-2xs font-extrabold"
+                  activeSource === "PETUGAS_LAPANGAN"
+                    ? "bg-indigo-600 text-white shadow-xs font-extrabold"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
                 title="Hanya data penimbangan manual posko / TPS3R oleh petugas"
@@ -369,93 +642,68 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Ekspor XLSX */}
-        <div className="flex items-center self-end lg:self-center">
-          <button
-            type="button"
-            onClick={handleExportXLSX}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer active:scale-95"
-            title="Ekspor tabel rekapitulasi ke file Excel"
-          >
-            <FileSpreadsheet size={14} />
-            <span>Ekspor XLSX</span>
-          </button>
+          {/* Acuan Konstan Tetap */}
+          <div className="flex items-center gap-2 text-xs bg-white dark:bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-500">
+              Acuan Evaluasi:
+            </span>
+            <span className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+              Baseline KKN Juli 2026 (Konstan B₀)
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 3. Banner Ringkas Tata Kelola Data */}
-      <div
-        className={`px-4 py-3 rounded-2xl border text-xs flex items-start gap-3 transition-colors ${
-          selectedSource === "ALL"
-            ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/40 text-amber-900 dark:text-amber-200"
-            : selectedSource === "WARGA_APP"
-            ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/40 text-emerald-900 dark:text-emerald-200"
-            : "bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-200/80 dark:border-indigo-800/40 text-indigo-900 dark:text-indigo-200"
-        }`}
-      >
-        <div className="shrink-0 mt-0.5">
-          {selectedSource === "ALL" ? (
-            <AlertCircle size={16} className="text-amber-600 dark:text-amber-400" />
-          ) : (
-            <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
-          )}
-        </div>
-        <div className="flex-1 space-y-1">
-          <div className="font-extrabold flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-xs font-black">
-              {selectedSource === "ALL"
-                ? "Tata Kelola Data: Mode Tampilan Gabungan (Semua Sumber)"
-                : selectedSource === "WARGA_APP"
-                ? "Sumber Terisolasi: Aktivitas Pemilahan Warga (Aplikasi Mobile / AI)"
-                : "Sumber Terisolasi: Pencatatan Penimbangan Petugas (Posko / TPS3R)"}
-            </span>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono">
-              <span className="px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/60 border border-current/20 font-bold">
-                Tag: {selectedSource}
-              </span>
-              <span className="px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/60 border border-current/20 font-bold">
-                {currentPeriod === "DAILY" ? "kg/hari" : "kg/bulan (×30)"}
-              </span>
-              <span className="px-2 py-0.5 rounded-md bg-white/80 dark:bg-slate-900/60 border border-current/20 font-bold">
-                Cut-off Tgl 7
+      {/* 3. Status Notification jika belum ada transaksi di periode terpilih */}
+      {aggregation.totalActualKg === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <span className="font-extrabold">Belum ada transaksi sampah tercatat pada {activePeriodLabel}.</span>
+              <span className="text-amber-700 dark:text-amber-300 ml-1">
+                Kolom penurunan dan perubahan kepatuhan ditampilkan tanda strip (<code className="font-bold font-mono">—</code>).
               </span>
             </div>
           </div>
-          <p className="text-[11px] leading-relaxed opacity-90">
-            {selectedSource === "ALL" ? (
-              <>
-                <strong>Perhatian Double-Counting:</strong> Angka berat aktual merefleksikan{" "}
-                <strong>
-                  {currentPeriod === "DAILY"
-                    ? "rata-rata per hari (kg/hari)"
-                    : "total akumulasi bulanan (kg/bulan = harian × 30)"}
-                </strong>{" "}
-                dari gabungan seluruh sumber dalam siklus 30 hari kalender. Penggabungan data pemilahan warga via aplikasi mobile dengan pencatatan penimbangan petugas berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi. Rekapitulasi berkala dilakukan setiap <strong>tanggal 7 setiap bulannya</strong>.
-              </>
-            ) : selectedSource === "WARGA_APP" ? (
-              <>
-                Menampilkan{" "}
-                <strong>
-                  {currentPeriod === "DAILY"
-                    ? "rata-rata per hari (kg/hari)"
-                    : "total akumulasi bulanan (kg/bulan = harian × 30)"}
-                </strong>{" "}
-                dari sampah yang terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI di wilayah binaan. Nilai dihitung berbasis siklus standar 30 hari kalender, dihimpun berkala setiap <strong>tanggal 7 setiap bulannya</strong>.
-              </>
-            ) : (
-              <>
-                Menampilkan{" "}
-                <strong>
-                  {currentPeriod === "DAILY"
-                    ? "rata-rata per hari (kg/hari)"
-                    : "total akumulasi bulanan (kg/bulan = harian × 30)"}
-                </strong>{" "}
-                dari sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan. Nilai dihitung berbasis siklus standar 30 hari kalender, dihimpun berkala setiap <strong>tanggal 7 setiap bulannya</strong>.
-              </>
+          <div className="flex items-center gap-2 shrink-0">
+            {activePeriod === "DAILY" && activeDatePreset !== "YESTERDAY" && (
+              <button
+                type="button"
+                onClick={() => handleDatePresetSelect("YESTERDAY")}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              >
+                Lihat Data Kemarin (7 Okt)
+              </button>
             )}
-          </p>
+            {activePeriod === "DAILY" && (
+              <button
+                type="button"
+                onClick={() => handlePeriodSelect("MONTHLY")}
+                className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 font-bold text-xs hover:bg-amber-50 shadow-xs transition-all cursor-pointer"
+              >
+                Beralih ke Per Bulan
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3.1 Meta Information Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2 flex-wrap font-medium">
+          <span className="font-bold text-slate-700 dark:text-slate-300">
+            Komparasi: {activePeriodLabel} vs Baseline Survei KKN
+          </span>
+          <span>•</span>
+          <span>Satuan Massa: <strong className="text-slate-700 dark:text-slate-300 font-mono">{unitLabel}</strong></span>
+          <span>•</span>
+          <span>Satuan Kepatuhan: <strong className="text-slate-700 dark:text-slate-300 font-mono">pp</strong> (poin persentase)</span>
+        </div>
+        <div className="text-[11px] text-slate-400 dark:text-slate-500 italic">
+          *Data aktual merefleksikan capture rate penimbangan di aplikasi BERSEKA
         </div>
       </div>
 
@@ -475,42 +723,38 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Berat Sampah ({unitLabel})
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-blue-50/70 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 border-r border-slate-200 dark:border-slate-800">
-                Penurunan Berat Sampah (Δ)
+                Penurunan Berat Sampah (B₀ − B₁)
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-emerald-50/70 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
                 Kepatuhan Pemilahan
               </th>
               <th rowSpan={2} className="py-3 px-3 text-center uppercase tracking-wider bg-teal-50/70 dark:bg-teal-950/50 text-teal-900 dark:text-teal-200 min-w-[125px]">
-                Perubahan Kepatuhan (Δ)
+                Perubahan Kepatuhan (Δ pp)
               </th>
             </tr>
 
             {/* Header Row 2: Sub-Kolom Seragam */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
               <th
-                title={`Baseline estimasi timbulan sampah ${currentPeriod === "DAILY" ? "per hari" : "per bulan (harian × 30)"} hasil survei lapangan`}
+                title="Baseline estimasi timbulan sampah hasil survei KKN Juli 2026 (Konstan B₀)"
                 className="py-2 px-3 text-center bg-slate-50/60 dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-800 min-w-[125px]"
               >
-                Baseline ({unitLabel})
+                Baseline KKN ({unitLabel})
               </th>
               <th
-                title={
-                  currentPeriod === "DAILY"
-                    ? "Rata-rata berat sampah per hari dari standar 30 hari kalender (cut-off tanggal 7)"
-                    : "Total timbulan sampah per bulan (harian × 30) dari standar 30 hari kalender (cut-off tanggal 7)"
-                }
+                title={`Data transaksi sampah aktual tercatat pada ${activePeriodLabel}`}
                 className="py-2 px-3 text-center bg-slate-50/60 dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-800 min-w-[135px]"
               >
-                {currentPeriod === "DAILY" ? "Aktual Rata-Rata" : "Aktual Total"} ({unitLabel})
+                Aktual ({unitLabel})
               </th>
               <th
-                title={`Delta penurunan berat sampah ${currentPeriod === "DAILY" ? "per hari (Baseline - Aktual Rata-Rata)" : "per bulan (Baseline - Aktual Total)"}`}
+                title="Delta selisih penurunan berat sampah: Baseline KKN dikurangi Aktual (B₀ − B₁)"
                 className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[130px]"
               >
-                Delta ({unitLabel})
+                Penurunan ({unitLabel})
               </th>
-              <th title="Persentase penurunan berat sampah terhadap baseline" className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[95px]">
-                Delta (%)
+              <th title="Persentase penurunan berat sampah terhadap Baseline KKN" className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[95px]">
+                Penurunan (%)
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 min-w-[90px]">
                 Baseline (%)
@@ -530,8 +774,6 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 ? calculateComplianceDelta(item.baselineCompliance, item.actualCompliance)
                 : null;
 
-              const hasBaselineData = item.hasBaseline && item.baselineKg && item.baselineKg > 0;
-
               return (
                 <tr
                   key={item.id || idx}
@@ -549,46 +791,36 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Berat Baseline ({unitLabel}) */}
+                  {/* Berat Baseline */}
                   <td className="py-3 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
-                    {hasBaselineData ? (
-                      <div>
-                        <span className="font-extrabold text-slate-800 dark:text-slate-100">
-                          {Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-normal ml-0.5">{unitLabel}</span>
-                      </div>
+                    {item.baselineKg !== null && item.baselineKg !== undefined ? (
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100">
+                        {Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </span>
                     ) : (
                       <span className="text-slate-400 italic text-[11px] font-sans">Belum ada data</span>
                     )}
                   </td>
 
-                  {/* Berat Aktual ({unitLabel}) */}
+                  {/* Berat Aktual Terpilih */}
                   <td className="py-3 px-3 text-center font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     <div className="flex flex-col items-center justify-center">
-                      <div>
-                        <span className="font-extrabold text-slate-800 dark:text-slate-100">
-                          {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100">
+                        {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </span>
+                      {item.actualKg === 0 ? (
+                        <span className="text-[9.5px] font-medium text-amber-600 dark:text-amber-400 font-sans mt-0.5">
+                          (Belum ada transaksi)
                         </span>
-                        <span className="text-[10px] text-slate-400 font-normal ml-0.5">{unitLabel}</span>
-                      </div>
-                      {currentPeriod === "DAILY" ? (
-                        item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg !== null && item.rawAccumulatedKg > 0 && (
-                          <span className="text-[9.5px] font-normal text-slate-400 dark:text-slate-500 font-sans mt-0.5">
-                            (total: {Number(item.rawAccumulatedKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
-                          </span>
-                        )
-                      ) : (
-                        item.dailyAverageKg !== undefined && item.dailyAverageKg !== null && item.dailyAverageKg > 0 && (
-                          <span className="text-[9.5px] font-normal text-slate-400 dark:text-slate-500 font-sans mt-0.5">
-                            (rata-rata: {Number(item.dailyAverageKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari)
-                          </span>
-                        )
-                      )}
+                      ) : activePeriod === "MONTHLY" && item.dailyAverageKg !== undefined && item.dailyAverageKg > 0 ? (
+                        <span className="text-[9.5px] font-normal text-slate-400 dark:text-slate-500 font-sans mt-0.5">
+                          (rata-rata: {Number(item.dailyAverageKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari)
+                        </span>
+                      ) : null}
                     </div>
                   </td>
 
-                  {/* Kolom Seragam 1: Penurunan Berat Sampah (Delta) */}
+                  {/* Kolom Penurunan / Perubahan Berat Sampah (Delta kg) */}
                   <td className="py-3 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {deltaKg === null ? (
                       <span className="text-slate-400 italic font-sans">—</span>
@@ -614,12 +846,11 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                             ? `+${Math.abs(deltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
                             : `${deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`}
                         </span>
-                        <span className="text-[9.5px] font-medium opacity-75">{unitLabel}</span>
                       </span>
                     )}
                   </td>
 
-                  {/* Kolom Seragam 2: Penurunan Berat Sampah (Delta %) */}
+                  {/* Kolom Penurunan / Perubahan Berat Sampah (Delta %) */}
                   <td className="py-3 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {deltaPct === null ? (
                       <span className="text-slate-400 italic font-sans">—</span>
@@ -649,7 +880,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Kepatuhan Baseline (%) */}
+                  {/* Kepatuhan Pembanding (%) */}
                   <td className="py-3 px-3 text-center font-semibold text-slate-600 dark:text-slate-400 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {item.baselineCompliance !== null && item.baselineCompliance !== undefined ? (
                       <span>{Number(item.baselineCompliance).toFixed(1).replace(".", ",")}%</span>
@@ -658,7 +889,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Kepatuhan Aktual (%) */}
+                  {/* Kepatuhan Terpilih (%) */}
                   <td className="py-3 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60 font-mono tabular-nums">
                     {item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0 ? (
                       <div className="flex flex-col items-center justify-center">
@@ -674,7 +905,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Perubahan Kepatuhan (%) */}
+                  {/* Perubahan Kepatuhan (Δ pp) */}
                   <td className="py-3 px-3 text-center font-extrabold font-mono tabular-nums">
                     {deltaCompliance === null ? (
                       <span className="text-slate-400 italic font-sans">—</span>
@@ -695,7 +926,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                         ) : (
                           <Minus size={13} className="shrink-0" />
                         )}
-                        <span>{formatComplianceDelta(deltaCompliance, { unit: "%", showPlusSign: true, fractionDigits: 1 })}</span>
+                        <span>{formatComplianceDelta(deltaCompliance, { unit: "pp", showPlusSign: true, fractionDigits: 1 })}</span>
                       </span>
                     )}
                   </td>
@@ -713,119 +944,133 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                   Kecamatan Coblong (Total)
                 </span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block font-sans">
-                  Agregasi Terbobot 6 Kelurahan ({currentPeriod === "DAILY" ? "Rata-Rata Harian" : "Akumulasi Bulanan 30 Hari"})
+                  Agregasi Terbobot 6 Kelurahan ({activePeriod === "DAILY" ? "Rata-Rata Harian" : "Akumulasi Bulanan 30 Hari"})
                 </span>
               </td>
 
-              {/* Total Baseline Berat ({unitLabel}) */}
+              {/* Total Baseline */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
-                <div>
-                  <span className="font-black text-slate-900 dark:text-white">
-                    {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-normal ml-0.5">{unitLabel}</span>
-                </div>
+                <span className="font-black text-slate-900 dark:text-white">
+                  {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                </span>
               </td>
 
-              {/* Total Aktual Berat ({unitLabel}) */}
+              {/* Total Aktual */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
                 <div className="flex flex-col items-center justify-center">
-                  <div>
-                    <span className="font-black text-slate-900 dark:text-white">
-                      {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  <span className="font-black text-slate-900 dark:text-white">
+                    {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  </span>
+                  {aggregation.totalActualKg === 0 ? (
+                    <span className="text-[9.5px] font-medium text-amber-600 dark:text-amber-400 font-sans mt-0.5">
+                      (Belum ada transaksi)
                     </span>
-                    <span className="text-[10px] text-slate-500 font-normal ml-0.5">{unitLabel}</span>
-                  </div>
-                  {currentPeriod === "DAILY" ? (
-                    aggregation.totalAccumulatedKg !== undefined && aggregation.totalAccumulatedKg > 0 && (
-                      <span className="text-[9.5px] font-normal text-slate-500 dark:text-slate-400 font-sans mt-0.5">
-                        (total: {aggregation.totalAccumulatedKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
-                      </span>
-                    )
-                  ) : (
+                  ) : activePeriod === "MONTHLY" ? (
                     <span className="text-[9.5px] font-normal text-slate-500 dark:text-slate-400 font-sans mt-0.5">
                       (rata-rata: {(aggregation.totalActualKg / STANDARD_CYCLE_DAYS).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari)
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </td>
 
-              {/* Total Penurunan Berat (Delta {unitLabel}) */}
+              {/* Total Penurunan / Perubahan Berat (Delta kg) */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300 font-mono tabular-nums">
-                <span
-                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                    aggregation.totalDeltaKg > 0
-                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                      : aggregation.totalDeltaKg < 0
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {aggregation.totalDeltaKg > 0 ? (
-                    <TrendingDown size={13} className="text-emerald-600 shrink-0" />
-                  ) : aggregation.totalDeltaKg < 0 ? (
-                    <TrendingUp size={13} className="text-rose-600 shrink-0" />
-                  ) : (
-                    <Minus size={13} className="shrink-0" />
-                  )}
-                  <span>
-                    {aggregation.totalDeltaKg < 0
-                      ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
-                      : `${aggregation.totalDeltaKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`}
+                {aggregation.totalDeltaKg === null ? (
+                  <span className="text-slate-400 italic font-sans">—</span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                      aggregation.totalDeltaKg > 0
+                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                        : aggregation.totalDeltaKg < 0
+                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {aggregation.totalDeltaKg > 0 ? (
+                      <TrendingDown size={13} className="text-emerald-600 shrink-0" />
+                    ) : aggregation.totalDeltaKg < 0 ? (
+                      <TrendingUp size={13} className="text-rose-600 shrink-0" />
+                    ) : (
+                      <Minus size={13} className="shrink-0" />
+                    )}
+                    <span>
+                      {aggregation.totalDeltaKg < 0
+                        ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
+                        : `${aggregation.totalDeltaKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`}
+                    </span>
                   </span>
-                  <span className="text-[9.5px] font-semibold opacity-80">{unitLabel}</span>
-                </span>
+                )}
               </td>
 
-              {/* Total Penurunan Berat (Delta %) */}
+              {/* Total Penurunan / Perubahan Berat (Delta %) */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300 font-mono tabular-nums">
-                <span
-                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                    (aggregation.weightedDeltaPct || 0) > 0
-                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                      : (aggregation.weightedDeltaPct || 0) < 0
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {(aggregation.weightedDeltaPct || 0) > 0 ? (
-                    <TrendingDown size={13} className="text-emerald-600 shrink-0" />
-                  ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
-                    <TrendingUp size={13} className="text-rose-600 shrink-0" />
-                  ) : (
-                    <Minus size={13} className="shrink-0" />
-                  )}
-                  <span>
-                    {(aggregation.weightedDeltaPct || 0) < 0
-                      ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
-                      : `${(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+                {aggregation.weightedDeltaPct === null ? (
+                  <span className="text-slate-400 italic font-sans">—</span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                      aggregation.weightedDeltaPct > 0
+                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                        : aggregation.weightedDeltaPct < 0
+                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {aggregation.weightedDeltaPct > 0 ? (
+                      <TrendingDown size={13} className="text-emerald-600 shrink-0" />
+                    ) : aggregation.weightedDeltaPct < 0 ? (
+                      <TrendingUp size={13} className="text-rose-600 shrink-0" />
+                    ) : (
+                      <Minus size={13} className="shrink-0" />
+                    )}
+                    <span>
+                      {aggregation.weightedDeltaPct < 0
+                        ? `+${Math.abs(aggregation.weightedDeltaPct).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                        : `${aggregation.weightedDeltaPct.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
+                    </span>
                   </span>
-                </span>
+                )}
               </td>
 
-              {/* Rata-Rata Kepatuhan Baseline (%) */}
+              {/* Rata-Rata Kepatuhan Pembanding (%) */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-mono tabular-nums">
                 {aggregation.avgBaselineCompliance.toFixed(1).replace(".", ",")}%
               </td>
 
-              {/* Rata-Rata Kepatuhan Aktual (%) */}
+              {/* Rata-Rata Kepatuhan Terpilih (%) */}
               <td className="py-3.5 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300 font-mono tabular-nums">
-                {aggregation.avgActualCompliance.toFixed(1).replace(".", ",")}%
+                {aggregation.avgActualCompliance === null ? (
+                  <span className="text-slate-400 italic font-sans">Belum terdata</span>
+                ) : (
+                  `${aggregation.avgActualCompliance.toFixed(1).replace(".", ",")}%`
+                )}
               </td>
 
-              {/* Rata-Rata Perubahan Kepatuhan (%) */}
+              {/* Rata-Rata Perubahan Kepatuhan (Δ pp) */}
               <td className="py-3.5 px-3 text-center text-teal-700 dark:text-teal-300 font-mono tabular-nums">
-                <span
-                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                    aggregation.deltaCompliance > 0
-                      ? "bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-300"
-                      : aggregation.deltaCompliance < 0
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {formatComplianceDelta(aggregation.deltaCompliance, { unit: "%", showPlusSign: true, fractionDigits: 1 })}
-                </span>
+                {aggregation.deltaCompliance === null ? (
+                  <span className="text-slate-400 italic font-sans">—</span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                      aggregation.deltaCompliance > 0
+                        ? "bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-300"
+                        : aggregation.deltaCompliance < 0
+                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {aggregation.deltaCompliance > 0 ? (
+                      <TrendingUp size={13} className="text-teal-600 shrink-0" />
+                    ) : aggregation.deltaCompliance < 0 ? (
+                      <TrendingDown size={13} className="text-rose-600 shrink-0" />
+                    ) : (
+                      <Minus size={13} className="shrink-0" />
+                    )}
+                    <span>{formatComplianceDelta(aggregation.deltaCompliance, { unit: "pp", showPlusSign: true, fractionDigits: 1 })}</span>
+                  </span>
+                )}
               </td>
             </tr>
           </tbody>
@@ -837,82 +1082,68 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         <div className="flex items-center gap-2">
           <Info size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
           <span>
-            *Nilai kepatuhan pemilahan bersumber dari aktivitas warga via BERSEKA Vision AI, sedangkan penimbangan berat sampah bersumber dari pencatatan posko/TPS3R.
+            *Nilai kepatuhan bersumber dari aktivitas pemilahan via BERSEKA Vision AI, penimbangan berat sampah bersumber dari pencatatan posko/TPS3R.
           </span>
         </div>
         <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400 shrink-0">
           <Calendar size={13} className="text-indigo-600 dark:text-indigo-400" />
-          <span>Data dihimpun rata-rata per hari setiap <strong>tanggal 7 setiap bulannya</strong>.</span>
+          <span>Cut-off siklus transaksi bulanan: <strong>tanggal 7 setiap bulannya</strong>.</span>
         </div>
       </div>
 
-      {/* 5. Rangkuman Metodologi Standardisasi ISO (Kartu Seimbang) */}
+      {/* 5. Rangkuman Metodologi Standardisasi ISO (Kartu Simetris) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
         {/* Box Left: Rumus Penurunan Berat Sampah Standar ISO */}
-        <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 sm:p-5 border border-blue-200/70 dark:border-blue-800/40 flex flex-col justify-between space-y-3">
+        <div className="bg-slate-50/70 dark:bg-slate-800/30 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between space-y-3">
           <div className="space-y-2.5">
             <div className="flex items-center justify-between gap-2">
-              <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center shrink-0">
+              <h5 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center shrink-0">
                   Δ
                 </span>
-                Rumus Penurunan Berat Sampah (KPI 1 - Satuan {unitLabel})
+                Rumus Penurunan Berat Sampah (B₀ − B₁)
               </h5>
-              <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full shrink-0">
-                {currentPeriod === "DAILY" ? "Standar ISO 80000-1" : "Asumsi 30 Hari (× 30)"}
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/40 px-2.5 py-0.5 rounded-full shrink-0">
+                {activePeriod === "DAILY" ? "Standar Rata-Rata Harian" : "Asumsi 30 Hari (× 30)"}
               </span>
             </div>
-            <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
-              {currentPeriod === "DAILY" ? (
-                <>
-                  <p><strong>Rata-Rata Harian (kg/hari)</strong> = Total Akumulasi (kg) ÷ 30 Hari</p>
-                  <p><strong>Δ Berat (kg/hari)</strong> = Baseline (kg/hari) − Aktual Rata-Rata (kg/hari)</p>
-                  <p><strong>Δ Persen (%)</strong> = [(Baseline − Aktual Rata-Rata) ÷ Baseline] × 100%</p>
-                </>
-              ) : (
-                <>
-                  <p><strong>Akumulasi Bulanan (kg/bulan)</strong> = Rata-Rata Harian (kg/hari) × 30 Hari</p>
-                  <p><strong>Δ Berat (kg/bulan)</strong> = Baseline Bulanan (kg/bulan) − Aktual Total (kg/bulan)</p>
-                  <p><strong>Δ Persen (%)</strong> = [(Baseline Bulanan − Aktual Total) ÷ Baseline Bulanan] × 100%</p>
-                </>
-              )}
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[11px] text-slate-800 dark:text-slate-200 space-y-1 shadow-2xs">
+              <p><strong>Δ Berat Sampah</strong> = Baseline (B₀) − Aktual (B₁)</p>
+              <p><strong>Rasio Penurunan (%)</strong> = [(B₀ − B₁) ÷ B₀] × 100%</p>
             </div>
           </div>
-          <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
-            <strong>Kesesuaian Basis Waktu (Apple-to-Apple):</strong>{" "}
-            {currentPeriod === "DAILY"
-              ? "Baseline survei adalah estimasi timbulan harian (kg/hari). Dengan menormalisasi data aktual menjadi rata-rata per hari berbasis siklus standar 30 hari kalender, kalkulasi delta penurunan berat menjadi sahih dan akuntabel."
-              : "Baseline bulanan diperoleh dari Baseline Harian × 30 hari, sedangkan Aktual Bulanan diperoleh dari data aktual rata-rata harian × 30 hari (atau total akumulasi 30 hari). Rasio delta persentase (%) bernilai invarian (sama persis)."}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed bg-white/70 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+            <strong>Keterangan Capture Rate:</strong> Nilai aktual B₁ merupakan tonase sampah terpilah yang berhasil terserap dan tercatat di aplikasi Berseka pada periode {activePeriodLabel}.
           </div>
         </div>
 
         {/* Box Right: Rumus Perubahan Kepatuhan */}
-        <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 sm:p-5 border border-emerald-200/70 dark:border-emerald-800/40 flex flex-col justify-between space-y-3">
+        <div className="bg-slate-50/70 dark:bg-slate-800/30 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between space-y-3">
           <div className="space-y-2.5">
             <div className="flex items-center justify-between gap-2">
-              <h5 className="font-black text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center shrink-0">
+              <h5 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center shrink-0">
                   Δ
                 </span>
-                Rumus Kenaikan Kepatuhan Pemilahan (KPI 2)
+                Indeks Komposit Kepatuhan Pemilahan
               </h5>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full shrink-0">
-                Persentase &amp; PP
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-0.5 rounded-full shrink-0">
+                Satuan: pp (Poin Persentase)
               </span>
             </div>
-            <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 font-mono text-[11px] text-emerald-950 dark:text-emerald-200 space-y-1">
-              <p><strong>Δ Kepatuhan (%)</strong> = Kepatuhan_Aktual − Kepatuhan_Baseline</p>
-              <p><strong>Satuan Baku:</strong> Persentase (%) / Percentage Point (pp)</p>
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-[11px] text-slate-800 dark:text-slate-200 space-y-1 shadow-2xs">
+              <p><strong>Indeks Aktual</strong> = 50% Partisipasi Warga + 50% Akurasi Wadah</p>
+              <p><strong>Δ Kepatuhan</strong> = Kepatuhan_Aktual − Kepatuhan_Baseline (Satuan: <strong>pp</strong>)</p>
             </div>
           </div>
-          <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-emerald-100/50 dark:bg-emerald-900/30 p-2.5 rounded-xl">
-            <strong>Dua Indikator Kinerja Utama (IKU):</strong> (1) Penurunan laju timbulan sampah per hari di setiap kelurahan, dan (2) Kenaikan indeks kepatuhan pemilahan sampah warga secara terverifikasi kecerdasan buatan (Vision AI).
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed bg-white/70 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
+            <strong>Standar Satuan Baku:</strong> Selisih antara dua angka persentase dinyatakan dalam <strong>poin persentase (pp)</strong> untuk menghindari kerancuan dengan rasio relatif.
           </div>
         </div>
       </div>
 
-      {/* Catatan Kritis & Transparansi Analisis (Dropdown/Toggle) */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700 text-xs space-y-2">
+      {/* Catatan Kritis & Transparansi Analisis (Dropdown/Toggle Simetris) */}
+      <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800/80 text-xs space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
             <Info size={14} className="text-indigo-600 dark:text-indigo-400" />
@@ -921,26 +1152,31 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <button
             type="button"
             onClick={() => setShowFootnoteDetails(!showFootnoteDetails)}
-            className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
           >
-            {showFootnoteDetails ? "Sembunyikan Detail" : "Pelajari Metodologi Selengkapnya"}
+            <span>{showFootnoteDetails ? "Sembunyikan Detail" : "Pelajari Metodologi Selengkapnya"}</span>
+            {showFootnoteDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
 
         {showFootnoteDetails && (
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
-            <p>
-              <strong>1. Standardisasi Siklus Pelaporan (Tanggal 7 Setiap Bulan):</strong> Data transaksi timbulan sampah dan pemilahan dihimpun dalam siklus standar 30 hari kalender, lalu dinormalisasi menjadi rata-rata harian (<code className="font-mono">kg/hari</code>). Penarikan berkala dan evaluasi komparatif resmi diselenggarakan setiap tanggal 7 setiap bulannya.
-            </p>
-            <p>
-              <strong>2. Standardisasi Data Baseline:</strong> Angka baseline menggunakan total berat timbulan sampah harian resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (contoh: 4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) guna memastikan komparasi yang konsisten dan akuntabel di 6 kelurahan.
-            </p>
-            <p>
-              <strong>3. Formula Agregasi Terbobot Kecamatan:</strong> Rata-rata persentase penurunan berat kecamatan dihitung dari <strong>Total Pengurangan Berat Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana aritmetika persentase 6 kelurahan, guna meniadakan distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
-            </p>
-            <p>
-              <strong>4. Taat Asas SI &amp; Pedoman Ejaan Bahasa Indonesia (EYD V):</strong> Seluruh penulisan massa memakai simbol baku internasional <code>kg/hari</code> (huruf kecil). Format bilangan menggunakan koma desimal <code>,</code> dan titik ribuan <code>.</code> sesuai kaidah Bahasa Indonesia baku dan KBBI.
-            </p>
+          <div className="pt-3 border-t border-slate-200/80 dark:border-slate-700/80 grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
+              <strong className="text-slate-800 dark:text-slate-100 block">1. Fleksibilitas Filter &amp; Komparasi:</strong>
+              <p>Dasbor mendukung komparasi dinamis harian (Hari Ini, Kemarin, Kalender) dan bulanan (Januari s/d Desember 2026). Seluruh data dikunci membandingkan terhadap Baseline Survei Lapangan KKN Juli 2026 secara konsisten.</p>
+            </div>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
+              <strong className="text-slate-800 dark:text-slate-100 block">2. Standardisasi Data Baseline:</strong>
+              <p>Angka baseline menggunakan total berat timbulan sampah harian resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS guna memastikan komparasi yang konsisten dan akuntabel di 6 kelurahan.</p>
+            </div>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
+              <strong className="text-slate-800 dark:text-slate-100 block">3. Formula Agregasi Terbobot Kecamatan:</strong>
+              <p>Rata-rata persentase perubahan berat kecamatan dihitung dari <strong>Total Perubahan Berat Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata aritmetika sederhana.</p>
+            </div>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
+              <strong className="text-slate-800 dark:text-slate-100 block">4. Taat Asas SI &amp; Pedoman EYD V:</strong>
+              <p>Seluruh penulisan massa memakai simbol baku internasional <code>kg/hari</code> atau <code>kg/bulan</code>. Perubahan persentase menggunakan satuan baku <code>pp</code> (poin persentase). Format bilangan menggunakan koma desimal <code>,</code> dan titik ribuan <code>.</code>.</p>
+            </div>
           </div>
         )}
       </div>

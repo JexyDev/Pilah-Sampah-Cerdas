@@ -34,10 +34,18 @@ import { canAccessSidebarRoute } from "../../utils/sidebarAccess";
 import { WasteTrendChart } from "../../components/dashboard/WasteTrendChart";
 import { ComplianceWidget } from "../../components/dashboard/ComplianceWidget";
 import type { ComplianceMetricsResult } from "../../services/complianceService";
-import { WasteImpactSummaryTable } from "../../components/dashboard/WasteImpactSummaryTable";
+import { WasteImpactSummaryTable, type WasteImpactFilterState } from "../../components/dashboard/WasteImpactSummaryTable";
 import { WasteImpactTrendChart } from "../../components/dashboard/WasteImpactTrendChart";
 import { BaselineSection } from "../../components/dashboard/BaselineSection";
-import type { WasteImpactItem, WasteSourceType, WastePeriodMode } from "../../utils/wasteCalculations";
+import {
+  getDateRangeForDay,
+  getDateRangeForMonth,
+  getPreviousPeriodRange,
+  type DateRange,
+  type WasteImpactItem,
+  type WasteSourceType,
+  type WastePeriodMode,
+} from "../../utils/wasteCalculations";
 import { isStagingEnv } from "../../utils/envUtils";
 
 export interface KelurahanBaselineData {
@@ -1783,6 +1791,26 @@ const Dashboard: React.FC = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedWasteSource, setSelectedWasteSource] = useState<WasteSourceType>("ALL");
   const [wastePeriodMode, setWastePeriodMode] = useState<WastePeriodMode>("DAILY");
+  const [wasteFilterState, setWasteFilterState] = useState<WasteImpactFilterState>(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const yesterdayStr = `${yesterday.getFullYear()}-${pad(yesterday.getMonth() + 1)}-${pad(yesterday.getDate())}`;
+    return {
+      periodMode: "DAILY",
+      selectedSource: "ALL",
+      datePreset: "YESTERDAY",
+      selectedDate: yesterdayStr,
+      monthPreset: "CURRENT",
+      selectedYear: today.getFullYear(),
+      selectedMonth: today.getMonth() + 1,
+      comparisonTarget: "BASELINE",
+    };
+  });
+  const [wasteFilteredData, setWasteFilteredData] = useState<any[] | null>(null);
+  const [wastePreviousData, setWastePreviousData] = useState<any[] | null>(null);
+  const [wasteComparisonLoading, setWasteComparisonLoading] = useState<boolean>(false);
 
   // Wilayah selection state (Default: Kecamatan Coblong)
   const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
@@ -2085,6 +2113,40 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const fetchWasteComparisonData = useCallback(
+    async (filter: WasteImpactFilterState) => {
+      try {
+        setWasteComparisonLoading(true);
+        const paramsPrimary: Record<string, any> = {
+          wilayah: effectiveWilayah,
+          sourceType: filter.selectedSource,
+        };
+
+        let primaryRange: DateRange;
+        if (filter.periodMode === "DAILY") {
+          primaryRange = getDateRangeForDay(filter.selectedDate);
+        } else {
+          primaryRange = getDateRangeForMonth(filter.selectedYear, filter.selectedMonth);
+        }
+        paramsPrimary.startDate = `${primaryRange.startDate}T00:00:00.000Z`;
+        paramsPrimary.endDate = `${primaryRange.endDate}T23:59:59.999Z`;
+
+        const resPrimary = await api.get("/dashboard/kpi", { params: paramsPrimary });
+        const primaryList = resPrimary.data?.data?.baselineComparison ?? [];
+        setWasteFilteredData(primaryList);
+      } catch (_err) {
+        // Fallback gracefully
+      } finally {
+        setWasteComparisonLoading(false);
+      }
+    },
+    [effectiveWilayah]
+  );
+
+  useEffect(() => {
+    fetchWasteComparisonData(wasteFilterState);
+  }, [fetchWasteComparisonData, wasteFilterState]);
+
   useEffect(() => {
     // Role non-operasional dialihkan / tidak memuat stats sampah
     // PIMPINAN / PEMIMPIN / PANITIA_TASKFORCE / DEVELOPER / SUPER_USER memuat fetchStats() agar data rekapitulasi kelurahan konsisten
@@ -2120,7 +2182,12 @@ const Dashboard: React.FC = () => {
       : (loading ? KELURAHAN_BASELINE_DATA : []);
 
   const wasteImpactItems: WasteImpactItem[] = useMemo(() => {
-    return kelurahanBaselineList.map((item) => {
+    const sourceList =
+      wasteFilteredData && Array.isArray(wasteFilteredData) && wasteFilteredData.length > 0
+        ? wasteFilteredData
+        : kelurahanBaselineList;
+
+    return sourceList.map((item) => {
       const normKey = (item.kelurahan || "").toLowerCase().replace(/^(kel\.|kelurahan)\s*/i, "").replace(/\s+/g, "");
       const fbRate = SURVEY_BASELINE_RATES[normKey] ?? null;
       const fbKg = SURVEY_BASELINE_KG[normKey] ?? null;
@@ -2155,7 +2222,23 @@ const Dashboard: React.FC = () => {
         totalWarga: (item as any).totalWarga ?? null,
       };
     });
-  }, [kelurahanBaselineList]);
+  }, [wasteFilteredData, kelurahanBaselineList]);
+
+  const wastePreviousImpactItems: WasteImpactItem[] | null = useMemo(() => {
+    if (!wastePreviousData || !Array.isArray(wastePreviousData) || wastePreviousData.length === 0) return null;
+    return wastePreviousData.map((item) => {
+      return {
+        ...item,
+        actualKg: Number(item.totalKg || 0),
+        wargaKg: Number(item.wargaKg || 0),
+        petugasKg: Number(item.petugasKg || 0),
+        actualCompliance:
+          item.actualCompliance !== undefined && item.actualCompliance !== null
+            ? item.actualCompliance
+            : (item.endlineRate ?? null),
+      };
+    });
+  }, [wastePreviousData]);
 
   const renderTabSwitcher = () => {
     if (!canAccessTabs) return null;
@@ -2705,17 +2788,30 @@ const Dashboard: React.FC = () => {
       <div className="space-y-6 relative z-10">
         <WasteImpactSummaryTable
           data={wasteImpactItems}
-          loading={loading || refreshing}
+          previousPeriodData={wastePreviousImpactItems}
+          loading={loading || refreshing || wasteComparisonLoading}
+          filterState={wasteFilterState}
+          onFilterChange={(newFilter) => {
+            setWasteFilterState(newFilter);
+            setWastePeriodMode(newFilter.periodMode);
+            setSelectedWasteSource(newFilter.selectedSource);
+          }}
           periodMode={wastePeriodMode}
           onPeriodChange={setWastePeriodMode}
-          onSourceChange={(src) => setSelectedWasteSource(src)}
+          onSourceChange={(src) => {
+            setSelectedWasteSource(src);
+            setWasteFilterState((prev) => ({ ...prev, selectedSource: src }));
+          }}
         />
         <WasteImpactTrendChart
           data={wasteImpactItems}
           selectedSource={selectedWasteSource}
           periodMode={wastePeriodMode}
-          loading={loading || refreshing}
-          onRefresh={() => fetchStats(false)}
+          loading={loading || refreshing || wasteComparisonLoading}
+          onRefresh={() => {
+            fetchStats(false);
+            fetchWasteComparisonData(wasteFilterState);
+          }}
           lastUpdated={formattedLastUpdated}
         />
       </div>

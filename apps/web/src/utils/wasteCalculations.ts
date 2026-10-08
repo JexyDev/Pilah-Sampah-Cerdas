@@ -43,12 +43,12 @@ export interface WasteImpactItem {
 export interface WasteImpactAggregation {
   totalBaselineKg: number;
   totalActualKg: number;
-  totalDeltaKg: number;
+  totalDeltaKg: number | null;
   weightedDeltaPct: number | null;
   simpleAvgDeltaPct: number | null;
   avgBaselineCompliance: number;
-  avgActualCompliance: number;
-  deltaCompliance: number;
+  avgActualCompliance: number | null;
+  deltaCompliance: number | null;
   totalWargaKg: number;
   totalPetugasKg: number;
   totalAccumulatedKg?: number;
@@ -102,8 +102,8 @@ export function calculateWeightDeltaKg(
   actualKg: number | null | undefined
 ): number | null {
   if (baselineKg === null || baselineKg === undefined) return null;
-  const actual = actualKg ?? 0;
-  return Number((baselineKg - actual).toFixed(2));
+  if (actualKg === null || actualKg === undefined || actualKg <= 0) return null;
+  return Number((baselineKg - actualKg).toFixed(2));
 }
 export const calculateBeratDeltaKg = calculateWeightDeltaKg;
 export const calculateVolumeDeltaKg = calculateWeightDeltaKg;
@@ -112,7 +112,7 @@ export const calculateVolumeDeltaKg = calculateWeightDeltaKg;
  * 2. Menghitung Penurunan Berat Sampah dalam Satuan Persentase (%)
  * Rumus: Delta_berat (%) = ((Berat_Baseline - Berat_Aktual) / Berat_Baseline) * 100%
  * Catatan Proteksi & Edge Cases:
- * - Jika Berat_Baseline <= 0, mengembalikan null untuk menghindari Division by Zero (div/0).
+ * - Jika Berat_Baseline <= 0 atau data aktual belum ada (<= 0), return null agar tidak terjadi klaim penurunan 100% palsu saat data kosong.
  * - Jika Berat_Aktual > Berat_Baseline, menghasilkan persentase negatif tanpa merusak format.
  * - Studi kasus Lebakgede: Baseline = 250 kg, Aktual = 37 kg ->
  *   (250 - 37) / 250 * 100% = 213 / 250 * 100% = 85.20%.
@@ -124,8 +124,10 @@ export function calculateWeightDeltaPct(
   if (baselineKg === null || baselineKg === undefined || baselineKg <= 0) {
     return null;
   }
-  const actual = actualKg ?? 0;
-  const delta = ((baselineKg - actual) / baselineKg) * 100;
+  if (actualKg === null || actualKg === undefined || actualKg <= 0) {
+    return null;
+  }
+  const delta = ((baselineKg - actualKg) / baselineKg) * 100;
   return Number(delta.toFixed(2));
 }
 export const calculateBeratDeltaPct = calculateWeightDeltaPct;
@@ -135,6 +137,7 @@ export const calculateVolumeDeltaPct = calculateWeightDeltaPct;
  * 3. Menghitung Kenaikan / Perubahan Kepatuhan Pemilahan
  * Rumus: Delta_kepatuhan = Kepatuhan_Aktual - Kepatuhan_Baseline
  * Disajikan dalam persentase (%) atau Percentage Point (PP).
+ * Jika actualRate belum terdata (null / <= 0), return null agar tidak menghasilkan penurunan minus palsu.
  */
 export function calculateComplianceDelta(
   baselineRate: number | null | undefined,
@@ -144,7 +147,8 @@ export function calculateComplianceDelta(
     baselineRate === null ||
     baselineRate === undefined ||
     actualRate === null ||
-    actualRate === undefined
+    actualRate === undefined ||
+    actualRate <= 0
   ) {
     return null;
   }
@@ -205,11 +209,11 @@ export function formatComplianceDelta(
   val: number | null | undefined,
   options: { unit?: "%" | "pp"; showPlusSign?: boolean; fallback?: string; fractionDigits?: number } = {}
 ): string {
-  const { unit = "%", showPlusSign = true, fallback = "—", fractionDigits } = options;
+  const { unit = "pp", showPlusSign = true, fallback = "—", fractionDigits } = options;
   if (val === null || val === undefined || isNaN(val)) return fallback;
 
   const minDigits = fractionDigits !== undefined ? fractionDigits : 1;
-  const maxDigits = fractionDigits !== undefined ? fractionDigits : 2;
+  const maxDigits = fractionDigits !== undefined ? fractionDigits : 1;
 
   const formatted = Math.abs(val).toLocaleString("id-ID", {
     minimumFractionDigits: minDigits,
@@ -223,7 +227,7 @@ export function formatComplianceDelta(
   } else if (val < 0) {
     return `-${formatted}${suffix}`;
   }
-  return `0,00${suffix}`;
+  return `0,0${suffix}`;
 }
 
 /**
@@ -277,7 +281,7 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
       countBaselineCompliance++;
     }
 
-    if (item.actualCompliance !== null && item.actualCompliance !== undefined) {
+    if (item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0) {
       sumActualCompliance += item.actualCompliance;
       countActualCompliance++;
     }
@@ -294,9 +298,10 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
     }
   });
 
-  const totalDeltaKg = Number((totalBaselineKg - totalActualKg).toFixed(2));
+  const totalDeltaKg =
+    totalActualKg > 0 ? Number((totalBaselineKg - totalActualKg).toFixed(2)) : null;
   const weightedDeltaPct =
-    totalBaselineKg > 0
+    totalActualKg > 0 && totalBaselineKg > 0
       ? Number((((totalBaselineKg - totalActualKg) / totalBaselineKg) * 100).toFixed(2))
       : null;
   const simpleAvgDeltaPct =
@@ -307,13 +312,16 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
       ? Number((sumBaselineCompliance / countBaselineCompliance).toFixed(1))
       : 0;
 
-  // Gunakan rata-rata indeks komposit kepatuhan kelurahan agar konsisten dan sinkron dengan baris masing-masing kelurahan
+  // Gunakan rata-rata indeks komposit kepatuhan kelurahan jika ada data riil
   const avgActualCompliance =
     countActualCompliance > 0
       ? Number((sumActualCompliance / countActualCompliance).toFixed(1))
-      : 0;
+      : null;
 
-  const deltaCompliance = Number((avgActualCompliance - avgBaselineCompliance).toFixed(1));
+  const deltaCompliance =
+    avgActualCompliance !== null
+      ? Number((avgActualCompliance - avgBaselineCompliance).toFixed(1))
+      : null;
 
   return {
     totalBaselineKg: Number(totalBaselineKg.toFixed(2)),
@@ -330,3 +338,85 @@ export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactA
     kelurahanCount: items.length,
   };
 }
+
+/**
+ * 8. Struktur & Helper Rentang Tanggal Filter Dasbor
+ */
+export interface DateRange {
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  label: string;
+}
+
+/**
+ * Menghasilkan rentang tanggal untuk 1 hari tertentu (YYYY-MM-DD).
+ */
+export function getDateRangeForDay(dateStr: string): DateRange {
+  const parts = dateStr.split("-");
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const date = new Date(year, month, day);
+
+  const formatted = date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return {
+    startDate: dateStr,
+    endDate: dateStr,
+    label: formatted,
+  };
+}
+
+/**
+ * Menghasilkan rentang tanggal untuk 1 bulan kalender (YYYY-MM).
+ */
+export function getDateRangeForMonth(year: number, monthIndex: number): DateRange {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const startDate = `${year}-${pad(monthIndex)}-01`;
+  const lastDay = new Date(year, monthIndex, 0).getDate();
+  const endDate = `${year}-${pad(monthIndex)}-${pad(lastDay)}`;
+
+  const monthName = new Date(year, monthIndex - 1, 1).toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return {
+    startDate,
+    endDate,
+    label: monthName,
+  };
+}
+
+/**
+ * Menghitung rentang tanggal periode pembanding sebelumnya (H-1 atau Bulan Sebelumnya).
+ */
+export function getPreviousPeriodRange(
+  mode: WastePeriodMode,
+  currentStartDate: string
+): DateRange {
+  const parts = currentStartDate.split("-");
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+
+  if (mode === "DAILY") {
+    const cur = new Date(year, month, day);
+    cur.setDate(cur.getDate() - 1);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const prevDateStr = `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`;
+    return getDateRangeForDay(prevDateStr);
+  } else {
+    let prevYear = year;
+    let prevMonth = month; // month is 0-11, so previous month is month
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear -= 1;
+    }
+    return getDateRangeForMonth(prevYear, prevMonth);
+  }
+}
+
