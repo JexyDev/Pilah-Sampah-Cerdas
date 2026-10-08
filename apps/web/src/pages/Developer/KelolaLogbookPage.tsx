@@ -781,7 +781,7 @@ export const KelolaLogbookPage: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="min-w-[1000px] w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold text-[11px]">
                 <th className="py-3 px-4 w-12 text-center">No</th>
@@ -1103,7 +1103,7 @@ export const KelolaLogbookPage: React.FC = () => {
               </div>
 
               {/* Jam & Tipe */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Mulai</label>
                   <input
@@ -1291,7 +1291,7 @@ export const KelolaLogbookPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Mulai</label>
                   <input

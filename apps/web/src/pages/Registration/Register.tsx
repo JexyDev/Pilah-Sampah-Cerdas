@@ -271,7 +271,7 @@ export const Register: React.FC = () => {
               <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 PILIH PERAN
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole("WARGA")}
@@ -374,7 +374,7 @@ export const Register: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         KECAMATAN
@@ -435,7 +435,7 @@ export const Register: React.FC = () => {
               {/* MAHASISWA KKN FIELDS */}
               {role === "MAHASISWA_KKN" && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">NIM</label>
                       <input
@@ -460,7 +460,7 @@ export const Register: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">JURUSAN</label>
                       <input

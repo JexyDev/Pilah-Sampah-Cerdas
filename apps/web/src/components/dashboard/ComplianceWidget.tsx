@@ -499,8 +499,8 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                   <Layers size={14} className="text-emerald-600" />
                   Matriks Logika Biner &amp; Status Sistem
                 </h5>
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                  <table className="w-full text-left border-collapse text-[11px]">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto">
+                  <table className="w-full min-w-[500px] text-left border-collapse text-[11px]">
                     <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                       <tr>
                         <th className="py-2 px-3">Sampah Terdeteksi</th>

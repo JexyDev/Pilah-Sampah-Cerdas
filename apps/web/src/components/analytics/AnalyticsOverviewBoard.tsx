@@ -149,7 +149,7 @@ const TableSection: React.FC<TableSectionProps> = ({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
+        <table className="min-w-[420px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
           <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th

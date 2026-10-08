@@ -858,7 +858,7 @@ const KknDashboardContent: React.FC = () => {
 
         {/* Warga Table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="min-w-[700px] w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 uppercase text-[11px] font-extrabold tracking-wider">
                 <th className="p-3.5">Nama &amp; Alamat</th>

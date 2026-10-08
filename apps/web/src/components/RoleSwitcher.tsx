@@ -93,7 +93,7 @@ export const RoleSwitcher: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         disabled={isSwitching}
         title="Ganti Peran: Pimpinan / DPL"
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all text-xs font-bold cursor-pointer shadow-2xs group ${
+        className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border transition-all text-xs font-bold cursor-pointer shadow-2xs group ${
           isPimpinan
             ? "border-amber-200/80 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 hover:bg-amber-100/80"
             : "border-blue-200/80 dark:border-blue-800/80 bg-blue-50/80 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 hover:bg-blue-100/80"
@@ -107,8 +107,9 @@ export const RoleSwitcher: React.FC = () => {
         <span className="hidden sm:inline text-[11px] font-extrabold tracking-tight">
           Peran:
         </span>
-        <span className="text-[11px] font-black max-w-[130px] truncate">
-          {isPimpinan ? "Pimpinan Eksekutif" : kelompokName ? `DPL (${kelompokName})` : "DPL"}
+        <span className="text-[11px] font-black max-w-[65px] xs:max-w-[85px] sm:max-w-[130px] truncate">
+          {isPimpinan ? "Pimpinan" : "DPL"}
+          <span className="hidden md:inline">{isPimpinan ? " Eksekutif" : kelompokName ? ` (${kelompokName})` : ""}</span>
         </span>
         <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>

@@ -475,7 +475,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                 }`}
               />
               <span
-                className={`items-center gap-1.5 text-xs px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border transition-all truncate max-w-[120px] sm:max-w-[220px] ${
+                className={`items-center gap-1.5 text-xs px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-full border transition-all truncate max-w-[85px] xs:max-w-[120px] sm:max-w-[220px] ${
                   !isLast ? "hidden sm:flex" : "flex"
                 } ${
                   isLast
@@ -491,7 +491,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       </div>
 
       {/* Right Section: System Actions & User Profile */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Notifications Popover Trigger & Container */}
         <div className="relative" ref={notifRef}>
           <button
@@ -635,7 +635,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
           <div
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
             title="Menu Akun Pengguna"
-            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
+            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-3.5 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
           >
             <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
               <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">

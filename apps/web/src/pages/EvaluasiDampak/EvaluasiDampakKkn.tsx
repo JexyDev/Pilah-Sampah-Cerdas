@@ -325,7 +325,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
       ) : activeTab === "BASELINE" || activeTab === "ENDLINE" ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="min-w-[800px] w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
                   <th className="px-4 py-3 font-bold">Kelurahan</th>
@@ -598,7 +598,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                </h3>
              </div>
              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="min-w-[780px] w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 uppercase tracking-wider font-bold">
                       <th className="px-4 py-3">Kelurahan</th>

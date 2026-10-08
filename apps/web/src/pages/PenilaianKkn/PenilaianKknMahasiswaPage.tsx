@@ -1014,8 +1014,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
-                    <table className="w-full text-left text-xs border-collapse">
+                  <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-x-auto">
+                    <table className="w-full min-w-[480px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-sky-50/70 dark:bg-slate-800/90 text-slate-600 border-b border-slate-200 dark:border-slate-800 text-[10.5px] uppercase tracking-wider font-bold">
                           <th className="py-2.5 px-3 w-8 text-center">No</th>
@@ -1131,8 +1131,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
-                    <table className="w-full text-left text-xs border-collapse">
+                  <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-x-auto">
+                    <table className="w-full min-w-[480px] text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[10.5px] uppercase tracking-wider font-bold">
                           <th className="py-2.5 px-3 w-8 text-center">No</th>

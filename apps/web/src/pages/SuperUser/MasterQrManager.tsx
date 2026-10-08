@@ -444,8 +444,8 @@ export const MasterQrManager: React.FC = () => {
               <span>Peringatan: {inactiveBins.length} Tempat Sampah Membutuhkan Tindakan (TIDAK AKTIF / RUSAK)</span>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200/60 dark:border-amber-800/50 overflow-hidden shadow-xs">
-            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200/60 dark:border-amber-800/50 overflow-x-auto shadow-xs">
+            <table className="min-w-[620px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
               <thead className="bg-amber-50/50 dark:bg-amber-950/50 text-[11px] font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3">Kode QR</th>
@@ -549,7 +549,7 @@ export const MasterQrManager: React.FC = () => {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+            <table className="min-w-[850px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Preview QR</th>
@@ -732,7 +732,7 @@ export const MasterQrManager: React.FC = () => {
                 description="Tidak ada pengajuan verifikasi akun petugas residu baru saat ini."
               />
             ) : (
-              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
+              <table className="min-w-[500px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm text-left">
                 <thead className="bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Nama & Kontak</th>

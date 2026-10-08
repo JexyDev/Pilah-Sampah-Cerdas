@@ -463,7 +463,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
               />
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="min-w-[1100px] w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4 w-12 text-center">No</th>

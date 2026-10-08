@@ -137,7 +137,7 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
         {/* Scrollable Form Body */}
         <form id="form-logbook-modal" onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
           {/* Tanggal & Waktu */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="col-span-1 space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal</label>
               <input

@@ -98,42 +98,44 @@ export const RwApproval = () => {
           {pendingPetugas.length === 0 ? (
             <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan petugas residu baru.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Kontak</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
-                {pendingPetugas.map((petugas) => {
-                  const targetId = petugas.id || petugas.userId;
-                  const isApproved = petugas.whitelistStatus === "APPROVED" || petugas.user?.status === "Aktif";
-                  return (
-                    <tr key={targetId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
-                      <td className="px-4 py-2">
-                        <p className="font-semibold text-sm">{petugas.nama || petugas.user?.name || "Petugas Residu"}</p>
-                        <p className="text-xs text-gray-500">{petugas.noWa || petugas.user?.phone || "-"}</p>
-                      </td>
-                      <td className="px-4 py-2">
-                        {isApproved ? (
-                          <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-800">AKTIF</span>
-                        ) : (
-                          <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-100 text-amber-800">MENUNGGU ACC</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex gap-2">
-                          <button onClick={() => verifyPetugas(targetId, "APPROVED")} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Setujui</button>
-                          <button onClick={() => verifyPetugas(targetId, "REJECTED")} className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Tolak</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="min-w-[480px] w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Kontak</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
+                  {pendingPetugas.map((petugas) => {
+                    const targetId = petugas.id || petugas.userId;
+                    const isApproved = petugas.whitelistStatus === "APPROVED" || petugas.user?.status === "Aktif";
+                    return (
+                      <tr key={targetId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
+                        <td className="px-4 py-2">
+                          <p className="font-semibold text-sm">{petugas.nama || petugas.user?.name || "Petugas Residu"}</p>
+                          <p className="text-xs text-gray-500">{petugas.noWa || petugas.user?.phone || "-"}</p>
+                        </td>
+                        <td className="px-4 py-2">
+                          {isApproved ? (
+                            <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 text-emerald-800">AKTIF</span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-100 text-amber-800">MENUNGGU ACC</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex gap-2">
+                            <button onClick={() => verifyPetugas(targetId, "APPROVED")} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Setujui</button>
+                            <button onClick={() => verifyPetugas(targetId, "REJECTED")} className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold btn-polish cursor-pointer shadow-sm">Tolak</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
@@ -147,30 +149,32 @@ export const RwApproval = () => {
           {inactiveBins.length === 0 ? (
             <p className="text-gray-500 text-sm p-4 text-center">Tidak ada tempat sampah yang inaktif di wilayah ini.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pemilik</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">QR Code</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tindakan Lapangan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
-                {inactiveBins.map((bin) => (
-                  <tr key={bin.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
-                    <td className="px-4 py-2 font-medium text-sm">{bin.user?.name}</td>
-                    <td className="px-4 py-2 font-mono text-sm">{bin.qrCode}</td>
-                    <td className="px-4 py-2">
-                      <Badge status="INACTIVE" />
-                    </td>
-                    <td className="px-4 py-2">
-                      <button onClick={() => markBinBroken(bin.id)} className="text-rose-600 hover:text-rose-800 text-xs font-bold btn-polish cursor-pointer underline">Lapor Rusak Fisik (BROKEN)</button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-[480px] w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pemilik</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">QR Code</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tindakan Lapangan</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
+                  {inactiveBins.map((bin) => (
+                    <tr key={bin.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
+                      <td className="px-4 py-2 font-medium text-sm">{bin.user?.name}</td>
+                      <td className="px-4 py-2 font-mono text-sm">{bin.qrCode}</td>
+                      <td className="px-4 py-2">
+                        <Badge status="INACTIVE" />
+                      </td>
+                      <td className="px-4 py-2">
+                        <button onClick={() => markBinBroken(bin.id)} className="text-rose-600 hover:text-rose-800 text-xs font-bold btn-polish cursor-pointer underline">Lapor Rusak Fisik (BROKEN)</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -1716,7 +1716,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </div>
 
               {/* Grid 4 Metrik Status Usulan */}
-              <div className="grid grid-cols-4 gap-2 flex-1 w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1 w-full">
                 {/* Total Usulan */}
                 <div className="bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200 mb-0.5">
@@ -2447,7 +2447,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         ) : leaderboardTab === "students" ? (
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
+            <table className="min-w-[600px] w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
                   <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
@@ -2513,7 +2513,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         ) : leaderboardTab === "groups" ? (
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
+            <table className="min-w-[600px] w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
                   <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
@@ -2559,7 +2559,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
+            <table className="min-w-[600px] w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
                   <th className="py-3 px-3.5 font-bold w-16 text-center">Peringkat</th>
@@ -2858,7 +2858,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
         ) : groupViewMode === "table" ? (
           /* TAMPILAN TABEL EKSEKUTIF */
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
+            <table className="min-w-[950px] w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 text-xs">
                   <th className="py-3 px-3.5 font-bold w-12 text-center">#</th>
@@ -3393,7 +3393,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="min-w-[620px] w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
                         <th className="py-3 px-3 text-center w-10">No</th>
@@ -3621,7 +3621,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               {/* Table of Critical Alpa Students */}
               <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="min-w-[700px] w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10.5px]">
                       <tr>
                         <th className="py-2.5 px-3.5 text-center w-12">No</th>
@@ -3871,7 +3871,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               {/* Table of DPL */}
               <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="min-w-[650px] w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10.5px]">
                       <tr>
                         <th className="py-2.5 px-3.5 text-center w-12">No</th>

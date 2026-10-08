@@ -2769,7 +2769,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Quick Schedule Selector & Manager */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto shrink-0">
             {canManageSchedules && (
               <button
                 type="button"
@@ -2784,7 +2784,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
 
             {userRole === "DEVELOPER" && (
-              <div className="relative min-w-[280px]">
+              <div className="relative w-full sm:w-auto sm:min-w-[260px] flex-1">
                 <select
                   value={selectedScheduleId}
                   onChange={(e) => {
@@ -2970,7 +2970,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center gap-2 sm:gap-0">
                 <div className="px-2 flex flex-col items-center justify-center">
                   <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
                   <div className="flex flex-col items-center">
@@ -3021,7 +3021,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center gap-2 sm:gap-0">
                 <div className="px-2 flex flex-col items-center justify-center">
                   <Calendar size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
                   <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetPekan ?? 10}</span>
@@ -3618,7 +3618,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               /* Mode 1: Table Pro - Sesuai Acuan Gambar Resmi 10 Kolom */
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full min-w-[1050px] text-left text-xs border-collapse">
                     <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       {isDpl ? (
                         <tr>

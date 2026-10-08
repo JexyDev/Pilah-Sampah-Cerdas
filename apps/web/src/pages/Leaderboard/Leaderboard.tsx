@@ -671,7 +671,7 @@ const Leaderboard: React.FC = () => {
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
+                  <table className="min-w-[550px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-xs text-left">
                     <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                       <tr>
                         <th

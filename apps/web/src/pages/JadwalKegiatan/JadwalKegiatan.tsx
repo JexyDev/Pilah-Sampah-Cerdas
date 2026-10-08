@@ -2267,8 +2267,8 @@ const JadwalKegiatan: React.FC = () => {
 
                         {/* Coordinate Points Table */}
                         {formData.polygon.length > 0 && (
-                          <div className="max-h-[120px] overflow-y-auto rounded-lg border border-emerald-200 bg-white dark:bg-slate-900">
-                            <table className="w-full text-left text-[11px]">
+                          <div className="max-h-[120px] overflow-x-auto overflow-y-auto rounded-lg border border-emerald-200 bg-white dark:bg-slate-900">
+                            <table className="w-full min-w-[280px] text-left text-[11px]">
                               <thead className="bg-emerald-100/70 text-emerald-950 font-bold sticky top-0">
                                 <tr>
                                   <th className="px-2.5 py-1">#</th>

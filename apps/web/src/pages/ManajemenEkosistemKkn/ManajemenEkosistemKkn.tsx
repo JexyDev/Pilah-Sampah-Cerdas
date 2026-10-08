@@ -2138,8 +2138,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     Belum ada kelompok dampingan yang terhubung dengan DPL ini.
                   </div>
                 ) : (
-                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
-                    <table className="w-full text-xs">
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto shadow-2xs">
+                    <table className="w-full min-w-[540px] text-xs">
                       <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
                         <tr>
                           <th className="py-2.5 px-3 text-left">Nama Kelompok & Wilayah</th>

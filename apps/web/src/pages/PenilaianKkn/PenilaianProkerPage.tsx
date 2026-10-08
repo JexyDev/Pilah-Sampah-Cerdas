@@ -1957,8 +1957,8 @@ export const PenilaianProkerPage: React.FC = () => {
                 </h4>
 
                 {/* Tabel 7 Aspek Rubrik Penilaian */}
-                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-xs">
-                  <table className="w-full border-collapse">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto text-xs">
+                  <table className="w-full min-w-[480px] border-collapse">
                     <thead>
                       <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[11px] font-bold border-b border-slate-200 dark:border-slate-800">
                         <th className="py-2.5 px-2 text-center w-8">No.</th>

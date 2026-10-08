@@ -1198,7 +1198,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="min-w-[700px] w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-extrabold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3 px-3 text-center w-10 border-r border-slate-200 dark:border-slate-800">No</th>
@@ -1319,7 +1319,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 Daftar Petugas Enumerator Lapangan per Kelurahan
               </span>
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-                <table className="w-full text-left border-collapse">
+                <table className="min-w-[550px] w-full text-left border-collapse">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
                     <tr>
                       <th className="py-2.5 px-3">Kelurahan</th>

@@ -790,7 +790,7 @@ export const AnalisisKknPage: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="min-w-[650px] w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     <th className="pb-3.5 pl-2">Peringkat</th>

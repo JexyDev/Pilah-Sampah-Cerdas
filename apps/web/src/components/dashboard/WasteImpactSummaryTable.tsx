@@ -461,7 +461,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
       {/* 4. Tabel Rekapitulasi Data (Grid & Typography Rapi) */}
       <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="min-w-[780px] w-full text-left text-xs border-collapse">
           <thead>
             {/* Header Row 1: Kategori Utama Standar ISO */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-200">

@@ -1068,7 +1068,7 @@ export const TempatSampahAktifPage: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="min-w-[850px] w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-left select-none">
                     <th className="p-3.5 pl-5 text-slate-400 font-bold uppercase tracking-wider w-14">

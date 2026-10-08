@@ -407,7 +407,7 @@ export const DampakNilaiEkonomis: React.FC = () => {
       {/* Table */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap">
+          <table className="min-w-[850px] w-full text-left text-xs whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
               <tr>
                 <th className="px-4 py-3.5 text-center w-12">No</th>

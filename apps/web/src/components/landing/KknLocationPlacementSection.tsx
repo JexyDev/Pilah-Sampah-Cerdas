@@ -58,8 +58,8 @@ export const KknLocationPlacementSection: React.FC = () => {
 
           {/* Right Column: Rekapitulasi Data (Dago 10 Klp/10 DPL, Total 38 Klp/38 DPL) */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 rounded-3xl border border-slate-200/70 dark:border-slate-700 shadow-sm overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[340px]">
                 <thead>
                   <tr className="bg-[#1D3B2F] dark:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider">
                     <th className="py-3.5 px-4">Kelurahan</th>

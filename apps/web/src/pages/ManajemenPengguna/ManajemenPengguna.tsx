@@ -1511,7 +1511,7 @@ const ManajemenPengguna: React.FC = () => {
       {/* Main Table Card (Desktop view) */}
       <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="min-w-[1050px] w-full text-left border-collapse">
             <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md">
               <tr className="text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
@@ -2696,7 +2696,7 @@ const ManajemenPengguna: React.FC = () => {
                                   />
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-2.5">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                   <div>
                                     <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang</label>
                                     <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-9.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
@@ -2765,7 +2765,7 @@ const ManajemenPengguna: React.FC = () => {
                                       Kel. {getCleanKelName(modalKelurahan) || "-"}
                                     </span>
                                   </div>
-                                  <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-24 overflow-y-auto">
+                                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-28 overflow-y-auto">
                                     {filteredRwsByKelurahan.length === 0 ? (
                                       <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-2">
                                         Belum ada data RW.
