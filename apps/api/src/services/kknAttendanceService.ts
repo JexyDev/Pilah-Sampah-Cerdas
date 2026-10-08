@@ -6316,6 +6316,9 @@ export class KknAttendanceService {
       }
     }
 
+    // Tracking set per student per date to prevent any double counting of days or minutes
+    const studentDailyProcessed = new Map<string, { mins: number; isMemenuhi: boolean }>();
+
     for (const r of allSummaryRecords) {
       const kknGroup = r.student?.studentProfile?.kelompok;
 
@@ -6417,18 +6420,39 @@ export class KknAttendanceService {
       }
 
       const agg = studentAggMap.get(sId)!;
-      agg.totalSessions++;
-      agg.totalMinutes += mins;
-      if (isFinishedSummary) {
-        if (st === "SELESAI_TELAT" || mins < targetMinMenit) {
-          agg.hadirKurang++;
-        } else {
-          agg.hadirMemenuhi++;
+      const attDateStr = r.attendedAt
+        ? new Date(r.attendedAt).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" })
+        : "unknown";
+      const studentDateKey = `${sId}_${attDateStr}`;
+      const isMemenuhiNow = isFinishedSummary && st !== "SELESAI_TELAT" && mins >= targetMinMenit;
+
+      if (!studentDailyProcessed.has(studentDateKey)) {
+        studentDailyProcessed.set(studentDateKey, { mins, isMemenuhi: isMemenuhiNow });
+        agg.totalSessions++;
+        agg.totalMinutes += mins;
+        if (isFinishedSummary) {
+          if (st === "SELESAI_TELAT" || mins < targetMinMenit) {
+            agg.hadirKurang++;
+          } else {
+            agg.hadirMemenuhi++;
+          }
+        } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA")
+          agg.berlangsung++;
+        else if (st === "TERJEDA") agg.terjeda++;
+        else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
+      } else {
+        const prev = studentDailyProcessed.get(studentDateKey)!;
+        if (mins > prev.mins) {
+          const diff = mins - prev.mins;
+          agg.totalMinutes += diff;
+          prev.mins = mins;
         }
-      } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA")
-        agg.berlangsung++;
-      else if (st === "TERJEDA") agg.terjeda++;
-      else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
+        if (!prev.isMemenuhi && isMemenuhiNow) {
+          if (agg.hadirKurang > 0) agg.hadirKurang--;
+          agg.hadirMemenuhi++;
+          prev.isMemenuhi = true;
+        }
+      }
     }
 
     const studentAggregates = Array.from(studentAggMap.values())
