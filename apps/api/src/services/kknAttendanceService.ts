@@ -2204,6 +2204,20 @@ export class KknAttendanceService {
       });
     }
 
+    // Self-healing Safari iOS bfcache / Stale Schedule ID Fallback:
+    // Jika dengan scheduleId tidak ditemukan, cari record aktif hari ini milik mahasiswa tanpa membatasi scheduleId
+    if (!attendance && scheduleId) {
+      attendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          attendedAt: { gte: startOfDay },
+          checkOutAt: null,
+          status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA", "DI_ZONA", "DALAM_RADIUS"] },
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+    }
+
     if (!attendance) {
       // Cross-table Bridge: Jika mahasiswa melakukan check-in via Presensi Mandiri hari ini,
       // pulihkan sesi dan buatkan ActivityAttendance agar sinkronisasi penuh
@@ -2263,6 +2277,17 @@ export class KknAttendanceService {
         },
         orderBy: { attendedAt: "desc" },
       });
+
+      // Self-healing: jika dengan scheduleId tidak ada, cari apakah sudah checkout hari ini tanpa batasan scheduleId
+      if (!attendance && scheduleId) {
+        attendance = await prisma.activityAttendance.findFirst({
+          where: {
+            studentId,
+            attendedAt: { gte: startOfDay },
+          },
+          orderBy: { attendedAt: "desc" },
+        });
+      }
     }
 
     if (!attendance) {

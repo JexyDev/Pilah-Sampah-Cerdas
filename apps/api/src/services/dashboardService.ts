@@ -1462,7 +1462,7 @@ export const dashboardService = {
     const targetYear = year || now.getFullYear();
     const isCurrentYear = targetYear === now.getFullYear();
 
-    // 1. Mode Rentang Waktu "Hari Ini" atau "24 Jam Terakhir" -> Agregasi Hourly
+    // 1. Mode Rentang Waktu "Hari Ini" (Hourly: 00:00 - 24:00, dengan 24h sebagai alias backward-compatible)
     if (range === "today" || range === "24h") {
       const hourlyIntervals = [
         { label: "00:00", startHour: 0, endHour: 4 },

@@ -10,8 +10,8 @@
  * - Normalisasi 2 Data Series: Sampah Organik (Hijau #10b981) & Sampah Anorganik (Kuning/Amber #f59e0b)
  * - Series Residu dinonaktifkan/disembunyikan dari visualisasi aktif
  * - Hierarki Filter Waktu Fleksibel:
- *   1. "Hari Ini" & "24 Jam Terakhir" -> Agregasi per-jam (Hourly: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
- *   2. "7 Hari Terakhir", "Minggu Ini", "4 Minggu Terakhir" -> Agregasi mingguan (W{week_number})
+ *   1. "Hari Ini" -> Agregasi per-jam (Hourly: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00)
+ *   2. "7 Hari Terakhir", "Minggu Ini", "4 Minggu Terakhir" -> Agregasi mingguan/harian
  *   3. "1 Tahun Penuh" / Filter Pilihan Tahun -> Agregasi bulanan (12 Bulan: Jan s/d Des)
  * - Penanganan Data Kosong: Nilai 0 kg eksplisit terplot pada dasar garis sumbu Y tanpa bias garis masa lalu
  * - Filter Pilihan Tahun: Dropdown Tahun (default 2026) tersinkronisasi via query parameter year=YYYY
@@ -59,7 +59,6 @@ export interface TimeRangeOption {
 
 export const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { value: "today", label: "Hari Ini", weeksEquivalent: 1, periodType: "hourly" },
-  { value: "24h", label: "24 Jam Terakhir", weeksEquivalent: 1, periodType: "hourly" },
   { value: "this_week", label: "Minggu Ini", weeksEquivalent: 1, periodType: "daily" },
   { value: "7d", label: "7 Hari Terakhir", weeksEquivalent: 2, periodType: "weekly" },
   { value: "4w", label: "4 Minggu Terakhir", weeksEquivalent: 4, periodType: "weekly" },
@@ -312,7 +311,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
   // - Format sumbu X sesuai hierarki (Hourly / Weekly / Monthly)
   // - Sediakan baseline 0 kg eksplisit jika tidak ada aktivitas
   const normalizedChartData = useMemo(() => {
-    // 1. Kasus Rentang Per Jam ("Hari Ini" / "24 Jam Terakhir")
+    // 1. Kasus Rentang Per Jam ("Hari Ini")
     if (currentRangeConfig.periodType === "hourly") {
       const defaultHourlySlots = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"];
 
