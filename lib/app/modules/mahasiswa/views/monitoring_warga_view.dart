@@ -407,16 +407,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   ) {
     final isLoading = isAktivasiBinMode
         ? (aktivasiState?.isLoading ?? false)
-        : state.isLoading;
+        : (state.isLoading || (aktivasiState?.isLoading ?? false));
     final errorMsg = isAktivasiBinMode
         ? aktivasiState?.errorMessage
-        : state.errorMessage;
+        : (state.errorMessage ?? aktivasiState?.errorMessage);
     final isEmpty = filteredWarga.isEmpty;
-    final isInitialLoading = isAktivasiBinMode
-        ? (isLoading &&
-              (aktivasiState?.wargaList.isEmpty ?? true) &&
-              (aktivasiState?.selectedKelurahan == null))
-        : (isLoading && state.wargaList.isEmpty);
+    final isInitialLoading =
+        (isLoading || (aktivasiState?.hasFetched != true)) && isEmpty;
 
     if (isInitialLoading) {
       return const Center(

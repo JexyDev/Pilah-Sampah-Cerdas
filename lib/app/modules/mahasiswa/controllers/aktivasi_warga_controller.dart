@@ -63,7 +63,17 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     required String kelurahan,
     required String rw,
     String search = '',
+    bool force = false,
   }) async {
+    final isSameRegion = state.selectedKelurahan == kelurahan &&
+        state.selectedRtRw == rw &&
+        state.searchQuery == search;
+
+    // Cache hit: Gunakan data memori jika sudah tersedia untuk wilayah yang sama
+    if (!force && state.hasFetched && state.wargaList.isNotEmpty && isSameRegion) {
+      return;
+    }
+
     state = state.copyWith(
       isLoading: true,
       clearError: true,
@@ -151,6 +161,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       kelurahan: kel,
       rw: rw,
       search: state.searchQuery,
+      force: true,
     );
   }
 
@@ -292,9 +303,9 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
   }
 }
 
-/// autoDispose: state reset setiap kali halaman Aktivasi Tempat Sampah dibuka baru.
+/// Cache sesi memori agar perpindahan halaman antar-menu (Monitoring, Aktivasi, Detail) instan.
 final aktivasiWargaProvider =
-    StateNotifierProvider.autoDispose<
+    StateNotifierProvider<
       AktivasiWargaNotifier,
       AktivasiWargaState
     >((ref) {
