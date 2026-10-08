@@ -24,6 +24,7 @@ class LocationPingState {
     this.detectedZoneArea,
     this.pendingOfflineCount = 0,
     this.isGpsGlitching = false,
+    this.isHighAccuracyRejected = false,
   });
 
   final bool isTracking;
@@ -35,6 +36,7 @@ class LocationPingState {
   final String? errorMessage;
   final String? detectedZoneArea;
   final int pendingOfflineCount;
+  final bool isHighAccuracyRejected;
 
   /// True saat backend mendeteksi GPS glitch (koordinat melenceng sesaat) dan
   /// sedang dalam grace period 90 detik sebelum memvonis TERJEDA.
@@ -53,6 +55,7 @@ class LocationPingState {
     String? detectedZoneArea,
     int? pendingOfflineCount,
     bool? isGpsGlitching,
+    bool? isHighAccuracyRejected,
   }) {
     return LocationPingState(
       isTracking: isTracking ?? this.isTracking,
@@ -65,6 +68,7 @@ class LocationPingState {
       detectedZoneArea: detectedZoneArea ?? this.detectedZoneArea,
       pendingOfflineCount: pendingOfflineCount ?? this.pendingOfflineCount,
       isGpsGlitching: isGpsGlitching ?? this.isGpsGlitching,
+      isHighAccuracyRejected: isHighAccuracyRejected ?? this.isHighAccuracyRejected,
     );
   }
 }
@@ -321,6 +325,12 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
         }
       }
     } catch (e) {
+      if (e is LocationServiceDisabledException) {
+        if (mounted) {
+          state = state.copyWith(isHighAccuracyRejected: true);
+        }
+        return;
+      }
       // Ping gagal — kemungkinan tidak ada koneksi internet.
       // Simpan data ke offline queue agar bisa dikirim saat sinyal kembali.
       // Durasi juga ikut disimpan agar backend mendapat nilai yang akurat
@@ -365,6 +375,10 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
     if (mounted) {
       state = const LocationPingState();
     }
+  }
+
+  void resetRejected() {
+    state = state.copyWith(isHighAccuracyRejected: false);
   }
 
   @override

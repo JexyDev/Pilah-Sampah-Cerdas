@@ -8,6 +8,8 @@ import '../../../core/values/app_config.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/kelompok_kkn_controller.dart'
@@ -48,7 +50,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
       final kknState = ref.read(kknLocationProvider);
       if (!kknState.isTracking) {
-        ref.read(locationPingControllerProvider.notifier).startTracking();
+        LocationService.instance.checkAndRequestPermission(
+          context,
+          role: 'mahasiswa_kkn',
+          mandatory: true,
+        ).then((perm) {
+          if (!mounted) return;
+          if (perm == LocationPermission.whileInUse ||
+              perm == LocationPermission.always) {
+            ref.read(locationPingControllerProvider.notifier).startTracking();
+            // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
+            ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
+          }
+        });
+      } else {
         // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
         ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
       }
@@ -120,6 +135,41 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       } else if (wasGlitching && !isGlitching) {
         // GPS kembali normal — tutup snackbar peringatan jika masih tampil
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+
+      final wasRejected = previous?.isHighAccuracyRejected ?? false;
+      final isRejected = next.isHighAccuracyRejected;
+      if (!wasRejected && isRejected) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              title: const Text(
+                'Akurasi Lokasi Ditolak',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Jika anda memilih "Lain kali", maka fungsi gps untuk presensi tidak akan berjalan. "Aktifkan" sekarang.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ref.read(locationPingControllerProvider.notifier).resetRejected();
+                    Geolocator.openLocationSettings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Aktifkan GPS'),
+                ),
+              ],
+            ),
+          ),
+        );
       }
     });
 
