@@ -195,11 +195,11 @@ export class AuthRepository {
    */
   async deleteRefreshToken(token: string): Promise<void> {
     await prisma.refreshToken
-      .delete({
+      .deleteMany({
         where: { token },
       })
       .catch(() => {
-        // Ignore if token doesn't exist
+        // Ignore any transient db error
       });
   }
 

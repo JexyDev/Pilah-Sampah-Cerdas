@@ -99,19 +99,20 @@ export function checkIsIOSSafari(): DeviceValidationResult {
     };
   }
 
-  // Determine validity: Valid for Apple ecosystem (iOS iPhone/iPad, macOS Safari, and iOS WebKit)
+  // Determine validity: Valid for Apple ecosystem (iOS iPhone/iPad running Safari or iOS WebKit browsers, and macOS Safari)
   const isAppleEcosystem = isIOS || isMac;
+  const isIOSWebKit = isIOS && (isSafari || isCriOS || isEdgiOS || isFxiOS || isOperaIOS || isInApp);
   let isValid = false;
   let reason: "NOT_IOS" | "NOT_SAFARI" | "IN_APP_BROWSER" | undefined;
 
   if (!isAppleEcosystem) {
     isValid = false;
     reason = "NOT_IOS";
-  } else if (!isSafari && !isInApp) {
+  } else if (!isSafari && !isIOSWebKit) {
     isValid = false;
     reason = "NOT_SAFARI";
   } else {
-    // Valid for iPhone/iPad Safari, macOS Safari, or iOS in-app webview
+    // Valid for iPhone/iPad Safari, iOS WebKit (Chrome, Edge, Firefox), macOS Safari, or iOS in-app webview
     isValid = true;
   }
 

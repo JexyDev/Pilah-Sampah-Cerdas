@@ -23,6 +23,10 @@ const ALLOWED_LEADERSHIP_ROLES = [
   "RW",
   "DPL",
   "DOSEN_PEMBIMBING",
+  "MPL",
+  "MITRA_PEMBIMBING_LAPANGAN",
+  "MITRA_PENDAMPING_LAPANGAN",
+  "MITRA",
 ];
 
 router.get("/kkn", authMiddleware, roleMiddleware(ALLOWED_LEADERSHIP_ROLES), systemAnalysisController.getKknAnalysis);

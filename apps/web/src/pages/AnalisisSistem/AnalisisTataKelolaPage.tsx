@@ -71,16 +71,24 @@ interface WasteAnalysisData {
 export const AnalisisTataKelolaPage: React.FC = () => {
   const [data, setData] = useState<WasteAnalysisData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setErrorMessage(null);
+      setErrorStatus(null);
       const res = await api.get("/analisis-sistem/tata-kelola");
       if (res.data?.data) {
         setData(res.data.data);
       }
-    } catch {
-      showToast.error("Gagal memuat analitik tata kelola sampah");
+    } catch (err: any) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || "Gagal memuat analitik tata kelola sampah";
+      setErrorStatus(status || null);
+      setErrorMessage(msg);
+      showToast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -508,10 +516,12 @@ export const AnalisisTataKelolaPage: React.FC = () => {
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
-              Gagal Memuat Data Analisis Tata Kelola Sampah
+              {errorMessage || "Gagal Memuat Data Analisis Tata Kelola Sampah"}
             </h3>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Sistem tidak dapat mengambil data aktual dari basis data. Pastikan koneksi server aktif dan silakan muat ulang.
+              {errorStatus === 403
+                ? "Peran akun Anda belum memiliki izin untuk mengakses analitik tata kelola sampah ini. Silakan hubungi administrator jika Anda memerlukan akses."
+                : "Sistem tidak dapat mengambil data aktual dari basis data. Pastikan koneksi server aktif dan silakan muat ulang."}
             </p>
           </div>
           <button
