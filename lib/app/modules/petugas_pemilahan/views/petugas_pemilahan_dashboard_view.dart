@@ -10,6 +10,7 @@ import '../../../data/models/user_entity.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
+import 'verifikasi_komunal_view.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'petugas_notification_view.dart';
@@ -617,15 +618,16 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
                     onTap: () async {
-                      await Navigator.pushNamed(
+                      await Navigator.push(
                         context,
-                        AppRoutes.timbanganPemilahan,
-                        arguments: {
-                          'binId': item.binId,
-                          'binCode': item.binCode,
-                          'category': item.wasteCategory,
-                          'wargaName': item.wargaName,
-                        },
+                        MaterialPageRoute(
+                          builder: (context) => VerifikasiKomunalView(
+                            binId: item.binId,
+                            binCode: item.binCode,
+                            category: item.wasteCategory,
+                            wargaName: item.wargaName,
+                          ),
+                        ),
                       );
                       ref
                           .read(petugasPemilahanControllerProvider.notifier)
@@ -733,15 +735,16 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  await Navigator.pushNamed(
+                                  await Navigator.push(
                                     context,
-                                    AppRoutes.timbanganPemilahan,
-                                    arguments: {
-                                      'binId': item.binId,
-                                      'binCode': item.binCode,
-                                      'category': item.wasteCategory,
-                                      'wargaName': item.wargaName,
-                                    },
+                                    MaterialPageRoute(
+                                      builder: (context) => VerifikasiKomunalView(
+                                        binId: item.binId,
+                                        binCode: item.binCode,
+                                        category: item.wasteCategory,
+                                        wargaName: item.wargaName,
+                                      ),
+                                    ),
                                   );
                                   ref
                                       .read(petugasPemilahanControllerProvider.notifier)
