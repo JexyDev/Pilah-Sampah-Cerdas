@@ -60,6 +60,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
 import PageHeader from "../../components/common/PageHeader";
 import { useAuthStore } from "../../store/useAuthStore";
 import { sortChronologicalList } from "../../utils/sortUtils";
@@ -1185,12 +1186,13 @@ export default function RekapSetoran() {
               {/* Optional Photo Sampah Preview Box */}
               {selectedDeposit.fotoUrl && (
                 <div
-                  onClick={() => setPreviewImageUrl(selectedDeposit.fotoUrl)}
+                  onClick={() => setPreviewImageUrl(resolveImageUrl(selectedDeposit.fotoUrl) || selectedDeposit.fotoUrl)}
                   className="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 relative group shadow-2xs cursor-pointer"
                 >
                   <img
-                    src={selectedDeposit.fotoUrl}
+                    src={resolveImageUrl(selectedDeposit.fotoUrl)}
                     alt="Foto Sampah"
+                    onError={(e) => handleDokumentasiImageError(e, "Foto Setoran Sampah")}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
@@ -1344,8 +1346,9 @@ export default function RekapSetoran() {
         >
           <div className="relative max-w-3xl w-full max-h-[90vh] flex items-center justify-center">
             <img
-              src={previewImageUrl}
+              src={resolveImageUrl(previewImageUrl)}
               alt="Preview Sampah"
+              onError={(e) => handleDokumentasiImageError(e, "Foto Setoran Sampah")}
               className="max-w-full max-h-[85vh] rounded-3xl object-contain shadow-2xl border border-white/20"
             />
             <button

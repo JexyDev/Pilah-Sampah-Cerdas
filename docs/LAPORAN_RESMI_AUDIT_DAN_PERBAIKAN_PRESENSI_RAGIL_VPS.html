@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Laporan Resmi Audit & Perbaikan Presensi - Ragil Yuni Wulandari</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.45;
+      font-size: 10.5pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .page {
+      page-break-after: always;
+      position: relative;
+      min-height: 260mm;
+    }
+    .page:last-child {
+      page-break-after: avoid;
+    }
+    .header {
+      border-bottom: 2.5px solid #059669;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      font-weight: 900;
+      font-size: 16pt;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
+    }
+    .brand-title {
+      font-size: 14pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.3px;
+      margin: 0;
+    }
+    .brand-subtitle {
+      font-size: 8.5pt;
+      color: #64748b;
+      margin: 2px 0 0 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .doc-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #475569;
+    }
+    .doc-meta strong {
+      color: #0f172a;
+    }
+    .badge-status {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 8pt;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    h1 {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 12px 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+    h2 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #059669;
+      margin: 14px 0 8px 0;
+      border-left: 3.5px solid #059669;
+      padding-left: 8px;
+    }
+    p {
+      margin: 0 0 8px 0;
+      text-align: justify;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .card-highlight {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px 0;
+      font-size: 9.5pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+      font-size: 9pt;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .font-mono {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8pt;
+      font-weight: 700;
+    }
+    .tag-success {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .tag-info {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      font-size: 8pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HALAMAN 1 -->
+<div class="page">
+  <div class="header">
+    <div class="brand">
+      <div class="logo-badge">B</div>
+      <div>
+        <div class="brand-title">BERSEKA TATA KELOLA KKN</div>
+        <div class="brand-subtitle">Data Governance & Engineering Report</div>
+      </div>
+    </div>
+    <div class="doc-meta">
+      <div><strong>No. Dokumen:</strong> REP-AUDIT/KKN-ATT/2026-10/021</div>
+      <div><strong>Tanggal:</strong> 08 Oktober 2026 (06:25 WIB)</div>
+      <div><span class="badge-status">🟢 SUKSES DISELESAIKAN DI VPS</span></div>
+    </div>
+  </div>
+
+  <h1>BERITA ACARA AUDIT & REKONSILIASI PRESENSI MAHASISWA KKN</h1>
+  <p>Laporan audit dan bukti eksekusi penyesuaian jam presensi mahasiswa KKN Tematik Terpadu pada server live VPS PostgreSQL 16 (<code>157.10.252.252 / psc_db</code>) sehubungan dengan kendala teknis pencatatan durasi aplikasi pada <strong>Rabu, 07 Oktober 2026</strong>.</p>
+
+  <h2>1. Profil Mahasiswa & Informasi Penempatan</h2>
+  <div class="card">
+    <table style="margin: 0; border: none;">
+      <tr style="background: transparent;"><td style="border: none; width: 25%; font-weight: 700;">Nama Mahasiswa</td><td style="border: none; width: 75%;">: <strong>Ragil Yuni Wulandari</strong></td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">NIM</td><td style="border: none;">: <span class="font-mono">10124707</span></td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">Kelompok Penempatan</td><td style="border: none;">: Kelompok 11 Sadang Serang</td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">Wilayah Penugasan</td><td style="border: none;">: RW 16 & RW 19, Kelurahan Sadang Serang, Kecamatan Coblong</td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">Dosen Pembimbing Lapangan</td><td style="border: none;">: <strong>Ayub Subandi, S.Si., M.T., Ph.D.</strong> (NIP: <span class="font-mono">4127.70.05.030</span>)</td></tr>
+    </table>
+  </div>
+
+  <h2>2. Konfirmasi Resmi Perwakilan Kelompok 11 (07 Oktober 2026)</h2>
+  <div class="card card-highlight">
+    <table style="margin: 0; border: none;">
+      <tr style="background: transparent;"><td style="border: none; width: 32%; font-weight: 700;">1. Kelompok & Lokasi RW</td><td style="border: none; width: 68%;">: Kelompok 11 & RW 16</td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">2. Anggota Hadir</td><td style="border: none;">: Ragil Yuni Wulandari (NIM: 10124707)</td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">3. Rincian Kegiatan</td><td style="border: none;">: <em>Ecobrick, Monitoring Rumah Memilah.</em></td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">4. Waktu Kegiatan Lapangan</td><td style="border: none;">: <strong>06.30 - 16.00 WIB</strong> (Durasi: <strong>570 Menit / 9 Jam 30 Menit</strong>)</td></tr>
+      <tr style="background: transparent;"><td style="border: none; font-weight: 700;">5. Foto Bukti Lapangan</td><td style="border: none;">: Terunggah di VPS (<span class="font-mono">/uploads/1791330304307-...ba2.jpg</span>)</td></tr>
+    </table>
+  </div>
+
+  <h2>3. Rincian Penyesuaian Data pada Server Live VPS (157.10.252.252)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Komponen Data</th>
+        <th style="width: 35%;">Kondisi Sebelum Mutasi</th>
+        <th style="width: 40%;">Status Terkoreksi di VPS Live</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>ActivityAttendance</strong><br><small class="font-mono">5fddfe92-...-85375c8d483c</small></td>
+        <td>Check-In 06:45 WIB, terputus logout 14:39 WIB, auto-cutoff 20:00 WIB (794 menit)</td>
+        <td><span class="tag tag-success">HADIR_MEMENUHI</span><br><strong>06.30 - 16.00 WIB (570 Menit)</strong><br>Deskripsi: <em>Ecobrick, Monitoring Rumah Memilah.</em><br>Jeda Logs: Bersih (<span class="font-mono">[]</span>)</td>
+      </tr>
+      <tr>
+        <td><strong>PresensiMandiri</strong><br><small class="font-mono">98b87e98-...-24133a0cf08a</small></td>
+        <td>Check-In 06:45 WIB, durasi menggantung 794 menit</td>
+        <td><span class="tag tag-success">SELESAI</span><br><strong>06.30 - 16.00 WIB (570 Menit)</strong><br>Deskripsi diselaraskan penuh</td>
+      </tr>
+      <tr>
+        <td><strong>PointHistory</strong></td>
+        <td>Check-in tercatat 06:45 WIB, durasi 794 menit</td>
+        <td><strong>+4 PTS</strong> Check-In (06:30 WIB)<br><strong>+3 PTS</strong> Durasi Terpenuhi 570 Menit (16:00 WIB)</td>
+      </tr>
+      <tr>
+        <td><strong>Redis Cache</strong></td>
+        <td>Cache lama aktif</td>
+        <td><span class="tag tag-info">FLUSHALL (OK)</span> Realtime tersinkronisasi</td>
+      </tr>
+      <tr>
+        <td><strong>Perlindungan Data</strong></td>
+        <td>-</td>
+        <td><strong>Golden Backup:</strong> <span class="font-mono">/home/maker/golden_backup_pre_ragil_07okt.sql</span> (543 MB)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 1 dari 2</div>
+  </div>
+</div>
+
+<!-- HALAMAN 2 -->
+<div class="page">
+  <div class="header">
+    <div class="brand">
+      <div class="logo-badge">B</div>
+      <div>
+        <div class="brand-title">BERSEKA TATA KELOLA KKN</div>
+        <div class="brand-subtitle">Data Governance & Engineering Report</div>
+      </div>
+    </div>
+    <div class="doc-meta">
+      <div><strong>Subjek:</strong> Ragil Yuni Wulandari (10124707)</div>
+      <div><strong>Kelompok:</strong> Kelompok 11 Sadang Serang</div>
+    </div>
+  </div>
+
+  <h2>4. Ringkasan Eksekutif Akumulasi Kehadiran & Poin Ragil Yuni Wulandari</h2>
+  <div class="card">
+    <table style="margin: 0; border: none;">
+      <tr style="background: transparent;">
+        <td style="border: none; width: 50%;">
+          <strong>Total Sesi Hadir Memenuhi:</strong><br>
+          <span style="font-size: 16pt; font-weight: 800; color: #059669;">31 Sesi</span> <span class="tag tag-success">HADIR_MEMENUHI</span><br>
+          <small style="color: #64748b;">Kepatuhan 100% pada seluruh hari penugasan posko</small>
+        </td>
+        <td style="border: none; width: 50%;">
+          <strong>Total Jam Kumulatif KKN:</strong><br>
+          <span style="font-size: 16pt; font-weight: 800; color: #0284c7;">252,67 Jam</span> <small>(15.160 Menit)</small><br>
+          <small style="color: #64748b;">Melampaui target wajib 80 jam (Pencapaian: 315%)</small>
+        </td>
+      </tr>
+      <tr style="background: transparent;">
+        <td style="border: none; padding-top: 12px;">
+          <strong>Rata-Rata Durasi per Sesi:</strong><br>
+          <span style="font-size: 14pt; font-weight: 700; color: #334155;">8 Jam 09 Menit</span><br>
+          <small style="color: #64748b;">Melampaui syarat minimum 4 jam per hari</small>
+        </td>
+        <td style="border: none; padding-top: 12px;">
+          <strong>Total Saldo Poin Akumulatif:</strong><br>
+          <span style="font-size: 14pt; font-weight: 700; color: #10b981;">203 PTS</span><br>
+          <small style="color: #64748b;">Kategori Nilai Kelulusan Prima (A)</small>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>5. Kesimpulan Audit & Panduan Mahasiswa</h2>
+  <ol style="margin-top: 6px; padding-left: 20px;">
+    <li><strong>Status Presensi 07 Oktober 2026 Sempurna</strong>: Presensi telah sah berstatus <strong>HADIR_MEMENUHI</strong> dengan durasi efektif <strong>570 Menit (06.30 – 16.00 WIB)</strong> dan rincian aktivitas <em>"Ecobrick, Monitoring Rumah Memilah."</em>.</li>
+    <li><strong>Saldo Poin Terjaga</strong>: Saldo poin mahasiswa tercatat <strong>203 PTS</strong>, membuktikan integritas kehadiran yang sangat tinggi.</li>
+    <li><strong>Jam Kumulatif 252,67 Jam</strong>: Mahasiswa telah melampaui target wajib 80 jam KKN dengan margin yang sangat besar (+172,67 jam di atas target).</li>
+    <li><strong>Panduan Pengecekan Aplikasi Mobile</strong>: Mahasiswa disarankan melakukan <em>pull-to-refresh</em> (tarik ke bawah layar) pada tab Beranda dan Timesheet di aplikasi Berseka untuk memuat riwayat terbaru.</li>
+  </ol>
+
+  <br><br>
+  <table style="width: 100%; border: none; margin-top: 30px;">
+    <tr style="background: transparent;">
+      <td style="width: 50%; border: none; vertical-align: top;">
+        Mengetahui / Mengonfirmasi,<br>
+        <strong>Dosen Pembimbing Lapangan (DPL)</strong><br>
+        Kelompok 11 Sadang Serang<br><br><br><br><br>
+        <b><u>Ayub Subandi, S.Si., M.T., Ph.D.</u></b><br>
+        NIP: 4127.70.05.030
+      </td>
+      <td style="width: 50%; border: none; vertical-align: top;">
+        Pemeriksa & Eksekutor Sistem,<br>
+        <strong>Tim Data Governance & Backend Engineering</strong><br>
+        Sistem Informasi Berseka Tematik<br><br><br><br><br>
+        <b><u>Tim Sistem & Arsitektur Berseka</u></b><br>
+        Otoritas Server Live VPS (157.10.252.252)
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 2 dari 2</div>
+  </div>
+</div>
+
+</body>
+</html>

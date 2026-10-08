@@ -61,6 +61,8 @@ import {
   type MasterKelurahanItem,
   type MasterRwItem,
 } from "../../utils/areaFilterUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
+import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
 export interface LaporanItem {
   id: string;
@@ -1613,8 +1615,9 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div className="flex items-center gap-2.5">
                             {student.fotoProfil ? (
                               <img
-                                src={student.fotoProfil}
+                                src={getProfilePhotoUrl(student.fotoProfil, student.namaMahasiswa)}
                                 alt={student.namaMahasiswa}
+                                onError={(e) => handleAvatarError(e, student.namaMahasiswa)}
                                 className="w-9 h-9 rounded-full object-cover border border-slate-200 shrink-0"
                               />
                             ) : (
@@ -1857,8 +1860,9 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div className="flex items-center gap-2.5">
                             {item.fotoProfil ? (
                               <img
-                                src={item.fotoProfil}
+                                src={getProfilePhotoUrl(item.fotoProfil, item.namaMahasiswa)}
                                 alt={item.namaMahasiswa}
+                                onError={(e) => handleAvatarError(e, item.namaMahasiswa)}
                                 className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
                               />
                             ) : (
@@ -2050,7 +2054,7 @@ export const LaporanPresensiPage: React.FC = () => {
                               type="button"
                               onClick={() =>
                                 setPreviewPhoto({
-                                  url: item.fotoUrl!,
+                                  url: resolveImageUrl(item.fotoUrl) || item.fotoUrl!,
                                   title: `Foto Dokumentasi - ${item.namaMahasiswa}`,
                                   desc: item.deskripsiKegiatan,
                                 })
@@ -2182,8 +2186,9 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
             <div className="p-4 overflow-y-auto flex-1 flex flex-col items-center bg-slate-950">
               <img
-                src={previewPhoto.url}
+                src={resolveImageUrl(previewPhoto.url)}
                 alt="Dokumentasi"
+                onError={(e) => handleDokumentasiImageError(e, previewPhoto.title || "Dokumentasi")}
                 className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-md"
               />
               {previewPhoto.desc && (
@@ -2195,7 +2200,7 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
             <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900/80">
               <a
-                href={previewPhoto.url}
+                href={resolveImageUrl(previewPhoto.url)}
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition cursor-pointer"
@@ -2391,8 +2396,9 @@ export const LaporanPresensiPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 {selectedStudentForLog.fotoProfil ? (
                   <img
-                    src={selectedStudentForLog.fotoProfil}
+                    src={getProfilePhotoUrl(selectedStudentForLog.fotoProfil, selectedStudentForLog.namaMahasiswa)}
                     alt={selectedStudentForLog.namaMahasiswa}
+                    onError={(e) => handleAvatarError(e, selectedStudentForLog.namaMahasiswa)}
                     className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shrink-0 shadow-2xs"
                   />
                 ) : (
@@ -2617,12 +2623,13 @@ export const LaporanPresensiPage: React.FC = () => {
                             {item.fotoUrl ? (
                               <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                 <img
-                                  src={item.fotoUrl}
+                                  src={resolveImageUrl(item.fotoUrl)}
                                   alt="Dokumentasi"
+                                  onError={(e) => handleDokumentasiImageError(e, `Foto Presensi: ${item.namaMahasiswa}`)}
                                   className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 cursor-pointer hover:opacity-90 transition"
                                   onClick={() =>
                                     setPreviewPhoto({
-                                      url: item.fotoUrl!,
+                                      url: resolveImageUrl(item.fotoUrl) || item.fotoUrl!,
                                       title: `Foto Presensi: ${item.namaMahasiswa} - ${item.tanggal}`,
                                       desc: item.deskripsiKegiatan,
                                     })
@@ -2636,7 +2643,7 @@ export const LaporanPresensiPage: React.FC = () => {
                                     type="button"
                                     onClick={() =>
                                       setPreviewPhoto({
-                                        url: item.fotoUrl!,
+                                        url: resolveImageUrl(item.fotoUrl) || item.fotoUrl!,
                                         title: `Foto Presensi: ${item.namaMahasiswa} - ${item.tanggal}`,
                                         desc: item.deskripsiKegiatan,
                                       })

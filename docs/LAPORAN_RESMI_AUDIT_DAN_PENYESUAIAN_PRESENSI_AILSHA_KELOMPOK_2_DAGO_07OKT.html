@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Laporan Resmi Audit & Penyesuaian Presensi KKN - Ailsha Azka SN (Kelompok 2 Dago)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm 15mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.45;
+      font-size: 9.5pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .page {
+      page-break-after: always;
+      position: relative;
+      height: 100%;
+    }
+    .page:last-child {
+      page-break-after: avoid;
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2.5px solid #047857;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .header-logo {
+      font-size: 20pt;
+      font-weight: 800;
+      color: #047857;
+      letter-spacing: -0.5px;
+    }
+    .header-tagline {
+      font-size: 8.5pt;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .doc-badge {
+      text-align: right;
+    }
+    .doc-badge-pill {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 8pt;
+      font-weight: 700;
+    }
+    .doc-title {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 6px 0 2px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .doc-subtitle {
+      font-size: 9pt;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 8.5pt;
+    }
+    .meta-item {
+      display: flex;
+      margin-bottom: 3px;
+    }
+    .meta-label {
+      width: 135px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .meta-value {
+      flex: 1;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    h3 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #047857;
+      border-left: 3.5px solid #059669;
+      padding-left: 8px;
+      margin: 14px 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    p, li {
+      color: #334155;
+      font-size: 8.8pt;
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 4px 0 8px 18px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 3px;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      text-align: center;
+      border-top: 3px solid #059669;
+    }
+    .card-val {
+      font-size: 14pt;
+      font-weight: 800;
+      color: #065f46;
+      margin-top: 2px;
+    }
+    .card-lbl {
+      font-size: 7.5pt;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.8pt;
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    th {
+      background: #065f46;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: left;
+      padding: 5px 6px;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    td {
+      padding: 4.5px 6px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .target-row {
+      background-color: #ecfdf5 !important;
+      font-weight: 600;
+      color: #065f46;
+    }
+    .alpa-row td {
+      color: #94a3b8;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1.5px 5px;
+      border-radius: 3px;
+      font-size: 6.8pt;
+      font-weight: 700;
+    }
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .action-box {
+      background: #f0fdf4;
+      border: 1px dashed #22c55e;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 10px 0;
+      font-size: 8.2pt;
+    }
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5pt;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HALAMAN 1 -->
+<div class="page">
+  <table class="header-table" style="border: none;">
+    <tr>
+      <td style="border: none; padding: 0;">
+        <div class="header-logo">🌿 BERSEKA</div>
+        <div class="header-tagline">Sistem Tata Kelola KKN Tematik & Monitoring Wilayah</div>
+      </td>
+      <td class="doc-badge" style="border: none; padding: 0;">
+        <span class="doc-badge-pill">AUDIT & RECONCILIATION REPORT</span>
+        <div style="font-size: 7.5pt; color: #64748b; margin-top: 4px;">Doc No: REP-AUDIT/KKN-ATT/2026-10/025</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="doc-title">Berita Acara Rekonsiliasi & Penyesuaian Presensi KKN</div>
+  <div class="doc-subtitle">Subjek: <strong>Ailsha Azka Sahda Nabilla</strong> (NIM: 21224062) • Kelompok 2 Dago (RW 03, 05, 06) • DPL: Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</div>
+
+  <div class="metadata-grid">
+    <div>
+      <div class="meta-item"><span class="meta-label">Nama Mahasiswa</span><span class="meta-value">: Ailsha Azka Sahda Nabilla</span></div>
+      <div class="meta-item"><span class="meta-label">Nomor Induk Mahasiswa</span><span class="meta-value">: 21224062</span></div>
+      <div class="meta-item"><span class="meta-label">Program Studi</span><span class="meta-value">: Manajemen</span></div>
+      <div class="meta-item"><span class="meta-label">Kelompok Penempatan</span><span class="meta-value">: Kelompok 2 Dago (RW 03, 05, 06)</span></div>
+    </div>
+    <div>
+      <div class="meta-item"><span class="meta-label">DPL Kelompok</span><span class="meta-value">: Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</span></div>
+      <div class="meta-item"><span class="meta-label">NIP DPL</span><span class="meta-value">: 4127.70.03.007</span></div>
+      <div class="meta-item"><span class="meta-label">Server Live VPS</span><span class="meta-value">: 157.10.252.252 (PostgreSQL 16)</span></div>
+      <div class="meta-item"><span class="meta-label">Status Verifikasi</span><span class="meta-value">: 🟢 TERSINKRONISASI 100% (EXIT CODE 0)</span></div>
+    </div>
+  </div>
+
+  <div class="summary-cards">
+    <div class="card">
+      <div class="card-lbl">Hari Hadir Sah</div>
+      <div class="card-val">17 Hari</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Total Jam Kumulatif</div>
+      <div class="card-val">94j 39m</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Total Saldo Poin</div>
+      <div class="card-val">160 PTS</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Status 07 Okt 2026</div>
+      <div class="card-val" style="font-size: 11pt; color: #047857;">MEMENUHI</div>
+    </div>
+  </div>
+
+  <h3>1. Latar Belakang & Konfirmasi Laporan Lapangan</h3>
+  <p>
+    Sehubungan dengan kendala teknis pencatatan durasi presensi pada aplikasi mobile Berseka pada hari <strong>Rabu, 07 Oktober 2026</strong>, tim admin KKN telah menyampaikan pengumuman resmi agar seluruh kegiatan lapangan tetap diakui dan disesuaikan langsung oleh tim pengembang backend.
+    Perwakilan Kelompok 2 Dago telah menyampaikan format konfirmasi mandiri kegiatan lapangan sebagai berikut:
+  </p>
+  <ul>
+    <li><strong>Kelompok & Lokasi RW</strong>: Kelompok 2 Dago & Lokasi RW 03, 05, 06 Dago</li>
+    <li><strong>Daftar Nama & NIM Anggota</strong>: Ailsha Azka Sahda Nabilla (21224062)</li>
+    <li><strong>Rincian Kegiatan</strong>: <em>Melakukan aktifitas pembagian tong sampah ke RW 03, 05, dan 06, pada RW 03 tidak hanya pembagian tong sampah tetapi mencari penambahan warga juga untuk aktifasi, selain pembagian tong sampah dilakukan juga pendataan yang dimana pendataan tersebut akan diberikan oleh pihak dlh mengenai warga mana saja yang sudah memilah, dan juga mengkomunikasikan pada pihak petugas pemilah agar aplikasi berseka warga dapat digunakan dalam pengosongan sampah.</em></li>
+    <li><strong>Waktu Kegiatan</strong>: Pukul <strong>09.00 – 13.15 WIB</strong> (Durasi Efektif: <strong>255 Menit / 4 Jam 15 Menit</strong>)</li>
+  </ul>
+
+  <h3>2. Tindakan Rekonsiliasi & Eksekusi pada Server Live VPS</h3>
+  <p>Tim Engineering telah mengeksekusi rekonsiliasi data operasional pada server live VPS (<code>157.10.252.252</code>) dengan hasil terverifikasi:</p>
+  <div class="action-box">
+    <strong>Rincian Mutasi Data Terverifikasi:</strong>
+    <ul style="margin: 4px 0 4px 16px;">
+      <li><strong>Tabel ActivityAttendance</strong>: Record ID <code>22ca8302-3281-4375-87cc-c89ee91d694c</code> diselaraskan: Waktu Masuk 09:00 WIB, Waktu Keluar 13:15 WIB, Durasi: <strong>255 Menit</strong>, Status: <strong>HADIR_MEMENUHI</strong>, Platform: ANDROID.</li>
+      <li><strong>Tabel PresensiMandiri</strong>: Record ID <code>043b7c4b-daf2-44c3-be6d-cdd6bed8e252</code> dibuat dengan status <strong>SELESAI</strong>, durasi 255 menit, koordinat Posko RW 03 Dago.</li>
+      <li><strong>Tabel LogbookKkn</strong>: Record ID <code>6cf03a53-b68c-436c-980d-dd64da2882f4</code> berhasil dibuat (Pekan Ke-4, Proker #3 Sistem Informasi BERSEKA & Bank Sampah), status: <strong>MENUNGGU_VERIFIKASI_DPL</strong> untuk DPL Assoc. Prof. Dr. Agus Riyanto.</li>
+      <li><strong>Tabel PointHistory</strong>: Sinkronisasi +4 PTS check-in (09:00 WIB), +3 PTS durasi harian terpenuhi (13:15 WIB), dan penambahan +3 PTS logbook harian. Total saldo poin meningkat menjadi <strong>160 PTS</strong>.</li>
+      <li><strong>Redis Flush Cache</strong>: Eksekusi <code>docker exec psc-redis redis-cli flushall</code> berhasil dijalankan untuk sinkronisasi realtime.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 1 dari 2</div>
+  </div>
+</div>
+
+<!-- HALAMAN 2 -->
+<div class="page">
+  <table class="header-table" style="border: none;">
+    <tr>
+      <td style="border: none; padding: 0;">
+        <div class="header-logo">🌿 BERSEKA</div>
+        <div class="header-tagline">Sistem Tata Kelola KKN Tematik & Monitoring Wilayah</div>
+      </td>
+      <td class="doc-badge" style="border: none; padding: 0;">
+        <span class="doc-badge-pill">AUDIT & RECONCILIATION REPORT</span>
+        <div style="font-size: 7.5pt; color: #64748b; margin-top: 4px;">Doc No: REP-AUDIT/KKN-ATT/2026-10/025</div>
+      </td>
+    </tr>
+  </table>
+
+  <h3>3. Rekapitulasi Riil 24 Sesi Kehadiran Mahasiswa (Database VPS Live)</h3>
+  <p style="font-size: 8pt; color: #64748b; margin-top: -4px;">
+    Seluruh 24 sesi terjadwal Ailsha Azka Sahda Nabilla (Kelompok 2 Dago) yang tercatat pada basis data live VPS:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25px; text-align: center;">No</th>
+        <th style="width: 95px;">Hari, Tanggal</th>
+        <th style="width: 75px; text-align: center;">Check-In</th>
+        <th style="width: 75px; text-align: center;">Check-Out</th>
+        <th style="width: 105px; text-align: center;">Durasi Efektif</th>
+        <th style="width: 95px; text-align: center;">Status</th>
+        <th>Keterangan / Kegiatan Lapangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">1</td>
+      <td style="font-weight: normal;">Sel, 25 Agu 2026</td>
+      <td style="text-align: center;">09:00:00 WIB</td>
+      <td style="text-align: center;">13:00:00 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 00 Mnt (240 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">2</td>
+      <td style="font-weight: normal;">Jum, 28 Agu 2026</td>
+      <td style="text-align: center;">08:30:00 WIB</td>
+      <td style="text-align: center;">15:00:00 WIB</td>
+      <td style="text-align: center; font-weight: 600;">6 Jam 30 Mnt (390 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">3</td>
+      <td style="font-weight: normal;">Sel, 01 Sep 2026</td>
+      <td style="text-align: center;">08:59:15 WIB</td>
+      <td style="text-align: center;">13:15:38 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 16 Mnt (256 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">4</td>
+      <td style="font-weight: normal;">Rab, 02 Sep 2026</td>
+      <td style="text-align: center;">12:25:28 WIB</td>
+      <td style="text-align: center;">16:48:07 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 16 Mnt (256 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">5</td>
+      <td style="font-weight: normal;">Kam, 03 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">6</td>
+      <td style="font-weight: normal;">Jum, 04 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">7</td>
+      <td style="font-weight: normal;">Sab, 05 Sep 2026</td>
+      <td style="text-align: center;">09:05:05 WIB</td>
+      <td style="text-align: center;">15:51:22 WIB</td>
+      <td style="text-align: center; font-weight: 600;">6 Jam 05 Mnt (365 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">8</td>
+      <td style="font-weight: normal;">Sel, 08 Sep 2026</td>
+      <td style="text-align: center;">09:14:33 WIB</td>
+      <td style="text-align: center;">13:26:46 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 12 Mnt (252 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">9</td>
+      <td style="font-weight: normal;">Rab, 09 Sep 2026</td>
+      <td style="text-align: center;">08:44:39 WIB</td>
+      <td style="text-align: center;">14:21:34 WIB</td>
+      <td style="text-align: center; font-weight: 600;">5 Jam 36 Mnt (336 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">10</td>
+      <td style="font-weight: normal;">Kam, 10 Sep 2026</td>
+      <td style="text-align: center;">08:05:36 WIB</td>
+      <td style="text-align: center;">16:56:22 WIB</td>
+      <td style="text-align: center; font-weight: 600;">8 Jam 50 Mnt (530 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">11</td>
+      <td style="font-weight: normal;">Sel, 15 Sep 2026</td>
+      <td style="text-align: center;">08:52:55 WIB</td>
+      <td style="text-align: center;">17:19:44 WIB</td>
+      <td style="text-align: center; font-weight: 600;">8 Jam 26 Mnt (506 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">12</td>
+      <td style="font-weight: normal;">Rab, 16 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">13</td>
+      <td style="font-weight: normal;">Kam, 17 Sep 2026</td>
+      <td style="text-align: center;">07:26:06 WIB</td>
+      <td style="text-align: center;">11:49:31 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 23 Mnt (263 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">14</td>
+      <td style="font-weight: normal;">Sel, 22 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">15</td>
+      <td style="font-weight: normal;">Rab, 23 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">16</td>
+      <td style="font-weight: normal;">Kam, 24 Sep 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">17</td>
+      <td style="font-weight: normal;">Jum, 25 Sep 2026</td>
+      <td style="text-align: center;">08:05:08 WIB</td>
+      <td style="text-align: center;">13:03:02 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 57 Mnt (297 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">18</td>
+      <td style="font-weight: normal;">Sab, 26 Sep 2026</td>
+      <td style="text-align: center;">09:38:35 WIB</td>
+      <td style="text-align: center;">16:08:48 WIB</td>
+      <td style="text-align: center; font-weight: 600;">6 Jam 30 Mnt (390 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">19</td>
+      <td style="font-weight: normal;">Sel, 29 Sep 2026</td>
+      <td style="text-align: center;">09:16:12 WIB</td>
+      <td style="text-align: center;">16:40:09 WIB</td>
+      <td style="text-align: center; font-weight: 600;">7 Jam 23 Mnt (443 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">20</td>
+      <td style="font-weight: normal;">Rab, 30 Sep 2026</td>
+      <td style="text-align: center;">09:00:00 WIB</td>
+      <td style="text-align: center;">13:00:00 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 00 Mnt (240 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="alpa-row">
+      <td style="text-align: center; font-weight: normal;">21</td>
+      <td style="font-weight: normal;">Kam, 01 Okt 2026</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center;">-</td>
+      <td style="text-align: center; font-weight: 600;">0 Mnt</td>
+      <td style="text-align: center;"><span class="badge badge-danger">ALPA</span></td>
+      <td>Non-Posko / Giliran Lapangan</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">22</td>
+      <td style="font-weight: normal;">Sen, 05 Okt 2026</td>
+      <td style="text-align: center;">09:27:33 WIB</td>
+      <td style="text-align: center;">16:13:07 WIB</td>
+      <td style="text-align: center; font-weight: 600;">6 Jam 45 Mnt (405 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Kegiatan Posko KKN Kelompok 2</td>
+    </tr>
+  
+    <tr class="">
+      <td style="text-align: center; font-weight: normal;">23</td>
+      <td style="font-weight: normal;">Sel, 06 Okt 2026</td>
+      <td style="text-align: center;">09:00:00 WIB</td>
+      <td style="text-align: center;">13:15:00 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 15 Mnt (255 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Pembagian Tong Sampah & Aktivasi Warga RW 03, 05, 06 Dago</td>
+    </tr>
+  
+    <tr class="target-row">
+      <td style="text-align: center; font-weight: bold;">24</td>
+      <td style="font-weight: bold;">Rab, 07 Okt 2026</td>
+      <td style="text-align: center;">09:00:00 WIB</td>
+      <td style="text-align: center;">13:15:00 WIB</td>
+      <td style="text-align: center; font-weight: 600;">4 Jam 15 Mnt (255 m)</td>
+      <td style="text-align: center;"><span class="badge badge-success">HADIR_MEMENUHI</span></td>
+      <td>Pembagian Tong Sampah & Edukasi Pilah Sampah RW 03, 05, 06 Dago</td>
+    </tr>
+  
+    </tbody>
+  </table>
+
+  <h3>4. Kesimpulan & Panduan Pengecekan Mahasiswa</h3>
+  <ul>
+    <li><strong>Kehadiran 07 Oktober 2026 Sah</strong>: Status kegiatan tanggal 07 Oktober 2026 tercatat resmi <strong>HADIR_MEMENUHI</strong> dengan durasi kerja 255 menit (09.00 - 13.15 WIB).</li>
+    <li><strong>Kelulusan Jam KKN Tercapai</strong>: Akumulasi jam kerja lapangan Ailsha mencapai <strong>94 Jam 39 Menit</strong>, melampaui standar kelulusan KKN universitas (80 Jam).</li>
+    <li><strong>Saldo Poin Aman (160 PTS)</strong>: Poin partisipasi telah terbarui secara otomatis dan memenuhi standar tinggi kelulusan.</li>
+    <li><strong>Logbook di Portal DPL</strong>: Logbook kegiatan telah masuk antrean verifikasi DPL Assoc. Prof. Dr. Agus Riyanto, S.T., M.T.</li>
+    <li><strong>Aplikasi Berseka</strong>: Mahasiswa cukup melakukan gestur tarik ke bawah (<em>pull to refresh</em>) pada aplikasi mobile untuk memuat data terkini.</li>
+  </ul>
+
+  <table style="width: 100%; border: none; margin-top: 20px; font-size: 8.5pt;">
+    <tr>
+      <td style="border: none; text-align: center; width: 50%;">
+        Mengetahui,<br><strong>Dosen Pembimbing Lapangan (DPL)</strong><br><br><br><br>
+        <strong>Assoc. Prof. Dr. Agus Riyanto, S.T., M.T</strong><br>
+        NIP: 4127.70.03.007
+      </td>
+      <td style="border: none; text-align: center; width: 50%;">
+        Bandung, 08 Oktober 2026<br><strong>Tim Data Governance & Backend Berseka</strong><br><br><br><br>
+        <strong>Lead Fullstack Developer</strong><br>
+        Sistem Informasi BERSEKA
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <div>Laporan Resmi Tata Kelola KKN Berseka • Dokumen Sah Data Governance VPS</div>
+    <div>Halaman 2 dari 2</div>
+  </div>
+</div>
+
+</body>
+</html>

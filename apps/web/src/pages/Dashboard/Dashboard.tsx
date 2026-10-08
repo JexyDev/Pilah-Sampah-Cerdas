@@ -2598,136 +2598,17 @@ const Dashboard: React.FC = () => {
         onMetricsLoaded={handleComplianceMetricsLoaded}
       />
 
-      {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
+      {/* 3. Analisis Tren Pemilahan dan Komposisi Sampah (Card Gabungan Terpadu) */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Analisis Tren Pemilahan dan Komposisi Sampah
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
-        {/* Left Column (8 cols): Trend Pemilahan Chart Lebih Luas */}
+      <div className="relative z-10">
         <WasteTrendChart
-          className="lg:col-span-8"
           wilayah={effectiveWilayah}
           initialData={trendData}
           rawOrg={rawOrg}
           rawAnorg={rawAnorg}
         />
-
-        {/* Right Column (4 cols): Komposisi Sampah Card Kompak & Fokus Nilai */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between h-full min-h-[460px] relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2 gap-2 shrink-0">
-            <div>
-              <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-tight">
-                Akumulasi terpilah sejak pekan pertama Agustus 2026.
-              </p>
-            </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
-              Massa (kg)
-            </span>
-          </div>
-
-          {(() => {
-            const totalKg = rawOrg + rawAnorg;
-            const pctOrg = totalKg > 0 ? Math.round((rawOrg / totalKg) * 100) : 0;
-            const pctAnorg = totalKg > 0 ? 100 - pctOrg : 0;
-
-            const c = 2 * Math.PI * 40;
-            const valOrg = (pctOrg / 100) * c;
-            const valAnorg = (pctAnorg / 100) * c;
-
-            let dominantLabel = "Organik";
-            let dominantPct = pctOrg;
-            let dominantColor = "text-emerald-600 dark:text-emerald-400";
-
-            if (pctAnorg > pctOrg) {
-              dominantLabel = "Anorganik";
-              dominantPct = pctAnorg;
-              dominantColor = "text-amber-600 dark:text-amber-400";
-            }
-
-            return (
-              <div className="flex-1 flex flex-col md:flex-row lg:flex-col items-center justify-center gap-5 md:gap-8 lg:gap-5 my-auto py-2">
-                {/* Donut Chart Ringkas & Proporsional */}
-                <div className="flex flex-col items-center justify-center shrink-0">
-                  <div className="w-28 h-28 relative flex items-center justify-center my-1 group">
-                    <svg className="w-28 h-28 transform -rotate-90">
-                      <circle cx="56" cy="56" r="40" fill="transparent" stroke="#f1f5f9" className="dark:stroke-slate-800" strokeWidth="10" />
-                      {pctOrg > 0 && (
-                        <circle
-                          cx="56"
-                          cy="56"
-                          r="40"
-                          fill="transparent"
-                          stroke="#34d399"
-                          strokeWidth="10"
-                          strokeDasharray={`${valOrg} ${c}`}
-                          strokeDashoffset={0}
-                          className="transition-all duration-500 hover:stroke-[12]"
-                        />
-                      )}
-                      {pctAnorg > 0 && (
-                        <circle
-                          cx="56"
-                          cy="56"
-                          r="40"
-                          fill="transparent"
-                          stroke="#fbbf24"
-                          strokeWidth="10"
-                          strokeDasharray={`${valAnorg} ${c}`}
-                          strokeDashoffset={-valOrg}
-                          className="transition-all duration-500 hover:stroke-[12]"
-                        />
-                      )}
-                    </svg>
-                    <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
-                      <span className={`block text-xl font-black leading-none ${dominantColor}`}>
-                        {dominantPct}%
-                      </span>
-                      <span className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider mt-0.5 block">
-                        {dominantLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Angka Total Akumulasi Terpilah */}
-                  <div className="text-center mt-1">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                      Total Sampah Terpilah
-                    </span>
-                    <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
-                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                    </span>
-                  </div>
-                </div>
-
-                {/* Penekanan Informasi pada Angka & Nilai Komposisi (Legend Ringkas tanpa Redundansi Bar) */}
-                <div className="w-full space-y-2.5 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399] inline-block"></span>
-                      Organik
-                    </div>
-                    <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                      {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
-                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24] inline-block"></span>
-                      Anorganik
-                    </div>
-                    <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                      {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
-                      <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
       </div>
 
       {/* 3.6 Seksi Baseline Data Hasil Survei Pemilahan Sampah (Statis & Terisolasi) */}

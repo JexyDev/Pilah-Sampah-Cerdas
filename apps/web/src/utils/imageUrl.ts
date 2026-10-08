@@ -39,6 +39,13 @@ export function resolveImageUrl(path?: string | null, convertHeic: boolean = tru
     trimmed = trimmed.substring(trimmed.indexOf("/uploads/"));
   }
 
+  // Normalisasi Mixed Content jika tersimpan sebagai http://berseka.id atau http://157.10.252.252
+  if (trimmed.startsWith("http://berseka.id/")) {
+    trimmed = trimmed.replace("http://berseka.id/", "https://berseka.id/");
+  } else if (trimmed.startsWith("http://157.10.252.252/uploads/")) {
+    trimmed = trimmed.replace("http://157.10.252.252", "");
+  }
+
   // Jika sudah URL absolut (http, https, blob, data), kembalikan langsung
   if (
     trimmed.startsWith("http://") ||
@@ -72,7 +79,10 @@ export function resolveImageUrl(path?: string | null, convertHeic: boolean = tru
   }
 
   const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return `${backendOrigin}${cleanPath}`;
+  // Cache-busting parameter for /uploads/ to bypass stale browser cache
+  const separator = cleanPath.includes("?") ? "&" : "?";
+  const finalPath = cleanPath.includes("v=") ? cleanPath : `${cleanPath}${separator}v=20261008c`;
+  return `${backendOrigin}${finalPath}`;
 }
 
 /**
@@ -116,6 +126,45 @@ export function handlePoskoImageError(
 ): void {
   const target = event.currentTarget;
   const fallback = getPoskoFallbackImage(nama);
+  if (target.src !== fallback) {
+    target.src = fallback;
+  }
+}
+
+/**
+ * Menghasilkan SVG Data URI representasi visual dokumentasi kegiatan / bukti foto
+ * jika berkas foto fisik 404 / koneksi terputus.
+ */
+export function getDokumentasiFallbackImage(judul: string = "Dokumentasi"): string {
+  const safeJudul = judul.length > 30 ? `${judul.slice(0, 27)}...` : judul;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+    <defs>
+      <linearGradient id="dokBg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#dokBg)" rx="12"/>
+    <circle cx="200" cy="115" r="40" fill="#334155" stroke="#475569" stroke-width="2"/>
+    <path d="M185 110 h30 M182 115 h36 v22 c0 4 -4 7 -8 7 h-20 c-4 0 -8 -3 -8 -7 z" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="200" cy="126" r="5" fill="#94a3b8"/>
+    <line x1="172" y1="87" x2="228" y2="143" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
+    <text x="200" y="195" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#e2e8f0">${safeJudul}</text>
+    <text x="200" y="222" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="500" fill="#94a3b8">Berkas arsip fisik tidak tersedia</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Event handler onError generik untuk elemen <img> dokumentasi agar beralih ke SVG fallback
+ * dan mencegah infinite loop.
+ */
+export function handleDokumentasiImageError(
+  event: React.SyntheticEvent<HTMLImageElement, Event>,
+  judul: string = "Dokumentasi Kegiatan"
+): void {
+  const target = event.currentTarget;
+  const fallback = getDokumentasiFallbackImage(judul);
   if (target.src !== fallback) {
     target.src = fallback;
   }

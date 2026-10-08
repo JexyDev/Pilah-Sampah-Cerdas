@@ -113,3 +113,9 @@ macos/
 windows/
 *.xlsx
 .vscode/
+scripts/*.cjs
+scripts/deep-search.js
+scripts/find-all-backups.js
+scripts/inspect-db.js
+scripts/*.json
+sample_output.svg

@@ -65,6 +65,11 @@ describe("sidebarAccess utility", () => {
     expect(canAccessSidebarRoute("/laporan/tata-kelola-sampah", pimpinan, mockCan)).toBe(false);
     expect(canAccessSidebarRoute("/laporan-pimpinan/kkn", pimpinan, mockCan)).toBe(false);
 
+    // Menu Analisis Sistem & Informasi / Tentang Aplikasi (Khusus Pimpinan Di-Hide)
+    expect(canAccessSidebarRoute("/analisis-sistem/kkn", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/analisis-sistem/tata-kelola-sampah", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/informasi", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/tentang-aplikasi", pimpinan, mockCan)).toBe(false);
   });
 
   it("allows PIMPINAN to access their legitimate executive modules", () => {
@@ -75,9 +80,6 @@ describe("sidebarAccess utility", () => {
     expect(canAccessSidebarRoute("/hasil-survei/data-survei", pimpinan, mockCan)).toBe(true);
 
     expect(canAccessSidebarRoute("/dasbor", pimpinan, mockCan)).toBe(true);
-    expect(
-      canAccessSidebarRoute("/analisis-sistem/tata-kelola-sampah", pimpinan, mockCan)
-    ).toBe(true);
     expect(canAccessSidebarRoute("/monitoring-wilayah", pimpinan, mockCan)).toBe(true);
     expect(canAccessSidebarRoute("/pelaksanaan/kelompok", pimpinan, mockCan)).toBe(true);
     expect(canAccessSidebarRoute("/monitoring-kegiatan/presensi", pimpinan, mockCan)).toBe(true);

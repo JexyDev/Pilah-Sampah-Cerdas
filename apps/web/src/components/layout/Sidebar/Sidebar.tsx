@@ -1001,6 +1001,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       return can(resource, "canView");
     }
 
+    // Khusus role PIMPINAN / PEMIMPIN: jika menu memiliki restriksi `allowed` dan tidak menyertakan PIMPINAN, tolak mutlak (tidak boleh bypass lewat dynamic resource)
+    if (
+      (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN" || isPimpinan) &&
+      allowed &&
+      !allowed.includes("PIMPINAN") &&
+      !(allowed as any).includes("PEMIMPIN")
+    ) {
+      return false;
+    }
+
     // 1. Dynamic RBAC check jika resource didefinisikan
     if (resource && can(resource, "canView")) {
       return true;
@@ -1114,8 +1124,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "SUPER_USER",
             "ADMIN_DLH",
             "PANITIA_TASKFORCE",
-            "PIMPINAN",
-            "PEMIMPIN",
             "DPL",
             "DOSEN_PEMBIMBING",
             "MPL",
@@ -1578,7 +1586,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/analisis-sistem/tata-kelola-sampah",
           icon: BarChart3,
           label: "Analisis Sistem",
-          resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1587,8 +1594,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "LURAH",
             "RW",
             "PANITIA_TASKFORCE",
-            "PIMPINAN",
-            "PEMIMPIN",
             "DPL",
             "DOSEN_PEMBIMBING",
             "MPL",
@@ -2183,7 +2188,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/informasi",
           icon: Info,
           label: "Tentang Aplikasi",
-          allowed: ALL_ROLES.filter((role) => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
+          allowed: ALL_ROLES.filter(
+            (role) =>
+              role !== "DPL" &&
+              role !== "DOSEN_PEMBIMBING" &&
+              role !== "PIMPINAN" &&
+              role !== "PEMIMPIN"
+          ),
         },
       ],
     },
@@ -2191,7 +2202,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const effectiveSections = menuSections.filter((sec) => {
     if (
-      sec.header === "MASTER DATA" &&
+      (sec.header === "MASTER DATA" || sec.header === "INFORMASI") &&
       (isPimpinan || userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN")
     ) {
       return false;
