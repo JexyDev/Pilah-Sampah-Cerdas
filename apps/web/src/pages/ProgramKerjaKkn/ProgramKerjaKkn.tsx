@@ -8,6 +8,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   FileSpreadsheet,
+  FileCheck2,
   Plus,
   Pencil,
   Trash2,
@@ -33,7 +34,15 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Filter,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Tooltip as RechartsTooltip,
+} from "recharts";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
@@ -208,7 +217,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       setSelectedKelurahan("ALL");
     }
     setSelectedRw("ALL");
-    if (isManagement || isMpl) {
+    if (isManagement || isMpl || isPimpinan || (isDpl && kelompokList.length > 1)) {
       setSelectedKelompokId("ALL");
     }
     setCategoryFilter("ALL");
@@ -575,12 +584,9 @@ export const ProgramKerjaKkn: React.FC = () => {
       }
 
       // 2. Fetch Program Kerja list
-      const prokers = await dplService.getProgramKerja(activeGroupId, {
-        kategori: categoryFilter !== "ALL" ? categoryFilter : undefined,
-        statusUsulan: statusUsulanFilter !== "ALL" ? statusUsulanFilter : undefined,
-        statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
-        search: searchQuery.trim() ? searchQuery : undefined,
-      });
+      // Memuat seluruh proker dalam lingkup otorisasi (tanpa membatasi status di backend)
+      // agar kartu KPI lengkap, Donut Chart visual, dan filter dropdown wilayah/kelompok 100% sinkron & real-time
+      const prokers = await dplService.getProgramKerja(activeGroupId);
 
       const sanitizedProkers = (prokers || []).filter(
         (p: any) =>
@@ -602,13 +608,7 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [
-    selectedKelompokId,
-    categoryFilter,
-    sourceFilter,
-    statusUsulanFilter,
-    statusPelaksanaanFilter,
-  ]);
+  }, [selectedKelompokId]);
 
   const handleOpenAddModal = () => {
     setFormMode("add");
@@ -873,17 +873,18 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Auto reset Kelompok if no longer available in filtered list
   useEffect(() => {
     if (
-      (isManagement || isMpl) &&
+      (isManagement || isMpl || isPimpinan) &&
       selectedKelompokId !== "ALL" &&
       !availableKelompokList.some((k) => k.id === selectedKelompokId)
     ) {
       setSelectedKelompokId("ALL");
     }
-  }, [isManagement, isMpl, availableKelompokList, selectedKelompokId]);
+  }, [isManagement, isMpl, isPimpinan, availableKelompokList, selectedKelompokId]);
 
-  // Filtered proker data
-  const filteredProkers = useMemo(() => {
-    const filtered = prokerList.filter((item) => {
+  // 1. Scoped Prokers: proker yang disaring berdasarkan lingkup wilayah, kelompok, waktu, kategori, sumber, dan pencarian
+  // Digunakan sebagai single source of truth untuk kartu metrik KPI dan visualisasi chart dashboard agar 100% sinkron
+  const scopedProkers = useMemo(() => {
+    return prokerList.filter((item) => {
       if (
         isTestProker(item) ||
         isTestKelompok({
@@ -915,20 +916,6 @@ export const ProgramKerjaKkn: React.FC = () => {
       const matchesSource =
         sourceFilter === "ALL" ||
         (item.sumber || "Mahasiswa").toLowerCase() === sourceFilter.toLowerCase();
-
-      const normU = normalizeStatusUsulan(item.statusUsulan, item.status);
-      const isAutoKadaluarsaDitolak =
-        item.status === "DITOLAK" ||
-        item.statusUsulan === "KADALUARSA_OTOMATIS" ||
-        item.statusUsulan === "KADALUARSA";
-      const matchesUsulan =
-        statusUsulanFilter === "ALL" ||
-        normU === statusUsulanFilter ||
-        (statusUsulanFilter === "DITOLAK" && isAutoKadaluarsaDitolak);
-
-      const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
-      const matchesPelaksanaan =
-        statusPelaksanaanFilter === "ALL" || normP === statusPelaksanaanFilter;
 
       let matchesDate = true;
       if (startDateFilter && item.createdAt) {
@@ -962,10 +949,40 @@ export const ProgramKerjaKkn: React.FC = () => {
         matchesSearch &&
         matchesCategory &&
         matchesSource &&
-        matchesUsulan &&
-        matchesPelaksanaan &&
         matchesDate
       );
+    });
+  }, [
+    prokerList,
+    kelompokList,
+    selectedKelurahan,
+    selectedRw,
+    selectedKelompokId,
+    searchQuery,
+    categoryFilter,
+    sourceFilter,
+    startDateFilter,
+    endDateFilter,
+  ]);
+
+  // 2. Filtered Prokers: saring lebih lanjut berdasarkan Status Usulan dan Status Pelaksanaan untuk tampilan tabel
+  const filteredProkers = useMemo(() => {
+    const filtered = scopedProkers.filter((item) => {
+      const normU = normalizeStatusUsulan(item.statusUsulan, item.status);
+      const isAutoKadaluarsaDitolak =
+        item.status === "DITOLAK" ||
+        item.statusUsulan === "KADALUARSA_OTOMATIS" ||
+        item.statusUsulan === "KADALUARSA";
+      const matchesUsulan =
+        statusUsulanFilter === "ALL" ||
+        normU === statusUsulanFilter ||
+        (statusUsulanFilter === "DITOLAK" && isAutoKadaluarsaDitolak);
+
+      const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
+      const matchesPelaksanaan =
+        statusPelaksanaanFilter === "ALL" || normP === statusPelaksanaanFilter;
+
+      return matchesUsulan && matchesPelaksanaan;
     });
 
     return [...filtered].sort((a, b) => {
@@ -998,18 +1015,9 @@ export const ProgramKerjaKkn: React.FC = () => {
       return 0;
     });
   }, [
-    prokerList,
-    kelompokList,
-    selectedKelurahan,
-    selectedRw,
-    selectedKelompokId,
-    searchQuery,
-    categoryFilter,
-    sourceFilter,
+    scopedProkers,
     statusUsulanFilter,
     statusPelaksanaanFilter,
-    startDateFilter,
-    endDateFilter,
     sortField,
     sortOrder,
   ]);
@@ -1035,28 +1043,55 @@ export const ProgramKerjaKkn: React.FC = () => {
     return filteredProkers.slice(start, start + itemsPerPage);
   }, [filteredProkers, currentPage, itemsPerPage]);
 
-  // Metric KPI Computations
-  const totalCount = prokerList.length;
-  const pendingCount = prokerList.filter(
+  // Metric KPI Computations (Dihitung dari scopedProkers agar 100% sinkron dengan filter dropdown wilayah/waktu/kelompok)
+  const totalCount = scopedProkers.length;
+  const pendingCount = scopedProkers.filter(
     (p) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI"
   ).length;
   const pendingPct =
-    totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
+    totalCount > 0 ? ((pendingCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
-  const disetujuiCount = prokerList.filter(
+  const disetujuiCount = scopedProkers.filter(
     (p) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI"
   ).length;
   const disetujuiPct =
-    totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(2).replace(".", ",") : "0,00";
+    totalCount > 0 ? ((disetujuiCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
 
-  const sedangBerjalanCount = prokerList.filter(
+  const ditolakCount = scopedProkers.filter((p) => {
+    const u = normalizeStatusUsulan(p.statusUsulan, p.status);
+    return u === "DITOLAK" || u === "KADALUARSA";
+  }).length;
+  const ditolakPct =
+    totalCount > 0 ? ((ditolakCount / totalCount) * 100).toFixed(1).replace(".", ",") : "0";
+
+  // Dimensi Pelaksanaan: Dari usulan yang telah disetujui
+  const disetujuiProkers = useMemo(() => {
+    return scopedProkers.filter(
+      (p) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI"
+    );
+  }, [scopedProkers]);
+
+  const totalPelaksanaan = disetujuiProkers.length;
+
+  const belumMulaiCount = disetujuiProkers.filter(
+    (p) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "BELUM_MULAI"
+  ).length;
+  const belumMulaiPct =
+    totalPelaksanaan > 0 ? Math.round((belumMulaiCount / totalPelaksanaan) * 100) : 0;
+
+  const sedangBerjalanCount = disetujuiProkers.filter(
     (p) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN"
   ).length;
-  const selesaiCount = prokerList.filter(
+  const sedangBerjalanPct =
+    totalPelaksanaan > 0 ? Math.round((sedangBerjalanCount / totalPelaksanaan) * 100) : 0;
+
+  const selesaiCount = disetujuiProkers.filter(
     (p) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI"
   ).length;
+  const selesaiPct =
+    totalPelaksanaan > 0 ? Math.round((selesaiCount / totalPelaksanaan) * 100) : 0;
 
-  const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
+  const totalBiaya = scopedProkers.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
   const handleExportXlsx = () => {
     if (!startDateFilter || !endDateFilter) {
@@ -1326,10 +1361,21 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Stat Cards Metrik Utama Program Kerja */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 5 Stat Cards Metrik Lengkap Program Kerja KKN */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Total Program Kerja */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div
+          onClick={() => {
+            setStatusUsulanFilter("ALL");
+            setStatusPelaksanaanFilter("ALL");
+          }}
+          className={`bg-white dark:bg-slate-900 p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+            statusUsulanFilter === "ALL" && statusPelaksanaanFilter === "ALL"
+              ? "border-slate-300 dark:border-slate-700 ring-2 ring-slate-400/30"
+              : "border-slate-200/80 dark:border-slate-800"
+          }`}
+          title="Klik untuk melihat seluruh usulan kegiatan KKN"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
               Total Program Kerja
@@ -1347,7 +1393,17 @@ export const ProgramKerjaKkn: React.FC = () => {
         </div>
 
         {/* Card 2: Menunggu Persetujuan */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 shadow-xs flex flex-col justify-between">
+        <div
+          onClick={() =>
+            setStatusUsulanFilter((prev) => (prev === "BELUM_DISETUJUI" ? "ALL" : "BELUM_DISETUJUI"))
+          }
+          className={`bg-white dark:bg-slate-900 p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+            statusUsulanFilter === "BELUM_DISETUJUI"
+              ? "border-amber-400 dark:border-amber-600 ring-2 ring-amber-500/40 bg-amber-50/20 dark:bg-amber-950/20"
+              : "border-amber-200/80 dark:border-amber-900/40"
+          }`}
+          title="Klik untuk menyaring proker yang menunggu persetujuan DPL"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs text-amber-700 dark:text-amber-400 font-bold">
               Menunggu Persetujuan
@@ -1366,8 +1422,18 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Disetujui */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 shadow-xs flex flex-col justify-between">
+        {/* Card 3: Disetujui (ACC DPL) */}
+        <div
+          onClick={() =>
+            setStatusUsulanFilter((prev) => (prev === "DISETUJUI" ? "ALL" : "DISETUJUI"))
+          }
+          className={`bg-white dark:bg-slate-900 p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+            statusUsulanFilter === "DISETUJUI"
+              ? "border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/20"
+              : "border-emerald-200/80 dark:border-emerald-900/40"
+          }`}
+          title="Klik untuk menyaring proker yang telah disetujui DPL"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">
               Disetujui (ACC DPL)
@@ -1386,29 +1452,433 @@ export const ProgramKerjaKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Pelaksanaan */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/40 shadow-xs flex flex-col justify-between">
+        {/* Card 4: Ditolak / Kadaluarsa */}
+        <div
+          onClick={() =>
+            setStatusUsulanFilter((prev) => (prev === "DITOLAK" ? "ALL" : "DITOLAK"))
+          }
+          className={`bg-white dark:bg-slate-900 p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+            statusUsulanFilter === "DITOLAK"
+              ? "border-rose-400 dark:border-rose-600 ring-2 ring-rose-500/40 bg-rose-50/20 dark:bg-rose-950/20"
+              : "border-rose-200/80 dark:border-rose-900/40"
+          }`}
+          title="Klik untuk menyaring proker yang ditolak / kadaluarsa"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs text-blue-700 dark:text-blue-400 font-bold">Pelaksanaan</span>
+            <span className="text-xs text-rose-700 dark:text-rose-400 font-bold">
+              Ditolak / Kadaluarsa
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/60 dark:border-rose-800/40">
+              <XCircle size={17} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400">
+              {ditolakCount}
+            </h3>
+            <span className="text-[11px] text-rose-700/80 dark:text-rose-400/80 font-medium">
+              {ditolakPct}% dari total
+            </span>
+          </div>
+        </div>
+
+        {/* Card 5: Pelaksanaan Kegiatan */}
+        <div
+          onClick={() =>
+            setStatusPelaksanaanFilter((prev) =>
+              prev === "SEDANG_BERJALAN" ? "SELESAI" : prev === "SELESAI" ? "ALL" : "SEDANG_BERJALAN"
+            )
+          }
+          className={`bg-white dark:bg-slate-900 p-4 rounded-2xl border transition-all cursor-pointer shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+            statusPelaksanaanFilter !== "ALL"
+              ? "border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/40 bg-blue-50/20 dark:bg-blue-950/20"
+              : "border-blue-200/80 dark:border-blue-900/40"
+          }`}
+          title="Klik untuk beralih filter status pelaksanaan"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-blue-700 dark:text-blue-400 font-bold">
+              Pelaksanaan
+            </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-800/40">
               <ListFilter size={17} />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <div>
-              <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+          <div className="mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
                 {sedangBerjalanCount}
               </span>
-              <span className="text-[10px] text-slate-500 ml-1 font-semibold">
-                Sedang Berlangsung
-              </span>
+              <span className="text-[10.5px] font-bold text-slate-500">Berjalan</span>
             </div>
-            <span className="text-slate-300">•</span>
+            <div className="flex items-center gap-2 text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+              <span>{belumMulaiCount} Belum</span>
+              <span>•</span>
+              <span className="text-emerald-600 dark:text-emerald-400">{selesaiCount} Selesai</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Widget Visual Analitik: Status Program Kerja & Status Pelaksanaan (Diadaptasi dari Dashboard, 100% Sinkron Dinamis) */}
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+              <FileCheck2 size={16} />
+            </div>
             <div>
-              <span className="text-lg font-black text-blue-600 dark:text-blue-400">
-                {selesaiCount}
-              </span>
-              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Selesai</span>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Status Program Kerja
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Visualisasi persetujuan usulan DPL dan progres pelaksanaan proker (sinkron dengan filter aktif)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-extrabold bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+              Total: {totalCount} Proker
+            </span>
+          </div>
+        </div>
+
+        {/* 2 Kolom Komparatif: Dimensi 1 (Usulan) & Dimensi 2 (Pelaksanaan) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:divide-x lg:divide-slate-100 dark:lg:divide-slate-800">
+          {/* Dimensi 1: Status Usulan Program Kerja (Donut Chart & Metrik Cards) */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Status Usulan Program Kerja:
+              </p>
+              {statusUsulanFilter !== "ALL" && (
+                <button
+                  type="button"
+                  onClick={() => setStatusUsulanFilter("ALL")}
+                  className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw size={10} /> Reset Filter Usulan
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3.5">
+              {/* Pie/Donut Chart Usulan */}
+              <div className="relative h-28 w-28 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={
+                        totalCount === 0
+                          ? [{ name: "Tidak ada data", value: 1, color: "#cbd5e1" }]
+                          : [
+                              { name: "Disetujui", value: disetujuiCount, color: "#10b981" },
+                              { name: "Menunggu", value: pendingCount, color: "#f59e0b" },
+                              { name: "Ditolak", value: ditolakCount, color: "#ef4444" },
+                            ].filter((d) => d.value > 0)
+                      }
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={24}
+                      outerRadius={46}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {(totalCount === 0
+                        ? [{ name: "Tidak ada data", value: 1, color: "#cbd5e1" }]
+                        : [
+                            { name: "Disetujui", value: disetujuiCount, color: "#10b981" },
+                            { name: "Menunggu", value: pendingCount, color: "#f59e0b" },
+                            { name: "Ditolak", value: ditolakCount, color: "#ef4444" },
+                          ].filter((d) => d.value > 0)
+                      ).map((entry, idx) => (
+                        <Cell key={`cell-usulan-${idx}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0];
+                          if (d.name === "Tidak ada data") return null;
+                          return (
+                            <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-2.5 rounded-lg shadow-lg">
+                              <span>{d.name}: </span>
+                              <span className="text-emerald-400 font-extrabold">{d.value} Proker</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+                    {totalCount}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Total</span>
+                </div>
+              </div>
+
+              {/* Grid 4 Metrik Status Usulan */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1 w-full">
+                {/* Total Usulan */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusUsulanFilter("ALL");
+                    setStatusPelaksanaanFilter("ALL");
+                  }}
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    statusUsulanFilter === "ALL" && statusPelaksanaanFilter === "ALL"
+                      ? "bg-slate-100/90 dark:bg-slate-800 border-slate-300 dark:border-slate-600 shadow-2xs"
+                      : "bg-slate-50/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                  }`}
+                  title="Klik untuk tampilkan semua status usulan"
+                >
+                  <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200 mb-0.5">
+                    <Calendar size={12} className="text-slate-500" />
+                    <span className="text-[10px] font-bold">Total</span>
+                  </div>
+                  <p className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    {totalCount}
+                  </p>
+                </button>
+
+                {/* Usulan Disetujui */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusUsulanFilter((prev) => (prev === "DISETUJUI" ? "ALL" : "DISETUJUI"))
+                  }
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    statusUsulanFilter === "DISETUJUI"
+                      ? "bg-emerald-100 dark:bg-emerald-950/70 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/30 shadow-2xs"
+                      : "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100/70"
+                  }`}
+                  title="Klik untuk filter hanya proker disetujui"
+                >
+                  <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 mb-0.5">
+                    <CheckCircle2 size={12} />
+                    <span className="text-[10px] font-bold">Disetujui</span>
+                  </div>
+                  <p className="text-sm font-black text-emerald-700 dark:text-emerald-400">
+                    {disetujuiCount}
+                  </p>
+                  <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-bold">
+                    {disetujuiPct}%
+                  </p>
+                </button>
+
+                {/* Usulan Menunggu */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusUsulanFilter((prev) =>
+                      prev === "BELUM_DISETUJUI" ? "ALL" : "BELUM_DISETUJUI"
+                    )
+                  }
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    statusUsulanFilter === "BELUM_DISETUJUI"
+                      ? "bg-amber-100 dark:bg-amber-950/70 border-amber-400 dark:border-amber-600 ring-2 ring-amber-500/30 shadow-2xs"
+                      : "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 hover:bg-amber-100/70"
+                  }`}
+                  title="Klik untuk filter hanya proker menunggu persetujuan"
+                >
+                  <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 mb-0.5">
+                    <Clock size={12} />
+                    <span className="text-[10px] font-bold">Menunggu</span>
+                  </div>
+                  <p className="text-sm font-black text-amber-700 dark:text-amber-400">
+                    {pendingCount}
+                  </p>
+                  <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-bold">
+                    {pendingPct}%
+                  </p>
+                </button>
+
+                {/* Usulan Ditolak */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusUsulanFilter((prev) => (prev === "DITOLAK" ? "ALL" : "DITOLAK"))
+                  }
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    statusUsulanFilter === "DITOLAK"
+                      ? "bg-rose-100 dark:bg-rose-950/70 border-rose-400 dark:border-rose-600 ring-2 ring-rose-500/30 shadow-2xs"
+                      : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/40 hover:bg-rose-100/70"
+                  }`}
+                  title="Klik untuk filter hanya proker ditolak / kadaluarsa"
+                >
+                  <div className="flex items-center gap-1 text-rose-700 dark:text-rose-400 mb-0.5">
+                    <XCircle size={12} />
+                    <span className="text-[10px] font-bold">Ditolak</span>
+                  </div>
+                  <p className="text-sm font-black text-rose-700 dark:text-rose-400">
+                    {ditolakCount}
+                  </p>
+                  <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-bold">
+                    {ditolakPct}%
+                  </p>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dimensi 2: Status Pelaksanaan Program Kerja (Donut Chart & Breakdown List) */}
+          <div className="space-y-2.5 lg:pl-6 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Status Pelaksanaan:
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/40">
+                  {totalPelaksanaan} Disetujui
+                </span>
+                {statusPelaksanaanFilter !== "ALL" && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusPelaksanaanFilter("ALL")}
+                    className="text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw size={10} /> Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3.5">
+              {/* Mini Donut Chart for Pelaksanaan */}
+              <div className="relative h-28 w-28 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={
+                        totalPelaksanaan === 0
+                          ? [{ name: "Belum Ada Disetujui", value: 1, color: "#cbd5e1" }]
+                          : [
+                              { name: "Belum Mulai", value: belumMulaiCount, color: "#94a3b8" },
+                              { name: "Sedang Berjalan", value: sedangBerjalanCount, color: "#3b82f6" },
+                              { name: "Sudah Selesai", value: selesaiCount, color: "#10b981" },
+                            ].filter((d) => d.value > 0)
+                      }
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={28}
+                      outerRadius={48}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {(totalPelaksanaan === 0
+                        ? [{ name: "Belum Ada Disetujui", value: 1, color: "#cbd5e1" }]
+                        : [
+                            { name: "Belum Mulai", value: belumMulaiCount, color: "#94a3b8" },
+                            { name: "Sedang Berjalan", value: sedangBerjalanCount, color: "#3b82f6" },
+                            { name: "Sudah Selesai", value: selesaiCount, color: "#10b981" },
+                          ].filter((d) => d.value > 0)
+                      ).map((entry, idx) => (
+                        <Cell key={`cell-pelaksanaan-${idx}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0];
+                          if (d.name === "Belum Ada Disetujui") return null;
+                          return (
+                            <div className="bg-slate-900 text-white text-xs font-bold py-1.5 px-2.5 rounded-lg shadow-lg">
+                              <span>{d.name}: </span>
+                              <span className="text-emerald-400 font-extrabold">{d.value} Proker</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    {totalPelaksanaan}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">Proker</span>
+                </div>
+              </div>
+
+              {/* Status Pelaksanaan Legend & Breakdown Rows */}
+              <div className="flex-1 space-y-2 w-full">
+                {/* Belum Mulai */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusPelaksanaanFilter((prev) =>
+                      prev === "BELUM_MULAI" ? "ALL" : "BELUM_MULAI"
+                    )
+                  }
+                  className={`w-full flex items-center justify-between text-xs p-2 rounded-lg border transition-all cursor-pointer ${
+                    statusPelaksanaanFilter === "BELUM_MULAI"
+                      ? "bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 ring-2 ring-slate-400/30 shadow-2xs"
+                      : "bg-slate-50 dark:bg-slate-800/60 border-slate-100 dark:border-slate-800 hover:bg-slate-100"
+                  }`}
+                  title="Klik untuk menyaring proker yang belum mulai"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" />
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Belum Mulai</span>
+                  </div>
+                  <span className="font-extrabold text-slate-800 dark:text-slate-100">
+                    {belumMulaiCount} ({belumMulaiPct}%)
+                  </span>
+                </button>
+
+                {/* Sedang Berjalan */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusPelaksanaanFilter((prev) =>
+                      prev === "SEDANG_BERJALAN" ? "ALL" : "SEDANG_BERJALAN"
+                    )
+                  }
+                  className={`w-full flex items-center justify-between text-xs p-2 rounded-lg border transition-all cursor-pointer ${
+                    statusPelaksanaanFilter === "SEDANG_BERJALAN"
+                      ? "bg-blue-100 dark:bg-blue-950/70 border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/30 shadow-2xs"
+                      : "bg-blue-50/50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/30 hover:bg-blue-100/70"
+                  }`}
+                  title="Klik untuk menyaring proker yang sedang berlangsung"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Sedang Berjalan</span>
+                  </div>
+                  <span className="font-extrabold text-blue-700 dark:text-blue-400">
+                    {sedangBerjalanCount} ({sedangBerjalanPct}%)
+                  </span>
+                </button>
+
+                {/* Sudah Selesai */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStatusPelaksanaanFilter((prev) =>
+                      prev === "SELESAI" ? "ALL" : "SELESAI"
+                    )
+                  }
+                  className={`w-full flex items-center justify-between text-xs p-2 rounded-lg border transition-all cursor-pointer ${
+                    statusPelaksanaanFilter === "SELESAI"
+                      ? "bg-emerald-100 dark:bg-emerald-950/70 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-500/30 shadow-2xs"
+                      : "bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-100/70"
+                  }`}
+                  title="Klik untuk menyaring proker yang sudah selesai"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">Sudah Selesai</span>
+                  </div>
+                  <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
+                    {selesaiCount} ({selesaiPct}%)
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1492,7 +1962,9 @@ export const ProgramKerjaKkn: React.FC = () => {
                 onChange={(e) => setSelectedKelompokId(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
               >
-                {(isManagement || isMpl) && <option value="ALL">Semua Kelompok</option>}
+                {(isManagement || isMpl || isPimpinan || (isDpl && kelompokList.length > 1)) && (
+                  <option value="ALL">Semua Kelompok</option>
+                )}
                 {availableKelompokList.map((k) => (
                   <option key={k.id} value={k.id}>
                     {k.name}
@@ -1636,6 +2108,95 @@ export const ProgramKerjaKkn: React.FC = () => {
             </button>
           </div>
         </div>
+      {/* Active Filter Feedback Strip */}
+      {hasActiveFilter && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs shadow-2xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-slate-500 dark:text-slate-400">
+              Menampilkan{" "}
+              <span className="font-black text-slate-900 dark:text-slate-100">
+                {filteredProkers.length}
+              </span>{" "}
+              dari{" "}
+              <span className="font-black text-slate-900 dark:text-slate-100">
+                {scopedProkers.length}
+              </span>{" "}
+              program kerja
+            </span>
+            {selectedKelurahan !== "ALL" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold text-[11px] border border-emerald-200 dark:border-emerald-800/50">
+                Kel. {selectedKelurahan}
+              </span>
+            )}
+            {selectedRw !== "ALL" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold text-[11px] border border-slate-200 dark:border-slate-700">
+                RW {selectedRw}
+              </span>
+            )}
+            {selectedKelompokId !== "ALL" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold text-[11px] border border-indigo-200 dark:border-indigo-800/50">
+                {kelompokList.find((k) => k.id === selectedKelompokId)?.name || "Kelompok Terpilih"}
+              </span>
+            )}
+            {categoryFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 font-bold text-[11px] border border-purple-200 dark:border-purple-800/50">
+                Kategori: {categoryFilter}
+              </span>
+            )}
+            {statusUsulanFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 font-bold text-[11px] border border-amber-200 dark:border-amber-800/50">
+                <span>
+                  Usulan:{" "}
+                  {statusUsulanFilter === "BELUM_DISETUJUI"
+                    ? "Menunggu"
+                    : statusUsulanFilter === "DISETUJUI"
+                    ? "Disetujui"
+                    : statusUsulanFilter === "DITOLAK"
+                    ? "Ditolak"
+                    : statusUsulanFilter}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusUsulanFilter("ALL")}
+                  className="hover:text-amber-900 dark:hover:text-amber-100 cursor-pointer text-xs"
+                  title="Hapus filter usulan"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {statusPelaksanaanFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-bold text-[11px] border border-blue-200 dark:border-blue-800/50">
+                <span>
+                  Pelaksanaan:{" "}
+                  {statusPelaksanaanFilter === "BELUM_MULAI"
+                    ? "Belum Mulai"
+                    : statusPelaksanaanFilter === "SEDANG_BERJALAN"
+                    ? "Sedang Berjalan"
+                    : statusPelaksanaanFilter === "SELESAI"
+                    ? "Selesai"
+                    : statusPelaksanaanFilter}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStatusPelaksanaanFilter("ALL")}
+                  className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer text-xs"
+                  title="Hapus filter pelaksanaan"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleResetAllFilters}
+            className="text-[11px] font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCcw size={11} /> Reset Filter
+          </button>
+        </div>
+      )}
       </div>
 
       {/* Main Table */}
@@ -1667,7 +2228,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           <>
             {/* Desktop Table View (>= md) */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
+              <table className="min-w-[1000px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                 <thead>
                   <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                     <th
