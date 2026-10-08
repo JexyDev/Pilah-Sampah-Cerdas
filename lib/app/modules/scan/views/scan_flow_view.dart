@@ -843,8 +843,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                           ref.invalidate(binsProvider);
                         }
                         // Lanjut proses scan di bawah
-                      } else if (decision == 'continue_scan') {
-                        // Lanjut proses scan di bawah
                       } else {
                         _qrScannerKey.currentState?.resetScanner();
                         return false;
@@ -1740,42 +1738,31 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 child: ElevatedButton.icon(
                   onPressed: () => Navigator.of(ctx).pop('cancel_and_scan'),
                   icon: const Icon(Icons.cancel_outlined, size: 18),
-                  label: const Text(
-                    'Batalkan Pengajuan & Lanjut Scan',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Batalkan Pengajuan & Lanjut Scan',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(ctx).pop('continue_scan'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Tetap Lanjut Scan',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop('change_bin'),
                 child: const Text(

@@ -2540,15 +2540,11 @@ class _KknStatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: onTap != null
-              ? color.withValues(alpha: 0.35)
-              : AppColors.border,
+          color: AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
-            color: onTap != null
-                ? color.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
