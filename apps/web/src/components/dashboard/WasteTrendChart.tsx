@@ -441,9 +441,23 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
     );
   }, [normalizedChartData]);
 
-  // Kalkulasi data komposisi sampah terpilah
-  const totalCompositionKg = (rawOrg || 0) + (rawAnorg || 0);
-  const pctOrg = totalCompositionKg > 0 ? Math.round(((rawOrg || 0) / totalCompositionKg) * 100) : 0;
+  // Kalkulasi data komposisi sampah terpilah (Sinkron 100% mengikuti filter aktif)
+  const filteredOrg = useMemo(() => {
+    if (normalizedChartData.length > 0) {
+      return normalizedChartData.reduce((acc, curr) => acc + (curr.organic || 0), 0);
+    }
+    return rawOrg || 0;
+  }, [normalizedChartData, rawOrg]);
+
+  const filteredAnorg = useMemo(() => {
+    if (normalizedChartData.length > 0) {
+      return normalizedChartData.reduce((acc, curr) => acc + (curr.inorganic || 0), 0);
+    }
+    return rawAnorg || 0;
+  }, [normalizedChartData, rawAnorg]);
+
+  const totalCompositionKg = filteredOrg + filteredAnorg;
+  const pctOrg = totalCompositionKg > 0 ? Math.round((filteredOrg / totalCompositionKg) * 100) : 0;
   const pctAnorg = totalCompositionKg > 0 ? 100 - pctOrg : 0;
 
   const donutCircumference = 2 * Math.PI * 40;
@@ -683,16 +697,18 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
           </div>
         </div>
 
-        {/* Kolom Kanan: Panel Komposisi Sampah (4 Kolom) */}
+        {/* Kolom Kanan: Panel Komposisi Sampah (4 Kolom) - Mengikuti Filter Aktif */}
         <div className="lg:col-span-4 bg-slate-50/70 dark:bg-slate-800/40 shadow-2xs rounded-2xl p-5 border border-slate-200/70 dark:border-slate-700/60 flex flex-col justify-between h-full min-h-[440px] relative overflow-hidden">
           <div className="flex justify-between items-start mb-2 gap-2 shrink-0">
             <div>
               <h5 className="font-bold text-[17px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h5>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-tight">
-                Akumulasi terpilah sejak pekan pertama Agustus 2026.
+                {selectedRange === "all"
+                  ? "Akumulasi terpilah seluruh periode tercatat."
+                  : `Proporsi terpilah periode ${currentRangeConfig.label.toLowerCase()} (${selectedYear}).`}
               </p>
             </div>
-            <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
+            <span className="text-[10.5px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-1 rounded-full tracking-wider shrink-0">
               Massa (kg)
             </span>
           </div>
@@ -740,7 +756,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
                 </div>
               </div>
 
-              {/* Angka Total Akumulasi Terpilah */}
+              {/* Angka Total Akumulasi Terpilah (Sinkron Mengikuti Filter Aktif) */}
               <div className="text-center mt-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                   Total Sampah Terpilah
@@ -751,7 +767,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
               </div>
             </div>
 
-            {/* Penekanan Informasi pada Angka & Nilai Komposisi */}
+            {/* Penekanan Informasi pada Angka & Nilai Komposisi (Mengikuti Filter Aktif) */}
             <div className="w-full space-y-2.5 bg-white dark:bg-slate-900/90 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex-1">
               <div className="flex justify-between items-center text-xs">
                 <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-200">
@@ -759,7 +775,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
                   Organik
                 </div>
                 <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                  {filteredOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                   <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                 </div>
               </div>
@@ -770,7 +786,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
                   Anorganik
                 </div>
                 <div className="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
+                  {filteredAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                   <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                 </div>
               </div>

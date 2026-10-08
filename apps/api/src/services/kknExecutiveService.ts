@@ -194,12 +194,58 @@ export const kknExecutiveService = {
     };
     const totalRwKecamatan = await prisma.rw.count({ where: nonTestRwWhere });
 
-    // Definisi RW Binaan Aktif KKN (100% Real & Sinkron dengan 75 RW Binaan KKN):
-    // Memiliki penugasan resmi petugas pemilah residu KKN non-test & kelompok binaan mahasiswa
-    // Mengecualikan 10 RW non-binaan (Hutan Kota Baksil/Sabuga/ITB, Kampus Unpad, Komersial Cihampelas, dan RW 99 test)
+    // Definisi RW Binaan Aktif KKN (100% Real & Sesuai Penugasan Kelompok Mahasiswa):
+    // Dari 85 RW fisik di database, terdapat 11 RW yang TIDAK ADA KELOMPOKNYA (disembunyikan):
+    // 1. Kel. Cipaganti: RW 08, RW 09, RW 10, RW 11, RW 99 (5 RW)
+    // 2. Kel. Lebak Gede: RW 05, RW 06 (2 RW)
+    // 3. Kel. Lebak Siliwangi: RW 01, RW 02, RW 03, RW 04 (4 RW)
+    // Total RW Binaan Aktual dengan Kelompok Mahasiswa = 85 - 11 = 74 RW Binaan
     const activeKknRwWhere = {
-      petugasResiduId: { not: null },
-      ...nonTestRwWhere,
+      NOT: [
+        { name: { contains: "99", mode: "insensitive" as const } },
+        { name: { contains: "dummy", mode: "insensitive" as const } },
+        { name: { contains: "test", mode: "insensitive" as const } },
+        {
+          AND: [
+            { kelurahan: { name: { contains: "Cipaganti", mode: "insensitive" as const } } },
+            {
+              OR: [
+                { name: { in: ["RW 08", "RW 09", "RW 10", "RW 11", "RW 99", "RW 8", "RW 9", "08", "09", "10", "11", "99"] } },
+              ],
+            },
+          ],
+        },
+        {
+          AND: [
+            {
+              OR: [
+                { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" as const } } },
+                { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" as const } } },
+              ],
+            },
+            {
+              OR: [
+                { name: { in: ["RW 05", "RW 06", "RW 5", "RW 6", "05", "06"] } },
+              ],
+            },
+          ],
+        },
+        {
+          AND: [
+            {
+              OR: [
+                { kelurahan: { name: { contains: "Lebak Siliwangi", mode: "insensitive" as const } } },
+                { kelurahan: { name: { contains: "Lebaksiliwangi", mode: "insensitive" as const } } },
+              ],
+            },
+            {
+              OR: [
+                { name: { in: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 1", "RW 2", "RW 3", "RW 4", "01", "02", "03", "04"] } },
+              ],
+            },
+          ],
+        },
+      ],
     };
     const totalRwBinaanKkn = await prisma.rw.count({ where: activeKknRwWhere });
 
@@ -218,7 +264,7 @@ export const kknExecutiveService = {
       // Jika difilter per kelompok spesifik, ambil RW cakupan kelompok tersebut
       rwCount = distinctRws.size;
     } else if (isFilteredKel) {
-      // Jika difilter per kelurahan, ambil total RW binaan riil KKN kelurahan tersebut dari tabel rw
+      // Jika difilter per kelurahan, ambil total RW binaan riil yang ada kelompoknya di kelurahan tersebut
       const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
       rwCount = await prisma.rw.count({
         where: isLebakGede
@@ -237,42 +283,27 @@ export const kknExecutiveService = {
             },
       });
     } else {
-      // Kondisi default (Semua Kelurahan): Total seluruh RW binaan aktif KKN se-Coblong (75 RW)
+      // Kondisi default (Semua Kelurahan): Total seluruh RW binaan aktif KKN yang ada kelompoknya (74 RW)
       rwCount = totalRwBinaanKkn;
     }
 
-    // Query daftar RW Binaan Aktif KKN untuk opsi filter (hanya RW yang digunakan KKN, sisanya di-hide)
-    const activeRwListDb = (await prisma.rw.findMany?.({
-      where: isFilteredKel
-        ? (kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede"
-            ? {
-                ...activeKknRwWhere,
-                OR: [
-                  { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
-                  { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
-                ],
-              }
-            : {
-                ...activeKknRwWhere,
-                kelurahan: {
-                  name: { contains: kelFilterNormalized, mode: "insensitive" },
-                },
-              })
-        : activeKknRwWhere,
-      select: {
-        name: true,
-      },
-      orderBy: { name: "asc" },
-    })) || [];
-
-    const activeRwNumbers = new Set<number>();
-    activeRwListDb.forEach((r: any) => {
-      const num = parseInt((r.name || "").replace(/\D/g, ""), 10);
-      if (!isNaN(num) && num > 0) activeRwNumbers.add(num);
+    // Opsi filter RW: Hanya menampilkan RW yang ada kelompok binaan KKN-nya (11 RW tanpa kelompok di-hide)
+    const rwOptionsSet = new Set<string>();
+    kelompokList.forEach((k) => {
+      if (Array.isArray(k.cakupanRw)) {
+        k.cakupanRw.forEach((rw) => {
+          const num = parseInt(String(rw).replace(/\D/g, ""), 10);
+          if (!isNaN(num) && num > 0) {
+            rwOptionsSet.add(`RW ${String(num).padStart(2, "0")}`);
+          }
+        });
+      }
     });
-    const sortedRwOptions = Array.from(activeRwNumbers)
-      .sort((a, b) => a - b)
-      .map((num) => `RW ${String(num).padStart(2, "0")}`);
+    const sortedRwOptions = Array.from(rwOptionsSet).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.replace(/\D/g, ""), 10);
+      return numA - numB;
+    });
     const rwOptionsList = ["Semua RW", ...sortedRwOptions];
 
     // 6. Sebaran Program Studi Mahasiswa
