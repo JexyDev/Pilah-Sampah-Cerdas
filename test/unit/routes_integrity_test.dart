@@ -60,6 +60,11 @@ void main() {
       AppRoutes.dataProker,
       AppRoutes.editProgramKerja,
       AppRoutes.prokerDetail,
+      AppRoutes.kknPresensi,
+      AppRoutes.editProfilWarga,
+      AppRoutes.editProfilPetugas,
+      AppRoutes.riwayatTidakMemenuhi,
+      AppRoutes.beritaList,
       AppRoutes.manajemenTempatSampah,
       AppRoutes.komunitasOnboarding,
     ];
