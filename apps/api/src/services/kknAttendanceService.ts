@@ -3728,6 +3728,13 @@ export class KknAttendanceService {
               },
               orderBy: { attendedAt: "desc" },
             },
+            presensiMandiri: {
+              where: {
+                status: "SELESAI",
+                ...(attendanceDateFilter ? { checkInAt: attendanceDateFilter } : {}),
+              },
+              orderBy: { checkInAt: "desc" },
+            },
           },
         },
         kelompok: {
@@ -3859,6 +3866,54 @@ export class KknAttendanceService {
             leaveType: leaveInfo.type,
           });
         }
+      }
+
+      // Tambahkan sesi sah dari Presensi Mandiri (mencegah data tercecer atau unbridged)
+      const userPresensiMandiri = (s.user as any)?.presensiMandiri || [];
+      for (const pm of userPresensiMandiri) {
+        if (!pm.checkInAt) continue;
+        const checkInDate = new Date(pm.checkInAt);
+        const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
+        const dateKey = wibDate.toISOString().slice(0, 10);
+        const isToday =
+          dateKey === todayDateKey ||
+          new Date(pm.checkInAt).toDateString() === now.toDateString();
+        const hasCheckedOut = !!pm.checkOutAt;
+
+        let durationMins = 0;
+        if (pm.durasiMenit !== null && pm.durasiMenit !== undefined) {
+          durationMins = Math.min(480, Math.max(0, pm.durasiMenit));
+        } else if (pm.checkOutAt) {
+          const diffMs = new Date(pm.checkOutAt).getTime() - new Date(pm.checkInAt).getTime();
+          durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+        } else if (isToday) {
+          const diffMs = Date.now() - new Date(pm.checkInAt).getTime();
+          durationMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
+        }
+
+        const isLeaveDate = approvedLeaveDays.has(dateKey);
+        const leaveInfo = approvedLeaveDays.get(dateKey);
+        const isApprovedLeave = isLeaveDate;
+        const leaveType = leaveInfo?.type || "HADIR_MEMENUHI";
+
+        const pmStatus = durationMins >= TARGET_HARIAN_MINUTES ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+
+        rawSessions.push({
+          id: `mandiri-${pm.id}`,
+          scheduleId: null,
+          scheduleTitle: pm.deskripsiKegiatan ? `Mandiri: ${pm.deskripsiKegiatan.slice(0, 40)}` : "Presensi Mandiri Posko",
+          attendedAt: pm.checkInAt,
+          checkOutAt: pm.checkOutAt,
+          durationMinutes: durationMins,
+          durationFormatted: `${Math.floor(durationMins / 60)} Jam ${durationMins % 60} Menit`,
+          isMinTargetMet: isApprovedLeave ? true : durationMins >= TARGET_HARIAN_MINUTES,
+          status: isApprovedLeave ? leaveType : pmStatus,
+          dateKey,
+          isToday,
+          hasCheckedOut,
+          isApprovedLeave,
+          leaveType: isApprovedLeave ? leaveType : undefined,
+        });
       }
 
       // 2. Deduplikasi cerdas per hari kalender (WIB: UTC+7)
@@ -4226,12 +4281,18 @@ export class KknAttendanceService {
       }
     }
 
-    // Jika mahasiswa memiliki sesi aktif di PresensiMandiri yang belum masuk ActivityAttendance,
+    // Jika mahasiswa memiliki sesi aktif/selesai di PresensiMandiri yang belum masuk ActivityAttendance,
     // bridge secara otomatis ke schedule kelompok agar data langsung sinkron ke Jadwal Resmi Kelompok KKN.
-    if (todayMandiri && todayMandiri.status === "AKTIF" && schedules.length > 0) {
+    if (todayMandiri && schedules.length > 0) {
       const activeSched = schedules[0];
       if (!activeSched.attendances || activeSched.attendances.length === 0) {
         try {
+          const isSelesai = todayMandiri.status === "SELESAI";
+          const durasiMenit = todayMandiri.durasiMenit ?? 0;
+          const statusBridge = isSelesai
+            ? (durasiMenit >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI")
+            : "BERLANGSUNG";
+
           const bridgedAtt = await prisma.activityAttendance.upsert({
             where: {
               studentId_scheduleId: {
@@ -4240,24 +4301,28 @@ export class KknAttendanceService {
               },
             },
             update: {
-              status: "BERLANGSUNG",
+              status: statusBridge,
               attendedAt: todayMandiri.checkInAt,
+              ...(todayMandiri.checkOutAt ? { checkOutAt: todayMandiri.checkOutAt } : {}),
+              ...(durasiMenit > 0 ? { actualInZoneMinutes: Math.min(480, durasiMenit) } : {}),
               latitude: Number(todayMandiri.latitude) || null,
               longitude: Number(todayMandiri.longitude) || null,
               deskripsiKegiatan: todayMandiri.deskripsiKegiatan,
               fotoUrl: todayMandiri.fotoUrl,
-              method: "GPS_ACTIVITY",
+              method: "GPS_MANDIRI_SYNC",
             },
             create: {
               studentId: userId,
               scheduleId: activeSched.id,
-              status: "BERLANGSUNG",
+              status: statusBridge,
               attendedAt: todayMandiri.checkInAt,
+              ...(todayMandiri.checkOutAt ? { checkOutAt: todayMandiri.checkOutAt } : {}),
+              ...(durasiMenit > 0 ? { actualInZoneMinutes: Math.min(480, durasiMenit) } : {}),
               latitude: Number(todayMandiri.latitude) || null,
               longitude: Number(todayMandiri.longitude) || null,
               deskripsiKegiatan: todayMandiri.deskripsiKegiatan,
               fotoUrl: todayMandiri.fotoUrl,
-              method: "GPS_ACTIVITY",
+              method: "GPS_MANDIRI_SYNC",
             },
           });
           activeSched.attendances = [bridgedAtt];
