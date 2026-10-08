@@ -126,26 +126,25 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
         primaryKegiatan?.statusKehadiran === "HADIR_TIDAK_MEMENUHI" ||
         Boolean(primaryKegiatan?.checkOutAt);
 
-      const todayDateStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const todayHistoryItem = presensiList.find((p: any) => {
-        const rawDate = p.checkInAt || p.waktuCheckin || p.jamMasuk || p.waktuAbsen;
-        if (!rawDate) return false;
-        const itemWib = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        return itemWib === todayDateStr && (
-          Boolean(p.checkOutAt) ||
-          Boolean(p.waktuCheckout) ||
-          Boolean(p.jamPulang) ||
-          p.status === "HADIR_MEMENUHI" ||
-          p.status === "SELESAI" ||
-          p.status === "HADIR"
-        );
-      });
+      // Cek sesi kehadiran yang telah selesai hari ini (dari timesheet summary atau jadwal kegiatan aktif)
+      const todaySession = Array.isArray(tsSummary?.sessions)
+        ? tsSummary.sessions.find(
+            (s: any) =>
+              s.isToday &&
+              (Boolean(s.checkOutAt) ||
+                s.status === "HADIR_MEMENUHI" ||
+                s.status === "SELESAI" ||
+                s.status === "HADIR" ||
+                s.status === "HADIR_TIDAK_MEMENUHI")
+          )
+        : null;
 
-      if (isKegiatanCompleted || todayHistoryItem) {
-        const durasi = primaryKegiatan?.actualInZoneMinutes || todayHistoryItem?.durasiMenit || 0;
+      if (isKegiatanCompleted || todaySession) {
+        const durasi = primaryKegiatan?.actualInZoneMinutes || todaySession?.durationMinutes || 0;
         const isMemenuhi =
           primaryKegiatan?.statusKehadiran === "HADIR_MEMENUHI" ||
-          todayHistoryItem?.status === "HADIR_MEMENUHI" ||
+          todaySession?.status === "HADIR_MEMENUHI" ||
+          Boolean(todaySession?.isMinTargetMet) ||
           durasi >= 240;
         setTodayAttendanceState({
           status: "SELESAI",

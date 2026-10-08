@@ -5644,7 +5644,7 @@ export class KknService {
     }
     targetRwId = targetRwId || 1;
 
-    const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } =
+    const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl, kategori } =
       payload;
 
     let programName = "LOGBOOK_HARIAN";
@@ -5674,6 +5674,15 @@ export class KknService {
       }
     }
 
+    const isAnorganikTeknologi =
+      String(kategori || "").toUpperCase() === "ANORGANIK" ||
+      cleanTeknologi.toLowerCase().includes("bank") ||
+      cleanTeknologi.toLowerCase().includes("anorganik") ||
+      cleanTeknologi.toLowerCase().includes("plastik") ||
+      cleanTeknologi.toLowerCase().includes("daur ulang");
+
+    const defaultBahanBaku = isAnorganikTeknologi ? "Sampah Anorganik" : "Sampah Organik";
+
     const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const report = await prisma.pemanfaatan.create({
@@ -5683,7 +5692,7 @@ export class KknService {
         nomorCaraPemanfaatan: uniqueNo,
         program: programName,
         teknologi: cleanTeknologi,
-        bahanBaku: bahanBaku || "Sampah Organik",
+        bahanBaku: bahanBaku || defaultBahanBaku,
         volumeBahanBaku: Number(beratInputKg) || 0,
         unitBahanBaku: "kg",
         hasil: 0, // Pilar 2: Hasil panen 0 karena baru pemrosesan awal
