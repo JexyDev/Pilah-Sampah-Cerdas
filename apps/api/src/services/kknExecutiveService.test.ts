@@ -90,17 +90,17 @@ describe("kknExecutiveService - Total Wilayah & RW Calculation", () => {
     (prisma.timelineKkn.findMany as any).mockResolvedValue([]);
   });
 
-  it("should return 75 RW and 6 Kelurahan for default view (Semua Kelurahan)", async () => {
+  it("should return 74 RW and 6 Kelurahan for default view (Semua Kelurahan)", async () => {
     (prisma.kelurahan.count as any).mockResolvedValue(6);
-    (prisma.rw.count as any).mockResolvedValue(75);
+    (prisma.rw.count as any).mockResolvedValue(74);
 
     const result = await kknExecutiveService.getExecutiveDashboard({});
 
     expect(prisma.kelurahan.count).toHaveBeenCalled();
     expect(prisma.rw.count).toHaveBeenCalled();
     expect(result.summary.totalWilayah.kelurahanCount).toBe(6);
-    expect(result.summary.totalWilayah.rwCount).toBe(75);
-    expect(result.summary.totalWilayah.label).toBe("6 Kelurahan • 75 RW");
+    expect(result.summary.totalWilayah.rwCount).toBe(74);
+    expect(result.summary.totalWilayah.label).toBe("6 Kelurahan • 74 RW");
   });
 
   it("should query rw count for specific kelurahan when filtered", async () => {
