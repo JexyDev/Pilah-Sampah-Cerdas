@@ -54,5 +54,57 @@ void main() {
 
       expect(sesi3.shortageFormatted, '0 Menit');
     });
+
+    test('Kasus 21 September 2026: Resolusi paradoks rentang 13:28 - 20:00 vs durasi posko 3 jam 57 menit', () {
+      final attended = DateTime(2026, 9, 21, 13, 28);
+      final checkOut = DateTime(2026, 9, 21, 20, 0);
+
+      final sesi21Sept = SesiTidakMemenuhi(
+        id: 'sesi-21sept',
+        scheduleId: 'sch-dago-1',
+        scheduleTitle: 'Pembersihan TPS Dago & Edukasi Warga',
+        attendedAt: attended,
+        checkOutAt: checkOut,
+        durationMinutes: 237, // 3 Jam 57 Menit efektif di posko
+        targetMinutes: 240,   // 4 Jam target minimal
+        shortageMinutes: 3,   // 3 Menit kekurangan
+        durasiJedaMenit: 155, // 2 Jam 35 Menit di luar zona
+        status: 'HADIR_TIDAK_MEMENUHI',
+        statusDisplay: 'Kurang Durasi',
+        keterangan: 'Durasi presensi belum memenuhi target harian (4 Jam)',
+      );
+
+      expect(sesi21Sept.rentangTotalMenit, 392);
+      expect(sesi21Sept.rentangTotalFormatted, '6 Jam 32 Menit');
+      expect(sesi21Sept.durationFormatted, '3 Jam 57 Menit');
+      expect(sesi21Sept.targetFormatted, '4 Jam');
+      expect(sesi21Sept.shortageFormatted, '3 Menit');
+      expect(sesi21Sept.jedaFormatted, '2 Jam 35 Menit');
+    });
+
+    test('Jeda di luar posko terhitung otomatis dari selisih attendedAt dan checkOutAt jika jedaMinutes 0', () {
+      final attended = DateTime(2026, 9, 22, 8, 0);
+      final checkOut = DateTime(2026, 9, 22, 12, 0); // 4 jam = 240 menit
+
+      final sesiAutoJeda = SesiTidakMemenuhi(
+        id: 'sesi-auto',
+        scheduleId: 'sch-auto',
+        scheduleTitle: 'Kegiatan Bank Sampah',
+        attendedAt: attended,
+        checkOutAt: checkOut,
+        durationMinutes: 180, // 3 Jam di posko
+        targetMinutes: 240,
+        shortageMinutes: 60,
+        durasiJedaMenit: 0,   // Diserahkan ke selisih 240 - 180 = 60 menit
+        status: 'HADIR_TIDAK_MEMENUHI',
+        statusDisplay: 'Kurang Durasi',
+        keterangan: 'Durasi presensi belum memenuhi target harian',
+      );
+
+      expect(sesiAutoJeda.rentangTotalMenit, 240);
+      expect(sesiAutoJeda.rentangTotalFormatted, '4 Jam');
+      expect(sesiAutoJeda.durationFormatted, '3 Jam');
+      expect(sesiAutoJeda.jedaFormatted, '1 Jam');
+    });
   });
 }

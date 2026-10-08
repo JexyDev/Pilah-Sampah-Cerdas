@@ -681,6 +681,32 @@ class _RiwayatTidakMemenuhiViewState
                     ),
                   ],
                 ),
+                if (item.rentangTotalFormatted.isNotEmpty && item.rentangTotalFormatted != '-') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blueGrey.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.schedule_rounded, size: 14, color: Colors.blueGrey.shade700),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Rentang Jam Dinding: ${item.rentangTotalFormatted}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blueGrey.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
 
                 // ── Progress Bar Durasi ──────────────────────────────
@@ -697,12 +723,14 @@ class _RiwayatTidakMemenuhiViewState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Durasi: ${item.durationFormatted}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                          Expanded(
+                            child: Text(
+                              'Durasi Efektif di Posko: ${item.durationFormatted}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ),
                           Text(
@@ -754,10 +782,63 @@ class _RiwayatTidakMemenuhiViewState
                           ),
                         ],
                       ),
+                      if (item.jedaFormatted.isNotEmpty && item.jedaFormatted != '0 Menit') ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.location_off_rounded, size: 13, color: Colors.amber.shade900),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Di Luar Zona / Jeda: ${item.jedaFormatted}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(height: 10),
+
+                // ── Status Badge Kurang dari Target ──────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange.shade900),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '⚠️ Kurang ${item.shortageFormatted} dari Target (${item.targetFormatted})',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
 
                 // ── Keterangan Edukasi & Action ──────────────────────
                 Text(
