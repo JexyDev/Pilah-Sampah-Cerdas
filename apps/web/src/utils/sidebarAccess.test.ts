@@ -107,6 +107,9 @@ describe("sidebarAccess utility", () => {
     expect(
       canAccessSidebarRoute("/monitoring-pemilahan/peringkat-warga?system=system2&tab=dpl", dpl)
     ).toBe(false);
+    expect(canAccessSidebarRoute("/analisis-sistem/kkn", dpl)).toBe(false);
+    expect(canAccessSidebarRoute("/analisis-sistem/tata-kelola-sampah", dpl)).toBe(false);
+    expect(canAccessSidebarRoute("/berseka-ai", dpl)).toBe(false);
   });
 
   it("allows MPL to access Leaderboard/peringkat routes and hides Laporan KKN", () => {
