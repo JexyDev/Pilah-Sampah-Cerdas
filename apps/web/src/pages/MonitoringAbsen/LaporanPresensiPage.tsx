@@ -259,13 +259,28 @@ export const LaporanPresensiPage: React.FC = () => {
       }
       const res = await api.get("/laporan-rekap", { params });
       if (res.data?.success && res.data?.data) {
-        const list = (res.data.data.items || []).filter(
+        const rawList = (res.data.data.items || []).filter(
           (it: LaporanItem) =>
             it.studentId === student.studentId ||
             it.nim === student.nim ||
             it.namaMahasiswa.toLowerCase().includes(student.namaMahasiswa.toLowerCase())
         );
-        setStudentLogItems(list);
+        // Deduplikasi harian cerdas: mencegah kartu ganda per tanggal kalender
+        const uniqueByDateMap = new Map<string, LaporanItem>();
+        for (const item of rawList) {
+          const key = item.tanggal || item.id;
+          if (!uniqueByDateMap.has(key)) {
+            uniqueByDateMap.set(key, item);
+          } else {
+            const existing = uniqueByDateMap.get(key)!;
+            const itemDur = item.durasiAktualMenit ?? item.durasiMenit ?? 0;
+            const existingDur = existing.durasiAktualMenit ?? existing.durasiMenit ?? 0;
+            if (itemDur > existingDur || (!existing.fotoUrl && item.fotoUrl)) {
+              uniqueByDateMap.set(key, item);
+            }
+          }
+        }
+        setStudentLogItems(Array.from(uniqueByDateMap.values()));
       }
     } catch (err: any) {
       console.error("Gagal memuat log presensi mahasiswa:", err);

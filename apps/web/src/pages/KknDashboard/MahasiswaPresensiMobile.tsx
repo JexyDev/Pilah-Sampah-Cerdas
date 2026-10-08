@@ -506,7 +506,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           } else if (typeof primary.actualInZoneMinutes === "number" && primary.actualInZoneMinutes > 0) {
             setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneMinutes * 60));
           }
-          setActiveSession((prev: any) => prev || {
+          setActiveSession({
             id: primary.id,
             scheduleId: primary.id,
             jamMasuk: primary.attendedAt || new Date().toISOString(),
@@ -521,7 +521,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           } else if (typeof primary.actualInZoneMinutes === "number" && primary.actualInZoneMinutes > 0) {
             setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneMinutes * 60));
           }
-          setActiveSession((prev: any) => prev || {
+          setActiveSession({
             id: primary.id,
             scheduleId: primary.id,
             jamMasuk: primary.attendedAt || new Date().toISOString(),
@@ -529,6 +529,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             status: "TERJEDA",
             ...primary,
           });
+        } else if (
+          primary.statusKehadiran === "HADIR" ||
+          primary.statusKehadiran === "HADIR_MEMENUHI" ||
+          primary.statusKehadiran === "HADIR_TIDAK_MEMENUHI" ||
+          primary.statusKehadiran === "SELESAI"
+        ) {
+          setIsLiveActiveInZone(false);
+          setActiveSession(null);
         } else {
           setIsLiveActiveInZone(false);
           setActiveSession((prev: any) => {

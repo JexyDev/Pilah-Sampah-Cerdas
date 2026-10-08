@@ -1188,7 +1188,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
                         {/* Highlight Box Metrik: Poin DPL & Rerata Kelompok */}
                         <div className="mt-3.5 grid grid-cols-2 gap-2 bg-white dark:bg-slate-900/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
-                          <div className="flex flex-col">
+                          <div
+                            className="flex flex-col"
+                            title="Formula Poin DPL: (60% Supervisi Logbook DPL) + (40% Rerata Kelompok Dampingan)"
+                          >
                             <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                               <Award size={11} className="text-emerald-500" />
                               Poin DPL
@@ -1199,8 +1202,14 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               </span>
                               <span className="text-[10px] font-bold text-slate-400">PTS</span>
                             </div>
+                            <span className="text-[9.5px] font-medium text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                              Komposit (60:40)
+                            </span>
                           </div>
-                          <div className="flex flex-col border-l border-slate-100 dark:border-slate-800 pl-2.5">
+                          <div
+                            className="flex flex-col border-l border-slate-100 dark:border-slate-800 pl-2.5"
+                            title="Formula Skor Kelompok: (60% Proker Disetujui) + (40% Rerata Saldo Anggota)"
+                          >
                             <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                               <TrendingUp size={11} className="text-blue-500" />
                               Rerata Kel.
@@ -1211,6 +1220,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                               </span>
                               <span className="text-[10px] font-bold text-slate-400">PTS</span>
                             </div>
+                            <span className="text-[9.5px] font-medium text-blue-600/80 dark:text-blue-400/80 mt-0.5">
+                              Performa Kelompok
+                            </span>
                           </div>
                         </div>
                       </div>
