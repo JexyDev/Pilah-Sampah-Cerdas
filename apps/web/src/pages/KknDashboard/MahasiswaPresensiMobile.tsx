@@ -30,6 +30,7 @@ import showToast from "../../utils/showToast";
 import { compressImage } from "../../utils/compressImage";
 import { useAuthStore } from "../../store/useAuthStore";
 import { parseSafeDate, safeFormatDateShort, safeFormatTime, safeToDateString } from "../../utils/safeDateUtils";
+import { resolveImageUrl, handleDokumentasiImageError } from "../../utils/imageUrl";
 
 // Haversine Formula untuk menghitung jarak dalam meter
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -1291,8 +1292,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           {(activeSession?.fotoBuktiUrl || activeSession?.fotoUrl) && (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48">
               <img
-                src={activeSession.fotoBuktiUrl || activeSession.fotoUrl}
+                src={resolveImageUrl(activeSession.fotoBuktiUrl || activeSession.fotoUrl)}
                 alt="Bukti Kehadiran"
+                onError={(e) => handleDokumentasiImageError(e, "Bukti Kehadiran Presensi")}
                 className="w-full h-full object-cover"
               />
             </div>

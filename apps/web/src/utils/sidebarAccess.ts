@@ -217,16 +217,32 @@ export function canAccessSidebarRoute(
     return true;
   }
 
-  // 7. Rute Dasbor & Analisis Sistem & BERSEKA AI & Monitoring Wilayah & Manajemen IoT (Terbuka untuk PIMPINAN)
-  if (
+  // 7. Rute Dasbor & Analisis Sistem & BERSEKA AI & Monitoring Wilayah & Manajemen IoT
+  const isAnalisisRoute =
     cleanPath === "/berseka-ai" ||
     cleanPath === "/analisis-sistem/tata-kelola-sampah" ||
     cleanPath === "/analisis-sistem/kkn" ||
     cleanPath === "/analisis-sistem" ||
     cleanPath === "/analisis-projek" ||
-    cleanPath === "/analisis-proyek"
-  ) {
+    cleanPath === "/analisis-proyek";
+
+  if (isAnalisisRoute) {
+    if (role === "PIMPINAN") return false;
     return isStagingEnv();
+  }
+
+  const isInformasiRoute =
+    cleanPath === "/informasi" ||
+    cleanPath === "/tentang" ||
+    cleanPath === "/tentang-aplikasi" ||
+    cleanPath === "/panduan-aplikasi" ||
+    cleanPath === "/faq" ||
+    cleanPath === "/bantuan" ||
+    cleanPath === "/panduan";
+
+  if (isInformasiRoute) {
+    if (role === "PIMPINAN") return false;
+    return true;
   }
 
   if (

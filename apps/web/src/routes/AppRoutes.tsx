@@ -762,8 +762,6 @@ const AppRoutes: React.FC = () => {
                 "SUPER_USER",
                 "DEVELOPER",
                 "ADMIN_DLH",
-                "PIMPINAN",
-                "PEMIMPIN",
                 "PANITIA_TASKFORCE",
                 "DPL",
                 "DOSEN_PEMBIMBING",
@@ -790,8 +788,6 @@ const AppRoutes: React.FC = () => {
                 "CAMAT",
                 "LURAH",
                 "RW",
-                "PIMPINAN",
-                "PEMIMPIN",
                 "PANITIA_TASKFORCE",
                 "DPL",
                 "DOSEN_PEMBIMBING",
@@ -1582,7 +1578,29 @@ const AppRoutes: React.FC = () => {
           path="/ide-daur-ulang"
           element={<IdeDaurUlang />}
         />
-        <Route path="/informasi" element={<TentangAplikasi />} />
+        <Route
+          path="/informasi"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "SUPER_USER",
+                "DEVELOPER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "RT",
+                "PANITIA_TASKFORCE",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "MPL",
+                "MAHASISWA_KKN",
+              ]}
+            >
+              <TentangAplikasi />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/tentang" element={<Navigate to="/informasi" replace />} />
         <Route path="/tentang-aplikasi" element={<Navigate to="/informasi" replace />} />
         <Route path="/panduan-aplikasi" element={<Navigate to="/informasi" replace />} />
