@@ -68,14 +68,12 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     final isSameRegion = state.selectedKelurahan == kelurahan &&
         state.selectedRtRw == rw &&
         state.searchQuery == search;
+    final hasExistingData = state.wargaList.isNotEmpty && isSameRegion;
 
-    // Cache hit: Gunakan data memori jika sudah tersedia untuk wilayah yang sama
-    if (!force && state.hasFetched && state.wargaList.isNotEmpty && isSameRegion) {
-      return;
-    }
-
+    // Stale-While-Revalidate: Jika data sudah ada di memori, tampilkan langsung (tanpa spinner),
+    // sambil tetap otomatis mengambil data terbaru dari server di latar belakang.
     state = state.copyWith(
-      isLoading: true,
+      isLoading: !hasExistingData || force,
       clearError: true,
       selectedKelurahan: kelurahan,
       selectedRtRw: rw,
@@ -147,7 +145,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal memuat data warga: $e',
+        errorMessage: state.wargaList.isEmpty ? 'Gagal memuat data warga: $e' : null,
         hasFetched: true,
       );
     }
