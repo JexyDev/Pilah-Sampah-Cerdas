@@ -221,6 +221,21 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
             <RefreshCw size={14} />
             <span>Cek Ulang Lingkungan Perangkat</span>
           </button>
+
+          <button
+            onClick={() => {
+              try {
+                localStorage.setItem("BERSEKA_DEV_BYPASS_IOS_GATE", "true");
+                setValidation(checkIsIOSSafari());
+                showToast.success("Melanjutkan ke portal...");
+              } catch {
+                // ignore
+              }
+            }}
+            className="w-full py-2.5 px-4 rounded-2xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 text-slate-400 hover:text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <span>Tetap Lanjutkan dengan Peramban Ini</span>
+          </button>
         </div>
 
         {/* Developer Bypass Option (Dev / Admin Only) */}

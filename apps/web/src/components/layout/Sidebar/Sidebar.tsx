@@ -1105,24 +1105,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
+        {
+          to: "/analisis-sistem/kkn",
+          icon: Activity,
+          label: "Analisis Sistem",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "MPL",
+            "CAMAT",
+            "LURAH",
+            "RW",
+          ] as UserRole[],
+        },
         ...(isStaging
           ? [
-              {
-                to: "/analisis-sistem/kkn",
-                icon: Activity,
-                label: "Analisis Sistem",
-                badge: "Pengembangan",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                  "PEMIMPIN",
-                  "DPL",
-                  "DOSEN_PEMBIMBING",
-                ] as UserRole[],
-              },
               {
                 to: "/berseka-ai?tab=kkn",
                 icon: Sparkles,
@@ -1571,25 +1574,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
+        {
+          to: "/analisis-sistem/tata-kelola-sampah",
+          icon: BarChart3,
+          label: "Analisis Sistem",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "MPL",
+          ] as UserRole[],
+        },
         ...(isStaging
           ? [
-              {
-                to: "/analisis-sistem/tata-kelola-sampah",
-                icon: BarChart3,
-                label: "Analisis Sistem",
-                badge: "Pengembangan",
-                resource: "monitoring_sampah",
-                allowed: [
-                  "DEVELOPER",
-                  "SUPER_USER",
-                  "ADMIN_DLH",
-                  "CAMAT",
-                  "LURAH",
-                  "RW",
-                  "PANITIA_TASKFORCE",
-                  "PIMPINAN",
-                ] as UserRole[],
-              },
               {
                 to: "/berseka-ai?tab=tata-kelola",
                 icon: Sparkles,
