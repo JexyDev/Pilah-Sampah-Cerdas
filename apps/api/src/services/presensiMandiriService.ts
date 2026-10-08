@@ -90,14 +90,25 @@ export class PresensiMandiriService {
 
     // [AUTO-SYNC] Bridge presensi mandiri ke ActivityAttendance (Jadwal KKN Resmi)
     try {
-      const activeSchedule = await prisma.schedule.findFirst({
+      const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+      let activeSchedule = await prisma.schedule.findFirst({
         where: {
-          date: { gte: todayStart, lte: todayEnd },
+          date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
           ...(student.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       });
+
+      if (!activeSchedule && student.kelompokId) {
+        activeSchedule = await prisma.schedule.findFirst({
+          where: {
+            kelompokId: student.kelompokId,
+            isActive: true,
+          },
+          orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        });
+      }
 
       if (activeSchedule) {
         const syncedAtt = await prisma.activityAttendance.upsert({
@@ -301,14 +312,26 @@ export class PresensiMandiriService {
         });
       } else {
         // Fallback: Jika ActivityAttendance belum terbuat saat check-in, hubungkan ke jadwal KKN aktif hari ini
-        const activeSchedule = await prisma.schedule.findFirst({
+        const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+        const todayEnd = new Date(`${todayWibStr}T23:59:59.999+07:00`);
+        let activeSchedule = await prisma.schedule.findFirst({
           where: {
-            date: { gte: todayStart },
+            date: { gte: yesterdayStart, lte: todayEnd },
             isActive: true,
             ...(record.kelompokId ? { OR: [{ kelompokId: record.kelompokId }, { kelompokId: null }] } : {}),
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         });
+
+        if (!activeSchedule && record.kelompokId) {
+          activeSchedule = await prisma.schedule.findFirst({
+            where: {
+              kelompokId: record.kelompokId,
+              isActive: true,
+            },
+            orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+          });
+        }
 
         if (activeSchedule) {
           const syncedFinish = await prisma.activityAttendance.upsert({
