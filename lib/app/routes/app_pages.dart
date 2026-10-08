@@ -148,8 +148,12 @@ class AppPages {
       case AppRoutes.kknAttendanceHistory:
         final args = settings.arguments as Map<String, dynamic>?;
         final scheduleId = args?['scheduleId'] as String? ?? '';
+        final fallbackData = args?['fallbackData'] as Map<String, dynamic>?;
         return _buildRoute(
-          KknAttendanceHistoryView(scheduleId: scheduleId),
+          KknAttendanceHistoryView(
+            scheduleId: scheduleId,
+            fallbackData: fallbackData,
+          ),
           settings,
         );
       case AppRoutes.monitoringWarga:

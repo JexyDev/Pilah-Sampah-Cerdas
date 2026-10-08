@@ -5,8 +5,13 @@ import '../../../data/providers/repository_providers.dart';
 
 class KknAttendanceHistoryView extends ConsumerStatefulWidget {
   final String scheduleId;
+  final Map<String, dynamic>? fallbackData;
 
-  const KknAttendanceHistoryView({super.key, required this.scheduleId});
+  const KknAttendanceHistoryView({
+    super.key,
+    required this.scheduleId,
+    this.fallbackData,
+  });
 
   @override
   ConsumerState<KknAttendanceHistoryView> createState() =>
@@ -26,7 +31,7 @@ class _KknAttendanceHistoryViewState
     super.initState();
     _progressAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
     _progressAnimation = CurvedAnimation(
       parent: _progressAnimController,
@@ -42,15 +47,40 @@ class _KknAttendanceHistoryViewState
   }
 
   Future<void> _fetchHistory() async {
-    final repo = ref.read(kknRepositoryProvider);
-    final history = await repo.getPresensiHistory(widget.scheduleId);
-    if (mounted) {
-      setState(() {
-        _historyData = history;
-        _isLoading = false;
-      });
-      if (history != null) {
-        _progressAnimController.forward();
+    if (widget.scheduleId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _historyData = widget.fallbackData;
+          _isLoading = false;
+        });
+        if (_historyData != null) {
+          _progressAnimController.forward();
+        }
+      }
+      return;
+    }
+
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final history = await repo.getPresensiHistory(widget.scheduleId);
+      if (mounted) {
+        setState(() {
+          _historyData = history ?? widget.fallbackData;
+          _isLoading = false;
+        });
+        if (_historyData != null) {
+          _progressAnimController.forward();
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _historyData = widget.fallbackData;
+          _isLoading = false;
+        });
+        if (_historyData != null) {
+          _progressAnimController.forward();
+        }
       }
     }
   }
@@ -63,7 +93,7 @@ class _KknAttendanceHistoryViewState
         return AppColors.primaryGreen;
       case 'HADIR_TIDAK_MEMENUHI':
       case 'SELESAI_TELAT':
-        return Colors.orange.shade700;
+        return const Color(0xFFD97706);
       case 'ALPA':
       case 'TANPA_KETERANGAN':
       case 'LEPAS_RADIUS':
@@ -74,7 +104,7 @@ class _KknAttendanceHistoryViewState
       case 'BERLANGSUNG':
         return AppColors.primaryGreen;
       case 'TERJEDA':
-        return Colors.amber.shade700;
+        return const Color(0xFFD97706);
       default:
         return AppColors.textSecondary;
     }
@@ -86,10 +116,10 @@ class _KknAttendanceHistoryViewState
         return Icons.verified_rounded;
       case 'HADIR_TIDAK_MEMENUHI':
       case 'SELESAI_TELAT':
-        return Icons.check_circle_outline_rounded;
+        return Icons.warning_amber_rounded;
       case 'ALPA':
       case 'TANPA_KETERANGAN':
-        return Icons.cancel_rounded;
+        return Icons.cancel_outlined;
       case 'LEPAS_RADIUS':
         return Icons.wrong_location_rounded;
       case 'IZIN':
@@ -108,24 +138,24 @@ class _KknAttendanceHistoryViewState
   String _getStatusLabel(String? status) {
     switch ((status ?? '').toUpperCase()) {
       case 'HADIR_MEMENUHI':
-        return 'Hadir & Memenuhi Syarat';
+        return 'Hadir Memenuhi Target';
       case 'HADIR_TIDAK_MEMENUHI':
-        return 'Hadir & Tidak Memenuhi';
+        return 'Tidak Terpenuhi (Kurang Jam)';
       case 'SELESAI_TELAT':
-        return 'Selesai (Durasi Kurang)';
+        return 'Durasi Belum Memenuhi';
       case 'ALPA':
       case 'TANPA_KETERANGAN':
-        return 'Tidak Hadir (Alpa)';
+        return 'Tanpa Keterangan';
       case 'LEPAS_RADIUS':
-        return 'Kehadiran Digagalkan';
+        return 'Presensi Dibatalkan';
       case 'IZIN':
-        return 'Izin';
+        return 'Izin Resmi';
       case 'SAKIT':
         return 'Sakit';
       case 'BERLANGSUNG':
         return 'Sedang Berlangsung';
       case 'TERJEDA':
-        return 'Dijeda';
+        return 'Sesi Dijeda';
       default:
         return status ?? '-';
     }
@@ -134,26 +164,26 @@ class _KknAttendanceHistoryViewState
   String _getKeteranganText(String? status) {
     switch ((status ?? '').toUpperCase()) {
       case 'HADIR_MEMENUHI':
-        return 'Selamat! Anda berhasil menyelesaikan kegiatan dan durasi kehadiran Anda memenuhi syarat minimum yang ditetapkan.';
+        return 'Selamat! Anda telah menyelesaikan kegiatan posko dengan durasi memenuhi ketentuan minimum (minimal 4 jam/240 menit). Poin kehadiran penuh tercatat.';
       case 'HADIR_TIDAK_MEMENUHI':
-        return 'Anda hadir pada kegiatan ini, namun durasi kehadiran di zona kurang dari target minimum. Silakan konsultasikan dengan DPL Anda jika diperlukan.';
+        return 'Kehadiran Anda tercatat di posko KKN, namun akumulasi durasi belum mencapai target minimal 4 jam (240 menit) atau sesi tidak diselesaikan dengan check-out.';
       case 'SELESAI_TELAT':
-        return 'Anda menyelesaikan kegiatan namun durasi kehadiran di zona belum mencapai target minimum yang ditetapkan.';
+        return 'Sesi kegiatan posko telah selesai, namun total durasi berada di bawah batas minimum yang dipersyaratkan.';
       case 'ALPA':
       case 'TANPA_KETERANGAN':
-        return 'Anda tidak tercatat hadir pada kegiatan ini. Jika ini adalah kekeliruan, segera hubungi DPL atau Ketua Kelompok Anda.';
+        return 'Tidak ada catatan kehadiran posko pada tanggal ini. Status dicatat sebagai Tanpa Keterangan (0 poin). Apabila Anda hadir atau terdapat kendala sistem, segera konfirmasi ke DPL.';
       case 'LEPAS_RADIUS':
-        return 'Kehadiran Anda digagalkan karena sistem mendeteksi Anda berada di luar radius zona kegiatan terlalu lama.';
+        return 'Presensi dibatalkan otomatis karena perangkat berada di luar batas radius posko melebihi toleransi waktu.';
       case 'IZIN':
-        return 'Anda tercatat izin pada kegiatan ini. Status izin tidak dihitung sebagai pelanggaran kehadiran.';
+        return 'Anda tercatat memiliki izin resmi pada kegiatan ini. Status izin tidak mengurangi poin kedisiplinan.';
       case 'SAKIT':
-        return 'Anda tercatat sakit pada kegiatan ini. Status sakit tidak dihitung sebagai pelanggaran kehadiran.';
+        return 'Anda tercatat sakit pada kegiatan ini sesuai konfirmasi keterangan yang disetujui.';
       case 'BERLANGSUNG':
-        return 'Sesi kegiatan Anda saat ini masih aktif berlangsung.';
+        return 'Sesi kegiatan posko hari ini sedang berjalan aktif.';
       case 'TERJEDA':
-        return 'Sesi kegiatan Anda sedang dijeda. Silakan lanjutkan kembali dari halaman presensi.';
+        return 'Sesi kegiatan sedang dijeda sementara. Silakan lanjutkan kembali sebelum jam operasional posko berakhir.';
       default:
-        return 'Status kehadiran Anda sedang diproses.';
+        return 'Status kehadiran sedang diproses oleh sistem.';
     }
   }
 
@@ -205,16 +235,15 @@ class _KknAttendanceHistoryViewState
   }
 
   String _formatMethod(String? method) {
-    switch ((method ?? '').toUpperCase()) {
-      case 'GPS':
-        return 'GPS Tracking';
-      case 'MANUAL':
-        return 'Input Manual';
-      case 'QR':
-        return 'QR Code';
-      default:
-        return method ?? '-';
+    final m = (method ?? '').toUpperCase().trim();
+    if (m.isEmpty) return 'Sistem';
+    if (m.contains('GPS')) return 'Presensi GPS Posko';
+    if (m.contains('QR')) return 'Pindai QR Posko';
+    if (m.contains('MANUAL')) return 'Presensi Mandiri';
+    if (m.contains('ALPA') || m.contains('AUTO')) {
+      return 'Pencatatan Otomatis Sistem';
     }
+    return m;
   }
 
   // ─── Build ────────────────────────────────────────────────────
@@ -224,7 +253,10 @@ class _KknAttendanceHistoryViewState
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Detail Presensi'),
+        title: const Text(
+          'Detail Presensi',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -246,21 +278,39 @@ class _KknAttendanceHistoryViewState
 
   Widget _buildContent() {
     final history = _historyData!;
+    final status =
+        (history['statusKehadiran'] ?? history['status'] ?? '').toString();
+    final isAlpha =
+        status.toUpperCase() == 'ALPA' ||
+        status.toUpperCase() == 'TANPA_KETERANGAN';
+
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        bottomInset + 48,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildHeroStatusCard(history),
           const SizedBox(height: 12),
           _buildWaktuRow(history),
-          const SizedBox(height: 12),
-          _buildDurasiProgress(history),
+          if (!isAlpha) ...[
+            const SizedBox(height: 12),
+            _buildDurasiProgress(history),
+          ],
           const SizedBox(height: 12),
           _buildStatGrid(history),
           const SizedBox(height: 12),
           _buildKeteranganStatus(history),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -269,115 +319,182 @@ class _KknAttendanceHistoryViewState
   // ─── Section 1: Hero Status Card ────────────────────────────
 
   Widget _buildHeroStatusCard(Map<String, dynamic> history) {
-    final status = history['statusKehadiran'] as String?;
-    final namaKegiatan = history['namaKegiatan'] as String? ?? 'Kegiatan KKN';
+    final status =
+        (history['statusKehadiran'] ?? history['status'] ?? '').toString();
+    final namaKegiatan =
+        history['namaKegiatan'] as String? ?? 'Kegiatan Posko KKN';
     final jamMasuk = history['jamMasuk'] as String?;
     final method = history['method'] as String?;
     final color = _getStatusColor(status);
     final icon = _getStatusIcon(status);
     final label = _getStatusLabel(status);
+    final isAlpha =
+        status.toUpperCase() == 'ALPA' ||
+        status.toUpperCase() == 'TANPA_KETERANGAN';
+    final isMemenuhi = status.toUpperCase() == 'HADIR_MEMENUHI';
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top colored banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 36),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: color.withValues(alpha: 0.2)),
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            namaKegiatan,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today_rounded,
+                                size: 13,
+                                color: AppColors.textHint,
+                              ),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  _formatDate(jamMasuk),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  namaKegiatan,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(20),
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: color.withValues(alpha: 0.2)),
                   ),
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon, size: 14, color: color),
+                      const SizedBox(width: 6),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          // Bottom meta info
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(
-                  Icons.calendar_today_rounded,
-                  size: 14,
-                  color: AppColors.textHint,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.tune_rounded,
+                      size: 14,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _formatMethod(method),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  _formatDate(jamMasuk),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
                   ),
-                ),
-                if (method != null) ...[
-                  const SizedBox(width: 16),
-                  const Icon(
-                    Icons.gps_fixed_rounded,
-                    size: 14,
-                    color: AppColors.textHint,
+                  decoration: BoxDecoration(
+                    color: isAlpha
+                        ? AppColors.dangerRed.withValues(alpha: 0.08)
+                        : (isMemenuhi
+                            ? AppColors.primaryGreen.withValues(alpha: 0.08)
+                            : const Color(0xFFFEF3C7)),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _formatMethod(method),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                  child: Text(
+                    isAlpha
+                        ? '0 Poin Kehadiran'
+                        : (isMemenuhi ? '+7 Poin (Penuh)' : '+4 Poin (Dasar)'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isAlpha
+                          ? AppColors.dangerRed
+                          : (isMemenuhi
+                              ? AppColors.primaryGreen
+                              : const Color(0xFFD97706)),
                     ),
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -389,48 +506,127 @@ class _KknAttendanceHistoryViewState
   // ─── Section 2: Waktu Masuk & Keluar ────────────────────────
 
   Widget _buildWaktuRow(Map<String, dynamic> history) {
+    final status =
+        (history['statusKehadiran'] ?? history['status'] ?? '').toString();
+    final isAlpha =
+        status.toUpperCase() == 'ALPA' ||
+        status.toUpperCase() == 'TANPA_KETERANGAN';
+
+    if (isAlpha) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.dangerRed.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.dangerRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.event_busy_rounded,
+                size: 20,
+                color: AppColors.dangerRed,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tidak Ada Presensi Masuk & Keluar',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.dangerRed,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Sistem tidak menemukan rekaman waktu check-in maupun check-out pada kegiatan ini.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final jamMasuk = _formatTime(history['jamMasuk'] as String?);
     final jamPulang = _formatTime(history['jamPulang'] as String?);
+    final isTanpaCheckOut = jamPulang == '-';
 
     return Row(
       children: [
         Expanded(
           child: _buildWaktuCard(
-            'Jam Masuk',
-            jamMasuk,
-            Icons.login_rounded,
-            const Color(0xFF3B82F6),
+            label: 'Jam Masuk',
+            time: jamMasuk != '-' ? '$jamMasuk WIB' : '—',
+            subtitle: jamMasuk != '-' ? 'Check-in posko' : 'Tidak ada catatan',
+            icon: Icons.login_rounded,
+            color: const Color(0xFF0084DC),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _buildWaktuCard(
-            'Jam Keluar',
-            jamPulang,
-            Icons.logout_rounded,
-            Colors.orange.shade700,
+            label: 'Jam Keluar',
+            time: isTanpaCheckOut ? '—' : '$jamPulang WIB',
+            subtitle: isTanpaCheckOut ? 'Tanpa Check-Out' : 'Check-out posko',
+            icon: Icons.logout_rounded,
+            color: isTanpaCheckOut
+                ? const Color(0xFFD97706)
+                : AppColors.primaryGreen,
+            isWarning: isTanpaCheckOut,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWaktuCard(
-    String label,
-    String time,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildWaktuCard({
+    required String label,
+    required String time,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    bool isWarning = false,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isWarning
+              ? const Color(0xFFD97706).withValues(alpha: 0.3)
+              : AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -445,7 +641,7 @@ class _KknAttendanceHistoryViewState
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 16, color: color),
+                child: Icon(icon, size: 15, color: color),
               ),
               const SizedBox(width: 8),
               Text(
@@ -453,7 +649,7 @@ class _KknAttendanceHistoryViewState
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -462,16 +658,20 @@ class _KknAttendanceHistoryViewState
           Text(
             time,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: time == '-' ? AppColors.textHint : AppColors.textPrimary,
+              color: isWarning
+                  ? const Color(0xFFD97706)
+                  : (time == '—' ? AppColors.textHint : AppColors.textPrimary),
             ),
           ),
+          const SizedBox(height: 2),
           Text(
-            'WIB',
+            subtitle,
             style: TextStyle(
               fontSize: 11,
-              color: time == '-' ? AppColors.textHint : AppColors.textHint,
+              fontWeight: isWarning ? FontWeight.w600 : FontWeight.normal,
+              color: isWarning ? const Color(0xFFD97706) : AppColors.textHint,
             ),
           ),
         ],
@@ -482,9 +682,15 @@ class _KknAttendanceHistoryViewState
   // ─── Section 3: Progress Bar Durasi ─────────────────────────
 
   Widget _buildDurasiProgress(Map<String, dynamic> history) {
-    final aktualMenit = (history['durasiAktualMenit'] ?? 0) as num;
-    final targetMenit = (history['durasiTargetMenit'] ?? 120) as num;
-    final isMemenuhiDurasi = history['isMemenuhiDurasi'] == true;
+    final aktualMenit =
+        (history['durasiAktualMenit'] ?? history['durationMinutes'] ?? 0)
+            as num;
+    final targetMenit =
+        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 240)
+            as num;
+    final isMemenuhiDurasi =
+        history['isMemenuhiDurasi'] == true ||
+        (aktualMenit >= targetMenit && targetMenit > 0);
     final ratio = targetMenit > 0
         ? (aktualMenit / targetMenit).clamp(0.0, 1.0).toDouble()
         : 0.0;
@@ -493,18 +699,20 @@ class _KknAttendanceHistoryViewState
         : 0;
     final progressColor = isMemenuhiDurasi
         ? AppColors.primaryGreen
-        : Colors.orange.shade700;
+        : const Color(0xFFD97706);
+    final sisaMenit = (targetMenit - aktualMenit).clamp(0, targetMenit).round();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -514,61 +722,50 @@ class _KknAttendanceHistoryViewState
           Row(
             children: [
               const Icon(
-                Icons.timer_rounded,
-                size: 18,
+                Icons.timer_outlined,
+                size: 17,
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Capaian Durasi',
+                  'Capaian Durasi Posko',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: AppColors.textPrimary,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
                   color: progressColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '$persen%',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 12,
                     color: progressColor,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          // Animated progress bar
+          const SizedBox(height: 12),
           AnimatedBuilder(
             animation: _progressAnimation,
             builder: (context, _) {
-              return Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: ratio * _progressAnimation.value,
-                      minHeight: 12,
-                      backgroundColor: AppColors.border,
-                      color: progressColor,
-                    ),
-                  ),
-                ],
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: ratio * _progressAnimation.value,
+                  minHeight: 10,
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  color: progressColor,
+                ),
               );
             },
           ),
@@ -578,31 +775,31 @@ class _KknAttendanceHistoryViewState
             children: [
               Expanded(
                 child: Text(
-                  '$aktualMenit menit dari $targetMenit menit target',
+                  '$aktualMenit menit tercatat dari target $targetMenit menit (4 jam)',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     isMemenuhiDurasi
                         ? Icons.check_circle_rounded
                         : Icons.warning_amber_rounded,
-                    size: 15,
+                    size: 14,
                     color: progressColor,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    isMemenuhiDurasi ? 'Terpenuhi' : 'Belum Memenuhi',
+                    isMemenuhiDurasi
+                        ? 'Target Terpenuhi'
+                        : 'Kurang $sisaMenit mnt',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       color: progressColor,
                     ),
                   ),
@@ -618,44 +815,51 @@ class _KknAttendanceHistoryViewState
   // ─── Section 4: Grid Statistik ───────────────────────────────
 
   Widget _buildStatGrid(Map<String, dynamic> history) {
-    final aktualMenit = (history['durasiAktualMenit'] ?? 0) as num;
-    final targetMenit = (history['durasiTargetMenit'] ?? 120) as num;
+    final status =
+        (history['statusKehadiran'] ?? history['status'] ?? '').toString();
+    final isAlpha =
+        status.toUpperCase() == 'ALPA' ||
+        status.toUpperCase() == 'TANPA_KETERANGAN';
+    final aktualMenit =
+        (history['durasiAktualMenit'] ?? history['durationMinutes'] ?? 0)
+            as num;
+    final targetMenit =
+        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 240)
+            as num;
+    final durasiJedaMenit = (history['durasiJedaMenit'] ?? 0) as num;
+    final jedaFormatted =
+        history['durasiJedaFormatted'] as String? ?? '${durasiJedaMenit}m';
+    final isMemenuhi = status.toUpperCase() == 'HADIR_MEMENUHI';
     final method = _formatMethod(history['method'] as String?);
-    final persen = targetMenit > 0
-        ? ((aktualMenit / targetMenit) * 100).round()
-        : 0;
-    final attendanceId = history['attendanceId'] as String? ?? '-';
-    final shortId = attendanceId.length > 8
-        ? attendanceId.substring(0, 8).toUpperCase()
-        : attendanceId.toUpperCase();
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
                 Icon(
-                  Icons.bar_chart_rounded,
-                  size: 18,
+                  Icons.insert_chart_outlined_rounded,
+                  size: 17,
                   color: AppColors.textSecondary,
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Statistik Kegiatan',
+                  'Rincian Indikator Kehadiran',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -665,81 +869,61 @@ class _KknAttendanceHistoryViewState
               ],
             ),
           ),
-          const SizedBox(height: 12),
           const Divider(height: 1, color: AppColors.border),
-          // Grid 2x2
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               children: [
                 Row(
                   children: [
                     Expanded(
                       child: _buildStatItem(
-                        'Target Durasi',
-                        '$targetMenit menit',
-                        Icons.flag_rounded,
-                        AppColors.primaryBlue,
+                        label: 'Target Minimal',
+                        value: '$targetMenit Menit (4 Jam)',
+                        icon: Icons.flag_outlined,
+                        color: const Color(0xFF0084DC),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _buildStatItem(
-                        'Aktual Durasi',
-                        '$aktualMenit menit',
-                        Icons.timer_outlined,
-                        AppColors.primaryGreen,
+                        label: isAlpha ? 'Status Presensi' : 'Durasi Tercatat',
+                        value: isAlpha ? 'Tidak Hadir' : '$aktualMenit Menit',
+                        icon: Icons.timer_outlined,
+                        color: isAlpha
+                            ? AppColors.dangerRed
+                            : (isMemenuhi
+                                ? AppColors.primaryGreen
+                                : const Color(0xFFD97706)),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: _buildStatItem(
-                        'Metode Absen',
-                        method,
-                        Icons.gps_fixed_rounded,
-                        Colors.purple.shade400,
+                        label: 'Metode Presensi',
+                        value: method,
+                        icon: Icons.my_location_rounded,
+                        color: const Color(0xFF64748B),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _buildStatItem(
-                        'Capaian',
-                        '$persen%',
-                        Icons.percent_rounded,
-                        Colors.orange.shade600,
+                        label: 'Durasi Jeda',
+                        value: isAlpha
+                            ? '—'
+                            : (durasiJedaMenit > 0 ? jedaFormatted : '0 Menit'),
+                        icon: Icons.pause_circle_outline_rounded,
+                        color: durasiJedaMenit > 0
+                            ? const Color(0xFFD97706)
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
-          ),
-          // Footer: ID Presensi
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: const BoxDecoration(
-              color: AppColors.backgroundCanvas,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.tag_rounded,
-                  size: 13,
-                  color: AppColors.textHint,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'ID Presensi: $shortId...',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textHint,
-                  ),
                 ),
               ],
             ),
@@ -749,39 +933,54 @@ class _KknAttendanceHistoryViewState
     );
   }
 
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: color),
+          Row(
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: color,
+              color:
+                  color == const Color(0xFF64748B) ||
+                      color == AppColors.textSecondary
+                  ? AppColors.textPrimary
+                  : color,
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -791,15 +990,16 @@ class _KknAttendanceHistoryViewState
   // ─── Section 5: Keterangan Status ───────────────────────────
 
   Widget _buildKeteranganStatus(Map<String, dynamic> history) {
-    final status = history['statusKehadiran'] as String?;
+    final status =
+        (history['statusKehadiran'] ?? history['status'] ?? '').toString();
     final color = _getStatusColor(status);
     final icon = _getStatusIcon(status);
     final keterangan = _getKeteranganText(status);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
@@ -809,8 +1009,8 @@ class _KknAttendanceHistoryViewState
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 20, color: color),
           ),
@@ -820,19 +1020,19 @@ class _KknAttendanceHistoryViewState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Keterangan',
+                  'Keterangan & Evaluasi Kehadiran',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   keterangan,
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
                     height: 1.5,
                   ),
                 ),

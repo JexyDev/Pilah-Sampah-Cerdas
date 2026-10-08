@@ -30,16 +30,29 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
 
   final _formKey1 = GlobalKey<FormState>();
   final _programPemanfaatanCtrl = TextEditingController();
-  final List<String> _teknologiList = [
+  String _selectedKategori = 'ORGANIK';
+
+  static const List<String> _organikTeknologiList = [
     'Kompos Organik (Buruan Sae)',
-    'Maggot BSF',
+    'Budidaya Maggot BSF',
     'Pupuk Organik Cair (POC)',
-    'Bank Sampah Anorganik',
-    'Loseda (Lorong Sisa Dapur)',
+    'Loseda (Lodong Sesa Dapur)',
     'Bata Terawang',
-    'Kompos Keranjang Takakura',
-    'Daur Ulang Anorganik',
+    'Metode Keranjang Takakura',
   ];
+
+  static const List<String> _anorganikTeknologiList = [
+    'Penyetoran Bank Sampah',
+    'Pemilahan Botol & Sampah Plastik',
+    'Pemilahan Kertas & Karton',
+    'Pengumpulan Logam & Kaleng',
+    'Pembuatan Ecobrick',
+    'Kreasi Daur Ulang Anorganik',
+  ];
+
+  List<String> get _currentTeknologiList =>
+      _selectedKategori == 'ORGANIK' ? _organikTeknologiList : _anorganikTeknologiList;
+
   String _selectedTeknologi = 'Kompos Organik (Buruan Sae)';
   final _bahanBakuCtrl = TextEditingController();
   final _volBahanBakuCtrl = TextEditingController();
@@ -148,10 +161,15 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       );
       return;
     }
+    final defaultBahan = _selectedKategori == 'ORGANIK' ? 'Sampah Organik' : 'Sampah Anorganik';
+    final bahanBakuVal = _bahanBakuCtrl.text.trim().isNotEmpty
+        ? _bahanBakuCtrl.text.trim()
+        : defaultBahan;
+
     final req = PemanfaatanSampahRequest(
       jenisPemanfaatan: isPemanfaatan ? _selectedTeknologi : _kategoriProker,
       kategoriSampah: isPemanfaatan
-          ? _bahanBakuCtrl.text.trim()
+          ? bahanBakuVal
           : _sumberProker,
       jumlah: isPemanfaatan
           ? (double.tryParse(
@@ -171,6 +189,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           : _waktuPelaksanaanCtrl.text.trim(),
       programKerjaId: _selectedProgramKerjaId,
       fotoPath: isPemanfaatan ? _selectedImage1?.path : _selectedImage2?.path,
+      // ponytail: kirim kategori penentu Organik/Anorganik selaras backend
+      kategori: isPemanfaatan ? _selectedKategori : null,
     );
 
     final success = await notifier.submitLaporan(req);
@@ -452,7 +472,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           const SizedBox(height: 16),
 
           const Text(
-            'Metode / Kategori Pengolahan',
+            'Kategori Aliran Sampah',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -460,7 +480,110 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
             ),
           ),
           const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedKategori = 'ORGANIK';
+                      _selectedTeknologi = _organikTeknologiList.first;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _selectedKategori == 'ORGANIK'
+                          ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _selectedKategori == 'ORGANIK'
+                            ? AppColors.primaryGreen
+                            : Colors.grey.shade300,
+                        width: _selectedKategori == 'ORGANIK' ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🌿', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Organik',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedKategori == 'ORGANIK'
+                                ? AppColors.primaryGreen
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedKategori = 'ANORGANIK';
+                      _selectedTeknologi = _anorganikTeknologiList.first;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _selectedKategori == 'ANORGANIK'
+                          ? AppColors.primaryBlue.withValues(alpha: 0.12)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _selectedKategori == 'ANORGANIK'
+                            ? AppColors.primaryBlue
+                            : Colors.grey.shade300,
+                        width: _selectedKategori == 'ANORGANIK' ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('♻️', style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Anorganik',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedKategori == 'ANORGANIK'
+                                ? AppColors.primaryBlue
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Text(
+            'Metode / Kategori Pengolahan (${_selectedKategori == 'ORGANIK' ? 'Organik' : 'Anorganik'})',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
           DropdownButtonFormField<String>(
+            key: ValueKey('teknologi-$_selectedKategori'),
             initialValue: _selectedTeknologi,
             isExpanded: true,
             decoration: InputDecoration(
@@ -475,7 +598,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
             ),
-            items: _teknologiList
+            items: _currentTeknologiList
                 .map(
                   (e) => DropdownMenuItem(
                     value: e,
@@ -499,7 +622,9 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _bahanBakuCtrl,
             decoration: InputDecoration(
-              hintText: 'Contoh: Sampah Sayur / Buah',
+              hintText: _selectedKategori == 'ORGANIK'
+                  ? 'Contoh: Sisa Sayur Pasar, Daun Kering'
+                  : 'Contoh: Botol Plastik, Kardus Bekas',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(

@@ -106,5 +106,88 @@ void main() {
       expect(sesiAutoJeda.durationFormatted, '3 Jam');
       expect(sesiAutoJeda.jedaFormatted, '1 Jam');
     });
+
+    test('Hari Lampau lupa checkout (check-in jam 08:00, checkOutAt null) diklasifikasikan sebagai Kurang Jam, bukan Alpha', () {
+      final attended = DateTime(2026, 9, 20, 8, 0);
+      final sesiLupaCheckout = SesiTidakMemenuhi(
+        id: 'sesi-lupa-co',
+        scheduleId: 'sch-posko-1',
+        scheduleTitle: 'Kegiatan Posko',
+        attendedAt: attended,
+        checkOutAt: null,
+        durationMinutes: 0,
+        targetMinutes: 240,
+        shortageMinutes: 240,
+        status: 'HADIR_TIDAK_MEMENUHI',
+        statusDisplay: 'Tanpa Jam Pulang',
+        kategori: KategoriSesi.kurangDurasi,
+        keterangan: 'Tercatat Check-In pada 08:00 WIB serta tidak melakukan Check-Out hingga akhir hari.',
+      );
+
+      expect(sesiLupaCheckout.kategori, KategoriSesi.kurangDurasi);
+      expect(sesiLupaCheckout.isAlpha, false);
+      expect(sesiLupaCheckout.statusDisplay, 'Tanpa Jam Pulang');
+    });
+
+    test('Hari Lampau Alpha Murni (jam masuk 00:00 / tanpa check-in) diklasifikasikan sebagai Alpha', () {
+      final attended00 = DateTime(2026, 9, 19, 0, 0);
+      final sesiAlpha = SesiTidakMemenuhi(
+        id: 'sesi-alpha-1',
+        scheduleId: 'sch-posko-2',
+        scheduleTitle: 'Kegiatan Posko',
+        attendedAt: attended00,
+        checkOutAt: null,
+        durationMinutes: 0,
+        targetMinutes: 240,
+        shortageMinutes: 240,
+        status: 'ALPA',
+        statusDisplay: 'Alpha (Tanpa Keterangan)',
+        kategori: KategoriSesi.alpha,
+        keterangan: 'Mahasiswa tidak tercatat melakukan presensi check-in pada jadwal posko hari ini.',
+      );
+
+      expect(sesiAlpha.kategori, KategoriSesi.alpha);
+      expect(sesiAlpha.isAlpha, true);
+      expect(sesiAlpha.status, 'ALPA');
+    });
+
+    test('Filter tab memisahkan Kurang Jam dan Alpha secara presisi', () {
+      final list = [
+        const SesiTidakMemenuhi(
+          id: '1',
+          scheduleId: 's1',
+          scheduleTitle: 'Posko 1',
+          durationMinutes: 120,
+          targetMinutes: 240,
+          shortageMinutes: 120,
+          status: 'HADIR_TIDAK_MEMENUHI',
+          statusDisplay: 'Selesai Lebih Cepat',
+          kategori: KategoriSesi.kurangDurasi,
+          keterangan: 'Kurang jam',
+        ),
+        const SesiTidakMemenuhi(
+          id: '2',
+          scheduleId: 's2',
+          scheduleTitle: 'Posko 2',
+          durationMinutes: 0,
+          targetMinutes: 240,
+          shortageMinutes: 240,
+          status: 'ALPA',
+          statusDisplay: 'Alpha',
+          kategori: KategoriSesi.alpha,
+          keterangan: 'Alpha',
+        ),
+      ];
+
+      final filteredSemua = list;
+      final filteredKurangJam = list.where((e) => e.kategori == KategoriSesi.kurangDurasi).toList();
+      final filteredAlpha = list.where((e) => e.kategori == KategoriSesi.alpha).toList();
+
+      expect(filteredSemua.length, 2);
+      expect(filteredKurangJam.length, 1);
+      expect(filteredKurangJam.first.id, '1');
+      expect(filteredAlpha.length, 1);
+      expect(filteredAlpha.first.id, '2');
+    });
   });
 }

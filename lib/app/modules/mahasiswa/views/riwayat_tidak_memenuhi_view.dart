@@ -115,18 +115,6 @@ class _RiwayatTidakMemenuhiViewState
     ref.read(riwayatTidakMemenuhiProvider.notifier).clearFilter();
   }
 
-  String _formatDate(DateTime dt) {
-    try {
-      return DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(dt);
-    } catch (_) {
-      return DateFormat('dd/MM/yyyy').format(dt);
-    }
-  }
-
-  String _formatTime(DateTime dt) {
-    return DateFormat('HH:mm').format(dt);
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(riwayatTidakMemenuhiProvider);
@@ -163,7 +151,9 @@ class _RiwayatTidakMemenuhiViewState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoBanner(state.totalTidakMemenuhi),
+                    _buildInfoBanner(state),
+                    const SizedBox(height: 12),
+                    _buildCategorySelector(state),
                     const SizedBox(height: 12),
                     _buildDateFilterSection(hasActiveFilter),
                   ],
@@ -222,11 +212,16 @@ class _RiwayatTidakMemenuhiViewState
             else if (state.items.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: _buildEmptyState(hasActiveFilter),
+                child: _buildEmptyState(hasActiveFilter, state.selectedKategori),
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  MediaQuery.paddingOf(context).bottom + 48,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -243,7 +238,7 @@ class _RiwayatTidakMemenuhiViewState
     );
   }
 
-  Widget _buildInfoBanner(int totalCount) {
+  Widget _buildInfoBanner(RiwayatTidakMemenuhiState state) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -282,7 +277,7 @@ class _RiwayatTidakMemenuhiViewState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Ketentuan Durasi Harian KKN',
+                      'Evaluasi Kehadiran Posko KKN',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -291,7 +286,7 @@ class _RiwayatTidakMemenuhiViewState
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Total: $totalCount Sesi Tidak Memenuhi Target',
+                      '${state.totalTidakMemenuhi} Tidak Terpenuhi • ${state.totalAlpha} Tanpa Keterangan',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -305,21 +300,101 @@ class _RiwayatTidakMemenuhiViewState
           ),
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFDE68A)),
             ),
             child: const Text(
-              'Status "Hadir Tidak Memenuhi" diberikan apabila durasi berada di zona kegiatan kurang dari target minimal yang ditentukan. Sesi ini tetap tercatat hadir namun tidak memperoleh bonus +3 Poin Durasi.',
+              '• Tidak Terpenuhi: Mahasiswa tercatat melakukan presensi masuk (check-in), namun durasi kegiatan di posko belum mencapai target minimal harian (4 Jam) atau belum melakukan presensi keluar (check-out) pada hari lampau.\n• Tanpa Keterangan: Mahasiswa tidak tercatat melakukan presensi masuk pada jadwal kegiatan posko serta tidak memiliki pengajuan izin atau sakit resmi yang disetujui DPL.',
               style: TextStyle(
                 fontSize: 11,
                 color: Color(0xFF92400E),
-                height: 1.4,
+                height: 1.45,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategorySelector(RiwayatTidakMemenuhiState state) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildCategoryTab(
+            label: 'Tidak Terpenuhi',
+            count: state.totalTidakMemenuhi,
+            isSelected: state.selectedKategori == KategoriFilter.kurangDurasi,
+            activeColor: const Color(0xFFD97706),
+            onTap: () => ref
+                .read(riwayatTidakMemenuhiProvider.notifier)
+                .setKategori(KategoriFilter.kurangDurasi),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildCategoryTab(
+            label: 'Tanpa Keterangan',
+            count: state.totalAlpha,
+            isSelected: state.selectedKategori == KategoriFilter.alpha,
+            activeColor: AppColors.dangerRed,
+            onTap: () => ref
+                .read(riwayatTidakMemenuhiProvider.notifier)
+                .setKategori(KategoriFilter.alpha),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryTab({
+    required String label,
+    required int count,
+    required bool isSelected,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? activeColor.withValues(alpha: 0.12) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? activeColor : AppColors.border,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? activeColor : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? activeColor : AppColors.textSecondary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -551,59 +626,119 @@ class _RiwayatTidakMemenuhiViewState
   }
 
   Widget _buildSesiCard(SesiTidakMemenuhi item) {
-    final progress = (item.durationMinutes / (item.targetMinutes > 0 ? item.targetMinutes : 1))
-        .clamp(0.0, 1.0);
+    String dateStr = '-';
+    if (item.attendedAt != null) {
+      dateStr = DateFormat('yyyy-MM-dd').format(item.attendedAt!);
+    } else if (item.rawData?['tanggal'] != null &&
+        item.rawData!['tanggal'].toString().isNotEmpty &&
+        item.rawData!['tanggal'] != '-') {
+      dateStr = item.rawData!['tanggal'].toString();
+    } else if (item.rawData?['dateKey'] != null &&
+        item.rawData!['dateKey'].toString().isNotEmpty) {
+      dateStr = item.rawData!['dateKey'].toString();
+    }
+
+    final targetMins = item.targetMinutes > 0 ? item.targetMinutes : 240;
+    final rasioDouble =
+        (item.durationMinutes / targetMins * 100).clamp(0.0, 100.0);
+    final bool isAlphaItem = item.isAlpha;
+
+    // Badge styling & label
+    final Color badgeBorderColor =
+        isAlphaItem ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
+    final Color badgeBgColor =
+        isAlphaItem ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
+    final Color badgeTextColor =
+        isAlphaItem ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+    final IconData badgeIcon =
+        isAlphaItem ? Icons.cancel_outlined : Icons.warning_amber_rounded;
+    final String badgeLabel = isAlphaItem
+        ? 'Tanpa Keterangan'
+        : (item.checkOutAt == null ? 'Tanpa Check-Out' : 'Kurang Jam (< 4 Jam)');
+
+    final jamMasukText = (isAlphaItem || item.attendedAt == null)
+        ? '-'
+        : '${DateFormat("HH:mm").format(item.attendedAt!)} WIB';
+    final jamPulangText = item.checkOutAt != null
+        ? '${DateFormat("HH:mm").format(item.checkOutAt!)} WIB'
+        : (isAlphaItem ? '-' : 'Belum Check-Out');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.shade200),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isAlphaItem ? Colors.red.shade200 : Colors.orange.shade200,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: item.scheduleId.isNotEmpty
-              ? () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.kknAttendanceHistory,
-                    arguments: {'scheduleId': item.scheduleId},
-                  );
-                }
-              : null,
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.kknAttendanceHistory,
+              arguments: {
+                'scheduleId': item.scheduleId,
+                'fallbackData': {
+                  'statusKehadiran': isAlphaItem ? 'ALPA' : item.status,
+                  'namaKegiatan': item.scheduleTitle,
+                  'jamMasuk': item.attendedAt?.toIso8601String(),
+                  'jamPulang': item.checkOutAt?.toIso8601String(),
+                  'durasiAktualMenit': item.durationMinutes,
+                  'durasiTargetMenit': item.targetMinutes,
+                  'durasiJedaMenit': item.durasiJedaMenit,
+                  'durasiJedaFormatted': item.jedaFormatted,
+                  'isMemenuhiDurasi': false,
+                  'method': isAlphaItem ? 'ALPA_AUTO' : 'GPS_ACTIVITY',
+                },
+              },
+            );
+          },
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header Card: Tanggal & Badge Status ─────────────
+                // ── Header: Kalender Icon, Tanggal, Subtitle, & Badge ──
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F5E9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (item.attendedAt != null)
-                            Text(
-                              _formatDate(item.attendedAt!),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
+                          Text(
+                            dateStr,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             item.scheduleTitle,
@@ -611,35 +746,34 @@ class _RiwayatTidakMemenuhiViewState
                               fontSize: 12,
                               color: AppColors.textSecondary,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.shade300),
+                        color: badgeBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: badgeBorderColor),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.warning_amber_rounded,
-                            size: 13,
-                            color: Colors.orange.shade800,
-                          ),
+                          Icon(badgeIcon, size: 12, color: badgeTextColor),
                           const SizedBox(width: 4),
                           Text(
-                            item.statusDisplay,
+                            badgeLabel,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.orange.shade800,
+                              color: badgeTextColor,
                             ),
                           ),
                         ],
@@ -647,230 +781,275 @@ class _RiwayatTidakMemenuhiViewState
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
 
-                // ── Jam Check-in & Check-out ──────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTimeInfo(
-                        icon: Icons.login_rounded,
-                        label: 'Check-In',
-                        time: item.attendedAt != null
-                            ? '${_formatTime(item.attendedAt!)} WIB'
-                            : '-',
-                        color: AppColors.primaryGreen,
-                      ),
-                    ),
-                    Container(
-                      height: 24,
-                      width: 1,
-                      color: AppColors.border,
-                    ),
-                    Expanded(
-                      child: _buildTimeInfo(
-                        icon: Icons.logout_rounded,
-                        label: 'Check-Out',
-                        time: item.checkOutAt != null
-                            ? '${_formatTime(item.checkOutAt!)} WIB'
-                            : 'Selesai Lebih Cepat',
-                        color: Colors.orange.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-                if (item.rentangTotalFormatted.isNotEmpty && item.rentangTotalFormatted != '-') ...[
-                  const SizedBox(height: 8),
+                // ── Body: Responsif & Rapih ──
+                if (isAlphaItem) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blueGrey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blueGrey.shade200),
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFEE2E2)),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: const Row(
                       children: [
-                        Icon(Icons.schedule_rounded, size: 14, color: Colors.blueGrey.shade700),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Rentang Jam Dinding: ${item.rentangTotalFormatted}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blueGrey.shade800,
+                        Icon(
+                          Icons.event_busy_rounded,
+                          color: Color(0xFFDC2626),
+                          size: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Tidak ada rekam presensi check-in pada jadwal posko ini (0 Poin Kehadiran).',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF991B1B),
+                              height: 1.35,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-                const SizedBox(height: 12),
-
-                // ── Progress Bar Durasi ──────────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Durasi Efektif di Posko: ${item.durationFormatted}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            'Target: ${item.targetFormatted}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 8,
-                          backgroundColor: Colors.grey.shade200,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.orange.shade600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.timelapse_rounded,
-                            size: 13,
-                            color: Colors.orange.shade800,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Kekurangan: ${item.shortageFormatted}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange.shade800,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${(progress * 100).toInt()}% Tercapai',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (item.jedaFormatted.isNotEmpty && item.jedaFormatted != '0 Menit') ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.amber.shade300),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                ] else ...[
+                  // Baris 1: Jam Masuk & Jam Keluar
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.location_off_rounded, size: 13, color: Colors.amber.shade900),
-                              const SizedBox(width: 5),
-                              Text(
-                                'Di Luar Zona / Jeda: ${item.jedaFormatted}',
+                              const Text(
+                                'Jam Masuk',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.amber.shade900,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                jamMasukText,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF16A34A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                'Jam Pulang',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                jamPulangText,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: item.checkOutAt != null
+                                      ? AppColors.textPrimary
+                                      : Colors.orange.shade800,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                // ── Status Badge Kurang dari Target ──────────────────────────
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: Row(
+                  // Baris 2: 3 Kolom Metrik (Durasi Posko | Waktu Jeda | Rasio Target)
+                  Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, size: 14, color: Colors.orange.shade900),
-                      const SizedBox(width: 6),
+                      // Durasi Bersih
                       Expanded(
-                        child: Text(
-                          '⚠️ Kurang ${item.shortageFormatted} dari Target (${item.targetFormatted})',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade900,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Durasi Posko',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                item.durationFormatted,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                'Target ${item.targetFormatted}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Durasi Jeda
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Durasi Jeda',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFFD97706),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                item.durasiJedaMenit > 0 ? item.jedaFormatted : '0 Menit',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD97706),
+                                ),
+                              ),
+                              const Text(
+                                'Di luar posko',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Rasio Capaian
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Rasio Target',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${rasioDouble.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: rasioDouble >= 100
+                                      ? const Color(0xFF16A34A)
+                                      : Colors.orange.shade800,
+                                ),
+                              ),
+                              Text(
+                                '${item.durationMinutes}/${targetMins}m',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 8),
-
-                // ── Keterangan Edukasi & Action ──────────────────────
-                Text(
-                  item.keterangan,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                    height: 1.3,
-                  ),
-                ),
-                if (item.scheduleId.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Lihat Detail Sesi',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange.shade800,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Colors.orange.shade800,
-                      ),
-                    ],
-                  ),
                 ],
+                const SizedBox(height: 10),
+
+                // Footer CTA: Lihat Detail
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Lihat Detail Presensi',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isAlphaItem
+                            ? AppColors.dangerRed
+                            : Colors.orange.shade800,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 15,
+                      color: isAlphaItem
+                          ? AppColors.dangerRed
+                          : Colors.orange.shade800,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -879,44 +1058,28 @@ class _RiwayatTidakMemenuhiViewState
     );
   }
 
-  Widget _buildTimeInfo({
-    required IconData icon,
-    required String label,
-    required String time,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                time,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState(bool hasActiveFilter, KategoriFilter kategori) {
+    String title;
+    String subtitle;
+    IconData icon;
+    Color iconColor;
 
-  Widget _buildEmptyState(bool hasActiveFilter) {
+    if (kategori == KategoriFilter.alpha) {
+      icon = Icons.verified_user_rounded;
+      iconColor = AppColors.primaryGreen;
+      title = 'Tidak Ada Catatan Tanpa Keterangan';
+      subtitle = hasActiveFilter
+          ? 'Tidak ada catatan Tanpa Keterangan pada rentang tanggal yang dipilih.'
+          : 'Luar biasa! Anda tidak memiliki catatan Tanpa Keterangan pada kegiatan posko KKN.';
+    } else {
+      icon = Icons.timer_rounded;
+      iconColor = AppColors.primaryGreen;
+      title = 'Tidak Ada Sesi yang Tidak Terpenuhi';
+      subtitle = hasActiveFilter
+          ? 'Seluruh sesi pada rentang tanggal ini memenuhi target durasi kerja minimum posko.'
+          : 'Hebat! Seluruh sesi kehadiran posko Anda telah memenuhi target durasi kerja minimal 4 jam.';
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -926,20 +1089,20 @@ class _RiwayatTidakMemenuhiViewState
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.verified_rounded,
+              child: Icon(
+                icon,
                 size: 56,
-                color: AppColors.primaryGreen,
+                color: iconColor,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Tidak Ada Sesi yang Tidak Memenuhi',
+            Text(
+              title,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -947,9 +1110,7 @@ class _RiwayatTidakMemenuhiViewState
             ),
             const SizedBox(height: 8),
             Text(
-              hasActiveFilter
-                  ? 'Tidak ditemukan riwayat kehadiran dengan status "Hadir Tidak Memenuhi" pada rentang tanggal yang Anda pilih.'
-                  : 'Luar biasa! Seluruh presensi kegiatan KKN Anda telah memenuhi target durasi jam kerja atau belum ada presensi yang diselesaikan sebelum target.',
+              subtitle,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,

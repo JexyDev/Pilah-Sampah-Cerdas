@@ -986,6 +986,7 @@ class PemanfaatanSampahRequest {
     this.dplId,
     this.fotoPath,
     this.timestamp,
+    this.kategori,
   });
 
   final String jenisPemanfaatan;
@@ -999,6 +1000,8 @@ class PemanfaatanSampahRequest {
   final String? dplId;
   final String? fotoPath;
   final String? timestamp;
+  // ponytail: kategori penentu Organik/Anorganik selaras kontrak API backend
+  final String? kategori;
 
   Map<String, dynamic> toJson() {
     return {
@@ -1008,6 +1011,7 @@ class PemanfaatanSampahRequest {
       'satuan': satuan,
       'wilayahDampingan': wilayahDampingan,
       'deskripsi': deskripsi,
+      if (kategori != null) 'kategori': kategori,
       if (programKerjaId != null) 'programKerjaId': programKerjaId,
       if (rwTerkait != null) 'rwTerkait': rwTerkait,
       if (dplId != null) 'dplId': dplId,

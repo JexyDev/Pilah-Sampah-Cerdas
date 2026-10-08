@@ -695,10 +695,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       return success;
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, errorCode: e.code);
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: e.code,
+        errorMessage: e.message,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorCode: 'UPDATE_FAILED');
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: 'UPDATE_FAILED',
+        errorMessage: 'Terjadi kesalahan sistem saat memperbarui profil',
+      );
       return false;
     }
   }

@@ -34,16 +34,29 @@ class _LogbookPemanfaatanViewState
   String? _selectedProkerId;
   String? _selectedFasilitasId;
 
-  final List<String> _teknologiList = [
+  String _selectedKategori = 'ORGANIK';
+
+  static const List<String> _organikTeknologiList = [
     'Kompos Organik (Buruan Sae)',
-    'Maggot BSF',
+    'Budidaya Maggot BSF',
     'Pupuk Organik Cair (POC)',
-    'Bank Sampah Anorganik',
-    'Loseda (Lorong Sisa Dapur)',
+    'Loseda (Lodong Sesa Dapur)',
     'Bata Terawang',
-    'Kompos Keranjang Takakura',
-    'Daur Ulang Anorganik Lainnya',
+    'Metode Keranjang Takakura',
   ];
+
+  static const List<String> _anorganikTeknologiList = [
+    'Penyetoran Bank Sampah',
+    'Pemilahan Botol & Sampah Plastik',
+    'Pemilahan Kertas & Karton',
+    'Pengumpulan Logam & Kaleng',
+    'Pembuatan Ecobrick',
+    'Kreasi Daur Ulang Anorganik',
+  ];
+
+  List<String> get _currentTeknologiList =>
+      _selectedKategori == 'ORGANIK' ? _organikTeknologiList : _anorganikTeknologiList;
+
   String? _selectedTeknologi = 'Kompos Organik (Buruan Sae)';
 
   final _bahanBakuCtrl = TextEditingController();
@@ -121,11 +134,18 @@ class _LogbookPemanfaatanViewState
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
+      final defaultBahan = _selectedKategori == 'ORGANIK' ? 'Sampah Organik' : 'Sampah Anorganik';
+      final bahanBakuVal = _bahanBakuCtrl.text.trim().isNotEmpty
+          ? _bahanBakuCtrl.text.trim()
+          : defaultBahan;
+
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
-        'teknologi': _selectedTeknologi ?? 'Kompos Organik (Buruan Sae)',
-        'bahanBaku': _bahanBakuCtrl.text.trim(),
+        // ponytail: kirim kategori dan teknologi definitif sesuai kontrak API backend
+        'kategori': _selectedKategori,
+        'teknologi': _selectedTeknologi ?? _currentTeknologiList.first,
+        'bahanBaku': bahanBakuVal,
         'beratInputKg':
             double.tryParse(_beratInputCtrl.text.trim().replaceAll('.', '')) ??
             0,
@@ -441,6 +461,108 @@ class _LogbookPemanfaatanViewState
                   icon: Icons.tune_rounded,
                   children: [
                     const Text(
+                      'Kategori Aliran Sampah',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedKategori = 'ORGANIK';
+                                _selectedTeknologi = _organikTeknologiList.first;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _selectedKategori == 'ORGANIK'
+                                    ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                                    : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: _selectedKategori == 'ORGANIK'
+                                      ? AppColors.primaryGreen
+                                      : Colors.grey.shade300,
+                                  width: _selectedKategori == 'ORGANIK' ? 2 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('🌿', style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Organik',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedKategori == 'ORGANIK'
+                                          ? AppColors.primaryGreen
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedKategori = 'ANORGANIK';
+                                _selectedTeknologi = _anorganikTeknologiList.first;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: _selectedKategori == 'ANORGANIK'
+                                    ? AppColors.primaryBlue.withValues(alpha: 0.12)
+                                    : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: _selectedKategori == 'ANORGANIK'
+                                      ? AppColors.primaryBlue
+                                      : Colors.grey.shade300,
+                                  width: _selectedKategori == 'ANORGANIK' ? 2 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('♻️', style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Anorganik',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedKategori == 'ANORGANIK'
+                                          ? AppColors.primaryBlue
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
                       'Teknologi / Metode Pengolahan',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -451,14 +573,16 @@ class _LogbookPemanfaatanViewState
                     const SizedBox(height: 8),
                     _buildBottomSheetDropdown(
                       hint: 'Pilih Jenis Pengolahan',
-                      title: 'Metode Pengolahan',
+                      title: 'Metode Pengolahan (${_selectedKategori == 'ORGANIK' ? 'Organik' : 'Anorganik'})',
                       selectedValue: _selectedTeknologi,
-                      items: _teknologiList
+                      items: _currentTeknologiList
                           .map(
                             (tek) => {
                               'id': tek,
                               'label': tek,
-                              'icon': Icons.science_rounded,
+                              'icon': _selectedKategori == 'ORGANIK'
+                                  ? Icons.eco_rounded
+                                  : Icons.recycling_rounded,
                             },
                           )
                           .toList(),
@@ -479,7 +603,9 @@ class _LogbookPemanfaatanViewState
                     TextFormField(
                       controller: _bahanBakuCtrl,
                       decoration: _inputDecoration(
-                        'Contoh: Sisa Makanan Warga',
+                        _selectedKategori == 'ORGANIK'
+                            ? 'Contoh: Sisa Sayur Pasar, Daun Kering'
+                            : 'Contoh: Botol Plastik, Kardus Bekas',
                       ),
                       validator: (val) =>
                           val == null || val.isEmpty ? 'Wajib diisi' : null,

@@ -88,6 +88,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKel,
     String userRw,
     int? userRwId,
+    UserEntity? currentUser,
   ) {
     // Helper: bersihkan string kelurahan untuk perbandingan
     String cleanKel(String val) => val
@@ -111,11 +112,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
-      // Mode Monitoring: HANYA tampilkan warga yang sudah aktif (sudah punya tempat sampah aktif dan didampingi)
-      if (!isAktivasiBinMode && !w.isActivated) return false;
-
-      // Mode Aktivasi: HANYA tampilkan warga yang belum aktivasi tempat sampah (!w.isActivated)
-      if (isAktivasiBinMode && w.isActivated) return false;
+      if (!isAktivasiBinMode) {
+        // Mode Monitoring: Tampilkan seluruh warga di wilayah penugasan kelompok/RW yang sudah aktif
+        // (ponytail: filter personal dibebaskan agar seluruh anggota kelompok KKN dapat memantau warga di RW penugasan)
+        if (!w.isActivated) return false;
+      }
+      // Mode Aktivasi: Tampilkan SEMUA warga di penugasan (belum aktivasi maupun sudah) (sesuai Screenshot 2)
+      // Jadi tidak ada filter w.isActivated di mode aktivasi.
 
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')
@@ -233,6 +236,24 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       final kel = kelompokState.kelompok?.kelurahan ?? '';
       if (kel.isNotEmpty && kel != '-') userKel = kel;
     }
+    if (userRw.isEmpty) {
+      final cakupan = kelompokState.kelompok?.cakupanRw ?? [];
+      if (cakupan.isNotEmpty) userRw = cakupan.join(', ');
+    }
+
+    ref.listen<KelompokKknState>(kelompokKknProvider, (prev, next) {
+      if (prev?.kelompok == null && next.kelompok != null) {
+        final k = next.kelompok!;
+        final uKel = user?.kelurahan;
+        final uRw = user?.rw;
+        final kel = (uKel != null && uKel.isNotEmpty) ? uKel : (k.kelurahan ?? '');
+        final rw = (uRw != null && uRw.isNotEmpty) ? uRw : k.cakupanRw.join(', ');
+        ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
+              kelurahan: kel,
+              rw: rw,
+            );
+      }
+    });
 
     final isAktivasiBinMode =
         ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
@@ -244,14 +265,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // all registered & claimed citizens are included dynamically.
     final rawMerged = <WargaDampingan>[
       ...state.wargaList,
-      if (isAktivasiBinMode)
-        ..._getFilteredWargaAktivasi(
-          aktivasiState.wargaList,
-          userKec,
-          userKel,
-          userRw,
-          user?.rwId,
-        ),
+      ..._getFilteredWargaAktivasi(
+        aktivasiState.wargaList,
+        userKec,
+        userKel,
+        userRw,
+        user?.rwId,
+      ),
     ];
 
     // Remove duplicates safely: never collapse citizens with empty or placeholder ID
@@ -314,6 +334,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       userKel,
       userRw,
       user?.rwId,
+      user,
     );
 
     return Scaffold(
@@ -343,14 +364,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          if (isAktivasiBinMode) {
-            await ref.read(aktivasiWargaProvider.notifier).refresh();
-          } else {
-            await Future.wait([
-              ref.read(aktivasiWargaProvider.notifier).refresh(),
-              ref.read(mahasiswaControllerProvider.notifier).refresh(),
-            ]);
-          }
+          await Future.wait([
+            ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
+                  kelurahan: userKel,
+                  rw: userRw,
+                ),
+            ref.read(mahasiswaControllerProvider.notifier).refresh(),
+          ]);
         },
         color: AppColors.primaryGreen,
         child: _buildBody(

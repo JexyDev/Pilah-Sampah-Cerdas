@@ -162,21 +162,18 @@ jobs:
             echo "storeFile=berseka-release.keystore" >> android/key.properties
           fi
 
-      - name: Generate Dynamic Semantic Version
+      - name: Extract Version from pubspec
         run: |
-          BASE_VERSION="1.1"
-          OFFSET=1264
-          PATCH_NUM=$((${{ github.run_number }} - OFFSET))
-          if [ $PATCH_NUM -lt 0 ]; then PATCH_NUM=0; fi
-          VERSION_NAME="$BASE_VERSION.$PATCH_NUM"
-          echo "APP_VERSION=$VERSION_NAME" >> $GITHUB_ENV
+          VERSION_FULL=$(grep "^version:" pubspec.yaml | awk '{print $2}')
+          echo "APP_VERSION=$(echo $VERSION_FULL | cut -d+ -f1)" >> $GITHUB_ENV
+          echo "APK_BUILD_NUMBER=$(echo $VERSION_FULL | cut -d+ -f2)" >> $GITHUB_ENV
 
       - name: Build Android Release APK
         run: |
           flutter build apk --release \
             --dart-define=API_BASE_URL=${{ steps.set-env.outputs.api_base }} \
             --build-name=${{ env.APP_VERSION }} \
-            --build-number=${{ github.run_number }} \
+            --build-number=${{ env.APK_BUILD_NUMBER }} \
             --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
@@ -214,6 +211,7 @@ jobs:
           APK_NAME: ${{ steps.prepare-apk.outputs.apk_name }}
           DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
           APP_VERSION: ${{ env.APP_VERSION }}
+          APK_BUILD_NUMBER: ${{ env.APK_BUILD_NUMBER }}
           RUN_NUMBER: ${{ github.run_number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -233,7 +231,7 @@ jobs:
           # SSH ke VPS hanya kirim perintah (koneksi kecil ~1KB, tidak akan diblokir firewall)
           # VPS yang download APK sendiri via HTTPS (port 443, tidak pernah diblokir)
           timeout 5m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" \
-            "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' DOWNLOAD_URL='$DOWNLOAD_URL' GH_TOKEN='$GH_TOKEN' bash -s" << 'EOF'
+            "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' APK_BUILD_NUMBER='$APK_BUILD_NUMBER' RUN_NUMBER='$RUN_NUMBER' DOWNLOAD_URL='$DOWNLOAD_URL' GH_TOKEN='$GH_TOKEN' bash -s" << 'EOF'
             set -e
 
             echo "=== Downloading APK from GitHub Release via HTTPS ==="
@@ -270,8 +268,8 @@ jobs:
               -d "{
                 \"latestVersion\": \"$APP_VERSION\",
                 \"version\": \"$APP_VERSION\",
-                \"buildNumber\": $RUN_NUMBER,
-                \"releaseNotes\": \"Auto-build CI/CD universal APK v$APP_VERSION (Build $RUN_NUMBER), pembaruan performa, dan sinkronisasi real-time.\",
+                \"buildNumber\": $APK_BUILD_NUMBER,
+                \"releaseNotes\": \"Auto-build CI/CD universal APK v$APP_VERSION (Build $APK_BUILD_NUMBER), pembaruan performa, dan sinkronisasi real-time.\",
                 \"downloadUrl\": \"/downloads/$APK_NAME\",
                 \"apkUrl\": \"/downloads/$APK_NAME\",
                 \"fileSizeBytes\": $FILE_SIZE,

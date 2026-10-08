@@ -7,6 +7,16 @@ import '../../../data/models/user_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+enum KategoriSesi {
+  kurangDurasi,
+  alpha,
+}
+
+enum KategoriFilter {
+  kurangDurasi,
+  alpha,
+}
+
 class SesiTidakMemenuhi {
   final String id;
   final String scheduleId;
@@ -22,6 +32,7 @@ class SesiTidakMemenuhi {
   final String status;
   final String statusDisplay;
   final String keterangan;
+  final KategoriSesi kategori;
   final Map<String, dynamic>? rawData;
 
   const SesiTidakMemenuhi({
@@ -39,8 +50,11 @@ class SesiTidakMemenuhi {
     required this.status,
     required this.statusDisplay,
     required this.keterangan,
+    this.kategori = KategoriSesi.kurangDurasi,
     this.rawData,
   });
+
+  bool get isAlpha => kategori == KategoriSesi.alpha;
 
   /// Durasi efektif di posko (contoh: "3 Jam 57 Menit")
   String get durationFormatted {
@@ -115,8 +129,12 @@ class RiwayatTidakMemenuhiState {
   final String? errorMessage;
   final DateTime? startDate;
   final DateTime? endDate;
+  final KategoriFilter selectedKategori;
   final List<SesiTidakMemenuhi> items;
+  final List<SesiTidakMemenuhi> allItems;
   final int totalTidakMemenuhi;
+  final int totalAlpha;
+  final int totalSemua;
   final int targetHarianMenit;
 
   const RiwayatTidakMemenuhiState({
@@ -124,8 +142,12 @@ class RiwayatTidakMemenuhiState {
     this.errorMessage,
     this.startDate,
     this.endDate,
+    this.selectedKategori = KategoriFilter.kurangDurasi,
     this.items = const [],
+    this.allItems = const [],
     this.totalTidakMemenuhi = 0,
+    this.totalAlpha = 0,
+    this.totalSemua = 0,
     this.targetHarianMenit = 240,
   });
 
@@ -135,8 +157,12 @@ class RiwayatTidakMemenuhiState {
     DateTime? startDate,
     DateTime? endDate,
     bool clearDates = false,
+    KategoriFilter? selectedKategori,
     List<SesiTidakMemenuhi>? items,
+    List<SesiTidakMemenuhi>? allItems,
     int? totalTidakMemenuhi,
+    int? totalAlpha,
+    int? totalSemua,
     int? targetHarianMenit,
   }) {
     return RiwayatTidakMemenuhiState(
@@ -144,8 +170,12 @@ class RiwayatTidakMemenuhiState {
       errorMessage: errorMessage,
       startDate: clearDates ? null : (startDate ?? this.startDate),
       endDate: clearDates ? null : (endDate ?? this.endDate),
+      selectedKategori: selectedKategori ?? this.selectedKategori,
       items: items ?? this.items,
+      allItems: allItems ?? this.allItems,
       totalTidakMemenuhi: totalTidakMemenuhi ?? this.totalTidakMemenuhi,
+      totalAlpha: totalAlpha ?? this.totalAlpha,
+      totalSemua: totalSemua ?? this.totalSemua,
       targetHarianMenit: targetHarianMenit ?? this.targetHarianMenit,
     );
   }
@@ -196,25 +226,27 @@ class RiwayatTidakMemenuhiNotifier
 
       // 1. Coba ambil dari endpoint Laporan Presensi resmi backend (Opsi B: server-side filter & scoping)
       try {
-        final laporan = await kknRepo.getLaporanPresensi(
-          status: 'HADIR_TIDAK_MEMENUHI',
-          startDate: startStr,
-          endDate: endStr,
-        );
+        final laporanResults = await Future.wait([
+          kknRepo.getLaporanPresensi(
+            status: 'HADIR_TIDAK_MEMENUHI',
+            startDate: startStr,
+            endDate: endStr,
+          ),
+          kknRepo.getLaporanPresensi(
+            status: 'ALPA',
+            startDate: startStr,
+            endDate: endStr,
+          ),
+        ]);
 
-        if (laporan['items'] is List && (laporan['items'] as List).isNotEmpty) {
+        for (final laporan in laporanResults) {
+          if (laporan['items'] is! List) continue;
           final items = laporan['items'] as List;
           for (final item in items) {
             if (item is! Map) continue;
             final schId = item['scheduleId']?.toString() ?? '';
             final id = item['id']?.toString() ?? schId;
-            if (schId.isNotEmpty) {
-              countedScheduleIds.add(schId);
-            }
-            if (id.isNotEmpty) {
-              countedScheduleIds.add(id);
-            }
-
+            final rawStatus = (item['status'] ?? '').toString().toUpperCase();
             final durationMins = int.tryParse(
                   item['durasiMenit']?.toString() ??
                       item['durasiAktualMenit']?.toString() ??
@@ -222,6 +254,60 @@ class RiwayatTidakMemenuhiNotifier
                       '',
                 ) ??
                 0;
+
+            final tanggalStr = item['tanggal']?.toString() ?? '';
+            final jamMasukStr = item['jamMasuk']?.toString() ?? '';
+            final jamPulangStr = item['jamPulang']?.toString() ?? '';
+            DateTime? attendedAt;
+            if (item['attendedAt'] != null) {
+              attendedAt =
+                  DateTime.tryParse(item['attendedAt'].toString())?.toLocal();
+            } else if (tanggalStr.isNotEmpty &&
+                tanggalStr != '-' &&
+                jamMasukStr.isNotEmpty &&
+                jamMasukStr != '-') {
+              attendedAt =
+                  DateTime.tryParse('${tanggalStr}T$jamMasukStr:00')?.toLocal();
+            } else if (tanggalStr.isNotEmpty && tanggalStr != '-') {
+              attendedAt =
+                  DateTime.tryParse('${tanggalStr}T00:00:00')?.toLocal();
+            }
+
+            DateTime? checkOutAt;
+            if (item['checkOutAt'] != null) {
+              checkOutAt =
+                  DateTime.tryParse(item['checkOutAt'].toString())?.toLocal();
+            } else if (tanggalStr.isNotEmpty &&
+                tanggalStr != '-' &&
+                jamPulangStr.isNotEmpty &&
+                jamPulangStr != '-') {
+              checkOutAt =
+                  DateTime.tryParse('${tanggalStr}T$jamPulangStr:00')?.toLocal();
+            }
+
+            final isItemMidnight = (jamMasukStr == '00:00' ||
+                    jamMasukStr == '00:00:00' ||
+                    jamMasukStr == '-' ||
+                    jamMasukStr.isEmpty) ||
+                (attendedAt != null &&
+                    ((attendedAt.hour == 0 && attendedAt.minute == 0) ||
+                        (attendedAt.toUtc().hour == 0 &&
+                            attendedAt.toUtc().minute == 0)));
+
+            final hasRealCheckIn = attendedAt != null && !isItemMidnight;
+
+            final isExplicitAlpha = rawStatus == 'ALPA' ||
+                rawStatus == 'ALPHA' ||
+                rawStatus == 'TANPA_KETERANGAN' ||
+                item['isAlpa'] == true ||
+                item['method'] == 'ALPA_AUTO';
+
+            // ATURAN MANDAT: Jika mahasiswa memiliki jam masuk fisik (selain 00:00) atau durasi > 0,
+            // sesi TIDAK PERNAH diklasifikasikan sebagai Alpha/Tanpa Keterangan!
+            // Lupa check-out wajib masuk kategori kurangDurasi (Tidak Terpenuhi / Tanpa Check-Out).
+            final isItemAlpha = !hasRealCheckIn &&
+                durationMins == 0 &&
+                (isExplicitAlpha || isItemMidnight);
             final itemTarget = int.tryParse(
                   item['targetMinMenit']?.toString() ??
                       item['targetDurationMinutes']?.toString() ??
@@ -247,84 +333,113 @@ class RiwayatTidakMemenuhiNotifier
 
             final rawTitle = item['namaKegiatan'] ??
                 item['poskoName'] ??
-                'Kegiatan KKN';
+                (isItemAlpha ? 'Jadwal Posko KKN' : 'Kegiatan KKN');
             final title =
                 InputSanitizer.cleanSystemMessage(rawTitle.toString());
 
-            final tanggalStr = item['tanggal']?.toString() ?? '';
-            final jamMasukStr = item['jamMasuk']?.toString() ?? '';
-            final jamPulangStr = item['jamPulang']?.toString() ?? '';
-            DateTime? attendedAt;
-            if (item['attendedAt'] != null) {
-              attendedAt =
-                  DateTime.tryParse(item['attendedAt'].toString())?.toLocal();
-            } else if (tanggalStr.isNotEmpty &&
-                tanggalStr != '-' &&
-                jamMasukStr.isNotEmpty &&
-                jamMasukStr != '-') {
-              attendedAt =
-                  DateTime.tryParse('${tanggalStr}T$jamMasukStr:00')?.toLocal();
+            final now = DateTime.now();
+            final isSessionToday = item['isToday'] == true ||
+                (attendedAt != null &&
+                    attendedAt.year == now.year &&
+                    attendedAt.month == now.month &&
+                    attendedAt.day == now.day);
+            final isOngoing = !isItemAlpha &&
+                (item['isOngoing'] == true ||
+                    item['isBerlangsung'] == true ||
+                    (isSessionToday && checkOutAt == null));
+
+            // Sesi HARI INI yang belum check-out (masih berlangsung / in progress) JANGAN dimasukkan ke Tidak Memenuhi atau Alpha!
+            // ponytail: cek tanggal lokal hari ini cukup, upgrade ke status streaming bila backend dukung websocket
+            if (isOngoing && rawStatus != 'HADIR_TIDAK_MEMENUHI') {
+              continue;
             }
 
-            DateTime? checkOutAt;
-            if (item['checkOutAt'] != null) {
-              checkOutAt =
-                  DateTime.tryParse(item['checkOutAt'].toString())?.toLocal();
-            } else if (tanggalStr.isNotEmpty &&
-                tanggalStr != '-' &&
-                jamPulangStr.isNotEmpty &&
-                jamPulangStr != '-') {
-              checkOutAt =
-                  DateTime.tryParse('${tanggalStr}T$jamPulangStr:00')?.toLocal();
+            final dKey = attendedAt != null
+                ? '${attendedAt.year}-${attendedAt.month.toString().padLeft(2, '0')}-${attendedAt.day.toString().padLeft(2, '0')}'
+                : '';
+
+            if (dKey.isNotEmpty && countedScheduleIds.contains(dKey)) {
+              continue;
+            }
+            if (id.isNotEmpty && countedScheduleIds.contains(id)) {
+              continue;
             }
 
-            if (attendedAt != null) {
-              final dKey =
-                  '${attendedAt.year}-${attendedAt.month.toString().padLeft(2, '0')}-${attendedAt.day.toString().padLeft(2, '0')}';
-              countedScheduleIds.add(dKey);
-            }
+            if (schId.isNotEmpty) countedScheduleIds.add(schId);
+            if (id.isNotEmpty) countedScheduleIds.add(id);
+            if (dKey.isNotEmpty) countedScheduleIds.add(dKey);
 
-            final status = (item['status'] ?? 'HADIR_TIDAK_MEMENUHI')
-                .toString()
-                .toUpperCase();
-            final statusDisplay = item['statusDisplay']?.toString() ??
-                (status == 'SELESAI_TELAT'
-                    ? 'Selesai Lebih Cepat'
-                    : 'Hadir & Tidak Memenuhi');
+            if (isItemAlpha) {
+              parsedList.add(
+                SesiTidakMemenuhi(
+                  id: id,
+                  scheduleId: schId,
+                  scheduleTitle: title,
+                  attendedAt: attendedAt,
+                  checkOutAt: null,
+                  durationMinutes: 0,
+                  targetMinutes: itemTarget,
+                  shortageMinutes: itemTarget,
+                  durasiJedaMenit: 0,
+                  status: 'ALPA',
+                  statusDisplay: 'Alpha (Tanpa Keterangan)',
+                  kategori: KategoriSesi.alpha,
+                  keterangan:
+                      'Mahasiswa tidak tercatat melakukan presensi check-in pada jadwal posko hari ini tanpa pengajuan izin/sakit. Status kehadiran tercatat Alpha & tidak memperoleh poin kehadiran.',
+                  rawData: Map<String, dynamic>.from(item),
+                ),
+              );
+            } else {
+              final status =
+                  rawStatus.isNotEmpty ? rawStatus : 'HADIR_TIDAK_MEMENUHI';
+              final statusDisplay = item['statusDisplay']?.toString() ??
+                  (status == 'SELESAI_TELAT'
+                      ? 'Selesai Lebih Cepat'
+                      : (checkOutAt == null
+                          ? 'Tanpa Jam Pulang'
+                          : 'Hadir & Tidak Memenuhi'));
 
-            String keterangan;
-            if (shortage > 0) {
-              if (jedaMins > 0 || jedaFormattedStr != null) {
+              String keterangan;
+              if (checkOutAt == null) {
+                final inZoneInfo = durationMins > 0
+                    ? 'dengan durasi di zona $durationMins menit (kurang dari target $itemTarget menit)'
+                    : 'durasi kehadiran belum memenuhi target';
                 keterangan =
-                    'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $itemTarget menit. Terdeteksi ${jedaFormattedStr ?? "$jedaMins menit"} di luar zona posko/jeda. Status kehadiran tercatat Tidak Memenuhi & bonus +3 Poin Durasi tidak diberikan.';
+                    'Tercatat Check-In pada ${jamMasukStr.isNotEmpty ? jamMasukStr : (attendedAt != null ? DateFormat('HH:mm').format(attendedAt) : '-')} WIB, $inZoneInfo, serta tidak melakukan Check-Out hingga akhir hari. Status kehadiran tercatat Hadir Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+              } else if (shortage > 0) {
+                if (jedaMins > 0 || jedaFormattedStr != null) {
+                  keterangan =
+                      'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $itemTarget menit. Terdeteksi ${jedaFormattedStr ?? "$jedaMins menit"} di luar zona posko/jeda. Status kehadiran tercatat Tidak Memenuhi & bonus +3 Poin Durasi tidak diberikan.';
+                } else {
+                  keterangan =
+                      'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $itemTarget menit. Status kehadiran tercatat Tidak Memenuhi & bonus +3 Poin Durasi tidak diberikan.';
+                }
               } else {
                 keterangan =
-                    'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $itemTarget menit. Status kehadiran tercatat Tidak Memenuhi & bonus +3 Poin Durasi tidak diberikan.';
+                    'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
               }
-            } else {
-              keterangan =
-                  'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
-            }
 
-            parsedList.add(
-              SesiTidakMemenuhi(
-                id: id,
-                scheduleId: schId,
-                scheduleTitle: title,
-                attendedAt: attendedAt,
-                checkOutAt: checkOutAt,
-                durationMinutes: durationMins,
-                targetMinutes: itemTarget,
-                shortageMinutes: shortage,
-                durasiJedaMenit: jedaMins,
-                durasiJedaFormatted: jedaFormattedStr,
-                rasioKehadiran: rasio,
-                status: status,
-                statusDisplay: statusDisplay,
-                keterangan: keterangan,
-                rawData: Map<String, dynamic>.from(item),
-              ),
-            );
+              parsedList.add(
+                SesiTidakMemenuhi(
+                  id: id,
+                  scheduleId: schId,
+                  scheduleTitle: title,
+                  attendedAt: attendedAt,
+                  checkOutAt: checkOutAt,
+                  durationMinutes: durationMins,
+                  targetMinutes: itemTarget,
+                  shortageMinutes: shortage,
+                  durasiJedaMenit: jedaMins,
+                  durasiJedaFormatted: jedaFormattedStr,
+                  rasioKehadiran: rasio,
+                  status: status,
+                  statusDisplay: statusDisplay,
+                  kategori: KategoriSesi.kurangDurasi,
+                  keterangan: keterangan,
+                  rawData: Map<String, dynamic>.from(item),
+                ),
+              );
+            }
           }
         }
       } catch (e) {
@@ -373,48 +488,112 @@ class RiwayatTidakMemenuhiNotifier
             for (final sess in sessions) {
               if (sess is! Map) continue;
               final status = (sess['status'] ?? '').toString().toUpperCase();
-              final isTargetMet = sess['isTargetMet'] == true ||
-                  sess['isMinTargetMet'] == true;
-              final isAlpa = status == 'ALPA' ||
-                  status == 'TANPA_KETERANGAN' ||
-                  sess['isAlpa'] == true;
-              final isApprovedLeave = sess['isApprovedLeave'] == true ||
-                  status == 'IZIN' ||
-                  status == 'SAKIT';
-
-              // Kategori "Hadir Tidak Memenuhi" per Task MBL-QC-01:
-              // isTargetMet == false && !isAlpa && !isApprovedLeave
-              // atau status eksplisit HADIR_TIDAK_MEMENUHI / SELESAI_TELAT
-              final isTidakMemenuhi = (!isTargetMet && !isAlpa && !isApprovedLeave) ||
-                  status == 'HADIR_TIDAK_MEMENUHI' ||
-                  status == 'SELESAI_TELAT' ||
-                  (status.contains('HADIR') && !isTargetMet && sess['checkOutAt'] != null);
-
-              if (!isTidakMemenuhi) continue;
 
               final schId = sess['scheduleId']?.toString() ?? '';
               final sessId = sess['id']?.toString() ?? '';
               final attendedAtStr = sess['attendedAt']?.toString();
               final checkOutAtStr = sess['checkOutAt']?.toString();
-              final attendedAt = attendedAtStr != null
+              DateTime? attendedAt = attendedAtStr != null
                   ? DateTime.tryParse(attendedAtStr)?.toLocal()
                   : null;
+              if (attendedAt == null) {
+                final dKey = (sess['dateKey'] ?? sess['tanggal'] ?? sess['date'])?.toString();
+                if (dKey != null && dKey.isNotEmpty && dKey != '-') {
+                  attendedAt = DateTime.tryParse('${dKey}T00:00:00')?.toLocal();
+                }
+              }
+
               final checkOutAt = checkOutAtStr != null
                   ? DateTime.tryParse(checkOutAtStr)?.toLocal()
                   : null;
 
+              final now = DateTime.now();
+              final isSessionToday = sess['isToday'] == true ||
+                  (attendedAt != null &&
+                      attendedAt.year == now.year &&
+                      attendedAt.month == now.month &&
+                      attendedAt.day == now.day);
+              final durationMins = int.tryParse(
+                    sess['durationMinutes']?.toString() ??
+                        sess['durasiMenit']?.toString() ??
+                        '',
+                  ) ??
+                  0;
+
+              // Jam masuk adalah placeholder midnight (baik di jam lokal WIB maupun di UTC)
+              final isMidnightPlaceholder = attendedAt == null ||
+                  (attendedAt.hour == 0 && attendedAt.minute == 0) ||
+                  (attendedAt.toUtc().hour == 0 &&
+                      attendedAt.toUtc().minute == 0);
+
+              // Cek apakah ada jam masuk sah selain midnight
+              final hasValidCheckIn =
+                  attendedAt != null && !isMidnightPlaceholder;
+
+              // 1. Cek apakah ini Alpha
+              // ATURAN MANDAT USER:
+              // - Jika ADA check-in (attendedAt bukan 00:00), sesi TIDAK PERNAH dianggap Alpha murni,
+              //   bahkan jika checkOutAt == null atau sistem mencatat status ALPA karena lupa checkout!
+              // - Alpha murni HANYA jika TIDAK ADA check-in sah (!hasValidCheckIn) dan durasi 0.
+              final isExplicitAlpha = status == 'ALPA' ||
+                  status == 'ALPHA' ||
+                  status == 'TANPA_KETERANGAN' ||
+                  sess['isAlpa'] == true ||
+                  sess['method'] == 'ALPA_AUTO';
+
+              final isPureAlpha = !hasValidCheckIn &&
+                  durationMins == 0 &&
+                  (isExplicitAlpha || isMidnightPlaceholder || checkOutAt == null);
+
+              // 2. Sesi HARI INI yang belum check-out (masih berlangsung / in progress):
+              final isOngoing = !isPureAlpha &&
+                  (sess['isOngoing'] == true ||
+                      (isSessionToday && checkOutAt == null));
+
+              // Sesi HARI INI yang belum check-out (masih berlangsung / in progress) JANGAN dimasukkan ke Tidak Memenuhi atau Alpha!
+              if (isOngoing && status != 'HADIR_TIDAK_MEMENUHI') {
+                continue;
+              }
+
+              final isApprovedLeave = sess['isApprovedLeave'] == true ||
+                  status == 'IZIN' ||
+                  status == 'SAKIT';
+              if (isApprovedLeave) {
+                continue;
+              }
+
+              if (status == 'TIDAK_ADA_KEGIATAN' || status == 'SKIP_KEGIATAN') {
+                continue;
+              }
+
+              // Sesi lampau tanpa checkout tapi check-in ada (selain 00):
+              // ATURAN USER: TETAP MASUK HADIR TIDAK MEMENUHI!
+              final isMissingCheckoutPast =
+                  !isSessionToday && hasValidCheckIn && checkOutAt == null;
+              final isTargetMet = sess['isTargetMet'] == true ||
+                  sess['isMinTargetMet'] == true;
+
+              final isTidakMemenuhi = !isPureAlpha &&
+                  (isMissingCheckoutPast ||
+                      (!isTargetMet) ||
+                      status == 'HADIR_TIDAK_MEMENUHI' ||
+                      status == 'SELESAI_TELAT' ||
+                      (status.contains('HADIR') && !isTargetMet) ||
+                      (hasValidCheckIn && durationMins < targetMenit));
+
+              if (!isPureAlpha && !isTidakMemenuhi) continue;
+
               final dateKey = attendedAt != null
                   ? '${attendedAt.year}-${attendedAt.month.toString().padLeft(2, '0')}-${attendedAt.day.toString().padLeft(2, '0')}'
-                  : '';
+                  : (sess['dateKey']?.toString() ?? '');
 
-              final isAlreadyCounted = (schId.isNotEmpty && countedScheduleIds.contains(schId)) ||
-                  (sessId.isNotEmpty && countedScheduleIds.contains(sessId)) ||
+              // Deduplikasi per sessId atau dateKey (JANGAN gunakan schId saja karena posko yang sama punya schId sama)
+              final isAlreadyCounted = (sessId.isNotEmpty && countedScheduleIds.contains(sessId)) ||
                   (dateKey.isNotEmpty && countedScheduleIds.contains(dateKey));
 
               if (isAlreadyCounted) {
                 // Enrich existing item if missing jeda info
                 final existingIdx = parsedList.indexWhere((p) =>
-                    (schId.isNotEmpty && p.scheduleId == schId) ||
                     (sessId.isNotEmpty && p.id == sessId) ||
                     (attendedAt != null &&
                         p.attendedAt != null &&
@@ -427,7 +606,25 @@ class RiwayatTidakMemenuhiNotifier
                           sess['jedaMenit']?.toString() ?? '') ?? 0;
                   final jedaFormattedStr = sess['durasiJedaFormatted']?.toString() ??
                       sess['jedaFormatted']?.toString();
-                  if (existing.durasiJedaMenit <= 0 && jedaMins > 0) {
+                  if (isPureAlpha && existing.kategori != KategoriSesi.alpha) {
+                    parsedList[existingIdx] = SesiTidakMemenuhi(
+                      id: existing.id,
+                      scheduleId: existing.scheduleId,
+                      scheduleTitle: existing.scheduleTitle,
+                      attendedAt: existing.attendedAt,
+                      checkOutAt: null,
+                      durationMinutes: 0,
+                      targetMinutes: existing.targetMinutes,
+                      shortageMinutes: existing.targetMinutes,
+                      durasiJedaMenit: 0,
+                      status: 'ALPA',
+                      statusDisplay: 'Alpha (Tanpa Keterangan)',
+                      kategori: KategoriSesi.alpha,
+                      keterangan:
+                          'Mahasiswa tidak tercatat melakukan presensi check-in pada jadwal posko hari ini tanpa pengajuan izin/sakit. Status kehadiran tercatat Alpha & tidak memperoleh poin kehadiran.',
+                      rawData: existing.rawData,
+                    );
+                  } else if (existing.durasiJedaMenit <= 0 && jedaMins > 0) {
                     parsedList[existingIdx] = SesiTidakMemenuhi(
                       id: existing.id,
                       scheduleId: existing.scheduleId,
@@ -442,6 +639,7 @@ class RiwayatTidakMemenuhiNotifier
                       rasioKehadiran: existing.rasioKehadiran,
                       status: existing.status,
                       statusDisplay: existing.statusDisplay,
+                      kategori: existing.kategori,
                       keterangan: existing.keterangan,
                       rawData: existing.rawData,
                     );
@@ -454,60 +652,91 @@ class RiwayatTidakMemenuhiNotifier
               if (sessId.isNotEmpty) countedScheduleIds.add(sessId);
               if (dateKey.isNotEmpty) countedScheduleIds.add(dateKey);
 
-              final durationMins =
-                  int.tryParse(sess['durationMinutes']?.toString() ??
-                      sess['durasiMenit']?.toString() ?? '') ?? 0;
-              final sessTarget = int.tryParse(sess['targetMinutes']?.toString() ??
-                      sess['targetMinMenit']?.toString() ?? '') ?? targetMenit;
-              final shortage = (sessTarget - durationMins).clamp(0, sessTarget);
-
-              final jedaMins = int.tryParse(sess['durasiJedaMenit']?.toString() ??
-                      sess['jedaMenit']?.toString() ?? '') ?? 0;
-              final jedaFormattedStr = sess['durasiJedaFormatted']?.toString() ??
-                  sess['jedaFormatted']?.toString();
-              final rasio = double.tryParse(sess['rasioKehadiran']?.toString() ??
-                  sess['rasio']?.toString() ?? '');
-
               final rawTitle = sess['scheduleTitle']?.toString() ??
                   sess['namaKegiatan']?.toString() ??
-                  'Kegiatan KKN';
+                  (isPureAlpha ? 'Jadwal Posko KKN' : 'Kegiatan KKN');
               final title = InputSanitizer.cleanSystemMessage(rawTitle);
 
-              String keterangan;
-              if (shortage > 0) {
-                if (jedaMins > 0 || jedaFormattedStr != null) {
+              if (isPureAlpha) {
+                parsedList.add(
+                  SesiTidakMemenuhi(
+                    id: sessId.isNotEmpty ? sessId : '${schId}_${attendedAt?.millisecondsSinceEpoch}_alpha',
+                    scheduleId: schId,
+                    scheduleTitle: title,
+                    attendedAt: attendedAt,
+                    checkOutAt: null,
+                    durationMinutes: 0,
+                    targetMinutes: targetMenit,
+                    shortageMinutes: targetMenit,
+                    durasiJedaMenit: 0,
+                    status: 'ALPA',
+                    statusDisplay: 'Alpha (Tanpa Keterangan)',
+                    kategori: KategoriSesi.alpha,
+                    keterangan:
+                        'Mahasiswa tidak tercatat melakukan presensi check-in pada jadwal posko hari ini tanpa pengajuan izin/sakit. Status kehadiran tercatat Alpha & tidak memperoleh poin kehadiran.',
+                    rawData: Map<String, dynamic>.from(sess),
+                  ),
+                );
+              } else {
+                final durationMins =
+                    int.tryParse(sess['durationMinutes']?.toString() ??
+                        sess['durasiMenit']?.toString() ?? '') ?? 0;
+                final sessTarget = int.tryParse(sess['targetMinutes']?.toString() ??
+                        sess['targetMinMenit']?.toString() ?? '') ?? targetMenit;
+                final shortage = (sessTarget - durationMins).clamp(0, sessTarget);
+
+                final jedaMins = int.tryParse(sess['durasiJedaMenit']?.toString() ??
+                        sess['jedaMenit']?.toString() ?? '') ?? 0;
+                final jedaFormattedStr = sess['durasiJedaFormatted']?.toString() ??
+                    sess['jedaFormatted']?.toString();
+                final rasio = double.tryParse(sess['rasioKehadiran']?.toString() ??
+                    sess['rasio']?.toString() ?? '');
+
+                String keterangan;
+                if (checkOutAt == null) {
+                  final inZoneInfo = durationMins > 0
+                      ? 'dengan durasi di zona $durationMins menit (kurang dari target $sessTarget menit)'
+                      : 'durasi kehadiran belum memenuhi target';
                   keterangan =
-                      'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $sessTarget menit. Terdeteksi ${jedaFormattedStr ?? "$jedaMins menit"} di luar zona posko/jeda. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+                      'Tercatat Check-In pada ${attendedAt != null ? DateFormat('HH:mm').format(attendedAt) : '-'} WIB, $inZoneInfo, serta tidak melakukan Check-Out hingga akhir hari. Status kehadiran tercatat Hadir Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+                } else if (shortage > 0) {
+                  if (jedaMins > 0 || jedaFormattedStr != null) {
+                    keterangan =
+                        'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $sessTarget menit. Terdeteksi ${jedaFormattedStr ?? "$jedaMins menit"} di luar zona posko/jeda. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+                  } else {
+                    keterangan =
+                        'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $sessTarget menit. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+                  }
                 } else {
                   keterangan =
-                      'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $sessTarget menit. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.';
+                      'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
                 }
-              } else {
-                keterangan =
-                    'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
-              }
 
-              parsedList.add(
-                SesiTidakMemenuhi(
-                  id: sessId.isNotEmpty ? sessId : '${schId}_${attendedAt?.millisecondsSinceEpoch}',
-                  scheduleId: schId,
-                  scheduleTitle: title,
-                  attendedAt: attendedAt,
-                  checkOutAt: checkOutAt,
-                  durationMinutes: durationMins,
-                  targetMinutes: sessTarget,
-                  shortageMinutes: shortage,
-                  durasiJedaMenit: jedaMins,
-                  durasiJedaFormatted: jedaFormattedStr,
-                  rasioKehadiran: rasio,
-                  status: status.isNotEmpty ? status : 'HADIR_TIDAK_MEMENUHI',
-                  statusDisplay: status == 'SELESAI_TELAT'
-                      ? 'Selesai Lebih Cepat'
-                      : 'Hadir & Tidak Memenuhi',
-                  keterangan: keterangan,
-                  rawData: Map<String, dynamic>.from(sess),
-                ),
-              );
+                parsedList.add(
+                  SesiTidakMemenuhi(
+                    id: sessId.isNotEmpty ? sessId : '${schId}_${attendedAt?.millisecondsSinceEpoch}',
+                    scheduleId: schId,
+                    scheduleTitle: title,
+                    attendedAt: attendedAt,
+                    checkOutAt: checkOutAt,
+                    durationMinutes: durationMins,
+                    targetMinutes: sessTarget,
+                    shortageMinutes: shortage,
+                    durasiJedaMenit: jedaMins,
+                    durasiJedaFormatted: jedaFormattedStr,
+                    rasioKehadiran: rasio,
+                    status: status.isNotEmpty ? status : 'HADIR_TIDAK_MEMENUHI',
+                    statusDisplay: status == 'SELESAI_TELAT'
+                        ? 'Selesai Lebih Cepat'
+                        : (checkOutAt == null
+                            ? 'Tanpa Jam Pulang'
+                            : 'Hadir & Tidak Memenuhi'),
+                    kategori: KategoriSesi.kurangDurasi,
+                    keterangan: keterangan,
+                    rawData: Map<String, dynamic>.from(sess),
+                  ),
+                );
+              }
             }
           }
         }
@@ -591,6 +820,7 @@ class RiwayatTidakMemenuhiNotifier
               durasiJedaFormatted: jedaFormattedStr,
               status: status,
               statusDisplay: 'Hadir & Tidak Memenuhi',
+              kategori: KategoriSesi.kurangDurasi,
               keterangan: shortage > 0
                   ? 'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $targetMenit menit. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.'
                   : 'Durasi kehadiran belum memenuhi target harian minimum.',
@@ -602,7 +832,6 @@ class RiwayatTidakMemenuhiNotifier
         debugPrint('[RiwayatTidakMemenuhi] getKegiatanAktif error: $e');
       }
 
-
       // Sort by newest attendedAt descending
       parsedList.sort((a, b) {
         final aTime = a.attendedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -610,27 +839,29 @@ class RiwayatTidakMemenuhiNotifier
         return bTime.compareTo(aTime);
       });
 
-      // Filter lokal berdasarkan rentang tanggal jika ada
-      final filteredList = parsedList.where((item) {
-        if (queryStart != null && item.attendedAt != null) {
-          final startDay =
-              DateTime(queryStart.year, queryStart.month, queryStart.day);
-          if (item.attendedAt!.isBefore(startDay)) return false;
-        }
-        if (queryEnd != null && item.attendedAt != null) {
-          final endDay =
-              DateTime(queryEnd.year, queryEnd.month, queryEnd.day, 23, 59, 59);
-          if (item.attendedAt!.isAfter(endDay)) return false;
-        }
-        return true;
-      }).toList();
+      final totalTidakMemenuhi = parsedList
+          .where((p) => p.kategori == KategoriSesi.kurangDurasi)
+          .length;
+      final totalAlpha =
+          parsedList.where((p) => p.kategori == KategoriSesi.alpha).length;
+      final totalSemua = parsedList.length;
+
+      final filteredList = _applyFilters(
+        parsedList,
+        state.selectedKategori,
+        queryStart,
+        queryEnd,
+      );
 
       if (!mounted) return;
 
       state = state.copyWith(
         isLoading: false,
+        allItems: parsedList,
         items: filteredList,
-        totalTidakMemenuhi: filteredList.length,
+        totalTidakMemenuhi: totalTidakMemenuhi,
+        totalAlpha: totalAlpha,
+        totalSemua: totalSemua,
         targetHarianMenit: targetMenit,
       );
     } catch (e) {
@@ -642,13 +873,66 @@ class RiwayatTidakMemenuhiNotifier
     }
   }
 
+  List<SesiTidakMemenuhi> _applyFilters(
+    List<SesiTidakMemenuhi> source,
+    KategoriFilter kategori,
+    DateTime? start,
+    DateTime? end,
+  ) {
+    return source.where((item) {
+      if (kategori == KategoriFilter.kurangDurasi && item.isAlpha) {
+        return false;
+      }
+      if (kategori == KategoriFilter.alpha && !item.isAlpha) {
+        return false;
+      }
+      if (start != null && item.attendedAt != null) {
+        final startDay = DateTime(start.year, start.month, start.day);
+        if (item.attendedAt!.isBefore(startDay)) return false;
+      }
+      if (end != null && item.attendedAt != null) {
+        final endDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+        if (item.attendedAt!.isAfter(endDay)) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  void setKategori(KategoriFilter filter) {
+    state = state.copyWith(
+      selectedKategori: filter,
+      items: _applyFilters(
+        state.allItems,
+        filter,
+        state.startDate,
+        state.endDate,
+      ),
+    );
+  }
+
   void setFilterRange(DateTime? start, DateTime? end) {
-    fetchData(start: start, end: end);
+    state = state.copyWith(
+      startDate: start,
+      endDate: end,
+      items: _applyFilters(
+        state.allItems,
+        state.selectedKategori,
+        start,
+        end,
+      ),
+    );
   }
 
   void clearFilter() {
-    state = state.copyWith(clearDates: true);
-    fetchData(start: null, end: null);
+    state = state.copyWith(
+      clearDates: true,
+      items: _applyFilters(
+        state.allItems,
+        state.selectedKategori,
+        null,
+        null,
+      ),
+    );
   }
 
   Future<void> refresh() => fetchData();

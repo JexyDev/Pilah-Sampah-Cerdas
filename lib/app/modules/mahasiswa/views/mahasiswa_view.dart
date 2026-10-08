@@ -24,6 +24,8 @@ import 'data_logbook_harian_view.dart'
     show logbookListProvider, logbookStatsProvider;
 import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
 import 'data_proker_view.dart' show prokerDataListProvider;
+import '../controllers/riwayat_tidak_memenuhi_controller.dart'
+    show riwayatTidakMemenuhiProvider, KategoriFilter;
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -1237,11 +1239,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       return (isMyId || isMyName || isMyPendamping) && w.isActivated;
     }).toList();
 
-    final displayedWarga = (personalWarga.isNotEmpty
-            ? personalWarga
-            : state.wargaList.where((w) => w.isActivated).toList())
-        .take(3)
-        .toList();
+    final displayedWarga = personalWarga.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1272,7 +1270,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (state.wargaList.length > 3)
+              if (personalWarga.length > 3)
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
@@ -1417,6 +1415,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     // 1. Ambil Angka Presensi Langsung dari Backend (Single Source of Truth)
     int hariTerpenuhi = 0;
     int hariTidakMemenuhi = 0;
+    int hariTanpaKeterangan = 0;
     final Set<String> countedScheduleIds = {};
 
     if (mhsState.timesheetSummary != null) {
@@ -1446,10 +1445,126 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         hariTidakMemenuhi =
             int.tryParse(student['totalHariTidakMemenuhi']?.toString() ?? '') ?? 0;
 
+        // Membaca key 'totalAlpa' (Tanpa Keterangan)
+        hariTanpaKeterangan =
+            int.tryParse(student['totalAlpa']?.toString() ?? '') ?? 0;
+
         final sessions = student['sessions'] is List ? (student['sessions'] as List) : [];
         for (final sess in sessions) {
           if (sess is Map && sess['scheduleId'] != null) {
             countedScheduleIds.add(sess['scheduleId'].toString());
+          }
+        }
+
+        // Hitung total sesi tidak memenuhi yang valid dari sessions (SSOT):
+        // - Termasuk sesi lampau tanpa checkout jika ada jam masuk selain 00:00 (isMissingCheckoutPast)
+        // - Mengecualikan sesi hari ini yang belum checkout (karena masih progress)
+        // - Mengecualikan alpha murni dan izin/sakit
+        // ponytail: sinkronisasi lokal ini aman, upgrade saat backend deploy perbaikan timesheet/summary
+        int sessionCountTidakMemenuhi = 0;
+        int sessionCountTanpaKeterangan = 0;
+        final Set<String> countedDateKeys = {};
+        final nowCheck = DateTime.now();
+
+        for (final sess in sessions) {
+          if (sess is! Map) continue;
+          final attStr = sess['attendedAt']?.toString();
+          if (attStr == null) continue;
+          final attDate = DateTime.tryParse(attStr)?.toLocal();
+          if (attDate == null) continue;
+
+          final dKey = '${attDate.year}-${attDate.month.toString().padLeft(2, '0')}-${attDate.day.toString().padLeft(2, '0')}';
+          if (countedDateKeys.contains(dKey)) continue;
+
+          final isTodaySess = sess['isToday'] == true ||
+              (attDate.year == nowCheck.year &&
+                  attDate.month == nowCheck.month &&
+                  attDate.day == nowCheck.day);
+          final hasCheckOut = sess['checkOutAt'] != null;
+          final isOngoing =
+              sess['isOngoing'] == true || (isTodaySess && !hasCheckOut);
+          final durationMins = int.tryParse(sess['durationMinutes']?.toString() ??
+              sess['durasiMenit']?.toString() ?? '') ?? 0;
+          final st = (sess['status'] ?? '').toString().toUpperCase();
+          final isTargetMet = sess['isMinTargetMet'] == true ||
+              sess['isTargetMet'] == true ||
+              durationMins >= 240;
+          final isApprovedLeave = sess['isApprovedLeave'] == true ||
+              sess['isDispensasi'] == true ||
+              st == 'IZIN' ||
+              st == 'SAKIT';
+
+          final isMidnightPlaceholder =
+              (attDate.hour == 0 && attDate.minute == 0) ||
+              (attDate.toUtc().hour == 0 && attDate.toUtc().minute == 0);
+
+          final hasValidCheckIn = !isMidnightPlaceholder;
+
+          // Alpha murni:
+          // ATURAN MANDAT USER: Jika ada check-in sah (jam masuk bukan 00:00) atau durasi > 0,
+          // sesi BUKAN Alpha murni melainkan Hadir Tidak Memenuhi (Lupa Check-Out / Kurang Jam).
+          final isExplicitAlpha = st == 'ALPA' ||
+              st == 'ALPHA' ||
+              st == 'TANPA_KETERANGAN' ||
+              sess['isAlpa'] == true ||
+              sess['method'] == 'ALPA_AUTO';
+
+          final isPureAlpha = !hasValidCheckIn &&
+              durationMins == 0 &&
+              (isExplicitAlpha || isMidnightPlaceholder || !hasCheckOut);
+
+          // 1. Sesi hari ini yang belum checkout / masih ongoing: lewati!
+          if (isOngoing && st != 'HADIR_TIDAK_MEMENUHI') {
+            continue;
+          }
+
+          // 2. Alpha murni:
+          if (isPureAlpha) {
+            countedDateKeys.add(dKey);
+            sessionCountTanpaKeterangan++;
+            continue;
+          }
+
+          // 3. Sesi lampau tanpa checkout tapi check-in ada (selain 00):
+          final isMissingCheckoutPast = !isTodaySess && hasValidCheckIn && !hasCheckOut;
+
+          if (isMissingCheckoutPast ||
+              (!isTargetMet && !isApprovedLeave) ||
+              st == 'HADIR_TIDAK_MEMENUHI' ||
+              st == 'SELESAI_TELAT' ||
+              (st.contains('HADIR') && !isTargetMet) ||
+              (hasValidCheckIn && durationMins < 240)) {
+            countedDateKeys.add(dKey);
+            sessionCountTidakMemenuhi++;
+          }
+        }
+
+        if (sessions.isNotEmpty) {
+          hariTanpaKeterangan = sessionCountTanpaKeterangan;
+        } else if (sessionCountTanpaKeterangan > 0) {
+          hariTanpaKeterangan = sessionCountTanpaKeterangan;
+        }
+
+        if (sessionCountTidakMemenuhi > 0) {
+          hariTidakMemenuhi = sessionCountTidakMemenuhi;
+        } else {
+          final bool hasOngoingTodayInTimesheet = sessions.any((sess) {
+            if (sess is! Map) return false;
+            final attStr = sess['attendedAt']?.toString();
+            if (attStr == null) return false;
+            final attDate = DateTime.tryParse(attStr)?.toLocal();
+            if (attDate == null) return false;
+            final isTodaySess = attDate.year == nowCheck.year &&
+                attDate.month == nowCheck.month &&
+                attDate.day == nowCheck.day;
+            final hasNoCheckOut = sess['checkOutAt'] == null;
+            final isNotMet = sess['isMinTargetMet'] == false || sess['isTargetMet'] == false;
+            final st = (sess['status'] ?? '').toString().toUpperCase();
+            return isTodaySess && hasNoCheckOut && isNotMet && st != 'HADIR_TIDAK_MEMENUHI';
+          });
+
+          if (hasOngoingTodayInTimesheet && hariTidakMemenuhi > 0) {
+            hariTidakMemenuhi--;
           }
         }
       }
@@ -1473,13 +1588,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           continue;
         }
 
-        final status = (item['attendanceStatus'] ?? item['statusKehadiran'] ?? '').toString().toUpperCase();
+        final status = (item['attendanceStatus'] ??
+                item['statusKehadiran'] ??
+                '')
+            .toString()
+            .toUpperCase();
         final isMemenuhi = item['isMemenuhiDurasi'] == true;
-        if (status == 'HADIR_MEMENUHI' || (status == 'HADIR' && isMemenuhi)) {
+        final hasCheckedOut = item['checkOutAt'] != null;
+
+        if (status == 'HADIR_MEMENUHI' ||
+            (status == 'HADIR' && isMemenuhi && hasCheckedOut)) {
           hariTerpenuhi++;
           if (schId.isNotEmpty) countedScheduleIds.add(schId);
         } else if (status == 'HADIR_TIDAK_MEMENUHI' ||
-            (status.contains('HADIR') && !isMemenuhi && item['checkOutAt'] != null)) {
+            (status.contains('HADIR') && !isMemenuhi && hasCheckedOut)) {
           hariTidakMemenuhi++;
           if (schId.isNotEmpty) countedScheduleIds.add(schId);
         }
@@ -1679,7 +1801,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                       ),
                       const SizedBox(height: 8),
 
-                      // ── Baris 1: Presensi Terpenuhi & Tidak Memenuhi ──────────
+                      // ── Baris 1: Presensi Terpenuhi, Tidak Memenuhi, & Tanpa Keterangan ───
                       Row(
                         children: [
                           Expanded(
@@ -1700,6 +1822,29 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               icon: Icons.warning_amber_rounded,
                               showChevron: true,
                               onTap: () {
+                                ref
+                                    .read(riwayatTidakMemenuhiProvider.notifier)
+                                    .setKategori(KategoriFilter.kurangDurasi);
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.riwayatTidakMemenuhi,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Presensi',
+                              middleText: '$hariTanpaKeterangan',
+                              bottomText: 'Tanpa Keterangan',
+                              color: AppColors.dangerRed,
+                              icon: Icons.cancel_outlined,
+                              showChevron: true,
+                              onTap: () {
+                                ref
+                                    .read(riwayatTidakMemenuhiProvider.notifier)
+                                    .setKategori(KategoriFilter.alpha);
                                 Navigator.pushNamed(
                                   context,
                                   AppRoutes.riwayatTidakMemenuhi,

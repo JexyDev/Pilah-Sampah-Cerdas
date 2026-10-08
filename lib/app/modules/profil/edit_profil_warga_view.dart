@@ -89,10 +89,11 @@ class _EditProfilWargaViewState extends ConsumerState<EditProfilWargaView> {
         );
         Navigator.pop(context, true);
       } else {
-        final err = ref.read(authProvider).errorCode ?? 'Gagal menyimpan perubahan.';
+        final authState = ref.read(authProvider);
+        final err = authState.errorMessage ?? authState.errorCode ?? 'Gagal menyimpan perubahan.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memperbarui profil: $err'),
+            content: Text(err.startsWith('Gagal') ? err : 'Gagal memperbarui profil: $err'),
             backgroundColor: AppColors.dangerRed,
           ),
         );

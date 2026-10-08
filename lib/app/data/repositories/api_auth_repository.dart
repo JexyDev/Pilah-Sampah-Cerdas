@@ -871,6 +871,12 @@ class ApiAuthRepository implements AuthRepository {
           message ?? 'Format data tidak valid',
         );
       }
+      if (status == 409) {
+        throw AuthException(
+          'PHONE_ALREADY_EXISTS',
+          message ?? 'Nomor telepon sudah digunakan oleh akun lain',
+        );
+      }
       throw AuthException(
         'UPDATE_PROFILE_FAILED',
         message ?? 'Gagal memperbarui profil',
