@@ -227,7 +227,7 @@ export function canAccessSidebarRoute(
     cleanPath === "/analisis-proyek";
 
   if (isAnalisisRoute) {
-    if (role === "PIMPINAN") return false;
+    if (role === "PIMPINAN" || role === "DPL") return false;
     return isStagingEnv();
   }
 

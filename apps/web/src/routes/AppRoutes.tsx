@@ -746,7 +746,7 @@ const AppRoutes: React.FC = () => {
           path="/berseka-ai"
           element={
             isStaging ? (
-              <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
                 <BersekaAiPage />
               </ProtectedRoute>
             ) : (
@@ -763,8 +763,6 @@ const AppRoutes: React.FC = () => {
                 "DEVELOPER",
                 "ADMIN_DLH",
                 "PANITIA_TASKFORCE",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "MPL",
                 "MITRA_PEMBIMBING_LAPANGAN",
                 "MITRA_PENDAMPING_LAPANGAN",
@@ -789,8 +787,6 @@ const AppRoutes: React.FC = () => {
                 "LURAH",
                 "RW",
                 "PANITIA_TASKFORCE",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "MPL",
               ]}
             >

@@ -21,8 +21,6 @@ const ALLOWED_LEADERSHIP_ROLES = [
   "CAMAT",
   "LURAH",
   "RW",
-  "DPL",
-  "DOSEN_PEMBIMBING",
   "MPL",
   "MITRA_PEMBIMBING_LAPANGAN",
   "MITRA_PENDAMPING_LAPANGAN",
@@ -30,7 +28,7 @@ const ALLOWED_LEADERSHIP_ROLES = [
 ];
 
 router.get("/kkn", authMiddleware, roleMiddleware(ALLOWED_LEADERSHIP_ROLES), systemAnalysisController.getKknAnalysis);
-router.get("/tata-kelola", authMiddleware, systemAnalysisController.getWasteGovernanceAnalysis);
+router.get("/tata-kelola", authMiddleware, roleMiddleware(ALLOWED_LEADERSHIP_ROLES), systemAnalysisController.getWasteGovernanceAnalysis);
 router.post("/chat", authMiddleware, roleMiddleware(ALLOWED_LEADERSHIP_ROLES), systemAnalysisController.queryAiChat);
 
 export default router;
