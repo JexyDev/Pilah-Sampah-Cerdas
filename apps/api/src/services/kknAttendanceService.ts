@@ -6452,23 +6452,30 @@ export class KknAttendanceService {
           jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda &&
           !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
-      const isLeaveOrAlpha =
-        st.includes("IZIN") ||
-        st.includes("SAKIT") ||
-        st.includes("ALPA") ||
-        st.includes("ALPHA") ||
-        !att.attendedAt;
+      const isLeave = st.includes("IZIN") || st.includes("SAKIT");
+      const isAlpha = st.includes("ALPA") || st.includes("ALPHA");
+      const hasRealCheckIn = Boolean(att.attendedAt);
 
-      let actualMins = isLeaveOrAlpha
-        ? 0
-        : Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
-      if (!isLeaveOrAlpha) {
+      let actualMins = 0;
+      if (isLeave) {
+        actualMins = 0;
+      } else if (isAlpha && !hasRealCheckIn) {
+        actualMins = 0;
+      } else {
+        actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      }
+
+      if (!isLeave) {
         if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
           const liveMins = calculateLiveInZoneMinutes(att);
           actualMins = actualMins > 0 ? actualMins : liveMins;
         } else if (isPaused || jedaLogsArr.length > 0) {
           const liveCapped = calculateLiveInZoneMinutes(att);
-          actualMins = Math.min(actualMins, liveCapped);
+          if (liveCapped > 0 && actualMins > 0) {
+            actualMins = Math.min(actualMins, liveCapped);
+          } else if (actualMins === 0 && liveCapped > 0) {
+            actualMins = liveCapped;
+          }
         } else if (
           actualMins === 0 &&
           att.attendedAt &&
@@ -6506,8 +6513,13 @@ export class KknAttendanceService {
         statusDisplay = "Sakit (Disetujui)";
       } else if (st.includes("IZIN")) {
         statusDisplay = "Izin (Disetujui)";
-      } else if (st.includes("ALPA") || st.includes("ALPHA")) {
-        statusDisplay = "Tanpa Keterangan";
+      } else if (isAlpha) {
+        if (hasRealCheckIn && actualMins > 0) {
+          statusDisplay = "Hadir (Tanpa Presensi Pulang)";
+          computedStatus = actualMins >= targetMinMenit ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+        } else {
+          statusDisplay = "Tanpa Keterangan";
+        }
       }
 
       const hours = Math.floor(actualMins / 60);
@@ -6515,7 +6527,7 @@ export class KknAttendanceService {
       const durasiFormatted =
         hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
 
-      const jedaMins = isLeaveOrAlpha ? 0 : calculateTotalJedaMinutes(att as any);
+      const jedaMins = isLeave || (!hasRealCheckIn && isAlpha) ? 0 : calculateTotalJedaMinutes(att as any);
       const jedaFormatted = formatDurasiMenitIndo(jedaMins);
 
       const kknGroup = att.student?.studentProfile?.kelompok || att.schedule?.kelompok;
@@ -7329,6 +7341,29 @@ export class KknAttendanceService {
           const existingAtt = sched.attendances.find((a) => a.studentId === uId);
           if (existingAtt) {
             const stUpper = String(existingAtt.status || "").toUpperCase();
+
+            // Jika sesi ini memiliki jam masuk riil (attendedAt) tetapi belum checkout di penghujung hari:
+            if (
+              existingAtt.attendedAt &&
+              !existingAtt.checkOutAt &&
+              ["BERLANGSUNG", "TERJEDA", "DALAM_RADIUS", "DI_ZONA"].includes(stUpper)
+            ) {
+              const inZoneMins = existingAtt.actualInZoneMinutes ?? 0;
+              const finalSt = inZoneMins >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: finalSt,
+                  checkOutAt: endOfDay,
+                  deskripsiKegiatan: existingAtt.deskripsiKegiatan
+                    ? `${existingAtt.deskripsiKegiatan} (Auto-closed akhir hari)`
+                    : "Auto-closed akhir hari: Mahasiswa presensi masuk tanpa checkout manual",
+                },
+              });
+              totalBypassed++;
+              continue;
+            }
+
             if (
               [
                 "HADIR",
@@ -7344,6 +7379,8 @@ export class KknAttendanceService {
                 "SKIP_KEGIATAN",
                 "ALPA",
                 "ALPHA",
+                "DALAM_RADIUS",
+                "DI_ZONA",
               ].includes(stUpper)
             ) {
               totalBypassed++;
@@ -7367,6 +7404,8 @@ export class KknAttendanceService {
                     "TERJEDA",
                     "IZIN",
                     "SAKIT",
+                    "DALAM_RADIUS",
+                    "DI_ZONA",
                   ],
                 },
               },
