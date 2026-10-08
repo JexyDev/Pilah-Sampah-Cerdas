@@ -8,6 +8,8 @@ import '../../../core/values/app_config.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../routes/app_routes.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../controllers/kelompok_kkn_controller.dart'
@@ -38,6 +40,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     with WidgetsBindingObserver {
   bool _isTimelineVisible = true;
   bool _isStatsVisible = true;
+  bool _isCheckingLocation = false;
   @override
   void initState() {
     super.initState();
@@ -48,7 +51,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
       final kknState = ref.read(kknLocationProvider);
       if (!kknState.isTracking) {
-        ref.read(locationPingControllerProvider.notifier).startTracking();
+        LocationService.instance.checkAndRequestPermission(
+          context,
+          role: 'mahasiswa_kkn',
+          mandatory: true,
+        ).then((perm) {
+          if (!mounted) return;
+          if (perm == LocationPermission.whileInUse ||
+              perm == LocationPermission.always) {
+            ref.read(locationPingControllerProvider.notifier).startTracking();
+            // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
+            ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
+          }
+        });
+      } else {
         // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
         ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
       }
