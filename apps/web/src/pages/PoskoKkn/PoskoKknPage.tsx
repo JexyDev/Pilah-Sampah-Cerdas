@@ -221,17 +221,14 @@ export const PoskoKknPage: React.FC = () => {
   const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PEMBIMBING_LAPANGAN"].some((r) => userRole.includes(r));
   const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) => userRole.includes(r));
   const isPimpinan = ["PIMPINAN", "PEMIMPIN"].some((r) => userRole.includes(r));
-  const canViewGeofence = ["DEVELOPER", "SUPER_USER"].includes(userRole) && !isPimpinan;
-  const isDeveloperOrAdmin = [
-    "DEVELOPER",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "DLH_ADMIN",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-    "PIMPINAN"
-  ].some((r) => userRole.includes(r));
-  const canEditPosko = (isDeveloperOrAdmin || isDpl) && !isMpl;
+  const isSuperUser = ["SUPER_USER"].some((r) => userRole.includes(r));
+  const isDeveloper = ["DEVELOPER"].some((r) => userRole.includes(r));
+  const isSuperOrDev = isSuperUser || isDeveloper;
+  const canViewGeofence = isSuperOrDev && !isPimpinan;
+  // Hak CRUD Master Posko hanya untuk SUPER_USER dan DEVELOPER (Pimpinan & role lainnya read-only)
+  const isDeveloperOrAdmin = isSuperOrDev;
+  // Hak Edit Posko Binaan (DPL untuk wilayah binaannya, atau SU/Dev), Pimpinan & MPL berstatus read-only
+  const canEditPosko = !isPimpinan && !isMpl && (isSuperOrDev || isDpl);
 
   // Wilayah Binaan MPL
   const mplKelurahan = useMemo(() => {
@@ -554,6 +551,10 @@ export const PoskoKknPage: React.FC = () => {
 
   // Open Form for Adding New Posko
   const handleOpenAddModal = () => {
+    if (isPimpinan || (!isSuperOrDev && !canEditPosko)) {
+      showToast.error("Role Anda tidak memiliki izin untuk menambah Posko KKN.");
+      return;
+    }
     setFormMode("add");
     setSelectedPoskoId(null);
     setFormData({
@@ -569,6 +570,10 @@ export const PoskoKknPage: React.FC = () => {
 
   // Open Form for Editing Existing Posko
   const handleOpenEditModal = (item: PoskoItem) => {
+    if (isPimpinan || (!isSuperOrDev && !canEditPosko)) {
+      showToast.error("Role Anda tidak memiliki izin untuk mengedit Posko KKN.");
+      return;
+    }
     setFormMode("edit");
     setSelectedPoskoId(item.id);
     setFormData({
@@ -752,6 +757,11 @@ export const PoskoKknPage: React.FC = () => {
 
   // Delete Action Handler
   const handleDeleteConfirm = async () => {
+    if (isPimpinan || !isSuperOrDev) {
+      showToast.error("Role Anda tidak memiliki izin untuk menghapus Posko KKN.");
+      setDeleteModal({ isOpen: false, posko: null, isLoading: false });
+      return;
+    }
     if (!deleteModal.posko) return;
     setDeleteModal((prev) => ({ ...prev, isLoading: true }));
     try {
@@ -2403,8 +2413,8 @@ export const PoskoKknPage: React.FC = () => {
                               </button>
                             )}
 
-                            {/* Tombol Inspeksi Zona KKN */}
-                            {item.kelompokId && (
+                            {/* Tombol Inspeksi Zona KKN (Hanya Developer) */}
+                            {isDeveloper && item.kelompokId && (
                               <button
                                 type="button"
                                 onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${item.kelompokId}`)}
