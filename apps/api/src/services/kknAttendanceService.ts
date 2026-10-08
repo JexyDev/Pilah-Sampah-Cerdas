@@ -5912,12 +5912,34 @@ export class KknAttendanceService {
       }
     }
 
+    // Load rule engine configs lebih awal untuk evaluasi target durasi kueri
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const ruleTargetMins5655 = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetMinMenit = ruleTargetMins5655 > 0
+      ? ruleTargetMins5655
+      : (ruleConfigs?.attendanceMinDefaultMinutes ?? 30);
+
     // 3. Filter Status
     if (params.status && params.status !== "ALL") {
       if (params.status === "HADIR_MEMENUHI") {
-        where.status = { in: ["HADIR_MEMENUHI", "HADIR", "SELESAI"] };
+        where.OR = [
+          { status: "HADIR_MEMENUHI" },
+          { status: "SELESAI" },
+          {
+            status: "HADIR",
+            actualInZoneMinutes: { gte: targetMinMenit },
+          },
+        ];
       } else if (params.status === "HADIR_TIDAK_MEMENUHI") {
-        where.status = { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] };
+        where.OR = [
+          { status: { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] } },
+          {
+            status: "HADIR",
+            actualInZoneMinutes: { lt: targetMinMenit },
+            checkOutAt: { not: null },
+          },
+        ];
       } else if (params.status === "IZIN_SAKIT") {
         where.OR = [
           { status: { in: ["IZIN", "SAKIT"] } },
@@ -6065,13 +6087,6 @@ export class KknAttendanceService {
         },
       }),
     ]);
-
-    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const ruleTargetMins5655 = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
-      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
-    const targetMinMenit = ruleTargetMins5655 > 0
-      ? ruleTargetMins5655
-      : (ruleConfigs?.attendanceMinDefaultMinutes ?? 30);
 
     // Calculate aggregated summary and per-student cumulative stats
     let hadirMemenuhiCount = 0;

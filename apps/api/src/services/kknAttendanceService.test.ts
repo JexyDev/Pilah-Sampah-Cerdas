@@ -2047,12 +2047,80 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         expect.objectContaining({
           where: expect.objectContaining({
             studentId: "student-single-1",
-            status: { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] },
+            OR: [
+              { status: { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] } },
+              {
+                status: "HADIR",
+                actualInZoneMinutes: { lt: 240 },
+                checkOutAt: { not: null },
+              },
+            ],
           }),
         })
       );
       expect(report.items).toHaveLength(1);
       expect(report.items[0].status).toBe("HADIR_TIDAK_MEMENUHI");
+    });
+
+    it("should correctly include and label historical sessions with status 'HADIR' and duration < target in HADIR_TIDAK_MEMENUHI filter", async () => {
+      vi.mocked(configService.getRuleEngineConfigs).mockResolvedValueOnce({
+        attendanceMinDurationHours: 4,
+        attendanceMinDurationMinutes: 0,
+        attendanceMinDurationSeconds: 0,
+      } as any);
+      vi.mocked(prisma.activityAttendance.count).mockResolvedValueOnce(1);
+      const historicalItem = {
+        id: "att-hist-1",
+        studentId: "student-hist-1",
+        scheduleId: "sch-hist-1",
+        status: "HADIR",
+        actualInZoneMinutes: 237,
+        attendedAt: new Date("2026-09-21T06:28:00.000Z"),
+        checkOutAt: new Date("2026-09-21T13:00:00.000Z"),
+        jedaLogs: [
+          {
+            waktuJeda: "2026-09-21T08:00:00.000Z",
+            waktuResume: "2026-09-21T10:35:00.000Z",
+            alasan: "OUT_OF_ZONE",
+          },
+        ],
+        schedule: {
+          id: "sch-hist-1",
+          title: "Kegiatan Posko Sadang Serang",
+          time: "13:28 - 20:00 WIB",
+          kelompok: {
+            id: "kel-1",
+            name: "Kelompok 1 Sadang Serang",
+            kelurahan: "Sadang Serang",
+            dpl: { id: "dpl-1", name: "DPL 1" },
+          },
+        },
+        student: {
+          id: "student-hist-1",
+          name: "Muhammad Dafa",
+          isTestAccount: false,
+          studentProfile: {
+            nim: "10923004",
+            jurusan: "Teknik Informatika",
+            kelompokId: "kel-1",
+          },
+        },
+      };
+      vi.mocked(prisma.activityAttendance.findMany)
+        .mockResolvedValueOnce([historicalItem as any])
+        .mockResolvedValueOnce([historicalItem as any]);
+
+      const report = await service.getLaporanPresensi({
+        studentId: "student-hist-1",
+        status: "HADIR_TIDAK_MEMENUHI",
+      });
+
+      expect(report.items).toHaveLength(1);
+      expect(report.items[0].status).toBe("HADIR_TIDAK_MEMENUHI");
+      expect(report.items[0].statusDisplay).toBe("Hadir & Tidak Memenuhi");
+      expect(report.items[0].durasiMenit).toBe(237);
+      expect(report.items[0].durasiJedaMenit).toBe(155);
+      expect(report.items[0].isMemenuhiDurasi).toBe(false);
     });
   });
 
