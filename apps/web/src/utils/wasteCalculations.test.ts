@@ -10,6 +10,9 @@ import {
   calculateDailyAverageKg,
   calculateMonthlyKg,
   STANDARD_CYCLE_DAYS,
+  getDateRangeForDay,
+  getDateRangeForMonth,
+  getPreviousPeriodRange,
   type WasteImpactItem,
 } from "./wasteCalculations.js";
 
@@ -35,8 +38,9 @@ describe("wasteCalculations", () => {
     expect(calculateVolumeDeltaKg(100, 125)).toBe(-25);
     expect(calculateVolumeDeltaKg(null, 37)).toBeNull();
     expect(calculateVolumeDeltaKg(undefined, 37)).toBeNull();
-    expect(calculateVolumeDeltaKg(250, 0)).toBe(250);
-    expect(calculateVolumeDeltaKg(250, undefined)).toBe(250);
+    // Jika belum ada data transaksi aktual (0 atau undefined), kembalikan null (tidak klaim penurunan palsu)
+    expect(calculateVolumeDeltaKg(250, 0)).toBeNull();
+    expect(calculateVolumeDeltaKg(250, undefined)).toBeNull();
   });
 
   it("should calculate volume delta percentage correctly", () => {
@@ -44,9 +48,11 @@ describe("wasteCalculations", () => {
     expect(calculateVolumeDeltaPct(250, 37)).toBe(85.2);
     // Lonjakan sampah: ((100 - 120) / 100) * 100% = -20%
     expect(calculateVolumeDeltaPct(100, 120)).toBe(-20);
-    // Edge case pembagian nol
+    // Edge case pembagian nol atau belum ada data aktual
     expect(calculateVolumeDeltaPct(0, 50)).toBeNull();
     expect(calculateVolumeDeltaPct(null, 50)).toBeNull();
+    expect(calculateVolumeDeltaPct(250, 0)).toBeNull();
+    expect(calculateVolumeDeltaPct(250, null)).toBeNull();
   });
 
   it("should calculate compliance delta correctly", () => {
@@ -54,6 +60,7 @@ describe("wasteCalculations", () => {
     expect(calculateComplianceDelta(50, 40)).toBe(-10);
     expect(calculateComplianceDelta(null, 80)).toBeNull();
     expect(calculateComplianceDelta(50, null)).toBeNull();
+    expect(calculateComplianceDelta(50, 0)).toBeNull();
   });
 
   it("should format delta kg correctly", () => {
@@ -70,10 +77,38 @@ describe("wasteCalculations", () => {
   });
 
   it("should format compliance delta with appropriate unit and decimals", () => {
-    expect(formatComplianceDelta(86.33, { unit: "%" })).toBe("+86,33%");
-    expect(formatComplianceDelta(86.33, { unit: "pp" })).toBe("+86,33 pp");
-    expect(formatComplianceDelta(-5.2, { unit: "pp" })).toBe("-5,2 pp");
+    // Default unit should now be 'pp'
+    expect(formatComplianceDelta(86.3)).toBe("+86,3 pp");
+    expect(formatComplianceDelta(86.33, { unit: "%" })).toBe("+86,3%");
+    expect(formatComplianceDelta(86.33, { unit: "pp", fractionDigits: 2 })).toBe("+86,33 pp");
+    expect(formatComplianceDelta(-5.2)).toBe("-5,2 pp");
     expect(formatComplianceDelta(-5.2, { unit: "pp", fractionDigits: 2 })).toBe("-5,20 pp");
+    expect(formatComplianceDelta(null)).toBe("—");
+  });
+
+  it("should generate date ranges for day and month correctly", () => {
+    const dayRange = getDateRangeForDay("2026-10-07");
+    expect(dayRange.startDate).toBe("2026-10-07");
+    expect(dayRange.endDate).toBe("2026-10-07");
+    expect(dayRange.label).toContain("2026");
+
+    const monthRange = getDateRangeForMonth(2026, 9); // September 2026 (30 hari)
+    expect(monthRange.startDate).toBe("2026-09-01");
+    expect(monthRange.endDate).toBe("2026-09-30");
+    expect(monthRange.label.toLowerCase()).toContain("september");
+
+    const octRange = getDateRangeForMonth(2026, 10); // Oktober 2026 (31 hari)
+    expect(octRange.startDate).toBe("2026-10-01");
+    expect(octRange.endDate).toBe("2026-10-31");
+
+    // Previous period range
+    const prevDay = getPreviousPeriodRange("DAILY", "2026-10-08");
+    expect(prevDay.startDate).toBe("2026-10-07");
+    expect(prevDay.endDate).toBe("2026-10-07");
+
+    const prevMonth = getPreviousPeriodRange("MONTHLY", "2026-10-01");
+    expect(prevMonth.startDate).toBe("2026-09-01");
+    expect(prevMonth.endDate).toBe("2026-09-30");
   });
 
   it("should aggregate kelurahan impact using weighted calculations", () => {
@@ -106,6 +141,35 @@ describe("wasteCalculations", () => {
     expect(agg.totalDeltaKg).toBe(313);
     expect(agg.weightedDeltaPct).toBe(25.04);
     expect(agg.avgActualCompliance).toBe(70);
+  });
+
+  it("should aggregate kelurahan impact returning null deltas when actual data is zero", () => {
+    const mockZeroItems: WasteImpactItem[] = [
+      {
+        id: "1",
+        kelurahan: "Lebakgede",
+        baselineKg: 250,
+        actualKg: 0,
+        baselineCompliance: 21.6,
+        actualCompliance: 0,
+      },
+      {
+        id: "2",
+        kelurahan: "Sekeloa",
+        baselineKg: 1000,
+        actualKg: 0,
+        baselineCompliance: 17.8,
+        actualCompliance: 0,
+      },
+    ];
+
+    const agg = aggregateKelurahanImpact(mockZeroItems);
+    expect(agg.totalBaselineKg).toBe(1250);
+    expect(agg.totalActualKg).toBe(0);
+    expect(agg.totalDeltaKg).toBeNull();
+    expect(agg.weightedDeltaPct).toBeNull();
+    expect(agg.avgActualCompliance).toBeNull();
+    expect(agg.deltaCompliance).toBeNull();
   });
 
   it("should calculate monthly kg (daily * 30) correctly and preserve delta percentage", () => {
