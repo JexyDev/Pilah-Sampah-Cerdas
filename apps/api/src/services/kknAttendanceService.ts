@@ -479,16 +479,69 @@ export function calculateTotalJedaMinutes(att: {
   const nonActiveStatuses = [
     "SAKIT",
     "IZIN",
-    "ALPA",
-    "ALPHA",
     "TIDAK_ADA_KEGIATAN",
     "SKIP_KEGIATAN",
   ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
+  // Sesi yang tidak memiliki durasi aktual sama sekali dan statusnya ALPA/ALPHA tanpa jam masuk riil
+  if (
+    (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) &&
+    (!att.actualInZoneMinutes || att.actualInZoneMinutes <= 0) &&
+    !att.attendedAt
+  ) {
+    return 0;
+  }
+
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : Date.now();
-  const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
-  return Math.max(0, Math.floor(pauseMs / 60000));
+
+  // 1. Akumulasi durasi jeda riil dari seluruh entri jedaLogs
+  let pauseFromLogsMs = 0;
+  const jedaLogs = (att.jedaLogs as any[]) || [];
+  for (let i = 0; i < jedaLogs.length; i++) {
+    const log = jedaLogs[i];
+    if (!log || typeof log !== "object") continue;
+    if (!log.waktuJeda) continue;
+    const pStart = new Date(log.waktuJeda).getTime();
+    if (isNaN(pStart)) continue;
+
+    let resumeTime = log.waktuResume || null;
+    if (!resumeTime) {
+      for (let j = i + 1; j < jedaLogs.length; j++) {
+        if (jedaLogs[j]?.waktuResume) {
+          resumeTime = jedaLogs[j].waktuResume;
+          break;
+        }
+        if (jedaLogs[j]?.waktuJeda) break;
+      }
+    }
+
+    const pEnd = resumeTime ? new Date(resumeTime).getTime() : sessionEndMs;
+    if (!isNaN(pEnd) && pEnd > pStart) {
+      pauseFromLogsMs += pEnd - pStart;
+    }
+  }
+
+  const pauseFromLogsMins = Math.floor(pauseFromLogsMs / 60000);
+
+  // 2. Korelasi dengan selisih durasi kotor (gross) vs durasi bersih tersimpan (net)
+  // Untuk sesi yang sudah selesai atau memiliki actualInZoneMinutes tersimpan,
+  // selisih waktu kotor dan waktu bersih mencerminkan waktu terpotong (jeda riil/loss)
+  if (
+    att.attendedAt &&
+    (att.checkOutAt || (att.actualInZoneMinutes !== null && att.actualInZoneMinutes !== undefined))
+  ) {
+    const attendedMs = new Date(att.attendedAt).getTime();
+    const grossMs = Math.max(0, sessionEndMs - attendedMs);
+    const grossMins = Math.min(480, Math.floor(grossMs / 60000));
+    const netMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+    if (grossMins > netMins && netMins > 0) {
+      const diffMins = grossMins - netMins;
+      return Math.max(pauseFromLogsMins, diffMins);
+    }
+  }
+
+  return Math.max(0, pauseFromLogsMins);
 }
 
 /**
@@ -2335,12 +2388,50 @@ export class KknAttendanceService {
       if (!coIsInside) {
         const distanceInt = Math.round(coNearestDist);
         const allowedRadius = coNearestRadius + coBuffer;
-        const err: any = new Error(
-          `OUT_OF_GEOFENCE: Posisi Anda terdeteksi berjarak ${distanceInt} meter di luar area posko (${coNearestName}). Presensi pulang wajib dilakukan di dalam zona posko KKN.`
-        );
-        err.code = "OUT_OF_GEOFENCE";
-        err.statusCode = 422;
-        throw err;
+
+        // Evaluasi toleransi kepulangan (Graceful Checkout di Luar Posko):
+        // 1. Waktu saat ini di WIB sudah >= 15:30 WIB (menjelang/pasca 16:00 WIB selesai operasional posko)
+        // 2. Jadwal kegiatan hari ini sudah berakhir (endTime sudah lewat) atau sesi hari lampau
+        // 3. Durasi di zona yang sudah tersimpan sudah mencukupi target (>= 240 menit)
+        // 4. Mode auto-checkout sistem
+        const nowUtc = new Date();
+        const nowWib = new Date(nowUtc.getTime() + 7 * 3600000);
+        const timeInMinsWib = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
+        const isAfterOperationalHours = timeInMinsWib >= 15 * 60 + 30; // >= 15:30 WIB
+        const hasMetDuration = (attendance.actualInZoneMinutes ?? 0) >= 240;
+
+        let isScheduleEnded = false;
+        if (coSchedule) {
+          if (coSchedule.endTime) {
+            const [endH, endM] = coSchedule.endTime.split(":").map(Number);
+            if (!isNaN(endH) && !isNaN(endM) && timeInMinsWib >= endH * 60 + endM) {
+              isScheduleEnded = true;
+            }
+          }
+          if (coSchedule.date) {
+            const schedDateStr = new Date(new Date(coSchedule.date).getTime() + 7 * 3600000)
+              .toISOString()
+              .slice(0, 10);
+            const todayStr = nowWib.toISOString().slice(0, 10);
+            if (schedDateStr < todayStr) isScheduleEnded = true;
+          }
+        }
+
+        const isGracefulAllowed =
+          isAfterOperationalHours || isScheduleEnded || hasMetDuration || Boolean(isAutoCheckout);
+
+        if (!isGracefulAllowed) {
+          const err: any = new Error(
+            `OUT_OF_GEOFENCE: Posisi Anda terdeteksi berjarak ${distanceInt} meter di luar area posko (${coNearestName}). Presensi pulang wajib dilakukan di dalam zona posko KKN.`
+          );
+          err.code = "OUT_OF_GEOFENCE";
+          err.statusCode = 422;
+          throw err;
+        } else {
+          console.log(
+            `[checkOutAttendance] Graceful checkout di luar geofence diizinkan untuk ${studentId} (${distanceInt}m dari ${coNearestName}). Alasan: operasional/jadwal posko berakhir atau target durasi tercapai.`
+          );
+        }
       }
     }
 
@@ -3630,6 +3721,10 @@ export class KknAttendanceService {
       Number(config.targetTotalJam) || TARGET_HARIAN_HOURS * Number(config.targetTotalHari || 50);
     const TARGET_TOTAL_MINUTES = Math.round(TARGET_TOTAL_HOURS * 60);
 
+    const now = new Date();
+    const nowWib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const todayDateKey = nowWib.toISOString().slice(0, 10);
+
     const summary = students.map((s) => {
       let totalMinutes = 0;
       let fulfilledTargetDays = 0;
@@ -3661,6 +3756,14 @@ export class KknAttendanceService {
 
       // 1. Hitung durasi dan detail tiap sesi mentah
       const rawSessions = s.user.attendances.map((att) => {
+        const checkInDate = new Date(att.attendedAt);
+        const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
+        const dateKey = wibDate.toISOString().slice(0, 10);
+        const isToday =
+          dateKey === todayDateKey ||
+          (att.attendedAt && new Date(att.attendedAt).toDateString() === now.toDateString());
+        const hasCheckedOut = !!att.checkOutAt;
+
         let durationMins = 0;
         let storedMins = 0;
         if (
@@ -3674,19 +3777,12 @@ export class KknAttendanceService {
         if (att.checkOutAt) {
           const diffMs = att.checkOutAt.getTime() - att.attendedAt.getTime();
           timeDiffMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
-        } else if (att.attendedAt) {
-          const isToday = new Date(att.attendedAt).toDateString() === new Date().toDateString();
-          if (isToday) {
-            const diffMs = Date.now() - new Date(att.attendedAt).getTime();
-            timeDiffMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
-          }
+        } else if (att.attendedAt && isToday) {
+          const diffMs = Date.now() - new Date(att.attendedAt).getTime();
+          timeDiffMins = Math.min(480, Math.max(0, Math.floor(diffMs / (1000 * 60))));
         }
 
         durationMins = storedMins > 0 ? storedMins : timeDiffMins;
-
-        const checkInDate = new Date(att.attendedAt);
-        const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
-        const dateKey = wibDate.toISOString().slice(0, 10);
 
         const isLeaveDate = approvedLeaveDays.has(dateKey);
         const leaveInfo = approvedLeaveDays.get(dateKey);
@@ -3705,6 +3801,8 @@ export class KknAttendanceService {
           isMinTargetMet: isApprovedLeave ? true : durationMins >= TARGET_HARIAN_MINUTES,
           status: isApprovedLeave ? leaveType : att.status,
           dateKey,
+          isToday,
+          hasCheckedOut,
           isApprovedLeave,
           leaveType,
         };
@@ -3725,6 +3823,8 @@ export class KknAttendanceService {
             isMinTargetMet: true,
             status: leaveInfo.type,
             dateKey,
+            isToday: dateKey === todayDateKey,
+            hasCheckedOut: true,
             isApprovedLeave: true,
             leaveType: leaveInfo.type,
           });
@@ -3742,9 +3842,13 @@ export class KknAttendanceService {
         isAlpa: boolean;
         isApprovedLeave: boolean;
         leaveType?: string;
+        isToday: boolean;
+        hasCheckedOut: boolean;
+        hasOngoingSession: boolean;
       }>();
 
       for (const sess of rawSessions) {
+        const isSessOngoing = sess.isToday && !sess.hasCheckedOut;
         if (!dailyMap.has(sess.dateKey)) {
           const isTargetMet = sess.isApprovedLeave || sess.durationMinutes >= TARGET_HARIAN_MINUTES || sess.status === "HADIR_MEMENUHI";
           dailyMap.set(sess.dateKey, {
@@ -3753,14 +3857,24 @@ export class KknAttendanceService {
             effectiveDuration: sess.durationMinutes,
             effectiveStatus: sess.status,
             isTargetMet,
-            isAlpa: sess.status === "ALPA" && sess.durationMinutes === 0 && !sess.isApprovedLeave,
+            isAlpa: (sess.status === "ALPA" || sess.status === "ALPHA") && sess.durationMinutes === 0 && !sess.isApprovedLeave,
             isApprovedLeave: !!sess.isApprovedLeave,
             leaveType: sess.leaveType,
+            isToday: sess.isToday,
+            hasCheckedOut: sess.hasCheckedOut,
+            hasOngoingSession: isSessOngoing,
           });
         } else {
           const day = dailyMap.get(sess.dateKey)!;
           // Ambil durasi tertinggi untuk hari tersebut jika ada record duplikat/tumpang tindih
           day.effectiveDuration = Math.max(day.effectiveDuration, sess.durationMinutes);
+
+          if (isSessOngoing) {
+            day.hasOngoingSession = true;
+          }
+          if (sess.hasCheckedOut) {
+            day.hasCheckedOut = true;
+          }
 
           if (sess.isApprovedLeave) {
             day.isApprovedLeave = true;
@@ -3771,7 +3885,7 @@ export class KknAttendanceService {
               day.effectiveStatus = sess.leaveType || sess.status;
               day.primarySession = sess;
             }
-          } else if (sess.status === "HADIR_MEMENUHI" || day.effectiveStatus === "ALPA") {
+          } else if (sess.status === "HADIR_MEMENUHI" || day.effectiveStatus === "ALPA" || day.effectiveStatus === "ALPHA") {
             day.effectiveStatus = sess.status;
             day.primarySession = sess;
           }
@@ -3779,7 +3893,7 @@ export class KknAttendanceService {
           if (day.isApprovedLeave || day.effectiveDuration >= TARGET_HARIAN_MINUTES || day.effectiveStatus === "HADIR_MEMENUHI") {
             day.isTargetMet = true;
           }
-          if (day.effectiveDuration > 0 || day.effectiveStatus !== "ALPA" || day.isApprovedLeave) {
+          if (day.effectiveDuration > 0 || (day.effectiveStatus !== "ALPA" && day.effectiveStatus !== "ALPHA") || day.isApprovedLeave) {
             day.isAlpa = false;
           }
         }
@@ -3820,7 +3934,12 @@ export class KknAttendanceService {
             fulfilledTargetDays++;
             totalHariTerpenuhi++;
           } else {
-            totalHariTidakMemenuhi++;
+            // Sesi yang tidak memenuhi target durasi:
+            // Hanya hitung tidak memenuhi jika hari sudah lampau (!isToday) ATAU mahasiswa sudah checkout pada hari ini
+            // Sesi hari ini yang masih berlangsung (!day.hasCheckedOut / day.hasOngoingSession) tidak dihitung tidak memenuhi
+            if (!day.isToday || (day.hasCheckedOut && !day.hasOngoingSession)) {
+              totalHariTidakMemenuhi++;
+            }
           }
         }
       }
@@ -3838,6 +3957,8 @@ export class KknAttendanceService {
           isMinTargetMet: day.isApprovedLeave ? true : day.isTargetMet,
           status: day.isApprovedLeave ? (day.leaveType || "IZIN") : day.effectiveStatus,
           isDispensasi: day.isApprovedLeave,
+          isToday: day.isToday,
+          isOngoing: day.isToday && !day.hasCheckedOut,
         };
       });
 
@@ -5422,11 +5543,10 @@ export class KknAttendanceService {
 
       for (const att of activeAttendances) {
         try {
-          if (!att.schedule) continue;
-
-          // Guard 1: Periksa tanggal jadwal terhadap hari ini
+          // Guard 1: Periksa tanggal jadwal atau jam masuk terhadap hari ini
           let isPastDate = false;
-          if (att.schedule.date) {
+          const schedTitle = att.schedule?.title || "Kegiatan Posko KKN";
+          if (att.schedule?.date) {
             const schedWibStr = new Date(new Date(att.schedule.date).getTime() + 7 * 60 * 60 * 1000)
               .toISOString()
               .slice(0, 10);
@@ -5435,6 +5555,13 @@ export class KknAttendanceService {
               continue;
             }
             if (schedWibStr < todayWibStr) {
+              isPastDate = true;
+            }
+          } else if (att.attendedAt) {
+            const attWibStr = new Date(new Date(att.attendedAt).getTime() + 7 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 10);
+            if (attWibStr < todayWibStr) {
               isPastDate = true;
             }
           }
@@ -5453,7 +5580,7 @@ export class KknAttendanceService {
 
           if (isPastDate || isEveningCutoff) {
             console.log(
-              `[AutoCheckout] Melakukan checkout otomatis batas jam 20:00 (Hadir Memenuhi) untuk Mahasiswa ${att.student?.name || att.studentId} pada jadwal ${att.schedule.title}`
+              `[AutoCheckout] Melakukan checkout otomatis batas jam 20:00 (Hadir Memenuhi) untuk Mahasiswa ${att.student?.name || att.studentId} pada jadwal ${schedTitle}`
             );
 
             // Hitung waktu checkout di-clamp ke batas 20:00:00 WIB tanggal kegiatan
@@ -5517,7 +5644,7 @@ export class KknAttendanceService {
                 data: {
                   userId: att.studentId,
                   title: "Kegiatan Selesai Otomatis (Hadir) ✅",
-                  message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 20:00 WIB. Sistem telah menyelesaikan presensi Anda secara otomatis dengan status Hadir.`,
+                  message: `Kegiatan ${schedTitle} telah mencapai batas jam 20:00 WIB. Sistem telah menyelesaikan presensi Anda secara otomatis dengan status Hadir.`,
                 },
               });
             } catch {}
@@ -5528,7 +5655,7 @@ export class KknAttendanceService {
                 await notificationIntegrationService?.sendPushNotification?.(
                   att.student.fcmToken,
                   "Kegiatan Selesai Otomatis (Hadir) ✅",
-                  `Kegiatan ${att.schedule.title} selesai otomatis pada jam 20:00 WIB. Status kehadiran Anda tercatat Hadir.`
+                  `Kegiatan ${schedTitle} selesai otomatis pada jam 20:00 WIB. Status kehadiran Anda tercatat Hadir.`
                 );
               } catch {}
             }

@@ -2564,5 +2564,154 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(st.totalHariTidakMemenuhi).toBe(0);
       expect(st.totalAlpa).toBe(0);
     });
+
+    it("should NOT increment totalHariTidakMemenuhi when session is ongoing today without checkout", async () => {
+      const service = new KknAttendanceService();
+      const today = new Date();
+
+      (prisma.studentKkn.findMany as any).mockResolvedValue([
+        {
+          id: "student-today-1",
+          userId: "user-today-1",
+          nim: "10121003",
+          jurusan: "Teknik Informatika",
+          fakultas: "Teknik",
+          isKetua: false,
+          kelompokId: "kel-1",
+          kelompok: { name: "Kelompok 1", kelurahan: "Dago" },
+          assignedRw: { name: "RW 01" },
+          user: {
+            id: "user-today-1",
+            name: "Mahasiswa Sedang Aktif Hari Ini",
+            phone: "08123456781",
+            attendances: [
+              // Sesi sedang berlangsung hari ini (jam masuk baru 15 menit yang lalu, belum checkout)
+              {
+                id: "att-today-1",
+                scheduleId: "sch-today-1",
+                attendedAt: new Date(today.getTime() - 15 * 60 * 1000),
+                checkOutAt: null,
+                actualInZoneMinutes: 15,
+                status: "HADIR",
+                schedule: { id: "sch-today-1", title: "Kegiatan Hari Ini", date: today },
+              },
+            ],
+            studentLeaveRequests: [],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-today-1" });
+      expect(result.students).toHaveLength(1);
+
+      const st = result.students[0];
+      // Karena masih berlangsung hari ini dan durasi < target, BELUM memenuhi target dan JANGAN dianggap tidak memenuhi
+      expect(st.totalHariTerpenuhi).toBe(0);
+      expect(st.totalHariTidakMemenuhi).toBe(0);
+      expect(st.totalAlpa).toBe(0);
+      expect(st.sessions[0].isOngoing).toBe(true);
+      expect(st.sessions[0].isToday).toBe(true);
+    });
+
+    it("should increment totalHariTidakMemenuhi when session today is completed with checkout but duration < target", async () => {
+      const service = new KknAttendanceService();
+      const today = new Date();
+
+      (prisma.studentKkn.findMany as any).mockResolvedValue([
+        {
+          id: "student-today-2",
+          userId: "user-today-2",
+          nim: "10121004",
+          jurusan: "Teknik Informatika",
+          fakultas: "Teknik",
+          isKetua: false,
+          kelompokId: "kel-1",
+          kelompok: { name: "Kelompok 1", kelurahan: "Dago" },
+          assignedRw: { name: "RW 01" },
+          user: {
+            id: "user-today-2",
+            name: "Mahasiswa Selesai Lebih Awal Hari Ini",
+            phone: "08123456782",
+            attendances: [
+              // Sesi hari ini sudah checkout tapi hanya 15 menit (< target)
+              {
+                id: "att-today-2",
+                scheduleId: "sch-today-2",
+                attendedAt: new Date(today.getTime() - 30 * 60 * 1000),
+                checkOutAt: new Date(today.getTime() - 15 * 60 * 1000),
+                actualInZoneMinutes: 15,
+                status: "SELESAI",
+                schedule: { id: "sch-today-2", title: "Kegiatan Hari Ini Selesai", date: today },
+              },
+            ],
+            studentLeaveRequests: [],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-today-2" });
+      expect(result.students).toHaveLength(1);
+
+      const st = result.students[0];
+      expect(st.totalHariTerpenuhi).toBe(0);
+      // Sudah checkout hari ini dan durasi kurang dari target -> totalHariTidakMemenuhi naik
+      expect(st.totalHariTidakMemenuhi).toBe(1);
+      expect(st.totalAlpa).toBe(0);
+    });
+
+    it("should increment totalHariTidakMemenuhi for historical past session without checkout (!isToday && checkOutAt == null)", async () => {
+      const service = new KknAttendanceService();
+
+      (prisma.studentKkn.findMany as any).mockResolvedValue([
+        {
+          id: "student-past-1",
+          userId: "user-past-1",
+          nim: "10121005",
+          jurusan: "Teknik Informatika",
+          fakultas: "Teknik",
+          isKetua: false,
+          kelompokId: "kel-1",
+          kelompok: { name: "Kelompok 1", kelurahan: "Dago" },
+          assignedRw: { name: "RW 01" },
+          user: {
+            id: "user-past-1",
+            name: "Mahasiswa Lupa Checkout Masa Lampau",
+            phone: "08123456783",
+            attendances: [
+              // Sesi historis lampau: hadir jam 08:00 tapi checkOutAt == null
+              {
+                id: "att-past-1",
+                scheduleId: "sch-past-1",
+                attendedAt: new Date("2026-09-01T01:00:00.000Z"), // 08:00 WIB
+                checkOutAt: null,
+                actualInZoneMinutes: null,
+                status: "HADIR",
+                schedule: { id: "sch-past-1", title: "Kegiatan Masa Lampau", date: new Date("2026-09-01") },
+              },
+              // Sesi historis lampau lainnya yang ALPA (jam 00:00, status ALPA)
+              {
+                id: "att-past-2",
+                scheduleId: "sch-past-2",
+                attendedAt: new Date("2026-09-02T00:00:00.000Z"),
+                checkOutAt: null,
+                actualInZoneMinutes: 0,
+                status: "ALPA",
+                schedule: { id: "sch-past-2", title: "Kegiatan Alpa", date: new Date("2026-09-02") },
+              },
+            ],
+            studentLeaveRequests: [],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-past-1" });
+      expect(result.students).toHaveLength(1);
+
+      const st = result.students[0];
+      // Sesi lampau tanpa checkout masuk ke totalHariTidakMemenuhi
+      expect(st.totalHariTidakMemenuhi).toBe(1);
+      // Sesi lampau alpa tetap masuk ke totalAlpa
+      expect(st.totalAlpa).toBe(1);
+    });
   });
 });
