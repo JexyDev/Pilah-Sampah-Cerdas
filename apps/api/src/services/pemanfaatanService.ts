@@ -88,6 +88,54 @@ export function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string)
   return "Kompos Organik";
 }
 
+export function resolveKategoriBahan(
+  cleanCategory: string,
+  rawBahanBaku?: string
+): "ORGANIK" | "ANORGANIK" | "RESIDU" {
+  const cat = (cleanCategory || "").toLowerCase();
+
+  // 1. Olahan spesifik Organik (Kompos, Maggot, POC, Loseda, Bata Terawang, Takakura)
+  if (
+    cat.includes("kompos") ||
+    cat.includes("maggot") ||
+    cat.includes("bsf") ||
+    cat.includes("poc") ||
+    cat.includes("pupuk") ||
+    cat.includes("loseda") ||
+    cat.includes("bata terawang") ||
+    cat.includes("takakura")
+  ) {
+    return "ORGANIK";
+  }
+
+  // 2. Olahan spesifik Anorganik (Bank Sampah, Plastik, Kertas, Logam, Daur Ulang, Ecobrick)
+  if (
+    cat.includes("bank") ||
+    cat.includes("anorganik") ||
+    cat.includes("plastik") ||
+    cat.includes("kertas") ||
+    cat.includes("logam") ||
+    cat.includes("daur ulang") ||
+    cat.includes("ecobrick")
+  ) {
+    return "ANORGANIK";
+  }
+
+  // 3. Fallback jika kategori teknologi umum, cek bahan baku
+  const bahan = (rawBahanBaku || "").toLowerCase();
+  if (bahan.includes("residu")) return "RESIDU";
+  if (
+    bahan.includes("anorganik") ||
+    bahan.includes("plastik") ||
+    bahan.includes("kertas") ||
+    bahan.includes("botol")
+  ) {
+    return "ANORGANIK";
+  }
+
+  return "ORGANIK";
+}
+
 function formatCleanRwName(item: any): string {
   const rwRaw = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
   const kelName = item.rw?.kelurahan?.name || "";
@@ -150,11 +198,7 @@ function formatPemanfaatanRecord(item: any) {
     ...item,
     namaProgram: cleanProgramName || "Program Pengolahan Mandiri",
     jenisProgram: cleanCategory,
-    kategoriBahan:
-      (item.bahanBaku || "").toLowerCase().includes("anorganik") ||
-      cleanCategory.includes("Bank Sampah")
-        ? "ANORGANIK"
-        : "ORGANIK",
+    kategoriBahan: resolveKategoriBahan(cleanCategory, item.bahanBaku),
     jumlahBahanMasukKg: bahanMasuk,
     jumlahHasilKg: hasil,
     unitHasil: item.unitHasil || "kg",
