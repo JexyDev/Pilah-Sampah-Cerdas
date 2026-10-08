@@ -87,6 +87,8 @@ export const AnalisisKknPage: React.FC = () => {
   const [data, setData] = useState<KknAnalysisData | null>(null);
   const [kpiStats, setKpiStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [kelompokList, setKelompokList] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("");
 
@@ -125,6 +127,8 @@ export const AnalisisKknPage: React.FC = () => {
   const fetchData = async (kelompokId?: string) => {
     try {
       setLoading(true);
+      setErrorMessage(null);
+      setErrorStatus(null);
       fetchKpiStats();
       const url = kelompokId
         ? `/analisis-sistem/kkn?kelompokId=${kelompokId}`
@@ -133,8 +137,12 @@ export const AnalisisKknPage: React.FC = () => {
       if (res.data?.data) {
         setData(res.data.data);
       }
-    } catch {
-      showToast.error("Gagal memuat analitik sistem Kuliah Kerja Nyata");
+    } catch (err: any) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || "Gagal memuat analitik sistem Kuliah Kerja Nyata";
+      setErrorStatus(status || null);
+      setErrorMessage(msg);
+      showToast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -835,10 +843,12 @@ export const AnalisisKknPage: React.FC = () => {
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
-              Gagal Memuat Data Analisis Kuliah Kerja Nyata
+              {errorMessage || "Gagal Memuat Data Analisis Kuliah Kerja Nyata"}
             </h3>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Sistem tidak dapat mengambil data aktual dari basis data. Pastikan koneksi server aktif dan silakan muat ulang.
+              {errorStatus === 403
+                ? "Peran akun Anda belum memiliki izin untuk mengakses analitik ini. Silakan hubungi administrator jika Anda memerlukan akses."
+                : "Sistem tidak dapat mengambil data aktual dari basis data. Pastikan koneksi server aktif dan silakan muat ulang."}
             </p>
           </div>
           <button

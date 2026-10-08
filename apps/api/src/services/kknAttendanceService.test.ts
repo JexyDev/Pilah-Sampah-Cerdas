@@ -2713,5 +2713,100 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       // Sesi lampau alpa tetap masuk ke totalAlpa
       expect(st.totalAlpa).toBe(1);
     });
+
+    it("should return status BERLANGSUNG and isOngoing true in sessionDetails for ongoing today session", async () => {
+      const service = new KknAttendanceService();
+      const today = new Date();
+      (prisma.studentKkn.findMany as any).mockResolvedValueOnce([
+        {
+          userId: "user-ongoing-detail",
+          nim: "10524999",
+          jurusan: "Teknik Lingkungan",
+          kelompokId: "kel-detail",
+          user: {
+            id: "user-ongoing-detail",
+            name: "Mahasiswa Ongoing",
+            phone: "08123456789",
+            attendances: [
+              {
+                id: "att-ongoing-today",
+                scheduleId: "sched-ongoing",
+                attendedAt: today,
+                checkOutAt: null,
+                status: "BERLANGSUNG",
+                actualInZoneMinutes: 60,
+                schedule: { id: "sched-ongoing", title: "Kegiatan Posko Hari Ini", date: today },
+              },
+            ],
+            studentLeaveRequests: [],
+          },
+        },
+      ]);
+
+      const result = await service.getTimesheetSummary({ studentId: "user-ongoing-detail" });
+      const st = result.students[0];
+      expect(st.totalHariTidakMemenuhi).toBe(0);
+      expect(st.sessions).toHaveLength(1);
+      expect(st.sessions[0].status).toBe("BERLANGSUNG");
+      expect(st.sessions[0].isOngoing).toBe(true);
+      expect(st.sessions[0].isMinTargetMet).toBe(false);
+    });
+  });
+
+  describe("getPresensiHistory: Ongoing Session vs Past Session", () => {
+    it("should return BERLANGSUNG and isBerlangsung true for today's session without checkOutAt", async () => {
+      const service = new KknAttendanceService();
+      const today = new Date();
+      (prisma.activityAttendance.findUnique as any).mockResolvedValueOnce({
+        id: "att-history-today",
+        studentId: "mhs-1",
+        scheduleId: "sched-today",
+        attendedAt: today,
+        checkOutAt: null,
+        status: "HADIR",
+        actualInZoneMinutes: 45,
+        method: "GPS_ACTIVITY",
+        schedule: {
+          id: "sched-today",
+          title: "Aktivitas Hari Ini",
+          date: today,
+          time: "08:00 - 16:00",
+        },
+      });
+
+      const history = await service.getPresensiHistory("mhs-1", "sched-today");
+      expect(history).not.toBeNull();
+      expect(history!.status).toBe("BERLANGSUNG");
+      expect(history!.statusDisplay).toBe("Sedang Berlangsung");
+      expect(history!.isBerlangsung).toBe(true);
+      expect(history!.isMemenuhiDurasi).toBe(false);
+    });
+
+    it("should return HADIR_TIDAK_MEMENUHI for past session without checkOutAt", async () => {
+      const service = new KknAttendanceService();
+      const pastDate = new Date(Date.now() - 48 * 3600000);
+      (prisma.activityAttendance.findUnique as any).mockResolvedValueOnce({
+        id: "att-history-past",
+        studentId: "mhs-1",
+        scheduleId: "sched-past",
+        attendedAt: pastDate,
+        checkOutAt: null,
+        status: "HADIR",
+        actualInZoneMinutes: 60,
+        method: "GPS_ACTIVITY",
+        schedule: {
+          id: "sched-past",
+          title: "Aktivitas 2 Hari Lalu",
+          date: pastDate,
+          time: "08:00 - 16:00",
+        },
+      });
+
+      const history = await service.getPresensiHistory("mhs-1", "sched-past");
+      expect(history).not.toBeNull();
+      expect(history!.status).toBe("HADIR_TIDAK_MEMENUHI");
+      expect(history!.statusDisplay).toBe("Hadir & Tidak Memenuhi");
+      expect(history!.isBerlangsung).toBe(false);
+    });
   });
 });

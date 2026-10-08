@@ -3959,8 +3959,12 @@ export class KknAttendanceService {
           checkOutAt: prim.checkOutAt,
           durationMinutes: day.effectiveDuration,
           durationFormatted: `${Math.floor(day.effectiveDuration / 60)} Jam ${day.effectiveDuration % 60} Menit`,
-          isMinTargetMet: day.isApprovedLeave ? true : day.isTargetMet,
-          status: day.isApprovedLeave ? (day.leaveType || "IZIN") : day.effectiveStatus,
+          isMinTargetMet: day.isApprovedLeave ? true : (day.isToday && !day.hasCheckedOut) ? false : day.isTargetMet,
+          status: day.isApprovedLeave
+            ? (day.leaveType || "IZIN")
+            : (day.isToday && !day.hasCheckedOut)
+            ? "BERLANGSUNG"
+            : day.effectiveStatus,
           isDispensasi: day.isApprovedLeave,
           isToday: day.isToday,
           isOngoing: day.isToday && !day.hasCheckedOut,
@@ -5755,13 +5759,24 @@ export class KknAttendanceService {
     let finalStatus = attendance.status;
     let statusDisplay = attendance.status;
 
-    if (
+    // Cek apakah sesi ini adalah sesi lampau atau sesi hari ini yang sedang berlangsung
+    const schedDate = attendance.schedule?.date ? new Date(attendance.schedule.date) : attendance.attendedAt;
+    const schedWib = schedDate ? new Date(schedDate.getTime() + 7 * 3600000).toISOString().slice(0, 10) : "";
+    const todayWib = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+    const isPastSession = schedWib.length > 0 && schedWib < todayWib;
+    const isOngoingToday = !jamPulang && !isPastSession;
+
+    if (isOngoingToday && ["BERLANGSUNG", "HADIR", "DALAM_RADIUS", "TERJEDA", "DI_ZONA"].includes(attendance.status)) {
+      finalStatus = attendance.status === "TERJEDA" ? "TERJEDA" : "BERLANGSUNG";
+      statusDisplay = attendance.status === "TERJEDA" ? "Terjeda" : "Sedang Berlangsung";
+    } else if (
       attendance.status === "HADIR_MEMENUHI" ||
       attendance.status === "HADIR_TIDAK_MEMENUHI" ||
       attendance.status === "SELESAI_TELAT" ||
       attendance.status === "HADIR" ||
       attendance.status === "SELESAI" ||
-      Boolean(jamPulang)
+      Boolean(jamPulang) ||
+      isPastSession
     ) {
       if (attendance.status === "SELESAI_TELAT") {
         finalStatus = "HADIR_TIDAK_MEMENUHI";
@@ -5781,7 +5796,7 @@ export class KknAttendanceService {
       status: finalStatus,
       statusDisplay,
       statusKehadiran: finalStatus,
-      isMemenuhiDurasi,
+      isMemenuhiDurasi: isOngoingToday ? false : isMemenuhiDurasi,
       namaKegiatan: attendance.schedule?.title ?? "-",
       jamMasuk: jamMasuk?.toISOString() ?? null,
       jamPulang: jamPulang?.toISOString() ?? null,
@@ -5795,7 +5810,7 @@ export class KknAttendanceService {
         ["HADIR", "SELESAI", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI"].includes(
           attendance.status
         ) || Boolean(jamPulang),
-      isBerlangsung: attendance.status === "BERLANGSUNG",
+      isBerlangsung: isOngoingToday || attendance.status === "BERLANGSUNG",
       method: attendance.method,
     };
   }
@@ -7348,10 +7363,16 @@ export class KknAttendanceService {
             const stUpper = String(existingAtt.status || "").toUpperCase();
 
             // Jika sesi ini memiliki jam masuk riil (attendedAt) tetapi belum checkout di penghujung hari:
+            const attDate = existingAtt.attendedAt ? new Date(existingAtt.attendedAt) : null;
+            const attWibHour = attDate ? (attDate.getUTCHours() + 7) % 24 : null;
+            const attWibMin = attDate ? attDate.getUTCMinutes() : null;
+            const isMidnightDummy = attDate && attWibHour === 0 && attWibMin === 0;
+
             if (
               existingAtt.attendedAt &&
+              !isMidnightDummy &&
               !existingAtt.checkOutAt &&
-              ["BERLANGSUNG", "TERJEDA", "DALAM_RADIUS", "DI_ZONA"].includes(stUpper)
+              ["BERLANGSUNG", "TERJEDA", "DALAM_RADIUS", "DI_ZONA", "HADIR"].includes(stUpper)
             ) {
               const inZoneMins = existingAtt.actualInZoneMinutes ?? 0;
               const finalSt = inZoneMins >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
