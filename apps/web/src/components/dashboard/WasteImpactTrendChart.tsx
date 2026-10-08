@@ -42,6 +42,10 @@ import {
   STANDARD_CYCLE_DAYS,
   formatDeltaKg,
 } from "../../utils/wasteCalculations";
+import {
+  SURVEY_BASELINE_COMPLIANCE,
+  SURVEY_BASELINE_DAILY_KG,
+} from "./WasteImpactSummaryTable";
 
 export interface WasteImpactTrendChartProps {
   data: WasteImpactItem[];
@@ -90,22 +94,31 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
         rawAccumulatedKg = Number((w + p).toFixed(2));
       }
 
-      // Normalisasi rata-rata per hari (kg/hari) = rawAccumulatedKg / STANDARD_CYCLE_DAYS (30 hari)
+      const normK = item.kelurahan.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
+
+      // Mode DAILY: Nilai aktual adalah berat timbulan transaksi harian pada hari terpilih (rawAccumulatedKg)
+      // Mode MONTHLY: Nilai aktual adalah total berat timbulan transaksi akumulasi bulan terpilih (rawAccumulatedKg)
+      const displayActualKg = rawAccumulatedKg;
       const dailyAverageKg = calculateDailyAverageKg(rawAccumulatedKg, STANDARD_CYCLE_DAYS);
-      const monthlyActualKg = calculateMonthlyKg(dailyAverageKg, STANDARD_CYCLE_DAYS);
+      const monthlyActualKg = rawAccumulatedKg;
 
-      const dailyBaselineKg = item.baselineKg ?? 0;
-      const monthlyBaselineKg = calculateMonthlyKg(dailyBaselineKg, STANDARD_CYCLE_DAYS);
+      const dailyBaselineKg =
+        item.baselineKg !== undefined && item.baselineKg !== null && item.baselineKg > 0
+          ? item.baselineKg
+          : (SURVEY_BASELINE_DAILY_KG[normK] ?? 0);
+      const monthlyBaselineKg = calculateMonthlyKg(dailyBaselineKg, STANDARD_CYCLE_DAYS) ?? 0;
 
-      const displayActualKg = periodMode === "DAILY" ? dailyAverageKg : monthlyActualKg;
       const displayBaselineKg = periodMode === "DAILY" ? dailyBaselineKg : monthlyBaselineKg;
 
       const deltaKg = calculateVolumeDeltaKg(displayBaselineKg, displayActualKg);
       const deltaPct = calculateVolumeDeltaPct(displayBaselineKg, displayActualKg);
 
-      const baselineCompliance = item.baselineCompliance ?? 0;
+      const baselineCompliance =
+        item.baselineCompliance !== undefined && item.baselineCompliance !== null && item.baselineCompliance > 0
+          ? item.baselineCompliance
+          : (SURVEY_BASELINE_COMPLIANCE[normK] ?? 0);
       const actualCompliance = item.actualCompliance ?? 0;
-      const deltaCompliance = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
+      const deltaCompliance = calculateComplianceDelta(baselineCompliance, actualCompliance);
 
       return {
         kelurahan: item.kelurahan,
@@ -132,9 +145,12 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
   const volumeSummary = useMemo(() => {
     const totalBaselineKg = chartData.reduce((acc, curr) => acc + (curr.baselineKg || 0), 0);
     const totalActualKg = chartData.reduce((acc, curr) => acc + (curr.actualKg || 0), 0);
-    const totalDeltaKg = Number((totalBaselineKg - totalActualKg).toFixed(1));
+    const totalDeltaKg =
+      totalActualKg > 0 ? Number((totalBaselineKg - totalActualKg).toFixed(1)) : null;
     const totalDeltaPct =
-      totalBaselineKg > 0 ? Number(((totalDeltaKg / totalBaselineKg) * 100).toFixed(1)) : 0;
+      totalBaselineKg > 0 && totalDeltaKg !== null
+        ? Number(((totalDeltaKg / totalBaselineKg) * 100).toFixed(1))
+        : null;
 
     return {
       totalBaselineKg: Number(totalBaselineKg.toFixed(1)),
@@ -273,13 +289,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                     <Weight size={15} />
                   </span>
                   <h5 className="font-extrabold text-[15px] text-slate-900 dark:text-slate-100 tracking-tight">
-                    Komparasi Berat Sampah: Baseline vs Aktual {periodMode === "DAILY" ? "Rata-Rata (kg/hari)" : "Total (kg/bulan)"}
+                    Komparasi Berat Sampah: Baseline vs Aktual ({unitLabel})
                   </h5>
                 </div>
                 <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
                   {periodMode === "DAILY"
-                    ? "Rata-rata berat timbulan per hari (kg/hari) dari total akumulasi siklus 30 hari kalender (cut-off setiap tanggal 7)."
-                    : "Estimasi berat timbulan per bulan (kg/bulan = data harian × 30) dari akumulasi siklus 30 hari kalender (cut-off setiap tanggal 7)."}
+                    ? "Perbandingan berat timbulan transaksi harian (kg/hari) terhadap baseline survei awal Juli 2026."
+                    : "Perbandingan total berat timbulan transaksi bulanan (kg/bulan) terhadap baseline survei bulanan Juli 2026."}
                 </p>
               </div>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shrink-0">
@@ -324,24 +340,11 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                 </span>
                               </div>
                               <div className="flex justify-between text-blue-300">
-                                <span>Aktual {periodMode === "DAILY" ? "Rata-Rata" : "Total"}:</span>
+                                <span>Aktual ({unitLabel}):</span>
                                 <div className="text-right">
                                   <span className="font-bold text-blue-400 font-mono">
                                     {Number(item.actualKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                                   </span>
-                                  {periodMode === "DAILY" ? (
-                                    item.rawAccumulatedKg !== undefined && item.rawAccumulatedKg > 0 && (
-                                      <span className="block text-[10px] text-slate-400">
-                                        (total: {Number(item.rawAccumulatedKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg)
-                                      </span>
-                                    )
-                                  ) : (
-                                    item.dailyAverageKg !== undefined && item.dailyAverageKg > 0 && (
-                                      <span className="block text-[10px] text-slate-400">
-                                        (rata-rata: {Number(item.dailyAverageKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari)
-                                      </span>
-                                    )
-                                  )}
                                 </div>
                               </div>
                               <div className="flex justify-between border-t border-slate-800 pt-1 text-[11px]">
@@ -380,7 +383,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   />
                   <Bar
                     dataKey="actualKg"
-                    name={`Aktual ${periodMode === "DAILY" ? "Rata-Rata" : "Total"} (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (${unitLabel})`}
+                    name={`Aktual (${selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Semua"}) (${unitLabel})`}
                     fill="#3b82f6"
                     radius={[6, 6, 0, 0]}
                     barSize={viewMode === "BOTH" ? 18 : 26}
@@ -389,7 +392,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
               </ResponsiveContainer>
             </div>
             <p className="text-center text-[10.5px] text-slate-400 font-medium -mt-2 mb-1">
-              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Berat Sampah ({unitLabel}) • {periodMode === "DAILY" ? "Standar 30 Hari Evaluasi Tgl 7" : "Asumsi 30 Hari (Harian × 30)"}
+              Sumbu X: 6 Kelurahan Binaan KKN • Sumbu Y: Berat Sampah ({unitLabel}) • Sumber: {sourceLabel}
             </p>
 
             {/* Mini Rekapitulasi Berat Sampah */}
@@ -401,7 +404,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span className="block text-[10px] text-blue-500 font-bold uppercase">Aktual {periodMode === "DAILY" ? "Rata-Rata" : "Total"}</span>
+                <span className="block text-[10px] text-blue-500 font-bold uppercase">Aktual Terpilih</span>
                 <span className="font-black text-blue-600 dark:text-blue-400 font-mono">
                   {volumeSummary.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} {unitLabel}
                 </span>
@@ -411,7 +414,9 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                   Penurunan Berat (Δ)
                 </span>
                 <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false, unit: unitLabel })} ({volumeSummary.totalDeltaPct}%)
+                  {volumeSummary.totalDeltaKg !== null
+                    ? `${formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false, unit: unitLabel })} (${volumeSummary.totalDeltaPct}%)`
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -507,8 +512,8 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                   }`}
                                 >
                                   {(item.deltaCompliance || 0) >= 0
-                                    ? `+${item.deltaCompliance}%`
-                                    : `${item.deltaCompliance}%`}
+                                    ? `+${item.deltaCompliance} pp`
+                                    : `${item.deltaCompliance} pp`}
                                 </span>
                               </div>
                             </div>
@@ -564,7 +569,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                     complianceSummary.avgDelta >= 0 ? "text-teal-600 dark:text-teal-400" : "text-rose-600 dark:text-rose-400"
                   }`}
                 >
-                  {complianceSummary.avgDelta >= 0 ? `+${complianceSummary.avgDelta}%` : `${complianceSummary.avgDelta}%`}
+                  {complianceSummary.avgDelta >= 0 ? `+${complianceSummary.avgDelta} pp` : `${complianceSummary.avgDelta} pp`}
                 </span>
               </div>
             </div>
@@ -582,7 +587,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
             <span className="font-semibold">
-              Biru = Aktual {periodMode === "DAILY" ? "Rata-Rata (kg/hari" : "Total (kg/bulan"} Siklus 30 Hari Cut-off Tgl 7)
+              Biru = Aktual ({unitLabel}) Terpilih ({selectedSource === "WARGA_APP" ? "Warga" : selectedSource === "PETUGAS_LAPANGAN" ? "Petugas" : "Warga + Petugas"})
             </span>
           </div>
           <div className="flex items-center gap-1.5">
