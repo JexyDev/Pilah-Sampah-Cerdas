@@ -113,7 +113,8 @@ const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
 
 const PERIODE_OPTIONS: SelectOption[] = [
   { value: "semua", label: "Semua Waktu", sublabel: "Akumulasi Keseluruhan" },
-  { value: "harian", label: "Hari Ini", sublabel: "24 Jam Terakhir" },
+  { value: "harian", label: "Hari Ini", sublabel: "Hari Berjalan (WIB)" },
+  { value: "kemarin", label: "Hari Kemarin", sublabel: "Rekapitulasi Kemarin (WIB)" },
   { value: "mingguan", label: "Minggu Ini", sublabel: "7 Hari Terakhir" },
   { value: "bulanan", label: "Bulan Ini", sublabel: "30 Hari Terakhir" },
   { value: "tahunan", label: "Tahun Ini", sublabel: "Tahun Berjalan" },
@@ -1958,6 +1959,16 @@ const Dashboard: React.FC = () => {
           ? `${startDate} s/d ${endDate}`
           : timeFilter === "semua"
           ? "Total Keseluruhan"
+          : timeFilter === "harian"
+          ? "Hari Ini (WIB)"
+          : timeFilter === "kemarin"
+          ? "Hari Kemarin (WIB)"
+          : timeFilter === "mingguan"
+          ? "Minggu Ini"
+          : timeFilter === "bulanan"
+          ? "Bulan Ini"
+          : timeFilter === "tahunan"
+          ? "Tahun Ini"
           : `Periode ${timeFilter}`;
 
       const totalPenggunaSampahVal = Number(kpi.totalPenggunaSampah ?? kpi.penggunaSampah?.total ?? 0);
@@ -2651,6 +2662,7 @@ const Dashboard: React.FC = () => {
           label={
             timeFilter === "custom" && startDate && endDate ? "Tonase Sampah Periode Ini" :
             timeFilter === "harian" ? "Tonase Sampah Hari Ini" :
+            timeFilter === "kemarin" ? "Tonase Sampah Hari Kemarin" :
             timeFilter === "mingguan" ? "Tonase Sampah Minggu Ini" :
             timeFilter === "bulanan" ? "Tonase Sampah Bulan Ini" :
             timeFilter === "tahunan" ? "Tonase Sampah Tahun Ini" :

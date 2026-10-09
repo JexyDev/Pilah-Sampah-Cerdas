@@ -59,6 +59,7 @@ export interface TimeRangeOption {
 
 export const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { value: "today", label: "Hari Ini", weeksEquivalent: 1, periodType: "hourly" },
+  { value: "yesterday", label: "Hari Kemarin", weeksEquivalent: 1, periodType: "hourly" },
   { value: "this_week", label: "Minggu Ini", weeksEquivalent: 1, periodType: "daily" },
   { value: "7d", label: "7 Hari Terakhir", weeksEquivalent: 2, periodType: "weekly" },
   { value: "4w", label: "4 Minggu Terakhir", weeksEquivalent: 4, periodType: "weekly" },
@@ -102,21 +103,33 @@ const DAY_NAMES_MAP: Record<string, string> = {
   Min: "Minggu",
 };
 
+const HOURLY_SLOT_MAP: Record<string, string> = {
+  "00:00": "00:00 - 04:00",
+  "04:00": "04:00 - 08:00",
+  "08:00": "08:00 - 12:00",
+  "12:00": "12:00 - 16:00",
+  "16:00": "16:00 - 20:00",
+  "20:00": "20:00 - 24:00",
+};
+
 interface CustomTooltipProps {
   active?: boolean;
   payload?: any[];
   label?: string;
   selectedYear?: string;
+  selectedRange?: string;
 }
 
-const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, selectedYear }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, selectedYear, selectedRange }) => {
   if (active && payload && payload.length) {
     let displayLabel = label || "";
 
     if (label && MONTH_NAMES_MAP[label]) {
       displayLabel = `Bulan ${MONTH_NAMES_MAP[label]}${selectedYear ? ` ${selectedYear}` : ""}`;
     } else if (label && /^\d{2}:\d{2}$/.test(label)) {
-      displayLabel = `Pukul ${label} WIB (Hari Ini)`;
+      const slotSpan = HOURLY_SLOT_MAP[label] || label;
+      const dayContext = selectedRange === "yesterday" ? "Hari Kemarin" : "Hari Ini";
+      displayLabel = `Pukul ${slotSpan} WIB (${dayContext})`;
     } else if (label && DAY_NAMES_MAP[label]) {
       const dateStr = payload[0]?.payload?.date ? ` (${payload[0].payload.date})` : "";
       displayLabel = `Hari ${DAY_NAMES_MAP[label]}${dateStr}`;
@@ -583,7 +596,11 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
             <div className="flex items-center gap-2 px-3.5 py-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/40 rounded-xl text-[11px] font-bold text-amber-800 dark:text-amber-300 animate-in fade-in duration-200">
               <AlertCircle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
               <span>
-                Belum ada data setoran sampah pada rentang waktu ini (0 kg).
+                {selectedRange === "today"
+                  ? "Belum ada transaksi sampah tercatat hari ini (0 kg)."
+                  : selectedRange === "yesterday"
+                  ? "Belum ada transaksi sampah tercatat hari kemarin (0 kg)."
+                  : `Belum ada data setoran sampah pada rentang ${currentRangeConfig.label.toLowerCase()} (0 kg).`}
               </span>
             </div>
           )}
@@ -643,7 +660,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
 
                     {/* Formatter Tooltip Sesuai Standar Pelaporan */}
                     <Tooltip
-                      content={<CustomTooltip selectedYear={selectedYear} />}
+                      content={<CustomTooltip selectedYear={selectedYear} selectedRange={selectedRange} />}
                       formatter={(value: any, name: any) => [
                         `${Number(value || 0).toLocaleString("id-ID")} kg`,
                         name === "organic" || name === "Sampah Organik" ? "Sampah Organik" : "Sampah Anorganik",
@@ -704,6 +721,14 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 leading-tight">
                 {selectedRange === "all"
                   ? "Akumulasi terpilah seluruh periode tercatat."
+                  : selectedRange === "today"
+                  ? isAllZeroActivity
+                    ? "Belum ada transaksi sampah tercatat hari ini."
+                    : "Proporsi terpilah transaksi hari ini (WIB)."
+                  : selectedRange === "yesterday"
+                  ? isAllZeroActivity
+                    ? "Belum ada transaksi sampah tercatat hari kemarin."
+                    : "Proporsi terpilah transaksi hari kemarin (WIB)."
                   : `Proporsi terpilah periode ${currentRangeConfig.label.toLowerCase()} (${selectedYear}).`}
               </p>
             </div>
