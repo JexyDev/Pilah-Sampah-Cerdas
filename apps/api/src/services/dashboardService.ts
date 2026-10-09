@@ -75,6 +75,31 @@ export function classifyWaste(log: {
   return null;
 }
 
+// Helper zona waktu Indonesia Barat (WIB = UTC+7)
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function getWibDate(date: Date = new Date()): { year: number; month: number; day: number; hour: number } {
+  const wibTime = new Date(date.getTime() + WIB_OFFSET_MS);
+  return {
+    year: wibTime.getUTCFullYear(),
+    month: wibTime.getUTCMonth(),
+    day: wibTime.getUTCDate(),
+    hour: wibTime.getUTCHours(),
+  };
+}
+
+function createWibUtcDate(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number = 0,
+  second: number = 0,
+  ms: number = 0
+): Date {
+  return new Date(Date.UTC(year, month, day, hour, minute, second, ms) - WIB_OFFSET_MS);
+}
+
 async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext> {
   if (!isWilayahFiltered(wilayah)) {
     return { isFiltered: false, rwIds: [], kelurahanIds: [], kelurahanNames: [] };
@@ -225,33 +250,38 @@ export const dashboardService = {
 
     let dateFilter: any = undefined;
     const now = new Date();
+    const wib = getWibDate(now);
 
     if (startDate && endDate) {
       dateFilter = { gte: new Date(startDate), lte: new Date(endDate) };
-    } else if (period === "harian") {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
+    } else if (period === "harian" || period === "today") {
+      const start = createWibUtcDate(wib.year, wib.month, wib.day, 0, 0, 0, 0);
+      const end = createWibUtcDate(wib.year, wib.month, wib.day, 23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
-    } else if (period === "mingguan") {
-      const start = new Date(now);
-      const day = start.getDay();
-      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-      start.setDate(diff);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
+    } else if (period === "kemarin" || period === "yesterday") {
+      const yesterdayRef = new Date(now.getTime() + WIB_OFFSET_MS - 24 * 60 * 60 * 1000);
+      const yYear = yesterdayRef.getUTCFullYear();
+      const yMonth = yesterdayRef.getUTCMonth();
+      const yDay = yesterdayRef.getUTCDate();
+      const start = createWibUtcDate(yYear, yMonth, yDay, 0, 0, 0, 0);
+      const end = createWibUtcDate(yYear, yMonth, yDay, 23, 59, 59, 999);
+      dateFilter = { gte: start, lte: end };
+    } else if (period === "mingguan" || period === "this_week") {
+      const wibNow = new Date(now.getTime() + WIB_OFFSET_MS);
+      const currentDay = wibNow.getUTCDay();
+      const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
+      const mondayDate = new Date(wibNow);
+      mondayDate.setUTCDate(wibNow.getUTCDate() + mondayDiff);
+      const start = createWibUtcDate(mondayDate.getUTCFullYear(), mondayDate.getUTCMonth(), mondayDate.getUTCDate(), 0, 0, 0, 0);
+      const end = createWibUtcDate(wib.year, wib.month, wib.day, 23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
     } else if (period === "bulanan") {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
+      const start = createWibUtcDate(wib.year, wib.month, 1, 0, 0, 0, 0);
+      const end = createWibUtcDate(wib.year, wib.month, wib.day, 23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
     } else if (period === "tahunan") {
-      const start = new Date(now.getFullYear(), 0, 1);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
+      const start = createWibUtcDate(wib.year, 0, 1, 0, 0, 0, 0);
+      const end = createWibUtcDate(wib.year, wib.month, wib.day, 23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
     }
 
@@ -1462,8 +1492,9 @@ export const dashboardService = {
     const targetYear = year || now.getFullYear();
     const isCurrentYear = targetYear === now.getFullYear();
 
-    // 1. Mode Rentang Waktu "Hari Ini" (Hourly: 00:00 - 24:00, dengan 24h sebagai alias backward-compatible)
-    if (range === "today" || range === "24h") {
+    // 1. Mode Rentang Waktu "Hari Ini" & "Hari Kemarin" (Hourly: 00:00 - 24:00 WIB)
+    if (range === "today" || range === "24h" || range === "yesterday" || range === "kemarin") {
+      const isYesterday = range === "yesterday" || range === "kemarin";
       const hourlyIntervals = [
         { label: "00:00", startHour: 0, endHour: 4 },
         { label: "04:00", startHour: 4, endHour: 8 },
@@ -1473,19 +1504,22 @@ export const dashboardService = {
         { label: "20:00", startHour: 20, endHour: 24 },
       ];
 
-      const baseDay = isCurrentYear ? new Date(now) : new Date(targetYear, 11, 31);
-      baseDay.setHours(0, 0, 0, 0);
+      const wibNow = new Date(now.getTime() + WIB_OFFSET_MS);
+      let targetRef = isCurrentYear ? wibNow : new Date(Date.UTC(targetYear, 11, 31));
+
+      if (isYesterday) {
+        targetRef = new Date(targetRef.getTime() - 24 * 60 * 60 * 1000);
+      }
+
+      const tYear = targetRef.getUTCFullYear();
+      const tMonth = targetRef.getUTCMonth();
+      const tDay = targetRef.getUTCDate();
 
       for (const slot of hourlyIntervals) {
-        const startSlot = new Date(baseDay);
-        startSlot.setHours(slot.startHour, 0, 0, 0);
-
-        const endSlot = new Date(baseDay);
-        if (slot.endHour === 24) {
-          endSlot.setHours(23, 59, 59, 999);
-        } else {
-          endSlot.setHours(slot.endHour, 0, 0, 0);
-        }
+        const startSlot = createWibUtcDate(tYear, tMonth, tDay, slot.startHour, 0, 0, 0);
+        const endSlot = slot.endHour === 24
+          ? createWibUtcDate(tYear, tMonth, tDay, 23, 59, 59, 999)
+          : createWibUtcDate(tYear, tMonth, tDay, slot.endHour, 0, 0, 0);
 
         const bucket = await calculateBucketWeights(startSlot, endSlot);
         result.push({
@@ -1497,13 +1531,13 @@ export const dashboardService = {
       return result;
     }
 
-    // 2. Mode Rentang Waktu "Tahun" & "Semua Periode" -> Agregasi Bulanan (12 Bulan: Jan s/d Des)
+    // 2. Mode Rentang Waktu "Tahun" & "Semua Periode" -> Agregasi Bulanan (12 Bulan: Jan s/d Des WIB)
     if (range === "year" || range === "tahunan" || range === "all") {
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
       for (let m = 0; m < 12; m++) {
-        const startMonth = new Date(targetYear, m, 1, 0, 0, 0, 0);
-        const endMonth = new Date(targetYear, m + 1, 0, 23, 59, 59, 999);
+        const startMonth = createWibUtcDate(targetYear, m, 1, 0, 0, 0, 0);
+        const endMonth = createWibUtcDate(targetYear, m + 1, 0, 23, 59, 59, 999);
 
         const bucket = await calculateBucketWeights(startMonth, endMonth);
         result.push({
@@ -1515,28 +1549,30 @@ export const dashboardService = {
       return result;
     }
 
-    // 2.5 Mode Rentang Waktu "Minggu Ini" -> Agregasi Harian (7 Hari: Senin s/d Minggu)
+    // 2.5 Mode Rentang Waktu "Minggu Ini" -> Agregasi Harian (7 Hari: Senin s/d Minggu WIB)
     if (range === "this_week" || range === "minggu_ini") {
       const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
-      const refDate = isCurrentYear ? new Date(now) : new Date(targetYear, 11, 31);
-      const currentDay = refDate.getDay();
+      const wibNow = new Date(now.getTime() + WIB_OFFSET_MS);
+      const wibRef = isCurrentYear ? wibNow : new Date(Date.UTC(targetYear, 11, 31));
+
+      const currentDay = wibRef.getUTCDay();
       const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
-      const monday = new Date(refDate);
-      monday.setDate(refDate.getDate() + mondayDiff);
-      monday.setHours(0, 0, 0, 0);
+      const mondayDate = new Date(wibRef);
+      mondayDate.setUTCDate(wibRef.getUTCDate() + mondayDiff);
+
+      const monYear = mondayDate.getUTCFullYear();
+      const monMonth = mondayDate.getUTCMonth();
+      const monDay = mondayDate.getUTCDate();
 
       for (let d = 0; d < 7; d++) {
-        const startDay = new Date(monday);
-        startDay.setDate(monday.getDate() + d);
-        startDay.setHours(0, 0, 0, 0);
-
-        const endDay = new Date(startDay);
-        endDay.setHours(23, 59, 59, 999);
+        const startDay = createWibUtcDate(monYear, monMonth, monDay + d, 0, 0, 0, 0);
+        const endDay = createWibUtcDate(monYear, monMonth, monDay + d, 23, 59, 59, 999);
 
         const bucket = await calculateBucketWeights(startDay, endDay);
+        const dayLabelDate = new Date(Date.UTC(monYear, monMonth, monDay + d));
         result.push({
           label: dayNames[d],
-          date: `${String(startDay.getDate()).padStart(2, "0")}/${String(startDay.getMonth() + 1).padStart(2, "0")}`,
+          date: `${String(dayLabelDate.getUTCDate()).padStart(2, "0")}/${String(dayLabelDate.getUTCMonth() + 1).padStart(2, "0")}`,
           ...bucket,
         });
       }

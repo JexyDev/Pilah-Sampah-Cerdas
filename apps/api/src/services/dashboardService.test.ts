@@ -136,6 +136,49 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
       });
     });
 
+    it("should return 6 hourly interval buckets for 'yesterday' range with factual 0 kg baseline when empty", async () => {
+      const trend = await dashboardService.getTrend(1, undefined, undefined, "yesterday");
+
+      expect(trend).toHaveLength(6);
+      expect(trend.map((t: any) => t.label)).toEqual([
+        "00:00",
+        "04:00",
+        "08:00",
+        "12:00",
+        "16:00",
+        "20:00",
+      ]);
+      trend.forEach((slot: any) => {
+        expect(slot.organic).toBe(0);
+        expect(slot.inorganic).toBe(0);
+        expect(slot.weight).toBe(0);
+      });
+    });
+
+    it("should attribute 08:30 WIB morning transaction to slot 08:00 and not slot 00:00", async () => {
+      // 08:30 WIB on current date is 01:30 UTC
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 3600 * 1000);
+      const targetUtcDate = new Date(
+        Date.UTC(wibNow.getUTCFullYear(), wibNow.getUTCMonth(), wibNow.getUTCDate(), 1, 30, 0, 0)
+      );
+
+      (prisma.setoranOtomatis.findMany as any).mockImplementation((args: any) => {
+        const { gte, lte } = args?.where?.createdAt || {};
+        if (gte && lte && targetUtcDate >= gte && targetUtcDate <= lte) {
+          return [{ berat: 2.5, kategoriAktual: "organik" }];
+        }
+        return [];
+      });
+
+      const trend = await dashboardService.getTrend(1, undefined, undefined, "today");
+      const slot00 = trend.find((t: any) => t.label === "00:00");
+      const slot08 = trend.find((t: any) => t.label === "08:00");
+
+      expect(slot00.organic).toBe(0);
+      expect(slot08.organic).toBe(2.5);
+    });
+
     it("should return 12 monthly buckets for 'year' range", async () => {
       const trend = await dashboardService.getTrend(52, undefined, 2026, "year");
 

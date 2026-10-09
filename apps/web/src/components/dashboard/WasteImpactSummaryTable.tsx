@@ -150,6 +150,12 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
     return `${y.getFullYear()}-${pad(y.getMonth() + 1)}-${pad(y.getDate())}`;
   }, [today]);
 
+  const yesterdayLabelShort = useMemo(() => {
+    const y = new Date(today);
+    y.setDate(y.getDate() - 1);
+    return y.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  }, [today]);
+
   // Internal state jika tidak dikontrol penuh oleh parent
   const [internalSource, setInternalSource] = useState<WasteSourceType>("ALL");
   const [internalPeriod, setInternalPeriod] = useState<WastePeriodMode>("DAILY");
@@ -675,7 +681,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 onClick={() => handleDatePresetSelect("YESTERDAY")}
                 className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
               >
-                Lihat Data Kemarin (7 Okt)
+                Lihat Data Kemarin ({yesterdayLabelShort})
               </button>
             )}
             {activePeriod === "DAILY" && (
