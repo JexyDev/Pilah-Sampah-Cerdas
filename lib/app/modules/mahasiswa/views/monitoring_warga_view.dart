@@ -132,7 +132,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         rwMatches = true;
       } else {
         // Murni pencocokan string, tanpa dummy bypass (jika kosong = false)
-        rwMatches = targetRwSet.contains(wRwClean) ||
+        final wRwSet = w.rw
+            .split(',')
+            .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), ''))
+            .where((s) => s.isNotEmpty)
+            .toSet();
+
+        rwMatches = targetRwSet.intersection(wRwSet).isNotEmpty ||
             targetRwSet.any(
               (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
             );
