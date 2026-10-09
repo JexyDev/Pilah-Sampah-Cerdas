@@ -74,6 +74,7 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
         update: vi.fn(),
         upsert: vi.fn(),
+        deleteMany: vi.fn(),
         count: vi.fn(),
       },
       kelompokKkn: {
@@ -1146,7 +1147,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         { userId: "student-2" },
       ] as any);
 
-      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({} as any);
+      vi.mocked(prisma.activityAttendance.deleteMany).mockResolvedValue({ count: 0 } as any);
 
       const result = await service.skipKegiatan(dplUserId, "DPL", scheduleId, {
         alasan: "Pembersihan posko mandiri",
@@ -1157,7 +1158,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.totalMahasiswaTerdampak).toBe(2);
       expect(result.alasan).toBe("Pembersihan posko mandiri");
       expect(result.ditandaiOleh).toBe(dplUserId);
-      expect(prisma.activityAttendance.upsert).toHaveBeenCalledTimes(2);
+      expect(prisma.activityAttendance.deleteMany).toHaveBeenCalledWith({
+        where: { scheduleId },
+      });
     });
 
     it("should allow Ketua Kelompok (isKetua = true) to skip kegiatan for their own group", async () => {
@@ -1186,7 +1189,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         { userId: "student-member-2" },
       ] as any);
 
-      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({} as any);
+      vi.mocked(prisma.activityAttendance.deleteMany).mockResolvedValue({ count: 0 } as any);
 
       const result = await service.skipKegiatan(ketuaUserId, "MAHASISWA_KKN", scheduleId, {
         alasan: "Koordinasi eksternal",
