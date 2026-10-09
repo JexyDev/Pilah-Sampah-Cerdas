@@ -36,9 +36,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
     super.initState();
     _initPackageInfo();
     _phoneController.addListener(_onPhoneChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateChecker.checkForUpdate(context);
-    });
   }
 
   Future<void> _initPackageInfo() async {
