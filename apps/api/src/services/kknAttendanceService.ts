@@ -6872,33 +6872,12 @@ export class KknAttendanceService {
       alasan,
     };
 
-    // 5. Bulk Upsert Presensi untuk seluruh anggota kelompok
-    for (const student of targetStudents) {
-      await prisma.activityAttendance.upsert({
+    // 5. Bersihkan data presensi jika ada record sebelumnya pada jadwal ini
+    // Sesuai mandat: Hari libur / off-day posko TIDAK BOLEH masuk ke tabel kehadiran_kegiatan
+    if (prisma.activityAttendance?.deleteMany) {
+      await prisma.activityAttendance.deleteMany({
         where: {
-          studentId_scheduleId: {
-            studentId: student.userId,
-            scheduleId: schedule.id,
-          },
-        },
-        create: {
-          studentId: student.userId,
           scheduleId: schedule.id,
-          method: "SKIP_KEGIATAN",
-          latitude: schedule.latitude ? Number(schedule.latitude) : 0,
-          longitude: schedule.longitude ? Number(schedule.longitude) : 0,
-          status: "TIDAK_ADA_KEGIATAN",
-          actualInZoneMinutes: 0,
-          deskripsiKegiatan: alasan,
-          jedaLogs: skipMetadata,
-          attendedAt: ditandaiPada,
-        },
-        update: {
-          method: "SKIP_KEGIATAN",
-          status: "TIDAK_ADA_KEGIATAN",
-          actualInZoneMinutes: 0,
-          deskripsiKegiatan: alasan,
-          jedaLogs: skipMetadata,
         },
       });
     }
@@ -7464,6 +7443,48 @@ export class KknAttendanceService {
 
         const students = sched.kelompok?.students || [];
         if (students.length === 0) continue;
+
+        // Guard 4: Proteksi Posko Off-day / Jadwal Tanpa Aktivitas Lapangan
+        // Jika tidak ada satu pun mahasiswa di kelompok tersebut yang melakukan check-in / hadir
+        // (posko hari itu tutup/libur/off-day kuliah kampus sehingga tidak ada aktivitas sama sekali),
+        // otomatis tandai jadwal sebagai TIDAK_ADA_KEGIATAN dan lewati (jangan beri ALPA massal).
+        const realAttendanceCount = sched.attendances.filter((a) => {
+          const attDate = a.attendedAt ? new Date(a.attendedAt) : null;
+          const attWibHour = attDate ? (attDate.getUTCHours() + 7) % 24 : null;
+          const attWibMin = attDate ? attDate.getUTCMinutes() : null;
+          const isMidnightDummy = attDate && attWibHour === 0 && attWibMin === 0;
+          return (
+            a.attendedAt &&
+            !isMidnightDummy &&
+            [
+              "HADIR_MEMENUHI",
+              "HADIR_TIDAK_MEMENUHI",
+              "BERLANGSUNG",
+              "TERJEDA",
+              "DALAM_RADIUS",
+              "DI_ZONA",
+              "HADIR",
+            ].includes(String(a.status || "").toUpperCase())
+          );
+        }).length;
+
+        if (students.length >= 5 && realAttendanceCount === 0) {
+          try {
+            await (prisma.schedule as any).update({
+              where: { id: sched.id },
+              data: {
+                statusKegiatan: "TIDAK_ADA_KEGIATAN",
+                detailSkip: {
+                  by: "AUTO_SYSTEM",
+                  alasan: "Off-day otomatis: 0 mahasiswa hadir di posko",
+                },
+              },
+            });
+          } catch {
+            // Non-blocking fallback
+          }
+          continue;
+        }
 
         totalEvaluatedGroups++;
 
