@@ -1492,18 +1492,9 @@ export const dashboardService = {
     const targetYear = year || now.getFullYear();
     const isCurrentYear = targetYear === now.getFullYear();
 
-    // 1. Mode Rentang Waktu "Hari Ini" & "Hari Kemarin" (Hourly: 00:00 - 24:00 WIB)
+    // 1. Mode Rentang Waktu "Hari Ini" & "Hari Kemarin" (Hourly: 24 Jam 00:00 - 23:00 WIB Real Timestamp)
     if (range === "today" || range === "24h" || range === "yesterday" || range === "kemarin") {
       const isYesterday = range === "yesterday" || range === "kemarin";
-      const hourlyIntervals = [
-        { label: "00:00", startHour: 0, endHour: 4 },
-        { label: "04:00", startHour: 4, endHour: 8 },
-        { label: "08:00", startHour: 8, endHour: 12 },
-        { label: "12:00", startHour: 12, endHour: 16 },
-        { label: "16:00", startHour: 16, endHour: 20 },
-        { label: "20:00", startHour: 20, endHour: 24 },
-      ];
-
       const wibNow = new Date(now.getTime() + WIB_OFFSET_MS);
       let targetRef = isCurrentYear ? wibNow : new Date(Date.UTC(targetYear, 11, 31));
 
@@ -1515,20 +1506,97 @@ export const dashboardService = {
       const tMonth = targetRef.getUTCMonth();
       const tDay = targetRef.getUTCDate();
 
-      for (const slot of hourlyIntervals) {
-        const startSlot = createWibUtcDate(tYear, tMonth, tDay, slot.startHour, 0, 0, 0);
-        const endSlot = slot.endHour === 24
-          ? createWibUtcDate(tYear, tMonth, tDay, 23, 59, 59, 999)
-          : createWibUtcDate(tYear, tMonth, tDay, slot.endHour, 0, 0, 0);
+      const startDay = createWibUtcDate(tYear, tMonth, tDay, 0, 0, 0, 0);
+      const endDay = createWibUtcDate(tYear, tMonth, tDay, 23, 59, 59, 999);
 
-        const bucket = await calculateBucketWeights(startSlot, endSlot);
-        result.push({
-          label: slot.label,
-          ...bucket,
-        });
+      // Fetch seluruh log dalam rentang 1 hari secara efisien (hanya 2 query DB)
+      const logsWhere: any = {
+        createdAt: {
+          gte: startDay,
+          lte: endDay,
+        },
+      };
+      if (!includeTestAccounts) {
+        logsWhere.warga = { isTestAccount: false };
+      }
+      if (isFiltered && filterOr.length > 0) {
+        logsWhere.OR = filterOr;
       }
 
-      return result;
+      const logs = await prisma.setoranOtomatis.findMany({
+        where: logsWhere,
+      });
+
+      const residuWhere: any = {
+        createdAt: {
+          gte: startDay,
+          lte: endDay,
+        },
+      };
+      if (!includeTestAccounts) {
+        residuWhere.petugas = { isTestAccount: false };
+      }
+      if (isFiltered && rwFilter) {
+        residuWhere.OR = [{ rw: rwFilter }, { petugas: { rw: rwFilter } }];
+      }
+
+      const residuLogs = await prisma.setoranManual.findMany({
+        where: residuWhere,
+        select: {
+          createdAt: true,
+          berat: true,
+          kategori: true,
+        },
+      });
+
+      // Siapkan 24 slot per jam (00:00 s.d 23:00 WIB)
+      const hourlyBuckets = Array.from({ length: 24 }, (_, h) => ({
+        label: `${String(h).padStart(2, "0")}:00`,
+        organic: 0,
+        inorganic: 0,
+        residu: 0,
+      }));
+
+      logs.forEach((log: any) => {
+        const kg = Number(log.berat) || 0;
+        const logDateWib = new Date(log.createdAt.getTime() + WIB_OFFSET_MS);
+        const hour = logDateWib.getUTCHours();
+        if (hour >= 0 && hour < 24) {
+          const kelas = classifyWaste(log);
+          if (kelas === "organik") {
+            hourlyBuckets[hour].organic += kg;
+          } else if (kelas === "anorganik") {
+            hourlyBuckets[hour].inorganic += kg;
+          }
+        }
+      });
+
+      residuLogs.forEach((l: any) => {
+        const kg = Number(l.berat || 0);
+        const logDateWib = new Date(l.createdAt.getTime() + WIB_OFFSET_MS);
+        const hour = logDateWib.getUTCHours();
+        if (hour >= 0 && hour < 24) {
+          const kat = String(l.kategori || "").toLowerCase().trim();
+          if (kat.includes("organik") && !kat.includes("anorganik") && !kat.includes("non")) {
+            hourlyBuckets[hour].organic += kg;
+          } else if (kat.includes("anorganik") || kat.includes("non organik") || kat.includes("an-organik")) {
+            hourlyBuckets[hour].inorganic += kg;
+          } else {
+            hourlyBuckets[hour].residu += kg;
+          }
+        }
+      });
+
+      return hourlyBuckets.map((b) => {
+        const total = b.organic + b.inorganic + b.residu;
+        return {
+          label: b.label,
+          weight: parseFloat(total.toFixed(2)),
+          organic: parseFloat(b.organic.toFixed(2)),
+          inorganic: parseFloat(b.inorganic.toFixed(2)),
+          residu: parseFloat(b.residu.toFixed(2)),
+        };
+      });
     }
 
     // 2. Mode Rentang Waktu "Tahun" & "Semua Periode" -> Agregasi Bulanan (12 Bulan: Jan s/d Des WIB)
