@@ -117,18 +117,14 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
   });
 
   describe("dashboardService getTrend Hierarchical Time Filter Tests", () => {
-    it("should return 6 hourly interval buckets for 'today' or '24h' range with factual 0 kg baseline when empty", async () => {
+    it("should return 24 hourly interval buckets for 'today' or '24h' range with factual 0 kg baseline when empty", async () => {
       const trend = await dashboardService.getTrend(1, undefined, undefined, "today");
 
-      expect(trend).toHaveLength(6);
-      expect(trend.map((t: any) => t.label)).toEqual([
-        "00:00",
-        "04:00",
-        "08:00",
-        "12:00",
-        "16:00",
-        "20:00",
-      ]);
+      expect(trend).toHaveLength(24);
+      expect(trend[0].label).toBe("00:00");
+      expect(trend[4].label).toBe("04:00");
+      expect(trend[8].label).toBe("08:00");
+      expect(trend[23].label).toBe("23:00");
       trend.forEach((slot: any) => {
         expect(slot.organic).toBe(0);
         expect(slot.inorganic).toBe(0);
@@ -136,18 +132,12 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
       });
     });
 
-    it("should return 6 hourly interval buckets for 'yesterday' range with factual 0 kg baseline when empty", async () => {
+    it("should return 24 hourly interval buckets for 'yesterday' range with factual 0 kg baseline when empty", async () => {
       const trend = await dashboardService.getTrend(1, undefined, undefined, "yesterday");
 
-      expect(trend).toHaveLength(6);
-      expect(trend.map((t: any) => t.label)).toEqual([
-        "00:00",
-        "04:00",
-        "08:00",
-        "12:00",
-        "16:00",
-        "20:00",
-      ]);
+      expect(trend).toHaveLength(24);
+      expect(trend[0].label).toBe("00:00");
+      expect(trend[23].label).toBe("23:00");
       trend.forEach((slot: any) => {
         expect(slot.organic).toBe(0);
         expect(slot.inorganic).toBe(0);
@@ -166,7 +156,7 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
       (prisma.setoranOtomatis.findMany as any).mockImplementation((args: any) => {
         const { gte, lte } = args?.where?.createdAt || {};
         if (gte && lte && targetUtcDate >= gte && targetUtcDate <= lte) {
-          return [{ berat: 2.5, kategoriAktual: "organik" }];
+          return [{ berat: 2.5, kategoriAktual: "organik", createdAt: targetUtcDate }];
         }
         return [];
       });
