@@ -28,6 +28,8 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
     final mhsState = ref.watch(mahasiswaControllerProvider);
     final totalWarga = mhsState.wargaList.length;
     final activeWarga = mhsState.wargaList.where((w) => w.isActivated).length;
+    final totalBinsInRw =
+        mhsState.wargaList.fold<int>(0, (sum, w) => sum + w.activeBinCount);
     final calcPercentage = totalWarga > 0
         ? (activeWarga / totalWarga * 100)
         : 0.0;
@@ -265,7 +267,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '$activeWarga dari $totalWarga rumah tangga binaan RW telah aktif memilah dari rumah.',
+                          '$activeWarga dari $totalWarga rumah tangga binaan RW telah aktif memilah ($totalBinsInRw unit tempat sampah terpasang).',
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.textHint,

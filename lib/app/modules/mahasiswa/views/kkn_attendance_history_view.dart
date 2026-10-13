@@ -164,9 +164,9 @@ class _KknAttendanceHistoryViewState
   String _getKeteranganText(String? status) {
     switch ((status ?? '').toUpperCase()) {
       case 'HADIR_MEMENUHI':
-        return 'Selamat! Anda telah menyelesaikan kegiatan posko dengan durasi memenuhi ketentuan minimum (minimal 4 jam/240 menit). Poin kehadiran penuh tercatat.';
+        return 'Selamat! Anda telah menyelesaikan kegiatan posko dengan durasi memenuhi ketentuan minimum (minimal 250 menit). Poin kehadiran penuh tercatat.';
       case 'HADIR_TIDAK_MEMENUHI':
-        return 'Kehadiran Anda tercatat di posko KKN, namun akumulasi durasi belum mencapai target minimal 4 jam (240 menit) atau sesi tidak diselesaikan dengan check-out.';
+        return 'Kehadiran Anda tercatat di posko KKN, namun akumulasi durasi belum mencapai target minimal 250 menit atau sesi tidak diselesaikan dengan check-out.';
       case 'SELESAI_TELAT':
         return 'Sesi kegiatan posko telah selesai, namun total durasi berada di bawah batas minimum yang dipersyaratkan.';
       case 'ALPA':
@@ -686,7 +686,7 @@ class _KknAttendanceHistoryViewState
         (history['durasiAktualMenit'] ?? history['durationMinutes'] ?? 0)
             as num;
     final targetMenit =
-        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 240)
+        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 250)
             as num;
     final isMemenuhiDurasi =
         history['isMemenuhiDurasi'] == true ||
@@ -824,7 +824,7 @@ class _KknAttendanceHistoryViewState
         (history['durasiAktualMenit'] ?? history['durationMinutes'] ?? 0)
             as num;
     final targetMenit =
-        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 240)
+        (history['durasiTargetMenit'] ?? history['targetMinutes'] ?? 250)
             as num;
     final durasiJedaMenit = (history['durasiJedaMenit'] ?? 0) as num;
     final jedaFormatted =

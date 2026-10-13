@@ -1536,9 +1536,19 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           final durationMins = int.tryParse(sess['durationMinutes']?.toString() ??
               sess['durasiMenit']?.toString() ?? '') ?? 0;
           final st = (sess['status'] ?? '').toString().toUpperCase();
+          final method = (sess['method'] ?? '').toString().toUpperCase();
+
+          // Off-day / Libur posko (TIDAK_ADA_KEGIATAN / SKIP_KEGIATAN)
+          // BUKAN presensi mahasiswa, jangan pernah dihitung sebagai alpa ataupun tidak memenuhi!
+          if (st == 'TIDAK_ADA_KEGIATAN' ||
+              st == 'SKIP_KEGIATAN' ||
+              method == 'SKIP_KEGIATAN') {
+            continue;
+          }
+
           final isTargetMet = sess['isMinTargetMet'] == true ||
               sess['isTargetMet'] == true ||
-              durationMins >= 240;
+              durationMins >= 250;
           final isApprovedLeave = sess['isApprovedLeave'] == true ||
               sess['isDispensasi'] == true ||
               st == 'IZIN' ||
@@ -1583,7 +1593,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               st == 'HADIR_TIDAK_MEMENUHI' ||
               st == 'SELESAI_TELAT' ||
               (st.contains('HADIR') && !isTargetMet) ||
-              (hasValidCheckIn && durationMins < 240)) {
+              (hasValidCheckIn && durationMins < 250)) {
             countedDateKeys.add(dKey);
             sessionCountTidakMemenuhi++;
           }
@@ -1683,6 +1693,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     // Kartu 2: Tempat Sampah Aktif Terpasang pada Warga Dampingan Anda
     final wargaAktif = dashboardWargaStats?.wargaDampinganBinAktif ??
         personalWargaList.where((w) => w.isActivated).length;
+
+    final localPhysicalBins =
+        personalWargaList.fold<int>(0, (sum, w) => sum + w.activeBinCount);
+    final totalBinsCount = (mhsState.dashboard?.totalRegisteredBins != null &&
+            mhsState.dashboard!.totalRegisteredBins > 0)
+        ? mhsState.dashboard!.totalRegisteredBins
+        : localPhysicalBins;
+    final wargaLengkapCount =
+        personalWargaList.where((w) => w.hasCompleteBins).length;
 
     // 4. Hitung Data Pemanfaatan & Hasil Sampah
     final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
@@ -1911,18 +1930,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         children: [
                           Expanded(
                             child: _KknStatCard(
-                              topText: 'Total',
+                              topText: 'Rumah / Warga Binaan',
                               middleText: '$totalWarga',
-                              bottomText: 'Warga Dampingan Anda',
+                              bottomText: '$wargaAktif Teraktivasi',
                               color: AppColors.primaryGreen,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _KknStatCard(
-                              topText: 'Tempat Sampah Warga',
-                              middleText: '$wargaAktif/$totalWarga',
-                              bottomText: 'Aktif Terpasang',
+                              topText: 'Tempat Sampah Fisik',
+                              middleText: '$totalBinsCount Unit',
+                              bottomText: '$wargaAktif Rumah ($wargaLengkapCount Lengkap 2 Wadah)',
                               color: AppColors.primaryBlueDark,
                             ),
                           ),
