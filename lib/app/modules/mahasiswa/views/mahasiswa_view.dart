@@ -1536,9 +1536,19 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           final durationMins = int.tryParse(sess['durationMinutes']?.toString() ??
               sess['durasiMenit']?.toString() ?? '') ?? 0;
           final st = (sess['status'] ?? '').toString().toUpperCase();
+          final method = (sess['method'] ?? '').toString().toUpperCase();
+
+          // Off-day / Libur posko (TIDAK_ADA_KEGIATAN / SKIP_KEGIATAN)
+          // BUKAN presensi mahasiswa, jangan pernah dihitung sebagai alpa ataupun tidak memenuhi!
+          if (st == 'TIDAK_ADA_KEGIATAN' ||
+              st == 'SKIP_KEGIATAN' ||
+              method == 'SKIP_KEGIATAN') {
+            continue;
+          }
+
           final isTargetMet = sess['isMinTargetMet'] == true ||
               sess['isTargetMet'] == true ||
-              durationMins >= 240;
+              durationMins >= 250;
           final isApprovedLeave = sess['isApprovedLeave'] == true ||
               sess['isDispensasi'] == true ||
               st == 'IZIN' ||
@@ -1583,7 +1593,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               st == 'HADIR_TIDAK_MEMENUHI' ||
               st == 'SELESAI_TELAT' ||
               (st.contains('HADIR') && !isTargetMet) ||
-              (hasValidCheckIn && durationMins < 240)) {
+              (hasValidCheckIn && durationMins < 250)) {
             countedDateKeys.add(dKey);
             sessionCountTidakMemenuhi++;
           }
