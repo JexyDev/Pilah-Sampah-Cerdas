@@ -404,6 +404,37 @@ class WargaDampingan extends Equatable {
     return recentLogs.first.createdAt;
   }
 
+  /// Total unit tempat sampah fisik terpasang untuk warga ini
+  int get activeBinCount {
+    final org = binOrganikId?.trim();
+    final anorg = binAnorganikId?.trim();
+    final hasOrg = org != null &&
+        org.isNotEmpty &&
+        org != 'Belum Ada Tempat Sampah' &&
+        org.toLowerCase() != 'null';
+    final hasAnorg = anorg != null &&
+        anorg.isNotEmpty &&
+        anorg != 'Belum Ada Tempat Sampah' &&
+        anorg.toLowerCase() != 'null';
+
+    if (hasOrg && hasAnorg && org != anorg) {
+      return 2;
+    }
+    if (hasOrg || hasAnorg) {
+      return 1;
+    }
+    if (isActivated &&
+        binId.trim().isNotEmpty &&
+        binId.trim() != 'Belum Ada Tempat Sampah' &&
+        binId.trim().toLowerCase() != 'null') {
+      return 1;
+    }
+    return 0;
+  }
+
+  /// Apakah warga memiliki 2 wadah lengkap (Organik & Anorganik)
+  bool get hasCompleteBins => activeBinCount >= 2;
+
   WargaDampingan copyWith({
     String? wargaId,
     String? binId,

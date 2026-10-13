@@ -1694,6 +1694,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final wargaAktif = dashboardWargaStats?.wargaDampinganBinAktif ??
         personalWargaList.where((w) => w.isActivated).length;
 
+    final localPhysicalBins =
+        personalWargaList.fold<int>(0, (sum, w) => sum + w.activeBinCount);
+    final totalBinsCount = (mhsState.dashboard?.totalRegisteredBins != null &&
+            mhsState.dashboard!.totalRegisteredBins > 0)
+        ? mhsState.dashboard!.totalRegisteredBins
+        : localPhysicalBins;
+    final wargaLengkapCount =
+        personalWargaList.where((w) => w.hasCompleteBins).length;
+
     // 4. Hitung Data Pemanfaatan & Hasil Sampah
     final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
     final laporanCount = pemanfaatanAsync.value?.length ?? 0;
@@ -1921,18 +1930,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         children: [
                           Expanded(
                             child: _KknStatCard(
-                              topText: 'Total',
+                              topText: 'Rumah / Warga Binaan',
                               middleText: '$totalWarga',
-                              bottomText: 'Warga Dampingan Anda',
+                              bottomText: '$wargaAktif Teraktivasi',
                               color: AppColors.primaryGreen,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _KknStatCard(
-                              topText: 'Tempat Sampah Warga',
-                              middleText: '$wargaAktif/$totalWarga',
-                              bottomText: 'Aktif Terpasang',
+                              topText: 'Tempat Sampah Fisik',
+                              middleText: '$totalBinsCount Unit',
+                              bottomText: '$wargaAktif Rumah ($wargaLengkapCount Lengkap 2 Wadah)',
                               color: AppColors.primaryBlueDark,
                             ),
                           ),
