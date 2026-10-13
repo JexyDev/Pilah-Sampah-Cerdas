@@ -81,7 +81,7 @@ class KknLocationState {
     this.zoneResetWarning,
     this.checkInTime,
     this.checkOutTime,
-    this.targetDurationMinutes = 240,
+    this.targetDurationMinutes = 250,
     this.attendanceId,
     this.alpaDurationMinutes,
     this.kegiatanList = const [],
@@ -601,7 +601,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       }
 
       final durasiWajib =
-          (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 240)
+          (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 250)
               .clamp(1, 480);
 
       final updatedKegiatanList = state.kegiatanList.map((k) {
@@ -1422,15 +1422,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['geofenceBufferMeters'] ??= 15.0;
       mergedData['invalidationHours'] ??= 2.0;
 
-      int duration = 240;
+      int duration = 250;
       if (mergedData['targetDurationMinutes'] != null) {
         duration =
             (int.tryParse(mergedData['targetDurationMinutes'].toString()) ??
-                    240)
+                    250)
                 .clamp(1, 480);
       } else if (mergedData['durationMinutes'] != null) {
         duration =
-            (int.tryParse(mergedData['durationMinutes'].toString()) ?? 240)
+            (int.tryParse(mergedData['durationMinutes'].toString()) ?? 250)
                 .clamp(1, 480);
       }
 

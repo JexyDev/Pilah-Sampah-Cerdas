@@ -5,7 +5,7 @@ import 'package:mobile_app_sampah/app/core/utils/network_exception_helper.dart';
 void main() {
   group('KKN Attendance Checkout Logic Tests', () {
     test('Checkout minimum duration gate evaluates correctly at 30 minutes', () {
-      const int targetMenit = 240;
+      const int targetMenit = 250;
       const int minCheckoutMenit =
           (targetMenit > 0 && targetMenit < 30) ? targetMenit : 30;
 
@@ -24,8 +24,8 @@ void main() {
       canCheckout = durasiMenit >= minCheckoutMenit;
       expect(canCheckout, isTrue);
 
-      // Kasus 4: Durasi 240 menit (target penuh terpenuhi) -> Sudah bisa checkout
-      durasiMenit = 240;
+      // Kasus 4: Durasi 250 menit (target penuh terpenuhi) -> Sudah bisa checkout
+      durasiMenit = 250;
       canCheckout = durasiMenit >= minCheckoutMenit;
       expect(canCheckout, isTrue);
     });
