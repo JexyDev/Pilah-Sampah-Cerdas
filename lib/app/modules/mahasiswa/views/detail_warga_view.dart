@@ -10,6 +10,7 @@ import '../controllers/mahasiswa_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../../auth/controllers/auth_controller.dart' show authProvider;
+import 'widgets/reassign_pendamping_bottom_sheet.dart';
 
 class DetailWargaView extends ConsumerStatefulWidget {
   const DetailWargaView({super.key});
@@ -664,11 +665,23 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                               );
                               return;
                             }
-                            _showReassignBottomSheet(
-                              context,
-                              ref,
-                              warga,
-                              kelompokState,
+                            ReassignPendampingBottomSheet.show(
+                              context: context,
+                              ref: ref,
+                              warga: warga,
+                              kelompokState: kelompokState,
+                              onSuccess: (updated) async {
+                                if (mounted) {
+                                  setState(() {
+                                    _localWarga = updated;
+                                  });
+                                  ref
+                                      .read(
+                                        detailWargaControllerProvider.notifier,
+                                      )
+                                      .setWarga(updated);
+                                }
+                              },
                             );
                           },
                           child: Container(
@@ -879,11 +892,23 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                   );
                   return;
                 }
-                _showReassignBottomSheet(
-                  context,
-                  ref,
-                  warga,
-                  kelompokState,
+                ReassignPendampingBottomSheet.show(
+                  context: context,
+                  ref: ref,
+                  warga: warga,
+                  kelompokState: kelompokState,
+                  onSuccess: (updated) async {
+                    if (mounted) {
+                      setState(() {
+                        _localWarga = updated;
+                      });
+                      ref
+                          .read(
+                            detailWargaControllerProvider.notifier,
+                          )
+                          .setWarga(updated);
+                    }
+                  },
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -957,411 +982,6 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
           ),
         ),
       ],
-    );
-  }
-
-  Future<void> _showReassignBottomSheet(
-    BuildContext context,
-    WidgetRef ref,
-    WargaDampingan warga,
-    KelompokKknState kelompokState,
-  ) async {
-    // Pastikan data kelompok tersedia
-    if (kelompokState.kelompok == null) {
-      await ref.read(kelompokKknProvider.notifier).fetchKelompok();
-    }
-    final latestKelompokState = ref.read(kelompokKknProvider);
-    final members = latestKelompokState.kelompok?.members ?? [];
-    final currentStudentId = warga.pendampingKkn?.id ?? warga.mahasiswaId;
-
-    if (!context.mounted) return;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        String? selectedTargetId;
-        String? selectedTargetName;
-        final reasonCtrl = TextEditingController();
-        bool isSubmitting = false;
-        String? errorText;
-
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.border,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.swap_horiz_rounded,
-                              color: AppColors.primaryGreen,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Alihkan Pendamping Warga',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Otoritas Khusus Ketua Kelompok KKN',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.primaryGreen,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.backgroundCanvas,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              warga.wargaName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatWargaAddress(warga),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Text(
-                                  'Pendamping Saat Ini: ',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    (warga.pendampingKkn?.name.isNotEmpty == true)
-                                        ? warga.pendampingKkn!.name
-                                        : (warga.pendampingName.isNotEmpty
-                                            ? warga.pendampingName
-                                            : 'Belum Ada (Mandiri)'),
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Pilih Mahasiswa Pendamping Baru *',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      if (members.isEmpty)
-                        const Text(
-                          'Tidak ada anggota kelompok yang ditemukan.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.dangerRed,
-                          ),
-                        )
-                      else
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedTargetId,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  const BorderSide(color: AppColors.border),
-                            ),
-                            hintText: '-- Pilih Rekan Mahasiswa --',
-                            hintStyle: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textHint,
-                            ),
-                          ),
-                          items: members.map((m) {
-                            final isCurrent = (m.userId == currentStudentId);
-                            final label =
-                                '${m.name}${m.isLeader ? ' (Ketua)' : ''}${isCurrent ? ' (Saat Ini)' : ''}';
-                            return DropdownMenuItem<String>(
-                              value: m.userId,
-                              enabled: !isCurrent,
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isCurrent
-                                      ? AppColors.textHint
-                                      : AppColors.textPrimary,
-                                  fontWeight: isCurrent
-                                      ? FontWeight.normal
-                                      : FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: isSubmitting
-                              ? null
-                              : (val) {
-                                  setModalState(() {
-                                    selectedTargetId = val;
-                                    final m = members
-                                        .where((x) => x.userId == val)
-                                        .firstOrNull;
-                                    selectedTargetName = m?.name;
-                                    errorText = null;
-                                  });
-                                },
-                        ),
-                      const SizedBox(height: 14),
-                      const Text(
-                        'Alasan Pengalihan (Opsional)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: reasonCtrl,
-                        maxLines: 2,
-                        enabled: !isSubmitting,
-                        decoration: InputDecoration(
-                          hintText:
-                              'Misal: Pembagian beban wilayah, perputaran binaan',
-                          hintStyle: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textHint,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                const BorderSide(color: AppColors.border),
-                          ),
-                        ),
-                      ),
-                      if (errorText != null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          errorText!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.dangerRed,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: isSubmitting
-                                  ? null
-                                  : () => Navigator.pop(sheetContext),
-                              style: OutlinedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text('Batal'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: isSubmitting
-                                  ? null
-                                  : () async {
-                                      if (selectedTargetId == null ||
-                                          selectedTargetId!.isEmpty) {
-                                        setModalState(() {
-                                          errorText =
-                                              'Silakan pilih mahasiswa tujuan pengalihan.';
-                                        });
-                                        return;
-                                      }
-                                      setModalState(() {
-                                        isSubmitting = true;
-                                        errorText = null;
-                                      });
-                                      try {
-                                        final repo =
-                                            ref.read(kknRepositoryProvider);
-                                        final success =
-                                            await repo.reassignWargaPendamping(
-                                          warga.wargaId,
-                                          targetStudentId: selectedTargetId!,
-                                          reason:
-                                              reasonCtrl.text.trim().isNotEmpty
-                                                  ? reasonCtrl.text.trim()
-                                                  : null,
-                                        );
-                                        if (success) {
-                                          if (sheetContext.mounted) {
-                                            Navigator.pop(sheetContext);
-                                          }
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Warga berhasil dialihkan ke ${selectedTargetName ?? 'mahasiswa target'}',
-                                                ),
-                                                backgroundColor:
-                                                    AppColors.success,
-                                              ),
-                                            );
-                                            // Refresh data
-                                            await ref
-                                                .read(mahasiswaControllerProvider
-                                                    .notifier)
-                                                .refresh();
-                                            final updatedList = ref
-                                                .read(mahasiswaControllerProvider)
-                                                .wargaList;
-                                            final updated = updatedList
-                                                .where((w) =>
-                                                    w.wargaId == warga.wargaId)
-                                                .firstOrNull;
-                                            if (updated != null && mounted) {
-                                              setState(() {
-                                                _localWarga = updated;
-                                              });
-                                              ref
-                                                  .read(
-                                                    detailWargaControllerProvider
-                                                        .notifier,
-                                                  )
-                                                  .setWarga(updated);
-                                            }
-                                          }
-                                        }
-                                      } catch (err) {
-                                        setModalState(() {
-                                          isSubmitting = false;
-                                          errorText = err
-                                              .toString()
-                                              .replaceAll('Exception: ', '');
-                                        });
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryGreen,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: isSubmitting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Konfirmasi Alihkan',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 

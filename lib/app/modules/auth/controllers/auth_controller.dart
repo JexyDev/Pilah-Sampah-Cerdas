@@ -355,29 +355,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } catch (_) {}
 
       // 3b. Invalidate seluruh provider data pengguna agar sesi akun baru tidak menampilkan
-      //     data stale dari akun sebelumnya.
-      _ref.invalidate(mahasiswaControllerProvider);
-      _ref.invalidate(riwayatKknControllerProvider);
-      _ref.invalidate(totalPointsProvider);
-      _ref.invalidate(pointHistoryProvider);
-      _ref.invalidate(dailyPointsProvider);
-      _ref.invalidate(wasteLogsProvider);
-      _ref.invalidate(binsProvider);
-      _ref.invalidate(kelompokKknProvider);
-      _ref.invalidate(poskoKknProvider);
-      _ref.invalidate(fasilitasKknProvider);
-      _ref.invalidate(kknMapProvider);
-      _ref.invalidate(petugasPemilahanControllerProvider);
-      _ref.invalidate(petugasPointHistoryProvider);
-      _ref.invalidate(petugasPemilahanNotificationsProvider);
-      _ref.invalidate(notificationsProvider);
-      _ref.invalidate(wargaNotificationsProvider);
-      _ref.invalidate(mahasiswaNotificationsProvider);
-      _ref.invalidate(pemanfaatanSampahProvider);
-      _ref.invalidate(kelompokStikerQrProvider);
-      _ref.invalidate(userLeaderboardRankProvider);
-      _ref.invalidate(wargaAspirasiProvider);
-      _ref.invalidate(totalSetoranProvider);
+      //     data stale dari akun sebelumnya. Gunakan microtask agar terhindar dari CircularDependencyError
+      //     jika ada provider yang sedang di-watch oleh auth consumer saat logout diproses.
+      Future.microtask(() {
+        _ref.invalidate(mahasiswaControllerProvider);
+        _ref.invalidate(riwayatKknControllerProvider);
+        _ref.invalidate(totalPointsProvider);
+        _ref.invalidate(pointHistoryProvider);
+        _ref.invalidate(dailyPointsProvider);
+        _ref.invalidate(wasteLogsProvider);
+        _ref.invalidate(binsProvider);
+        _ref.invalidate(kelompokKknProvider);
+        _ref.invalidate(poskoKknProvider);
+        _ref.invalidate(fasilitasKknProvider);
+        _ref.invalidate(kknMapProvider);
+        _ref.invalidate(petugasPemilahanControllerProvider);
+        _ref.invalidate(petugasPointHistoryProvider);
+        _ref.invalidate(petugasPemilahanNotificationsProvider);
+        _ref.invalidate(notificationsProvider);
+        _ref.invalidate(wargaNotificationsProvider);
+        _ref.invalidate(mahasiswaNotificationsProvider);
+        _ref.invalidate(pemanfaatanSampahProvider);
+        _ref.invalidate(kelompokStikerQrProvider);
+        _ref.invalidate(userLeaderboardRankProvider);
+        _ref.invalidate(wargaAspirasiProvider);
+        _ref.invalidate(totalSetoranProvider);
+      });
 
       // 4. Hentikan notifikasi & bersihkan cache notifikasi
       try {
