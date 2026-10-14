@@ -1669,6 +1669,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     }
 
     // 2. Hitung Total Warga Dampingan Personal & Agregasi Dashboard (BEND-MEMO/MOBILE-INTEGRATION/2026-09/007)
+    final aggregation = user?.wargaAggregation ?? mhsState.dashboard?.wargaAggregation;
     final dashboardWargaStats = mhsState.dashboard?.wargaStats;
 
     // Filter lokal warga yang resmi didampingi akun ini (Personal Warga Dampingan)
@@ -1688,20 +1689,30 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     }).toList();
 
     // Kartu 1: Total Warga Dampingan Anda (Personal)
-    final totalWarga = dashboardWargaStats?.totalWargaDampingan ?? personalWargaList.length;
+    final totalWarga = (aggregation != null && aggregation.totalWargaDampingan > 0)
+        ? aggregation.totalWargaDampingan
+        : ((dashboardWargaStats != null && dashboardWargaStats.totalWargaDampingan > 0)
+            ? dashboardWargaStats.totalWargaDampingan
+            : personalWargaList.length);
 
     // Kartu 2: Tempat Sampah Aktif Terpasang pada Warga Dampingan Anda
-    final wargaAktif = dashboardWargaStats?.wargaDampinganBinAktif ??
-        personalWargaList.where((w) => w.isActivated).length;
+    final wargaAktif = (aggregation != null && aggregation.wargaDampinganBinAktif > 0)
+        ? aggregation.wargaDampinganBinAktif
+        : ((dashboardWargaStats != null && dashboardWargaStats.wargaDampinganBinAktif > 0)
+            ? dashboardWargaStats.wargaDampinganBinAktif
+            : personalWargaList.where((w) => w.isActivated).length);
 
     final localPhysicalBins =
         personalWargaList.fold<int>(0, (sum, w) => sum + w.activeBinCount);
-    final totalBinsCount = (mhsState.dashboard?.totalRegisteredBins != null &&
-            mhsState.dashboard!.totalRegisteredBins > 0)
-        ? mhsState.dashboard!.totalRegisteredBins
-        : localPhysicalBins;
-    final wargaLengkapCount =
-        personalWargaList.where((w) => w.hasCompleteBins).length;
+    final totalBinsCount = (aggregation != null && aggregation.totalPhysicalBins > 0)
+        ? aggregation.totalPhysicalBins
+        : ((mhsState.dashboard?.totalRegisteredBins != null &&
+                mhsState.dashboard!.totalRegisteredBins > 0)
+            ? mhsState.dashboard!.totalRegisteredBins
+            : localPhysicalBins);
+    final wargaLengkapCount = (aggregation != null && aggregation.wargaLengkapDuaWadah > 0)
+        ? aggregation.wargaLengkapDuaWadah
+        : personalWargaList.where((w) => w.hasCompleteBins).length;
 
     // 4. Hitung Data Pemanfaatan & Hasil Sampah
     final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);

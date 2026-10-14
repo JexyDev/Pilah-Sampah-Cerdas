@@ -217,7 +217,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   Widget build(BuildContext context) {
     final state = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
-    final userKec = user?.kecamatan ?? '';
+    final userKec = user?.kknTerritory?.kecamatan.isNotEmpty == true
+        ? user!.kknTerritory!.kecamatan
+        : (user?.kecamatan ?? '');
     final kelompokState = ref.watch(kelompokKknProvider);
     final isKetua = (user?.isKetua == true) ||
         (kelompokState.kelompok?.members.any(
@@ -231,10 +233,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
             ) ==
             true);
 
-    // Ambil kelurahan & rw dari profil user. Jika kosong (akun bulk-insert),
-    // gunakan data kelompok KKN sebagai fallback.
-    String userKel = user?.kelurahan ?? '';
-    String userRw = user?.rw ?? '';
+    // Ambil kelurahan & rw dari profil user atau kknTerritory SSOT.
+    // Fallback ke kelompokState jika profil belum terhidrasi penuh.
+    String userKel = user?.kknTerritory?.kelurahan.isNotEmpty == true
+        ? user!.kknTerritory!.kelurahan
+        : (user?.kelurahan ?? '');
+    String userRw = user?.kknTerritory?.cakupanRw.isNotEmpty == true
+        ? user!.kknTerritory!.cakupanRw.join(', ')
+        : (user?.rw ?? '');
     if (userKel.isEmpty) {
       final kel = kelompokState.kelompok?.kelurahan ?? '';
       if (kel.isNotEmpty && kel != '-') userKel = kel;

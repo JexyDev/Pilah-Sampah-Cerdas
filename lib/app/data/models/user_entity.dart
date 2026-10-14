@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'mahasiswa_kkn_models.dart';
 
 /// Entitas pengguna â€” sesuai schema backend tabel `users`.
 /// Backend menggunakan email sebagai identifier login (bukan NIK).
@@ -36,6 +37,10 @@ class UserEntity extends Equatable {
     this.noWa = '',
     this.namaDisplay = '',
     this.assignedZone = '',
+    this.kknTerritory,
+    this.wargaAggregation,
+    this.attendanceSummary,
+    this.activeResetRequests = const [],
   });
 
   final String id;
@@ -70,6 +75,10 @@ class UserEntity extends Equatable {
   final String noWa; // No. Telepon 2 / WhatsApp Personil (Petugas Pemilahan)
   final String namaDisplay;
   final String assignedZone;
+  final KknTerritoryEntity? kknTerritory;
+  final WargaDampinganAggregation? wargaAggregation;
+  final TodayAttendanceSummary? attendanceSummary;
+  final List<BinResetSummary> activeResetRequests;
 
   UserEntity copyWith({
     String? id,
@@ -104,6 +113,10 @@ class UserEntity extends Equatable {
     String? noWa,
     String? namaDisplay,
     String? assignedZone,
+    KknTerritoryEntity? kknTerritory,
+    WargaDampinganAggregation? wargaAggregation,
+    TodayAttendanceSummary? attendanceSummary,
+    List<BinResetSummary>? activeResetRequests,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -138,6 +151,10 @@ class UserEntity extends Equatable {
       noWa: noWa ?? this.noWa,
       namaDisplay: namaDisplay ?? this.namaDisplay,
       assignedZone: assignedZone ?? this.assignedZone,
+      kknTerritory: kknTerritory ?? this.kknTerritory,
+      wargaAggregation: wargaAggregation ?? this.wargaAggregation,
+      attendanceSummary: attendanceSummary ?? this.attendanceSummary,
+      activeResetRequests: activeResetRequests ?? this.activeResetRequests,
     );
   }
 
@@ -208,6 +225,29 @@ class UserEntity extends Equatable {
       noWa: noWa,
       namaDisplay: namaDisplay,
       assignedZone: assignedZone,
+      kknTerritory: json['kknTerritory'] is Map<String, dynamic>
+          ? KknTerritoryEntity.fromJson(
+              json['kknTerritory'] as Map<String, dynamic>)
+          : null,
+      wargaAggregation: json['wargaDampinganAggregation'] is Map<String, dynamic>
+          ? WargaDampinganAggregation.fromJson(
+              json['wargaDampinganAggregation'] as Map<String, dynamic>)
+          : (json['wargaAggregation'] is Map<String, dynamic>
+              ? WargaDampinganAggregation.fromJson(
+                  json['wargaAggregation'] as Map<String, dynamic>)
+              : null),
+      attendanceSummary: json['todayAttendanceSummary'] is Map<String, dynamic>
+          ? TodayAttendanceSummary.fromJson(
+              json['todayAttendanceSummary'] as Map<String, dynamic>)
+          : (json['attendanceSummary'] is Map<String, dynamic>
+              ? TodayAttendanceSummary.fromJson(
+                  json['attendanceSummary'] as Map<String, dynamic>)
+              : null),
+      activeResetRequests: (json['activeBinResetRequests'] as List<dynamic>?)
+              ?.map((e) =>
+                  BinResetSummary.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -250,6 +290,10 @@ class UserEntity extends Equatable {
     noWa,
     namaDisplay,
     assignedZone,
+    kknTerritory,
+    wargaAggregation,
+    attendanceSummary,
+    activeResetRequests,
   ];
 }
 

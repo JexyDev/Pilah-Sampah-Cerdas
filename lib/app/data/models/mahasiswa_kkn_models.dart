@@ -34,6 +34,260 @@ class WargaStats extends Equatable {
       ];
 }
 
+class PoskoSummary extends Equatable {
+  const PoskoSummary({
+    this.id = '',
+    this.name = '',
+    this.address = '',
+    this.latitude,
+    this.longitude,
+    this.radiusMeter = 500,
+  });
+
+  final String id;
+  final String name;
+  final String address;
+  final double? latitude;
+  final double? longitude;
+  final int radiusMeter;
+
+  factory PoskoSummary.fromJson(Map<String, dynamic> json) {
+    return PoskoSummary(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['nama']?.toString() ?? '',
+      address: json['address']?.toString() ?? json['alamat']?.toString() ?? '',
+      latitude: json['latitude'] != null
+          ? double.tryParse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.tryParse(json['longitude'].toString())
+          : null,
+      radiusMeter: (json['radiusMeter'] as num?)?.toInt() ??
+          (json['radius'] as num?)?.toInt() ??
+          500,
+    );
+  }
+
+  @override
+  List<Object?> get props =>
+      [id, name, address, latitude, longitude, radiusMeter];
+}
+
+class DplSummary extends Equatable {
+  const DplSummary({
+    this.id = '',
+    this.name = '',
+    this.phone = '',
+    this.nip = '',
+  });
+
+  final String id;
+  final String name;
+  final String phone;
+  final String nip;
+
+  factory DplSummary.fromJson(Map<String, dynamic> json) {
+    return DplSummary(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['nama']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? json['noHp']?.toString() ?? '',
+      nip: json['nip']?.toString() ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, name, phone, nip];
+}
+
+class BinResetSummary extends Equatable {
+  const BinResetSummary({
+    required this.requestId,
+    required this.binId,
+    required this.qrCode,
+    this.status = 'PENDING',
+    this.createdAt,
+  });
+
+  final String requestId;
+  final String binId;
+  final String qrCode;
+  final String status;
+  final DateTime? createdAt;
+
+  factory BinResetSummary.fromJson(Map<String, dynamic> json) {
+    return BinResetSummary(
+      requestId: json['requestId']?.toString() ?? json['id']?.toString() ?? '',
+      binId: json['binId']?.toString() ?? '',
+      qrCode: json['qrCode']?.toString() ??
+          json['bin']?['qrCode']?.toString() ??
+          '',
+      status: json['status']?.toString() ?? 'PENDING',
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
+    );
+  }
+
+  @override
+  List<Object?> get props => [requestId, binId, qrCode, status, createdAt];
+}
+
+class KknTerritoryEntity extends Equatable {
+  const KknTerritoryEntity({
+    required this.kelompokId,
+    required this.kelompokName,
+    required this.kecamatan,
+    required this.kelurahan,
+    required this.cakupanRw,
+    this.assignedRw = '',
+    this.posko,
+    this.dpl,
+  });
+
+  final String kelompokId;
+  final String kelompokName;
+  final String kecamatan;
+  final String kelurahan;
+  final List<String> cakupanRw;
+  final String assignedRw;
+  final PoskoSummary? posko;
+  final DplSummary? dpl;
+
+  factory KknTerritoryEntity.fromJson(Map<String, dynamic> json) {
+    return KknTerritoryEntity(
+      kelompokId: json['kelompokId']?.toString() ?? '',
+      kelompokName: json['kelompokName']?.toString() ?? '',
+      kecamatan: json['kecamatan']?.toString() ?? '',
+      kelurahan: json['kelurahan']?.toString() ?? '',
+      cakupanRw: (json['cakupanRw'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      assignedRw: json['assignedRw']?.toString() ?? '',
+      posko: json['posko'] is Map<String, dynamic>
+          ? PoskoSummary.fromJson(json['posko'] as Map<String, dynamic>)
+          : null,
+      dpl: json['dpl'] is Map<String, dynamic>
+          ? DplSummary.fromJson(json['dpl'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        kelompokId,
+        kelompokName,
+        kecamatan,
+        kelurahan,
+        cakupanRw,
+        assignedRw,
+        posko,
+        dpl,
+      ];
+}
+
+class WargaDampinganAggregation extends Equatable {
+  const WargaDampinganAggregation({
+    this.totalWargaDampingan = 0,
+    this.wargaDampinganBinAktif = 0,
+    this.totalPhysicalBins = 0,
+    this.wargaLengkapDuaWadah = 0,
+    this.wargaMandiriRwBelumKlaim = 0,
+    this.totalWargaRw = 0,
+  });
+
+  final int totalWargaDampingan;
+  final int wargaDampinganBinAktif;
+  final int totalPhysicalBins;
+  final int wargaLengkapDuaWadah;
+  final int wargaMandiriRwBelumKlaim;
+  final int totalWargaRw;
+
+  factory WargaDampinganAggregation.fromJson(Map<String, dynamic> json) {
+    return WargaDampinganAggregation(
+      totalWargaDampingan: (json['totalWargaDampingan'] as num?)?.toInt() ?? 0,
+      wargaDampinganBinAktif:
+          (json['wargaDampinganBinAktif'] as num?)?.toInt() ?? 0,
+      totalPhysicalBins: (json['totalPhysicalBins'] as num?)?.toInt() ?? 0,
+      wargaLengkapDuaWadah:
+          (json['wargaLengkapDuaWadah'] as num?)?.toInt() ?? 0,
+      wargaMandiriRwBelumKlaim:
+          (json['wargaMandiriRwBelumKlaim'] as num?)?.toInt() ?? 0,
+      totalWargaRw: (json['totalWargaRw'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        totalWargaDampingan,
+        wargaDampinganBinAktif,
+        totalPhysicalBins,
+        wargaLengkapDuaWadah,
+        wargaMandiriRwBelumKlaim,
+        totalWargaRw,
+      ];
+}
+
+class TodayAttendanceSummary extends Equatable {
+  const TodayAttendanceSummary({
+    this.scheduleId = '',
+    this.date = '',
+    this.status = 'ALPHA',
+    this.hasCheckedIn = false,
+    this.hasCheckedOut = false,
+    this.accumulatedMinutes = 0,
+    this.targetMinutes = 250,
+    this.isMemenuhiTarget = false,
+    this.remainingMinutes = 250,
+    this.activeZone = '',
+    this.lastPingAt,
+  });
+
+  final String scheduleId;
+  final String date;
+  final String status;
+  final bool hasCheckedIn;
+  final bool hasCheckedOut;
+  final int accumulatedMinutes;
+  final int targetMinutes;
+  final bool isMemenuhiTarget;
+  final int remainingMinutes;
+  final String activeZone;
+  final DateTime? lastPingAt;
+
+  factory TodayAttendanceSummary.fromJson(Map<String, dynamic> json) {
+    return TodayAttendanceSummary(
+      scheduleId: json['scheduleId']?.toString() ?? '',
+      date: json['date']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'ALPHA',
+      hasCheckedIn: json['hasCheckedIn'] == true,
+      hasCheckedOut: json['hasCheckedOut'] == true,
+      accumulatedMinutes: (json['accumulatedMinutes'] as num?)?.toInt() ?? 0,
+      targetMinutes: (json['targetMinutes'] as num?)?.toInt() ?? 250,
+      isMemenuhiTarget: json['isMemenuhiTarget'] == true,
+      remainingMinutes: (json['remainingMinutes'] as num?)?.toInt() ?? 250,
+      activeZone: json['activeZone']?.toString() ?? '',
+      lastPingAt: json['lastPingAt'] != null
+          ? DateTime.tryParse(json['lastPingAt'].toString())
+          : null,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        scheduleId,
+        date,
+        status,
+        hasCheckedIn,
+        hasCheckedOut,
+        accumulatedMinutes,
+        targetMinutes,
+        isMemenuhiTarget,
+        remainingMinutes,
+        activeZone,
+      ];
+}
+
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Model untuk response GET /api/kkn/dashboard
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -59,6 +313,7 @@ class KknDashboardData extends Equatable {
     this.personalPoints,
     this.prokerPoints,
     this.wargaStats,
+    this.wargaAggregation,
   });
 
   final String nim;
@@ -71,6 +326,7 @@ class KknDashboardData extends Equatable {
   final int? personalPoints;
   final int? prokerPoints;
   final WargaStats? wargaStats;
+  final WargaDampinganAggregation? wargaAggregation;
 
   factory KknDashboardData.fromJson(Map<String, dynamic> json) {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
@@ -145,6 +401,22 @@ class KknDashboardData extends Equatable {
       );
     }
 
+    WargaDampinganAggregation? parsedAggregation;
+    if (json['wargaDampinganAggregation'] is Map<String, dynamic>) {
+      parsedAggregation = WargaDampinganAggregation.fromJson(
+          json['wargaDampinganAggregation'] as Map<String, dynamic>);
+    } else if (stats['wargaDampinganAggregation'] is Map<String, dynamic>) {
+      parsedAggregation = WargaDampinganAggregation.fromJson(
+          stats['wargaDampinganAggregation'] as Map<String, dynamic>);
+    } else if (parsedWargaStats != null) {
+      parsedAggregation = WargaDampinganAggregation(
+        totalWargaDampingan: parsedWargaStats.totalWargaDampingan,
+        wargaDampinganBinAktif: parsedWargaStats.wargaDampinganBinAktif,
+        wargaMandiriRwBelumKlaim: parsedWargaStats.wargaMandiriRwBelumKlaim,
+        totalWargaRw: parsedWargaStats.totalWargaRw,
+      );
+    }
+
     return KknDashboardData(
       nim:
           student['nim']?.toString() ??
@@ -167,6 +439,7 @@ class KknDashboardData extends Equatable {
       personalPoints: personalPointVal?.toInt(),
       prokerPoints: prokerPointVal?.toInt(),
       wargaStats: parsedWargaStats,
+      wargaAggregation: parsedAggregation,
     );
   }
 
