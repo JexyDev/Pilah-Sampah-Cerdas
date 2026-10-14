@@ -70,7 +70,19 @@ class ApiKknRepository implements KknRepository {
       if (response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>? ?? {};
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
+        if (data.isNotEmpty) {
+          final totalBins = (data['totalRegisteredBins'] ?? data['registeredBins'] ?? 0) as num;
+          final wargaStats = data['wargaStats'] as Map<String, dynamic>?;
+          final totalWarga = (wargaStats?['totalWargaDampingan'] ?? 0) as num;
+          if (totalBins > 0 || totalWarga > 0) {
+            await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
+          } else {
+            final oldCache = prefs.getString(_cacheKeyDashboard);
+            if (oldCache == null || oldCache.isEmpty) {
+              await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
+            }
+          }
+        }
         return KknDashboardData.fromJson(data);
       }
       throw Exception(
