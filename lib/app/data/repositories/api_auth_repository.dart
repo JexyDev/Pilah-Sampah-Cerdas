@@ -261,18 +261,21 @@ class ApiAuthRepository implements AuthRepository {
   // â”€â”€â”€ OTP (Login Warga / Reset Password) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   @override
-  Future<void> requestOtp({required String phone}) async {
+  Future<void> requestOtp({
+    required String phone,
+    bool isForgotPassword = false,
+  }) async {
     try {
-      // Hanya panggil endpoint backend Express (menggunakan format 08)
-      // Backend yang akan men-generate OTP dan mengirimkannya via Fonnte.
       final backendPhone = PhoneFormatter.prepareLoginPhoneInput(phone);
+      final endpoint = isForgotPassword ? '/auth/forgot-password' : '/auth/request-otp';
       await apiClient.dio.post(
-        '/auth/request-otp',
+        endpoint,
         data: {'phone': backendPhone},
       );
     } on DioException catch (e) {
       final message = e.response?.data?['message']?.toString();
-      throw AuthException('OTP_FAILED', message ?? 'Gagal meminta kode OTP');
+      final errorCode = e.response?.data?['error']?.toString() ?? 'OTP_FAILED';
+      throw AuthException(errorCode, message ?? 'Gagal meminta kode OTP');
     } catch (e) {
       if (e is AuthException) rethrow;
       throw AuthException(

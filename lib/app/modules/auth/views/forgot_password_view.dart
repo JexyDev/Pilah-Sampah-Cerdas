@@ -157,12 +157,20 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
 
     final bool ok = await ref
         .read(authProvider.notifier)
-        .requestOtp(phone: normalizedPhone);
+        .requestOtp(phone: normalizedPhone, isForgotPassword: true);
 
     if (ok && mounted) {
       setState(() => _currentStep = 2);
       _startResendCountdown();
-      _showToast('OTP dikirim ke ${_maskPhone(phone)}', isError: false);
+      _showToast(
+        'Kode OTP dikirim via WhatsApp ke ${_maskPhone(phone)}',
+        isError: false,
+      );
+    } else if (mounted) {
+      final authState = ref.read(authProvider);
+      final errorMsg =
+          authState.errorMessage ?? 'Nomor ponsel tidak terdaftar atau gagal mengirim OTP.';
+      _showToast(errorMsg);
     }
   }
 
@@ -174,10 +182,56 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
       _otpValue = '';
       _otpCompleted = false;
     });
-    await _onRequestOtp();
+
+    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final normalizedPhone = _normalizePhone(phone);
+    ref.read(authProvider.notifier).clearError();
+
+    final bool ok = await ref
+        .read(authProvider.notifier)
+        .requestOtp(phone: normalizedPhone, isForgotPassword: true);
+
+    if (ok && mounted) {
+      _startResendCountdown();
+      _showToast(
+        'Kode OTP baru dikirim via WhatsApp ke ${_maskPhone(phone)}',
+        isError: false,
+      );
+    } else if (mounted) {
+      final authState = ref.read(authProvider);
+      final errorMsg =
+          authState.errorMessage ?? 'Gagal mengirim ulang kode OTP.';
+      _showToast(errorMsg);
+    }
   }
 
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
+
+  /// Tempel kode OTP dari clipboard.
+  Future<void> _onPasteOtp() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text ?? '';
+    final digits = text.replaceAll(RegExp(r'\D'), '');
+
+    if (digits.isEmpty) {
+      _showToast('Clipboard kosong atau tidak berisi angka OTP');
+      return;
+    }
+
+    final otpCode = digits.length > 6 ? digits.substring(0, 6) : digits;
+    _otpKey.currentState?.setOtp(otpCode);
+
+    setState(() {
+      _otpValue = otpCode;
+      _otpCompleted = otpCode.length == 6;
+    });
+
+    if (otpCode.length == 6) {
+      _showToast('OTP berhasil ditempel dari clipboard', isError: false);
+    } else {
+      _showToast('OTP tertempel: $otpCode (${otpCode.length}/6 digit)', isError: false);
+    }
+  }
 
   Future<void> _onVerifyOtp() async {
     if (!_otpCompleted || _otpValue.length < 6) {
@@ -616,7 +670,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Masukkan nomor HP terdaftar. Kami akan kirim kode OTP via SMS.',
+            'Masukkan nomor WhatsApp terdaftar. Kami akan kirim kode OTP resmi.',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
@@ -706,7 +760,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.sms_outlined, size: 16),
+                      Icon(Icons.chat_bubble_outline_rounded, size: 16),
                       SizedBox(width: 8),
                       Text('KIRIM KODE OTP'),
                     ],
@@ -767,7 +821,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              const TextSpan(text: ' via SMS.'),
+              const TextSpan(text: ' via WhatsApp.'),
             ],
           ),
         ),
@@ -791,7 +845,38 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
             },
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
+
+        // Tombol Tempel OTP
+        Center(
+          child: GestureDetector(
+            onTap: _onPasteOtp,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.content_paste_rounded,
+                    size: 14,
+                    color: AppColors.primaryGreen,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Tempel Kode OTP',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
 
         // Countdown / Resend
         Center(

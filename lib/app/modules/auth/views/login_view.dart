@@ -382,22 +382,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   return null;
                                 },
                               ),
-                              // const SizedBox(height: 8),
-                              // Align(
-                              //   alignment: Alignment.centerRight,
-                              //   child: GestureDetector(
-                              //     onTap: () => Navigator.of(context)
-                              //         .pushNamed(AppRoutes.forgotPassword),
-                              //     child: const Text(
-                              //       'Lupa kata sandi?',
-                              //       style: TextStyle(
-                              //         fontSize: 12,
-                              //         fontWeight: FontWeight.w600,
-                              //         color: AppColors.primaryGreen,
-                              //       ),
-                              //     ),
-                              //   ),
-                              // ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.of(context)
+                                      .pushNamed(AppRoutes.forgotPassword),
+                                  child: const Text(
+                                    'Lupa kata sandi?',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 24),
 
                               // Tombol Masuk

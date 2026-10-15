@@ -61,6 +61,35 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
   /// Ambil nilai OTP saat ini.
   String get currentValue => _controllers.map((c) => c.text).join();
 
+  /// Isi OTP secara programatik (misal dari SMS retriever atau auto-fill).
+  void setOtp(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return;
+
+    for (int i = 0; i < widget.length; i++) {
+      if (i < digits.length) {
+        _controllers[i].text = digits[i];
+      } else {
+        _controllers[i].clear();
+      }
+    }
+
+    final filledCount = digits.length.clamp(0, widget.length);
+    if (filledCount < widget.length) {
+      FocusScope.of(context).requestFocus(_focusNodes[filledCount]);
+    } else {
+      for (final fn in _focusNodes) {
+        fn.unfocus();
+      }
+    }
+
+    final otp = currentValue;
+    widget.onChanged?.call(otp);
+    if (otp.length == widget.length) {
+      widget.onCompleted(otp);
+    }
+  }
+
   /// Reset semua kotak ke kosong.
   void clear() {
     for (final c in _controllers) {
@@ -71,19 +100,33 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
   }
 
   void _onChanged(String value, int index) {
-    if (value.length > 1) {
+    final cleanValue = value.replaceAll(RegExp(r'\D'), '');
+
+    if (cleanValue.length > 1) {
       // Handle paste — distribusikan karakter
-      final chars = value.split('');
-      for (int i = 0; i < chars.length && (index + i) < widget.length; i++) {
-        _controllers[index + i].text = chars[i];
+      final chars = cleanValue.split('');
+      final start = cleanValue.length >= widget.length ? 0 : index;
+      for (int i = 0; i < chars.length && (start + i) < widget.length; i++) {
+        _controllers[start + i].text = chars[i];
       }
-      final nextIndex = (index + chars.length).clamp(0, widget.length - 1);
-      FocusScope.of(context).requestFocus(_focusNodes[nextIndex]);
-    } else if (value.isNotEmpty) {
-      if (index < widget.length - 1) {
-        FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+      final targetIndex = (start + chars.length).clamp(0, widget.length - 1);
+      if (start + chars.length >= widget.length) {
+        for (final fn in _focusNodes) {
+          fn.unfocus();
+        }
       } else {
-        _focusNodes[index].unfocus();
+        FocusScope.of(context).requestFocus(_focusNodes[targetIndex]);
+      }
+    } else {
+      if (cleanValue.length == 1) {
+        _controllers[index].text = cleanValue;
+        if (index < widget.length - 1) {
+          FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+        } else {
+          _focusNodes[index].unfocus();
+        }
+      } else {
+        _controllers[index].clear();
       }
     }
 
@@ -145,23 +188,12 @@ class _OtpBox extends StatefulWidget {
   State<_OtpBox> createState() => _OtpBoxState();
 }
 
-class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
+class _OtpBoxState extends State<_OtpBox> {
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.06,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-
     widget.focusNode.addListener(_onFocusChange);
   }
 
@@ -169,74 +201,61 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
     setState(() {
       _isFocused = widget.focusNode.hasFocus;
     });
-    if (_isFocused) {
-      _animController.forward();
-    } else {
-      _animController.reverse();
-    }
   }
 
   @override
   void dispose() {
     widget.focusNode.removeListener(_onFocusChange);
-    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 44,
-        height: 52,
-        decoration: BoxDecoration(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 44,
+      height: 52,
+      decoration: BoxDecoration(
+        color: _isFocused
+            ? AppColors.primaryGreen.withValues(alpha: 0.04)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
           color: _isFocused
-              ? AppColors.primaryGreen.withValues(alpha: 0.05)
-              : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _isFocused
-                ? AppColors.primaryGreen
-                : widget.controller.text.isNotEmpty
-                ? AppColors.primaryGreen.withValues(alpha: 0.4)
-                : const Color(0xFFDDE1E7),
-            width: _isFocused ? 2 : 1.5,
-          ),
-          boxShadow: _isFocused
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+              ? AppColors.primaryGreen
+              : widget.controller.text.isNotEmpty
+                  ? AppColors.primaryGreen.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
+          width: _isFocused ? 1.5 : 1.0,
         ),
-        child: KeyboardListener(
-          focusNode: FocusNode(skipTraversal: true),
-          onKeyEvent: widget.onKeyEvent,
-          child: TextFormField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            maxLength: 1,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: 0,
-            ),
-            decoration: const InputDecoration(
-              counterText: '',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 0),
-            ),
-            onChanged: widget.onChanged,
+      ),
+      child: KeyboardListener(
+        focusNode: FocusNode(skipTraversal: true),
+        onKeyEvent: widget.onKeyEvent,
+        child: TextFormField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: 0,
           ),
+          decoration: const InputDecoration(
+            counterText: '',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            filled: false,
+            contentPadding: EdgeInsets.symmetric(vertical: 0),
+          ),
+          onChanged: widget.onChanged,
         ),
       ),
     );
