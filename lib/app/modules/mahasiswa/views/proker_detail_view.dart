@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
@@ -1099,42 +1101,211 @@ class _ProkerDetailViewState extends ConsumerState<ProkerDetailView> {
           // Foto thumbnail jika ada
           if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
             const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () => showDialog(
-                context: context,
-                builder: (_) => Dialog(
-                  backgroundColor: Colors.transparent,
-                  insetPadding: const EdgeInsets.all(16),
-                  child: InteractiveViewer(
-                    child: Image.network(
-                      AppConfig.getImageUrl(fotoUrl),
-                      fit: BoxFit.contain,
+            _buildFotoDokumentasi(context, fotoUrl),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFotoDokumentasi(BuildContext context, String fotoUrl) {
+    final fullUrl = AppConfig.getImageUrl(fotoUrl);
+    final isSvg = fullUrl.toLowerCase().endsWith('.svg') ||
+        fotoUrl.toLowerCase().endsWith('.svg');
+
+    return GestureDetector(
+      onTap: () => _showFotoPreviewDialog(context, fullUrl, isSvg),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 110,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.backgroundCanvas,
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (isSvg)
+                SvgPicture.network(
+                  fullUrl,
+                  fit: BoxFit.cover,
+                  placeholderBuilder: (_) => const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primaryGreen,
                     ),
                   ),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  AppConfig.getImageUrl(fotoUrl),
-                  height: 100,
-                  width: double.infinity,
+                )
+              else
+                CachedNetworkImage(
+                  imageUrl: fullUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 60,
+                  memCacheHeight: 400,
+                  memCacheWidth: 600,
+                  placeholder: (_, __) => Container(
                     color: AppColors.backgroundCanvas,
                     child: const Center(
-                      child: Icon(
-                        Icons.broken_image_rounded,
-                        color: AppColors.textSecondary,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primaryGreen,
                       ),
                     ),
                   ),
+                  errorWidget: (_, __, ___) => _buildFallbackFotoCard(),
+                ),
+              Positioned(
+                bottom: 6,
+                right: 6,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.fullscreen_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        'Perbesar',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackFotoCard() {
+    return Container(
+      color: AppColors.primaryGreen.withValues(alpha: 0.04),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.eco_rounded,
+                size: 18,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Dokumentasi Terverifikasi',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'Arsip kegiatan resmi KKN',
+              style: TextStyle(
+                fontSize: 9,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFotoPreviewDialog(BuildContext context, String fullUrl, bool isSvg) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(ctx),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.7,
+                ),
+                color: Colors.black,
+                child: InteractiveViewer(
+                  maxScale: 4.0,
+                  child: isSvg
+                      ? SvgPicture.network(
+                          fullUrl,
+                          fit: BoxFit.contain,
+                          placeholderBuilder: (_) => const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: fullUrl,
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) => const SizedBox(
+                            height: 200,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => Container(
+                            height: 200,
+                            color: Colors.white,
+                            child: Center(
+                              child: _buildFallbackFotoCard(),
+                            ),
+                          ),
+                        ),
                 ),
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }

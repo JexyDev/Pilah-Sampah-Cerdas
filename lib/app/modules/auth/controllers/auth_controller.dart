@@ -261,17 +261,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Request OTP untuk login warga atau lupa password
-  Future<bool> requestOtp({required String phone}) async {
+  Future<bool> requestOtp({
+    required String phone,
+    bool isForgotPassword = false,
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await _authRepository.requestOtp(phone: phone);
+      await _authRepository.requestOtp(
+        phone: phone,
+        isForgotPassword: isForgotPassword,
+      );
       state = state.copyWith(isLoading: false);
       return true;
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, errorCode: e.code);
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: e.code,
+        errorMessage: e.message,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorCode: 'UNKNOWN_ERROR');
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: 'UNKNOWN_ERROR',
+        errorMessage: 'Gagal terhubung ke server',
+      );
       return false;
     }
   }
