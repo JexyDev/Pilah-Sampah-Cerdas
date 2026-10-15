@@ -61,6 +61,35 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
   /// Ambil nilai OTP saat ini.
   String get currentValue => _controllers.map((c) => c.text).join();
 
+  /// Isi OTP secara programatik (misal dari SMS retriever atau auto-fill).
+  void setOtp(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return;
+
+    for (int i = 0; i < widget.length; i++) {
+      if (i < digits.length) {
+        _controllers[i].text = digits[i];
+      } else {
+        _controllers[i].clear();
+      }
+    }
+
+    final filledCount = digits.length.clamp(0, widget.length);
+    if (filledCount < widget.length) {
+      FocusScope.of(context).requestFocus(_focusNodes[filledCount]);
+    } else {
+      for (final fn in _focusNodes) {
+        fn.unfocus();
+      }
+    }
+
+    final otp = currentValue;
+    widget.onChanged?.call(otp);
+    if (otp.length == widget.length) {
+      widget.onCompleted(otp);
+    }
+  }
+
   /// Reset semua kotak ke kosong.
   void clear() {
     for (final c in _controllers) {
@@ -71,19 +100,33 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
   }
 
   void _onChanged(String value, int index) {
-    if (value.length > 1) {
+    final cleanValue = value.replaceAll(RegExp(r'\D'), '');
+
+    if (cleanValue.length > 1) {
       // Handle paste — distribusikan karakter
-      final chars = value.split('');
-      for (int i = 0; i < chars.length && (index + i) < widget.length; i++) {
-        _controllers[index + i].text = chars[i];
+      final chars = cleanValue.split('');
+      final start = cleanValue.length >= widget.length ? 0 : index;
+      for (int i = 0; i < chars.length && (start + i) < widget.length; i++) {
+        _controllers[start + i].text = chars[i];
       }
-      final nextIndex = (index + chars.length).clamp(0, widget.length - 1);
-      FocusScope.of(context).requestFocus(_focusNodes[nextIndex]);
-    } else if (value.isNotEmpty) {
-      if (index < widget.length - 1) {
-        FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+      final targetIndex = (start + chars.length).clamp(0, widget.length - 1);
+      if (start + chars.length >= widget.length) {
+        for (final fn in _focusNodes) {
+          fn.unfocus();
+        }
       } else {
-        _focusNodes[index].unfocus();
+        FocusScope.of(context).requestFocus(_focusNodes[targetIndex]);
+      }
+    } else {
+      if (cleanValue.length == 1) {
+        _controllers[index].text = cleanValue;
+        if (index < widget.length - 1) {
+          FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+        } else {
+          _focusNodes[index].unfocus();
+        }
+      } else {
+        _controllers[index].clear();
       }
     }
 
@@ -222,7 +265,6 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
             focusNode: widget.focusNode,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            maxLength: 1,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(
               fontSize: 22,

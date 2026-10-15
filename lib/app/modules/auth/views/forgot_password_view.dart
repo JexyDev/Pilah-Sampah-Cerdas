@@ -187,6 +187,32 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
 
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
 
+  /// Tempel kode OTP dari clipboard.
+  Future<void> _onPasteOtp() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text ?? '';
+    final digits = text.replaceAll(RegExp(r'\D'), '');
+
+    if (digits.isEmpty) {
+      _showToast('Clipboard kosong atau tidak berisi angka OTP');
+      return;
+    }
+
+    final otpCode = digits.length > 6 ? digits.substring(0, 6) : digits;
+    _otpKey.currentState?.setOtp(otpCode);
+
+    setState(() {
+      _otpValue = otpCode;
+      _otpCompleted = otpCode.length == 6;
+    });
+
+    if (otpCode.length == 6) {
+      _showToast('OTP berhasil ditempel dari clipboard', isError: false);
+    } else {
+      _showToast('OTP tertempel: $otpCode (${otpCode.length}/6 digit)', isError: false);
+    }
+  }
+
   Future<void> _onVerifyOtp() async {
     if (!_otpCompleted || _otpValue.length < 6) {
       _showToast('Masukkan 6 digit kode OTP terlebih dahulu');
@@ -799,7 +825,33 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
             },
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
+
+        // Tombol Tempel OTP
+        Center(
+          child: TextButton.icon(
+            onPressed: _onPasteOtp,
+            icon: const Icon(
+              Icons.content_paste_rounded,
+              size: 15,
+              color: AppColors.primaryGreen,
+            ),
+            label: const Text(
+              'Tempel OTP dari Clipboard',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
 
         // Countdown / Resend
         Center(
