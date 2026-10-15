@@ -188,23 +188,12 @@ class _OtpBox extends StatefulWidget {
   State<_OtpBox> createState() => _OtpBoxState();
 }
 
-class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
+class _OtpBoxState extends State<_OtpBox> {
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.06,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-
     widget.focusNode.addListener(_onFocusChange);
   }
 
@@ -212,73 +201,61 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
     setState(() {
       _isFocused = widget.focusNode.hasFocus;
     });
-    if (_isFocused) {
-      _animController.forward();
-    } else {
-      _animController.reverse();
-    }
   }
 
   @override
   void dispose() {
     widget.focusNode.removeListener(_onFocusChange);
-    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 44,
-        height: 52,
-        decoration: BoxDecoration(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 44,
+      height: 52,
+      decoration: BoxDecoration(
+        color: _isFocused
+            ? AppColors.primaryGreen.withValues(alpha: 0.04)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
           color: _isFocused
-              ? AppColors.primaryGreen.withValues(alpha: 0.05)
-              : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _isFocused
-                ? AppColors.primaryGreen
-                : widget.controller.text.isNotEmpty
-                ? AppColors.primaryGreen.withValues(alpha: 0.4)
-                : const Color(0xFFDDE1E7),
-            width: _isFocused ? 2 : 1.5,
-          ),
-          boxShadow: _isFocused
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+              ? AppColors.primaryGreen
+              : widget.controller.text.isNotEmpty
+                  ? AppColors.primaryGreen.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
+          width: _isFocused ? 1.5 : 1.0,
         ),
-        child: KeyboardListener(
-          focusNode: FocusNode(skipTraversal: true),
-          onKeyEvent: widget.onKeyEvent,
-          child: TextFormField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: 0,
-            ),
-            decoration: const InputDecoration(
-              counterText: '',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 0),
-            ),
-            onChanged: widget.onChanged,
+      ),
+      child: KeyboardListener(
+        focusNode: FocusNode(skipTraversal: true),
+        onKeyEvent: widget.onKeyEvent,
+        child: TextFormField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: 0,
           ),
+          decoration: const InputDecoration(
+            counterText: '',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            filled: false,
+            contentPadding: EdgeInsets.symmetric(vertical: 0),
+          ),
+          onChanged: widget.onChanged,
         ),
       ),
     );

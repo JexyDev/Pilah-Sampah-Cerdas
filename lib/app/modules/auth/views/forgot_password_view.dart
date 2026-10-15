@@ -182,7 +182,27 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
       _otpValue = '';
       _otpCompleted = false;
     });
-    await _onRequestOtp();
+
+    final phone = InputSanitizer.sanitize(_phoneController.text);
+    final normalizedPhone = _normalizePhone(phone);
+    ref.read(authProvider.notifier).clearError();
+
+    final bool ok = await ref
+        .read(authProvider.notifier)
+        .requestOtp(phone: normalizedPhone, isForgotPassword: true);
+
+    if (ok && mounted) {
+      _startResendCountdown();
+      _showToast(
+        'Kode OTP baru dikirim via WhatsApp ke ${_maskPhone(phone)}',
+        isError: false,
+      );
+    } else if (mounted) {
+      final authState = ref.read(authProvider);
+      final errorMsg =
+          authState.errorMessage ?? 'Gagal mengirim ulang kode OTP.';
+      _showToast(errorMsg);
+    }
   }
 
   // ─── Step 2: Verifikasi OTP ───────────────────────────────────────────────
@@ -829,25 +849,30 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
 
         // Tombol Tempel OTP
         Center(
-          child: TextButton.icon(
-            onPressed: _onPasteOtp,
-            icon: const Icon(
-              Icons.content_paste_rounded,
-              size: 15,
-              color: AppColors.primaryGreen,
-            ),
-            label: const Text(
-              'Tempel OTP dari Clipboard',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryGreen,
+          child: GestureDetector(
+            onTap: _onPasteOtp,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.content_paste_rounded,
+                    size: 14,
+                    color: AppColors.primaryGreen,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Tempel Kode OTP',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
