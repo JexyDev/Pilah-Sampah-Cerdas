@@ -14,7 +14,7 @@ abstract class AuthRepository {
   });
 
   /// Meminta OTP untuk login/reset password
-  Future<void> requestOtp({required String phone});
+  Future<void> requestOtp({required String phone, bool isForgotPassword = false});
 
   /// Verifikasi OTP
   Future<UserEntity> verifyOtp({required String phone, required String otp});

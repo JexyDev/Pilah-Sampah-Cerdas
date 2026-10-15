@@ -157,12 +157,20 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
 
     final bool ok = await ref
         .read(authProvider.notifier)
-        .requestOtp(phone: normalizedPhone);
+        .requestOtp(phone: normalizedPhone, isForgotPassword: true);
 
     if (ok && mounted) {
       setState(() => _currentStep = 2);
       _startResendCountdown();
-      _showToast('OTP dikirim ke ${_maskPhone(phone)}', isError: false);
+      _showToast(
+        'Kode OTP dikirim via WhatsApp ke ${_maskPhone(phone)}',
+        isError: false,
+      );
+    } else if (mounted) {
+      final authState = ref.read(authProvider);
+      final errorMsg =
+          authState.errorMessage ?? 'Nomor ponsel tidak terdaftar atau gagal mengirim OTP.';
+      _showToast(errorMsg);
     }
   }
 
@@ -616,7 +624,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Masukkan nomor HP terdaftar. Kami akan kirim kode OTP via SMS.',
+            'Masukkan nomor WhatsApp terdaftar. Kami akan kirim kode OTP resmi.',
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
@@ -706,7 +714,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                 : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.sms_outlined, size: 16),
+                      Icon(Icons.chat_bubble_outline_rounded, size: 16),
                       SizedBox(width: 8),
                       Text('KIRIM KODE OTP'),
                     ],
@@ -767,7 +775,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              const TextSpan(text: ' via SMS.'),
+              const TextSpan(text: ' via WhatsApp.'),
             ],
           ),
         ),
