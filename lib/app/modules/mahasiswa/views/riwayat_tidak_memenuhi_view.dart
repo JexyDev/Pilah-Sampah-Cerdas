@@ -638,7 +638,7 @@ class _RiwayatTidakMemenuhiViewState
       dateStr = item.rawData!['dateKey'].toString();
     }
 
-    final targetMins = item.targetMinutes > 0 ? item.targetMinutes : 250;
+    final targetMins = item.targetMinutes > 0 ? item.targetMinutes : 240;
     final rasioDouble =
         (item.durationMinutes / targetMins * 100).clamp(0.0, 100.0);
     final bool isAlphaItem = item.isAlpha;

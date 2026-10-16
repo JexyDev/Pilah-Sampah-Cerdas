@@ -166,3 +166,10 @@ refactor/mobile-<deskripsi-singkat>
 - **Pengembangan UI Tanpa API**: Jika API backend belum terintegrasi, AI wajib mencantumkan label visual yang jelas pada UI (misal badge `[Belum Terhubung API]`). DILARANG menyajikan data hardcode seolah-olah data tersebut live.
 - **Semua chart & progress stats** pada mobile wajib dirender secara dinamis dari response JSON backend.
 - Pelanggaran terhadap aturan real data ini dianggap setara dengan bug kritis (❌).
+
+---
+
+## 🔄 PROTOKOL SINKRONISASI DENGAN WORKTREE WEB/API (../web)
+1. **Worktree Pendamping**: Web Dashboard & API Backend berada di direktori tetangga: `../web`.
+2. **Keterbacaan Kode**: Agent di worktree ini boleh dan dianjurkan membaca source code backend di `../web/apps/api` (termasuk Prisma schema dan controllers) untuk memverifikasi endpoint sebelum coding Flutter.
+3. **Pemeriksaan Kontrak**: Sebelum implementasi fitur network/HTTP baru di Flutter, periksa status endpoint di `../SYNC_STATE.md`.

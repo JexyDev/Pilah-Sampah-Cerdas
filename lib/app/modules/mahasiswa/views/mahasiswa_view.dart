@@ -1548,7 +1548,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
           final isTargetMet = sess['isMinTargetMet'] == true ||
               sess['isTargetMet'] == true ||
-              durationMins >= 250;
+              durationMins >= 240;
           final isApprovedLeave = sess['isApprovedLeave'] == true ||
               sess['isDispensasi'] == true ||
               st == 'IZIN' ||
@@ -1593,7 +1593,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               st == 'HADIR_TIDAK_MEMENUHI' ||
               st == 'SELESAI_TELAT' ||
               (st.contains('HADIR') && !isTargetMet) ||
-              (hasValidCheckIn && durationMins < 250)) {
+              (hasValidCheckIn && durationMins < 240)) {
             countedDateKeys.add(dKey);
             sessionCountTidakMemenuhi++;
           }

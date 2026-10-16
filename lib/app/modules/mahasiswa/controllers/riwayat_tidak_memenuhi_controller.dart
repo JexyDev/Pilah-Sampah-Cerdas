@@ -148,7 +148,7 @@ class RiwayatTidakMemenuhiState {
     this.totalTidakMemenuhi = 0,
     this.totalAlpha = 0,
     this.totalSemua = 0,
-    this.targetHarianMenit = 250,
+    this.targetHarianMenit = 240,
   });
 
   RiwayatTidakMemenuhiState copyWith({
@@ -220,7 +220,7 @@ class RiwayatTidakMemenuhiNotifier
       final currentUserId = user?.id;
       final currentUserNim = user?.nim;
 
-      int targetMenit = 250;
+      int targetMenit = 240;
       final List<SesiTidakMemenuhi> parsedList = [];
       final Set<String> countedScheduleIds = {};
 
