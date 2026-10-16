@@ -148,7 +148,7 @@ class RiwayatTidakMemenuhiState {
     this.totalTidakMemenuhi = 0,
     this.totalAlpha = 0,
     this.totalSemua = 0,
-    this.targetHarianMenit = 250,
+    this.targetHarianMenit = 240,
   });
 
   RiwayatTidakMemenuhiState copyWith({
@@ -220,7 +220,7 @@ class RiwayatTidakMemenuhiNotifier
       final currentUserId = user?.id;
       final currentUserNim = user?.nim;
 
-      int targetMenit = 250;
+      int targetMenit = 240;
       final List<SesiTidakMemenuhi> parsedList = [];
       final Set<String> countedScheduleIds = {};
 
@@ -416,7 +416,7 @@ class RiwayatTidakMemenuhiNotifier
                 }
               } else {
                 keterangan =
-                    'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
+                    'Target kehadiran terpenuhi ($durationMins menit dari target $itemTarget menit).';
               }
 
               parsedList.add(
@@ -709,7 +709,7 @@ class RiwayatTidakMemenuhiNotifier
                   }
                 } else {
                   keterangan =
-                      'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
+                      'Target kehadiran terpenuhi ($durationMins menit dari target $sessTarget menit).';
                 }
 
                 parsedList.add(
@@ -823,7 +823,7 @@ class RiwayatTidakMemenuhiNotifier
               kategori: KategoriSesi.kurangDurasi,
               keterangan: shortage > 0
                   ? 'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $targetMenit menit. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.'
-                  : 'Durasi kehadiran belum memenuhi target harian minimum.',
+                  : 'Target kehadiran terpenuhi ($durationMins menit dari target $targetMenit menit).',
               rawData: Map<String, dynamic>.from(item),
             ),
           );
