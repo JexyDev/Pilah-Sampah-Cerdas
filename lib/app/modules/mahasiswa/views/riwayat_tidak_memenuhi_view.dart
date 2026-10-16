@@ -642,19 +642,29 @@ class _RiwayatTidakMemenuhiViewState
     final rasioDouble =
         (item.durationMinutes / targetMins * 100).clamp(0.0, 100.0);
     final bool isAlphaItem = item.isAlpha;
+    final bool isTargetMet = !isAlphaItem &&
+        (item.shortageMinutes <= 0 || item.durationMinutes >= targetMins);
 
     // Badge styling & label
-    final Color badgeBorderColor =
-        isAlphaItem ? const Color(0xFFEF4444) : const Color(0xFFF59E0B);
-    final Color badgeBgColor =
-        isAlphaItem ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
-    final Color badgeTextColor =
-        isAlphaItem ? const Color(0xFFDC2626) : const Color(0xFFD97706);
-    final IconData badgeIcon =
-        isAlphaItem ? Icons.cancel_outlined : Icons.warning_amber_rounded;
+    final Color badgeBorderColor = isAlphaItem
+        ? const Color(0xFFEF4444)
+        : (isTargetMet ? const Color(0xFFBBF7D0) : const Color(0xFFF59E0B));
+    final Color badgeBgColor = isAlphaItem
+        ? const Color(0xFFFEF2F2)
+        : (isTargetMet ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB));
+    final Color badgeTextColor = isAlphaItem
+        ? const Color(0xFFDC2626)
+        : (isTargetMet ? const Color(0xFF15803D) : const Color(0xFFD97706));
+    final IconData badgeIcon = isAlphaItem
+        ? Icons.cancel_outlined
+        : (isTargetMet
+            ? Icons.check_circle_outline_rounded
+            : Icons.warning_amber_rounded);
     final String badgeLabel = isAlphaItem
         ? 'Tanpa Keterangan'
-        : (item.checkOutAt == null ? 'Tanpa Check-Out' : 'Kurang Jam (< 4 Jam)');
+        : (item.checkOutAt == null
+            ? 'Tanpa Check-Out'
+            : (isTargetMet ? 'Target Terpenuhi' : 'Kurang Jam (< 4 Jam)'));
 
     final jamMasukText = (isAlphaItem || item.attendedAt == null)
         ? '-'
@@ -669,7 +679,9 @@ class _RiwayatTidakMemenuhiViewState
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isAlphaItem ? Colors.red.shade200 : Colors.orange.shade200,
+          color: isAlphaItem
+              ? Colors.red.shade200
+              : (isTargetMet ? Colors.green.shade200 : Colors.orange.shade200),
         ),
         boxShadow: [
           BoxShadow(
@@ -1023,6 +1035,65 @@ class _RiwayatTidakMemenuhiViewState
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+
+                  // ── Status Banner Target Kehadiran ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isTargetMet
+                          ? const Color(0xFFF0FDF4)
+                          : const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isTargetMet
+                            ? const Color(0xFFBBF7D0)
+                            : const Color(0xFFFED7AA),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isTargetMet
+                              ? Icons.check_circle_rounded
+                              : Icons.warning_amber_rounded,
+                          size: 14,
+                          color: isTargetMet
+                              ? const Color(0xFF15803D)
+                              : const Color(0xFFC2410C),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            isTargetMet
+                                ? 'Target Kehadiran Terpenuhi (${item.durationFormatted} / Target ${item.targetFormatted})'
+                                : 'Kurang ${item.shortageFormatted} dari Target (${item.targetFormatted})',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isTargetMet
+                                  ? const Color(0xFF15803D)
+                                  : const Color(0xFFC2410C),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (item.keterangan.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      item.keterangan,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 10),
 

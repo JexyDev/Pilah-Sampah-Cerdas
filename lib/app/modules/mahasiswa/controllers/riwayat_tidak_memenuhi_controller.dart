@@ -416,7 +416,7 @@ class RiwayatTidakMemenuhiNotifier
                 }
               } else {
                 keterangan =
-                    'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
+                    'Target kehadiran terpenuhi ($durationMins menit dari target $itemTarget menit).';
               }
 
               parsedList.add(
@@ -709,7 +709,7 @@ class RiwayatTidakMemenuhiNotifier
                   }
                 } else {
                   keterangan =
-                      'Durasi kehadiran tercatat belum memenuhi syarat target presensi harian.';
+                      'Target kehadiran terpenuhi ($durationMins menit dari target $sessTarget menit).';
                 }
 
                 parsedList.add(
@@ -823,7 +823,7 @@ class RiwayatTidakMemenuhiNotifier
               kategori: KategoriSesi.kurangDurasi,
               keterangan: shortage > 0
                   ? 'Durasi efektif di posko ($durationMins menit) kurang $shortage menit dari target $targetMenit menit. Status kehadiran tercatat Tidak Memenuhi & tidak memperoleh +3 Poin Durasi.'
-                  : 'Durasi kehadiran belum memenuhi target harian minimum.',
+                  : 'Target kehadiran terpenuhi ($durationMins menit dari target $targetMenit menit).',
               rawData: Map<String, dynamic>.from(item),
             ),
           );
