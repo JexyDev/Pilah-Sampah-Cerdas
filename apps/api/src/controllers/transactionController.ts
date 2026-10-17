@@ -40,6 +40,14 @@ export const transactionController = {
           d.bin?.category
         );
 
+        const rawBerat = d.berat != null ? Number(d.berat) : 0;
+        const rawVolume =
+          d.volumeEstimate != null
+            ? Number(d.volumeEstimate)
+            : d.volume != null
+              ? Number(d.volume)
+              : rawBerat;
+
         return {
           id: d.id,
           warga: wargaName,
@@ -47,7 +55,10 @@ export const transactionController = {
           rw: d.warga?.rw?.name || d.bin?.rw?.name || "RW 01",
           kelurahan: d.warga?.rw?.kelurahan?.name || d.bin?.rw?.kelurahan?.name || "Coblong",
           jenis: finalJenis,
-          berat: Number(d.berat),
+          berat: rawBerat,
+          weightKg: rawBerat,
+          volume: rawVolume,
+          volumeLiter: rawVolume,
           poin: Math.round(Number(d.poin || 0)),
           waktu: d.createdAt,
           status: d.status || "ACCEPTED",
@@ -76,6 +87,8 @@ export const transactionController = {
           else if (kat.includes("residu")) finalJenis = "Residu";
         }
 
+        const rawBeratManual = m.berat != null ? Number(m.berat) : 0;
+
         return {
           id: m.id,
           warga: `Petugas: ${m.petugas?.name || "Petugas Pemilah"}`,
@@ -83,7 +96,10 @@ export const transactionController = {
           rw: m.rw?.name || `RW ${m.rwId}`,
           kelurahan: m.rw?.kelurahan?.name || "Coblong",
           jenis: finalJenis,
-          berat: Number(m.berat),
+          berat: rawBeratManual,
+          weightKg: rawBeratManual,
+          volume: rawBeratManual,
+          volumeLiter: rawBeratManual,
           poin: 0,
           waktu: m.createdAt,
           status: m.status || "ACCEPTED",
@@ -145,11 +161,21 @@ export const transactionController = {
           d.bin?.category
         );
 
+        const rawBerat = d.berat != null ? Number(d.berat) : 0;
+        const rawVolume =
+          d.volumeEstimate != null
+            ? Number(d.volumeEstimate)
+            : d.volume != null
+              ? Number(d.volume)
+              : rawBerat;
+
         return {
           id: d.id,
           jenis: finalJenis,
-          berat: Number(d.berat || 0),
-          volume: Number(d.volumeEstimate || 0),
+          berat: rawBerat,
+          weightKg: rawBerat,
+          volume: rawVolume,
+          volumeLiter: rawVolume,
           poin: poinVal,
           pointsAwarded: poinVal,
           waktu: d.createdAt,
@@ -288,6 +314,7 @@ export const transactionController = {
       }
 
       if (dep.isManual) {
+        const rawBeratManual = dep.berat != null ? Number(dep.berat) : 0;
         const mappedManual = {
           id: dep.id,
           warga: `Petugas: ${dep.petugas?.name || "Petugas Residu"}`,
@@ -295,7 +322,10 @@ export const transactionController = {
           rw: dep.rw?.name || `RW ${dep.rwId}`,
           kelurahan: dep.rw?.kelurahan?.name || "Coblong",
           jenis: "Residu",
-          berat: Number(dep.berat),
+          berat: rawBeratManual,
+          weightKg: rawBeratManual,
+          volume: rawBeratManual,
+          volumeLiter: rawBeratManual,
           poin: 0,
           waktu: dep.createdAt,
           status: dep.status || "ACCEPTED",
@@ -338,6 +368,14 @@ export const transactionController = {
         dep.bin?.category
       );
 
+      const rawBerat = dep.berat != null ? Number(dep.berat) : 0;
+      const rawVolume =
+        dep.volumeEstimate != null
+          ? Number(dep.volumeEstimate)
+          : dep.volume != null
+            ? Number(dep.volume)
+            : rawBerat;
+
       const mappedDeposit = {
         id: dep.id,
         warga: dep.warga?.name || "Warga Coblong",
@@ -345,7 +383,10 @@ export const transactionController = {
         rw: dep.bin?.rw?.name || dep.warga?.rw?.name || "RW 01",
         kelurahan: dep.bin?.rw?.kelurahan?.name || dep.warga?.rw?.kelurahan?.name || "Coblong",
         jenis: finalJenis,
-        berat: Number(dep.berat),
+        berat: rawBerat,
+        weightKg: rawBerat,
+        volume: rawVolume,
+        volumeLiter: rawVolume,
         poin: Math.round(Number(dep.poin || 0)),
         waktu: dep.createdAt,
         status: dep.status || "ACCEPTED",
