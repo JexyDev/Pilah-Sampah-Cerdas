@@ -165,8 +165,10 @@ jobs:
       - name: Extract Version from pubspec
         run: |
           VERSION_FULL=$(grep "^version:" pubspec.yaml | awk '{print $2}')
-          echo "APP_VERSION=$(echo $VERSION_FULL | cut -d+ -f1)" >> $GITHUB_ENV
-          echo "APK_BUILD_NUMBER=$(echo $VERSION_FULL | cut -d+ -f2)" >> $GITHUB_ENV
+          APP_VERSION=$(echo $VERSION_FULL | cut -d+ -f1)
+          # Otomatis gunakan run_number GitHub Actions agar build number selalu bertambah di setiap push
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "APK_BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Build Android Release APK
         run: |
