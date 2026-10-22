@@ -87,3 +87,6 @@ Thumbs.db
 
 # Firebase Admin SDK Credentials
 berseka-*-firebase-adminsdk-*.json
+
+# Agent & Local Workspace State
+.hermes/
