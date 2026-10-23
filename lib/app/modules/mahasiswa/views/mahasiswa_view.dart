@@ -1289,7 +1289,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       return (isMyId || isMyName || isMyPendamping) && w.isActivated;
     }).toList();
 
-    final displayedWarga = personalWarga.take(3).toList();
+    final groupActiveWarga = state.wargaList.where((w) {
+      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
+      return w.isActivated;
+    }).toList();
+    final displayedWarga = (personalWarga.isNotEmpty ? personalWarga : groupActiveWarga).take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

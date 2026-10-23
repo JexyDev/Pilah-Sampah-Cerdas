@@ -870,8 +870,14 @@ class WargaDampingan extends Equatable {
         parsedKelurahan = 'Sadang Serang';
       } else if (rawAddr.toLowerCase().contains('lebak gede')) {
         parsedKelurahan = 'Lebak Gede';
+      } else if (rawAddr.toLowerCase().contains('lebak siliwangi')) {
+        parsedKelurahan = 'Lebak Siliwangi';
       } else if (rawAddr.toLowerCase().contains('sekeloa')) {
         parsedKelurahan = 'Sekeloa';
+      } else if (rawAddr.toLowerCase().contains('cipaganti')) {
+        parsedKelurahan = 'Cipaganti';
+      } else if (rawAddr.toLowerCase().contains('dago')) {
+        parsedKelurahan = 'Dago';
       } else if (rawAddr.toLowerCase().contains('coblong')) {
         parsedKelurahan = 'Coblong';
       }
