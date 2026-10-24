@@ -131,12 +131,6 @@ export const LoginKknHero: React.FC<LoginKknHeroProps> = ({ className = "" }) =>
             Kelola kegiatan KKN untuk lingkungan yang lebih bersih, sehat, dan berkelanjutan.
           </p>
         </div>
-
-        {/* Pill Badge Fase Berjalan */}
-        <div className="inline-flex items-center gap-2 mt-3 sm:mt-4 px-3.5 py-1.5 rounded-full bg-black/15 text-xs font-semibold text-white backdrop-blur-sm">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#5BD08A] animate-pulse shrink-0" aria-hidden="true" />
-          <span>{activeStageTitle} • {phaseShortLabel}</span>
-        </div>
       </div>
 
       {/* Area Ilustrasi Vektor Melayang */}

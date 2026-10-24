@@ -558,14 +558,14 @@ const DownloadPage: React.FC = () => {
                 Platform KKN Tematik untuk pengelolaan sampah terpadu berbasis teknologi dan kolaborasi multipihak untuk mewujudkan kampung lebih bersih, sehat, dan asri.
               </p>
               <div className="soc">
-                <a href="https://instagram.com/" target="_blank" rel="noopener" aria-label="Instagram BERSEKA">
+                <a href="https://www.instagram.com/officialberseka.id" target="_blank" rel="noopener noreferrer" aria-label="Instagram BERSEKA">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="3" y="3" width="18" height="18" rx="5" />
                     <circle cx="12" cy="12" r="4" />
                     <path d="M17.5 6.5h.01" />
                   </svg>
                 </a>
-                <a href="https://youtube.com/" target="_blank" rel="noopener" aria-label="YouTube BERSEKA">
+                <a href="https://www.youtube.com/@adminberseka" target="_blank" rel="noopener noreferrer" aria-label="YouTube BERSEKA">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="2" y="5" width="20" height="14" rx="4" />
                     <path d="m10 9 5 3-5 3Z" />

@@ -5,7 +5,7 @@
  * fluid responsiveness, animated counters, interactive modals, and dynamic state.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
@@ -437,9 +437,15 @@ export const LandingPage: React.FC = () => {
     return typeof k === "number" && k > 0 ? k : 6;
   }, [landingStats]);
 
+  const targetSampah = useMemo(() => {
+    const kg = landingStats?.totalSampahKg;
+    return typeof kg === "number" && kg > 0 ? kg : 7680.19;
+  }, [landingStats]);
+
   // Animated counters
   const [heroCount, setHeroCount] = useState(0);
   const [aisahCount, setAisahCount] = useState(0);
+  const [sampahCount, setSampahCount] = useState(0);
 
   // Modals state
   const [showCalculatorModal, setShowCalculatorModal] = useState(
@@ -463,12 +469,27 @@ export const LandingPage: React.FC = () => {
 
   const [exchangeModalProduct, setExchangeModalProduct] = useState<ProductItem | null>(null);
 
-  // Handle scroll events
+  // Root container ref for direction-aware kinetic animations (zero re-render)
+  const landingRef = useRef<HTMLDivElement>(null);
+
+  // Handle scroll events & direction tracking
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
       setIsScrolled(scrollY > 20);
       setShowTopBtn(scrollY > 600);
+
+      const diff = scrollY - lastScrollY;
+      // 8px hysteresis avoids micro-vibration jitter
+      if (Math.abs(diff) >= 8) {
+        const dir = diff > 0 ? "down" : "up";
+        if (landingRef.current && landingRef.current.dataset.scrollDir !== dir) {
+          landingRef.current.dataset.scrollDir = dir;
+        }
+        lastScrollY = scrollY;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -476,7 +497,48 @@ export const LandingPage: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // IntersectionObserver for scrollspy & reveal animations
+  // Animation frame refs to prevent overlapping animations
+  const heroAnimRef = useRef<number | null>(null);
+  const aisahAnimRef = useRef<number | null>(null);
+
+  const animateHeroCounters = useCallback(() => {
+    if (heroAnimRef.current) window.cancelAnimationFrame(heroAnimRef.current);
+    let startTimestamp: number | null = null;
+    const duration = 1500;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      setHeroCount(Math.round(targetHero * easeProgress));
+      setSampahCount(Math.round(targetSampah * easeProgress * 100) / 100);
+      if (progress < 1) {
+        heroAnimRef.current = window.requestAnimationFrame(step);
+      }
+    };
+
+    heroAnimRef.current = window.requestAnimationFrame(step);
+  }, [targetHero, targetSampah]);
+
+  const animateAisahCounter = useCallback(() => {
+    if (aisahAnimRef.current) window.cancelAnimationFrame(aisahAnimRef.current);
+    let startTimestamp: number | null = null;
+    const duration = 1500;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      setAisahCount(Math.round(targetAisah * easeProgress));
+      if (progress < 1) {
+        aisahAnimRef.current = window.requestAnimationFrame(step);
+      }
+    };
+
+    aisahAnimRef.current = window.requestAnimationFrame(step);
+  }, [targetAisah]);
+
+  // IntersectionObserver for scrollspy
   useEffect(() => {
     const sectionIds = ["beranda", "ekosistem", "program", "pasar", "aisah", "berita"];
     const sectionElements = sectionIds
@@ -496,27 +558,71 @@ export const LandingPage: React.FC = () => {
 
     sectionElements.forEach((el) => observer.observe(el));
 
-    // Reveal elements observer
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Continuous bidirectional reveal elements observer & counter triggers
+  useEffect(() => {
     const revealElements = document.querySelectorAll(".rv");
+    if (!revealElements.length) return;
+
     const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("in");
-            revealObserver.unobserve(entry.target);
+
+            // Re-trigger counter animations whenever these sections scroll into view
+            if (entry.target.classList.contains("stats")) {
+              animateHeroCounters();
+            }
+            if (entry.target.classList.contains("ai")) {
+              animateAisahCounter();
+            }
+          } else {
+            entry.target.classList.remove("in");
+
+            // Reset counters off-screen so they replay freshly when scrolled back into view
+            if (entry.target.classList.contains("stats")) {
+              if (heroAnimRef.current) window.cancelAnimationFrame(heroAnimRef.current);
+              setHeroCount(0);
+              setSampahCount(0);
+            }
+            if (entry.target.classList.contains("ai")) {
+              if (aisahAnimRef.current) window.cancelAnimationFrame(aisahAnimRef.current);
+              setAisahCount(0);
+            }
           }
         });
       },
-      { rootMargin: "0px 0px -6% 0px" }
+      { rootMargin: "0px 0px -20px 0px", threshold: 0 }
     );
 
     revealElements.forEach((el) => revealObserver.observe(el));
 
     return () => {
-      observer.disconnect();
       revealObserver.disconnect();
+      if (heroAnimRef.current) window.cancelAnimationFrame(heroAnimRef.current);
+      if (aisahAnimRef.current) window.cancelAnimationFrame(aisahAnimRef.current);
     };
-  }, []);
+  }, [animateHeroCounters, animateAisahCounter, productsList, newsList, programsList, pasarFilter]);
+
+  // Keep in-view counters synchronized if target numbers update from API
+  useEffect(() => {
+    const statsEl = document.querySelector(".stats");
+    if (statsEl && statsEl.classList.contains("in")) {
+      animateHeroCounters();
+    }
+  }, [targetHero, targetSampah, animateHeroCounters]);
+
+  useEffect(() => {
+    const aiEl = document.querySelector(".ai");
+    if (aiEl && aiEl.classList.contains("in")) {
+      animateAisahCounter();
+    }
+  }, [targetAisah, animateAisahCounter]);
 
   // ── Load Dynamic Data (Backend Stats, AISAh AI Telemetry, CMS Content) ──
   useEffect(() => {
@@ -649,28 +755,6 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
-  // Counter animation smoothly interpolating to targetHero and targetAisah
-  useEffect(() => {
-    let startTimestamp: number | null = null;
-    let animId: number;
-    const duration = 1500;
-
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      setHeroCount(Math.round(targetHero * easeProgress));
-      setAisahCount(Math.round(targetAisah * easeProgress));
-      if (progress < 1) {
-        animId = window.requestAnimationFrame(step);
-      }
-    };
-
-    animId = window.requestAnimationFrame(step);
-    return () => {
-      if (animId) window.cancelAnimationFrame(animId);
-    };
-  }, [targetHero, targetAisah]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -773,7 +857,7 @@ export const LandingPage: React.FC = () => {
   }, [calcOrganicKg, calcPlasticKg, calcOilLiters]);
 
   return (
-    <div className="landing-root">
+    <div className="landing-root" ref={landingRef} data-scroll-dir="down">
       {/* ===================== HEADER ===================== */}
       <header className={`hdr ${isScrolled ? "solid" : ""}`} id="hdr">
         <div className="wrap">
@@ -982,105 +1066,59 @@ export const LandingPage: React.FC = () => {
         {/* ===================== HERO ===================== */}
         <section className="hero" id="beranda">
           <div className="wrap">
-            <div className="hero__grid">
-              <div className="hero__copy">
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z" />
-                    <path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12" />
-                  </svg>
-                  <span>Platform KKN Tematik untuk Pengelolaan Sampah Terpadu</span>
-                </span>
-                <h1 className="rv d1">
-                  Sampah <span>Terkelola,</span> Kampung Lebih Berdaya.
-                </h1>
-                <p className="hero__lead rv d2">
-                  BERSEKA menghubungkan warga, petugas, armada, fasilitas pengolahan, pemerintah, akademisi, dan pasar sirkular dalam satu ekosistem berbasis Web, Mobile, IoT, AI, GIS, QR Code, dan gamifikasi untuk mewujudkan ekonomi sirkular.
-                </p>
-                <div className="cta-pill rv d3">
-                  <Link className="btn btn-line" to="/download">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
-                    </svg>
-                    Unduh Aplikasi
-                  </Link>
-                  <a className="btn btn-leaf" href="#program">
-                    Jelajahi Program{" "}
-                    <svg className="go" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
-                  </a>
-                </div>
-                <div className="people rv d4">
-                  <div className="avs" aria-hidden="true">
-                    <img src="/image/landingpage/mitra-dlh.webp" alt="" />
-                    <img src="/image/landingpage/mitra-pemkot.webp" alt="" />
-                    <img src="/image/landingpage/mitra-unikom.webp" alt="" />
-                  </div>
-                  <p>
-                    Bergabung bersama <b><span data-count={targetHero}>{heroCount.toLocaleString("id-ID")}</span>+ pengguna</b>
-                    <br />
-                    dari {kelurahanCount} kelurahan di Coblong
-                  </p>
-                </div>
+            <div className="hero__banner">
+              <div className="hero__banner-media">
+                <img
+                  src="/image/landingpage/hero-sorting.webp"
+                  alt="Mahasiswa KKN tersenyum sambil memilah sampah organik, plastik, dan logam ke Tempat Sampah hijau, biru, dan kuning"
+                />
+                <div className="hero__banner-overlay" />
               </div>
 
-              {/* Hero Visual Column */}
-              <div className="hero__visual rv d2">
-                <div className="hero__img-frame">
-                  <img src="/image/landingpage/hero-sorting.webp" alt="Mahasiswa KKN tersenyum sambil memilah sampah organik, plastik, dan logam ke Tempat Sampah hijau, biru, dan kuning" />
+              <div className="hero__banner-content">
+                <div className="hero__copy">
+                  <h1 className="rv">
+                    Sampah <span>Terkelola,</span> Kampung Lebih Berdaya.
+                  </h1>
+                  <p className="hero__lead rv d2">
+                    BERSEKA menghubungkan warga, petugas, armada, fasilitas pengolahan, pemerintah, akademisi, dan pasar sirkular dalam satu ekosistem berbasis Web, Mobile, IoT, AI, GIS, QR Code, dan gamifikasi untuk mewujudkan ekonomi sirkular.
+                  </p>
+                  <div className="cta-pill rv d3">
+                    <Link className="btn btn-line" to="/download">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+                      </svg>
+                      Unduh Aplikasi
+                    </Link>
+                    <a className="btn btn-leaf" href="#program">
+                      Jelajahi Program{" "}
+                      <svg className="go" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </a>
+                  </div>
+                  <div className="people rv d4">
+                    <div className="avs" aria-hidden="true">
+                      <img src="/image/landingpage/mitra-dlh.webp" alt="" />
+                      <img src="/image/landingpage/mitra-pemkot.webp" alt="" />
+                      <img src="/image/landingpage/mitra-unikom.webp" alt="" />
+                    </div>
+                    <p>
+                      Bergabung bersama <b><span data-count={targetHero}>{heroCount.toLocaleString("id-ID")}</span>+ pengguna</b>
+                      <br />
+                      dari {kelurahanCount} kelurahan di Coblong
+                    </p>
+                  </div>
                 </div>
 
-                <a className="play" href="#berita">
+                <a className="play rv d3" href="#berita" aria-label="Lihat cerita kami">
                   <span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.4-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5Z" />
                     </svg>
                   </span>
                   Lihat cerita kami
                 </a>
-
-                {/* Floating cards hero di-hide sementara sesuai arahan agar visual hero bersih */}
-                {/*
-                <div className="floats" aria-label="Sorotan program">
-                  <a
-                    className="fcard"
-                    href="#program"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedProgram(programsList[0] || PROGRAMS[0]);
-                    }}
-                  >
-                    <img src="/image/landingpage/hero-qr-badge.webp" alt="" />
-                    <span>
-                      <b>Kodifikasi QR</b>
-                      <small>Identitas digital tiap tempat sampah</small>
-                    </span>
-                  </a>
-                  <a
-                    className="fcard"
-                    href="#program"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const kompost = programsList.find((p) => p.id.includes("kompost") || p.id.includes("camp-04")) || programsList[3] || PROGRAMS[3];
-                      setSelectedProgram(kompost);
-                    }}
-                  >
-                    <img src="/image/landingpage/hero-compost-badge.webp" alt="" />
-                    <span>
-                      <b>Komposter IoT</b>
-                      <small>Sampah organik jadi pupuk cair</small>
-                    </span>
-                  </a>
-                  <a className="fcard" href="#pasar">
-                    <img src="/image/landingpage/hero-circular-badge.webp" alt="" />
-                    <span>
-                      <b>Pasar Sirkular</b>
-                      <small>Tukar poin dengan produk warga</small>
-                    </span>
-                  </a>
-                </div>
-                */}
               </div>
             </div>
 
@@ -1100,19 +1138,15 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="stat">
                 <b>
-                  {landingStats?.totalSampahKg && landingStats.totalSampahKg > 0
-                    ? `${landingStats.totalSampahKg.toLocaleString("id-ID")} kg`
-                    : landingStats?.kegiatanCount
-                    ? `${landingStats.kegiatanCount}`
-                    : "100%"}
+                  <span data-count={targetSampah}>
+                    {sampahCount.toLocaleString("id-ID", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                  <span>&nbsp;kg</span>
                 </b>
-                <span className="stat__label">
-                  {landingStats?.totalSampahKg && landingStats.totalSampahKg > 0
-                    ? "Sampah Terkelola"
-                    : landingStats?.kegiatanCount
-                    ? "Aksi Terlaksana"
-                    : "Target Terkelola"}
-                </span>
+                <span className="stat__label">Sampah Terkelola</span>
               </div>
               <div className="stat hl">
                 <b>Kolaborasi</b>
@@ -1127,14 +1161,7 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="head">
               <div>
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
-                    <path d="M21 3v5h-5" />
-                  </svg>
-                  Dari rumah hingga pasar
-                </span>
-                <h2 className="h2 rv d1">
+                <h2 className="h2 rv">
                   Ekosistem <span>BERSEKA</span>
                 </h2>
                 <p className="sub rv d2">Enam pihak saling terhubung, supaya setiap sampah terpilah memiliki alur pemanfaatan yang jelas.</p>
@@ -1217,13 +1244,7 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="head">
               <div>
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 2 15 8.5l7 1-5 4.8 1.2 6.9L12 18l-6.2 3.2L7 14.3 2 9.5l7-1Z" />
-                  </svg>
-                  Program unggulan
-                </span>
-                <h2 className="h2 rv d1">
+                <h2 className="h2 rv">
                   {programsList.length} Program <span>KKN BERSEKA</span>
                 </h2>
                 <p className="sub rv d2">
@@ -1270,14 +1291,7 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="head">
               <div>
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M5 7h14l-1.5 13h-11Z" />
-                    <path d="M9 10V6a3 3 0 0 1 6 0v4" />
-                  </svg>
-                  Tukar poin, bawa pulang manfaat
-                </span>
-                <h2 className="h2 rv d1">
+                <h2 className="h2 rv">
                   Pasar <span>BERSEKA</span>
                 </h2>
                 <p className="sub rv d2">Tukar poin partisipasi menjadi produk ramah lingkungan dan karya kreatif warga.</p>
@@ -1360,13 +1374,6 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="ai rv">
               <div>
-                <span className="badge" style={{ background: "#fff" }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4Z" />
-                    <path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z" />
-                  </svg>
-                  Kecerdasan Artifisial Pemilah Sampah
-                </span>
                 <h2 className="h2">
                   AISAh — <span>Asisten Identifikasi Sampah</span>
                 </h2>
@@ -1457,70 +1464,74 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="head">
               <div>
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 2a14.5 14.5 0 0 0 0 20M2 12a14.5 14.5 0 0 0 20 0" />
-                  </svg>
-                  Dampak global, aksi lokal
-                </span>
-                <h2 className="h2 rv d1" id="sdgT">
+                <h2 className="h2 rv" id="sdgT">
                   Kontribusi terhadap <span>SDGs</span>
                 </h2>
               </div>
             </div>
             <div className="sdgs">
               <article className="sdg rv">
-                <div className="sdg__t" style={{ background: "#A21942" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />
-                  </svg>
-                  <b>8</b>
-                  <span>Decent Work and Economic Growth</span>
+                <div className="sdg__t">
+                  <img
+                    src="/image/sdgs/sdgs_8.png"
+                    alt="SDG 8: Decent Work and Economic Growth"
+                    className="sdg__img"
+                    width="554"
+                    height="554"
+                    loading="lazy"
+                  />
                 </div>
                 <p>Mendorong pekerjaan layak dan ekonomi lokal melalui pengelolaan sampah dan pasar sirkular.</p>
               </article>
               <article className="sdg rv d1">
-                <div className="sdg__t" style={{ background: "#E8891F" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 21h18M5 21V7l6-3v17M11 9h8v12" />
-                  </svg>
-                  <b>11</b>
-                  <span>Sustainable Cities and Communities</span>
+                <div className="sdg__t">
+                  <img
+                    src="/image/sdgs/sdgs_11.png"
+                    alt="SDG 11: Sustainable Cities and Communities"
+                    className="sdg__img"
+                    width="554"
+                    height="554"
+                    loading="lazy"
+                  />
                 </div>
                 <p>Mewujudkan kampung yang inklusif, aman, tangguh, dan berkelanjutan.</p>
               </article>
               <article className="sdg rv d2">
-                <div className="sdg__t" style={{ background: "#B07D1E" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 12c-2-2.5-4-4-6-4a4 4 0 0 0 0 8c2 0 4-1.5 6-4Zm0 0c2 2.5 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.5-6 4Z" />
-                  </svg>
-                  <b>12</b>
-                  <span>Responsible Consumption and Production</span>
+                <div className="sdg__t">
+                  <img
+                    src="/image/sdgs/sdgs_12.png"
+                    alt="SDG 12: Responsible Consumption and Production"
+                    className="sdg__img"
+                    width="447"
+                    height="447"
+                    loading="lazy"
+                  />
                 </div>
                 <p>Mengurangi sampah, meningkatkan daur ulang, dan konsumsi berkelanjutan.</p>
               </article>
               <article className="sdg rv d3">
-                <div className="sdg__t" style={{ background: "#3F7E44" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  <b>13</b>
-                  <span>Climate Action</span>
+                <div className="sdg__t">
+                  <img
+                    src="/image/sdgs/sdgs_13.png"
+                    alt="SDG 13: Climate Action"
+                    className="sdg__img"
+                    width="447"
+                    height="447"
+                    loading="lazy"
+                  />
                 </div>
                 <p>Mengurangi emisi dan dampak perubahan iklim melalui pengelolaan sampah berkelanjutan.</p>
               </article>
               <article className="sdg rv d4">
-                <div className="sdg__t" style={{ background: "#19486A" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="9" cy="9" r="4" />
-                    <circle cx="15" cy="9" r="4" />
-                    <circle cx="9" cy="15" r="4" />
-                    <circle cx="15" cy="15" r="4" />
-                  </svg>
-                  <b>17</b>
-                  <span>Partnerships for the Goals</span>
+                <div className="sdg__t">
+                  <img
+                    src="/image/sdgs/sdgs_17.png"
+                    alt="SDG 17: Partnerships for the Goals"
+                    className="sdg__img"
+                    width="447"
+                    height="447"
+                    loading="lazy"
+                  />
                 </div>
                 <p>Menguatkan kolaborasi multipihak untuk mencapai tujuan pembangunan berkelanjutan.</p>
               </article>
@@ -1533,14 +1544,7 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="head">
               <div>
-                <span className="badge rv">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3Z" />
-                    <path d="M8 9h8M8 13h8M8 17h5" />
-                  </svg>
-                  Kabar dari kampung
-                </span>
-                <h2 className="h2 rv d1">
+                <h2 className="h2 rv">
                   Berita dan <span>Cerita Lapangan</span>
                 </h2>
               </div>
@@ -1598,12 +1602,6 @@ export const LandingPage: React.FC = () => {
           <div className="wrap">
             <div className="contact rv">
               <div>
-                <span className="badge">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" />
-                  </svg>
-                  Pusat Informasi dan Kolaborasi
-                </span>
                 <h2 id="kT">
                   Butuh informasi tentang <span>BERSEKA?</span>
                 </h2>
@@ -1674,14 +1672,14 @@ export const LandingPage: React.FC = () => {
                 Platform KKN Tematik untuk pengelolaan sampah terpadu berbasis teknologi dan kolaborasi multipihak untuk mewujudkan kampung lebih bersih, sehat, dan asri.
               </p>
               <div className="soc">
-                <a href="https://instagram.com/" target="_blank" rel="noopener" aria-label="Instagram BERSEKA">
+                <a href="https://www.instagram.com/officialberseka.id" target="_blank" rel="noopener noreferrer" aria-label="Instagram BERSEKA">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="3" y="3" width="18" height="18" rx="5" />
                     <circle cx="12" cy="12" r="4" />
                     <path d="M17.5 6.5h.01" />
                   </svg>
                 </a>
-                <a href="https://youtube.com/" target="_blank" rel="noopener" aria-label="YouTube BERSEKA">
+                <a href="https://www.youtube.com/@adminberseka" target="_blank" rel="noopener noreferrer" aria-label="YouTube BERSEKA">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="2" y="5" width="20" height="14" rx="4" />
                     <path d="m10 9 5 3-5 3Z" />

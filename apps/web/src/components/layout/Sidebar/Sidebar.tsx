@@ -2271,13 +2271,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {isCollapsed ? (
           <div className="relative z-10 flex flex-col h-full items-center justify-between py-3">
             {/* Top Brand Logo */}
-            <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
+            <div className="h-16 flex items-center justify-center w-full border-b border-slate-200/80 dark:border-slate-800 shrink-0">
               <div
                 title={branding.appName || "BERSEKA"}
-                className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src={branding.logoEmblemUrl || "/logos/berseka/berseka-logo-bg-transparent.png?v=20261022_v2"}
+                  src={branding.logoEmblemUrl || "/image/landingpage/berseka-icon-1.webp"}
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -2329,25 +2329,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section */}
-            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-center relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
+            <div className="h-16 px-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
               <Link
                 to="/dasbor?tab=kkn"
                 onClick={handleMobileItemClick}
-                className="flex items-center justify-center group cursor-pointer relative z-10 w-full text-center"
+                className="flex items-center gap-2.5 group cursor-pointer relative z-10 select-none"
+                aria-label="BERSEKA.ID — Dasbor"
               >
                 <img
-                  src={branding.logoHorizontalUrl || "/app-logo.png?v=20261022_v2"}
+                  src="/image/landingpage/berseka-icon-1.webp"
                   alt="BERSEKA Logo"
-                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+                  width="36"
+                  height="36"
+                  className="w-[36px] h-[36px] shrink-0 object-contain transition-transform duration-200 group-hover:scale-105"
                 />
+                <span className="font-sans font-bold text-[19.5px] tracking-tight leading-none text-slate-900 dark:text-white">
+                  BERSEKA<span className="text-[#0E8A47] dark:text-emerald-400">.ID</span>
+                </span>
               </Link>
               {/* Mobile Close Button */}
               <button
                 type="button"
                 onClick={onClose}
-                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20"
+                className="lg:hidden w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20 shrink-0"
                 title="Tutup Menu"
               >
                 <X size={18} />

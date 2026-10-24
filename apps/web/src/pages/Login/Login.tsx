@@ -325,7 +325,7 @@ const Login: React.FC = () => {
 
           {/* Card Form Login */}
           <div
-            className={`w-full max-w-[460px] mx-auto my-auto bg-white p-5 sm:p-8 xl:p-10 rounded-[20px] sm:rounded-[24px] border border-slate-100/80 shadow-[0_40px_80px_-40px_rgba(14,27,51,0.22),0_2px_8px_rgba(14,27,51,0.04)] transition-all ${
+            className={`w-full max-w-[500px] mx-auto my-auto bg-white p-5 sm:p-8 xl:p-10 rounded-[20px] sm:rounded-[24px] border border-slate-100/80 shadow-[0_40px_80px_-40px_rgba(14,27,51,0.22),0_2px_8px_rgba(14,27,51,0.04)] transition-all ${
               isShaking ? "animate-shake" : ""
             }`}
           >
